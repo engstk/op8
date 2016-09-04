@@ -40,6 +40,13 @@ config CFQ_GROUP_IOSCHED
 	---help---
 	  Enable group IO scheduling in CFQ.
 
+config IOSCHED_ZEN
+	tristate "Zen I/O scheduler"
+	default n
+	---help---
+	FCFS, dispatches are back-inserted, deadlines ensure fairness.
+        Should work best with devices where there is no travel delay.
+
 choice
 
 	prompt "Default I/O scheduler"
@@ -54,6 +61,9 @@ choice
 	config DEFAULT_CFQ
 		bool "CFQ" if IOSCHED_CFQ=y
 
+	config DEFAULT_ZEN
+		bool "ZEN" if IOSCHED_ZEN=y
+
 	config DEFAULT_NOOP
 		bool "No-op"
 
@@ -63,6 +73,7 @@ config DEFAULT_IOSCHED
 	string
 	default "deadline" if DEFAULT_DEADLINE
 	default "cfq" if DEFAULT_CFQ
+	default "zen" if DEFAULT_ZEN
 	default "noop" if DEFAULT_NOOP
 
 config MQ_IOSCHED_DEADLINE

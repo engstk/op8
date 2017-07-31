@@ -85,3 +85,5 @@ obj-$(CONFIG_OPLUS_RF_CABLE_MONITOR) += oplus_rf_cable_monitor.o
 obj-$(CONFIG_OPLUS_RF_CABLE_MONITOR) += op_ant_detect.o
 obj-$(CONFIG_SIM_DETECT)	+= sim_detect.o
 obj-y				+= tri_state_key/
+
+obj-$(CONFIG_FORCE_FAST_CHARGE) += fastchg.o

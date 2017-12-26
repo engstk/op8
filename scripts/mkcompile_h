@@ -76,7 +76,12 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
   CC_VERSION=$($CC -v 2>&1 | grep ' version ' | sed 's/[[:space:]]*$//')
   LD_VERSION=$($LD -v | head -n1 | sed 's/(compatible with [^)]*)//' \
 		      | sed 's/[[:space:]]*$//')
-  printf '#define LINUX_COMPILER "%s"\n' "$CC_VERSION, $LD_VERSION"
+
+  if [ -z "$KBUILD_COMPILER_STRING" ]; then
+    printf '#define LINUX_COMPILER "%s"\n' "$CC_VERSION, $LD_VERSION"
+  else
+    echo \#define LINUX_COMPILER \"$KBUILD_COMPILER_STRING\"
+  fi;
 ) > .tmpcompile
 
 # Only replace the real compile.h if the new one is different,

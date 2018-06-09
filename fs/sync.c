@@ -174,13 +174,14 @@ void emergency_sync(void)
  */
 SYSCALL_DEFINE1(syncfs, int, fd)
 {
-	struct fd f = fdget(fd);
+	struct fd f;
 	struct super_block *sb;
 	int ret;
 
 	if (!fsync_enabled)
 		return 0;
 
+	f = fdget(fd);
 	if (!f.file)
 		return -EBADF;
 	sb = f.file->f_path.dentry->d_sb;
@@ -229,16 +230,13 @@ EXPORT_SYMBOL(vfs_fsync_range);
  */
 int vfs_fsync(struct file *file, int datasync)
 {
-	if (!fsync_enabled)
-		return 0;
-		
 	return vfs_fsync_range(file, 0, LLONG_MAX, datasync);
 }
 EXPORT_SYMBOL(vfs_fsync);
 
 static int do_fsync(unsigned int fd, int datasync)
 {
-	struct fd f = fdget(fd);
+	struct fd f;
 	int ret = -EBADF;
 #ifdef OPLUS_FEATURE_HEALTHINFO
 // Add for record  fsync  time
@@ -250,6 +248,7 @@ static int do_fsync(unsigned int fd, int datasync)
 	if (!fsync_enabled)
 		return 0;
 
+	f = fdget(fd);
 	if (f.file) {
 		ret = vfs_fsync(f.file, datasync);
 		fdput(f);
@@ -270,17 +269,11 @@ static int do_fsync(unsigned int fd, int datasync)
 
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
 {
-	if (!fsync_enabled)
-		return 0;
-
 	return do_fsync(fd, 0);
 }
 
 SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
 {
-	if (!fsync_enabled)
-		return 0;
-		
 	return do_fsync(fd, 1);
 }
 

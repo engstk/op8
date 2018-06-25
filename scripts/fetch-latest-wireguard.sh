@@ -2,6 +2,9 @@
 set -e
 USER_AGENT="WireGuard-AndroidROMBuild/0.1 ($(uname -a))"
 
+exec 9>.wireguard-fetch-lock
+flock -n 9 || exit 0
+
 [[ $(( $(date +%s) - $(stat -c %Y "net/wireguard/.check" 2>/dev/null || echo 0) )) -gt 86400 ]] || exit 0
 
 [[ $(curl -A "$USER_AGENT" -LSs https://git.zx2c4.com/WireGuard/refs/) =~ snapshot/WireGuard-([0-9.]+)\.tar\.xz ]]

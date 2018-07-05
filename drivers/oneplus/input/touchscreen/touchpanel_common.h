@@ -59,6 +59,22 @@
 #define SingleTap           15  // single tap
 #define Sgestrue            14  // S
 
+#define KEY_GESTURE_W               246
+#define KEY_GESTURE_M               247
+#define KEY_GESTURE_S               248
+#define KEY_DOUBLE_TAP              KEY_WAKEUP
+#define KEY_GESTURE_CIRCLE          250
+#define KEY_GESTURE_TWO_SWIPE       251
+#define KEY_GESTURE_UP_ARROW        252
+#define KEY_GESTURE_LEFT_ARROW      253
+#define KEY_GESTURE_RIGHT_ARROW     254
+#define KEY_GESTURE_DOWN_ARROW      255
+#define KEY_GESTURE_SWIPE_LEFT      KEY_F5
+#define KEY_GESTURE_SWIPE_DOWN      KEY_F6
+#define KEY_GESTURE_SWIPE_RIGHT     KEY_F7
+#define KEY_GESTURE_SWIPE_UP        KEY_F8
+#define KEY_GESTURE_SINGLE_TAP      KEY_F9
+
 #define BIT0 (0x1 << 0)
 #define BIT1 (0x1 << 1)
 #define BIT2 (0x1 << 2)

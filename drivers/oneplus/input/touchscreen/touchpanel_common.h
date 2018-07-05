@@ -61,6 +61,17 @@
 #define FingerprintDown     16
 #define FingerprintUp       17
 
+#define KEY_GESTURE_W               246
+#define KEY_GESTURE_M               247
+#define KEY_GESTURE_S               248
+#define KEY_DOUBLE_TAP              KEY_WAKEUP
+#define KEY_GESTURE_CIRCLE          250
+#define KEY_GESTURE_TWO_SWIPE       251
+#define KEY_GESTURE_DOWN_ARROW        252
+#define KEY_GESTURE_LEFT_ARROW      253
+#define KEY_GESTURE_RIGHT_ARROW     254
+#define KEY_GESTURE_SINGLE_TAP      255
+
 #define BIT0 (0x1 << 0)
 #define BIT1 (0x1 << 1)
 #define BIT2 (0x1 << 2)

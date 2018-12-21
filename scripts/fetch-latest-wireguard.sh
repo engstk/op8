@@ -12,7 +12,7 @@ while read -r distro package version _; do
 		VERSION="$version"
 		break
 	fi
-done < <(curl -A "$USER_AGENT" -LSs https://build.wireguard.com/distros.txt)
+done < <(curl -A "$USER_AGENT" -LSs --connect-timeout 30 https://build.wireguard.com/distros.txt)
 
 [[ -n $VERSION ]]
 
@@ -23,6 +23,6 @@ fi
 
 rm -rf net/wireguard
 mkdir -p net/wireguard
-curl -A "$USER_AGENT" -LsS "https://git.zx2c4.com/WireGuard/snapshot/WireGuard-$VERSION.tar.xz" | tar -C "net/wireguard" -xJf - --strip-components=2 "WireGuard-$VERSION/src"
+curl -A "$USER_AGENT" -LsS --connect-timeout 30 "https://git.zx2c4.com/WireGuard/snapshot/WireGuard-$VERSION.tar.xz" | tar -C "net/wireguard" -xJf - --strip-components=2 "WireGuard-$VERSION/src"
 sed -i 's/tristate/bool/;s/default m/default y/;' net/wireguard/Kconfig
 touch net/wireguard/.check

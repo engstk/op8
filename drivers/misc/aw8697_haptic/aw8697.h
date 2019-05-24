@@ -433,6 +433,7 @@ struct aw8697 {
     int index;
     int vmax;
     int gain;
+    int level;
     unsigned int gun_type;      //hch 20190917
     unsigned int bullet_nr; //hch 20190917
     unsigned int gun_mode;

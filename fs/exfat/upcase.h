@@ -12,31 +12,31 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-/************************************************************************/
-/*                                                                      */
-/*  PROJECT : exFAT & FAT12/16/32 File System                           */
-/*  FILE    : exfat_upcase.c                                            */
-/*  PURPOSE : exFAT Up-case Table                                       */
-/*                                                                      */
-/*----------------------------------------------------------------------*/
-/*  NOTES                                                               */
-/*                                                                      */
-/*----------------------------------------------------------------------*/
-/*  REVISION HISTORY (Ver 0.9)                                          */
-/*                                                                      */
-/*  - 2010.11.15 [Joosun Hahn] : first writing                          */
-/*                                                                      */
-/************************************************************************/
+#ifndef _UPCASE_H
+#define _UPCASE_H
 
-#include "exfat_config.h"
+/* Upcase tabel macro */
+#define EXFAT_NUM_UPCASE              2918
+#define HIGH_INDEX_BIT (8)
+#define HIGH_INDEX_MASK (0xFF00)
+#define LOW_INDEX_BIT (16-HIGH_INDEX_BIT)
+#define UTBL_ROW_COUNT (1<<LOW_INDEX_BIT)
+#define UTBL_COL_COUNT (1<<HIGH_INDEX_BIT)
 
-#include "exfat_nls.h"
+static inline u16 get_col_index(u16 i)
+{
+	return i >> LOW_INDEX_BIT;
+}
+static inline u16 get_row_index(u16 i)
+{
+	return i & ~HIGH_INDEX_MASK;
+}
 
-const u8 uni_upcase[NUM_UPCASE<<1] = {
+
+static const u8 uni_def_upcase[EXFAT_NUM_UPCASE<<1] = {
 	0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07, 0x00,
 	0x08, 0x00, 0x09, 0x00, 0x0A, 0x00, 0x0B, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x0E, 0x00, 0x0F, 0x00,
 	0x10, 0x00, 0x11, 0x00, 0x12, 0x00, 0x13, 0x00, 0x14, 0x00, 0x15, 0x00, 0x16, 0x00, 0x17, 0x00,
@@ -403,3 +403,5 @@ const u8 uni_upcase[NUM_UPCASE<<1] = {
 	0xF2, 0xFF, 0xF3, 0xFF, 0xF4, 0xFF, 0xF5, 0xFF, 0xF6, 0xFF, 0xF7, 0xFF, 0xF8, 0xFF, 0xF9, 0xFF,
 	0xFA, 0xFF, 0xFB, 0xFF, 0xFC, 0xFF, 0xFD, 0xFF, 0xFE, 0xFF, 0xFF, 0xFF
 };
+
+#endif /* _UPCASE_H */

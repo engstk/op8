@@ -1,52 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
  *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *  blkdev.c: exFAT Block Device Driver Glue Layer
  */
-
-/************************************************************************/
-/*                                                                      */
-/*  PROJECT : exFAT & FAT12/16/32 File System                           */
-/*  FILE    : blkdev.c                                                  */
-/*  PURPOSE : exFAT Block Device Driver Glue Layer                      */
-/*                                                                      */
-/*----------------------------------------------------------------------*/
-/*  NOTES                                                               */
-/*                                                                      */
-/************************************************************************/
 
 #include <linux/blkdev.h>
 #include <linux/log2.h>
 #include <linux/backing-dev.h>
-
 #include "exfat.h"
-
-/*----------------------------------------------------------------------*/
-/*  Constant & Macro Definitions                                        */
-/*----------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------*/
-/*  Global Variable Definitions                                         */
-/*----------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------*/
-/*  Local Variable Definitions                                          */
-/*----------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------*/
-/*  FUNCTIONS WHICH HAS KERNEL VERSION DEPENDENCY                       */
-/************************************************************************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
 	/* EMPTY */
@@ -57,10 +19,7 @@ static struct backing_dev_info *inode_to_bdi(struct inode *bd_inode)
 }
 #endif
 
-/*======================================================================*/
-/*  Function Definitions                                                */
-/*======================================================================*/
-s32 bdev_open_dev(struct super_block *sb)
+s32 exfat_bdev_open_dev(struct super_block *sb)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 
@@ -71,7 +30,7 @@ s32 bdev_open_dev(struct super_block *sb)
 	return 0;
 }
 
-s32 bdev_close_dev(struct super_block *sb)
+s32 exfat_bdev_close_dev(struct super_block *sb)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 
@@ -87,7 +46,7 @@ static inline s32 block_device_ejected(struct super_block *sb)
 	return (bdi->dev == NULL);
 }
 
-s32 bdev_check_bdi_valid(struct super_block *sb)
+s32 exfat_bdev_check_bdi_valid(struct super_block *sb)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 
@@ -106,7 +65,7 @@ s32 bdev_check_bdi_valid(struct super_block *sb)
 
 
 /* Make a readahead request */
-s32 bdev_readahead(struct super_block *sb, u64 secno, u64 num_secs)
+s32 exfat_bdev_readahead(struct super_block *sb, u64 secno, u64 num_secs)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 	u32 sects_per_page = (PAGE_SIZE >> sb->s_blocksize_bits);
@@ -134,17 +93,10 @@ s32 bdev_readahead(struct super_block *sb, u64 secno, u64 num_secs)
 	return 0;
 }
 
-s32 bdev_mread(struct super_block *sb, u64 secno, struct buffer_head **bh, u64 num_secs, s32 read)
+s32 exfat_bdev_mread(struct super_block *sb, u64 secno, struct buffer_head **bh, u64 num_secs, s32 read)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 	u8 blksize_bits = sb->s_blocksize_bits;
-#ifdef CONFIG_EXFAT_DBG_IOCTL
-	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-	long flags = sbi->debug_flags;
-
-	if (flags & EXFAT_DEBUGFLAGS_ERROR_RW)
-		return -EIO;
-#endif /* CONFIG_EXFAT_DBG_IOCTL */
 
 	if (!fsi->bd_opened)
 		return -EIO;
@@ -172,18 +124,11 @@ s32 bdev_mread(struct super_block *sb, u64 secno, struct buffer_head **bh, u64 n
 	return -EIO;
 }
 
-s32 bdev_mwrite(struct super_block *sb, u64 secno, struct buffer_head *bh, u64 num_secs, s32 sync)
+s32 exfat_bdev_mwrite(struct super_block *sb, u64 secno, struct buffer_head *bh, u64 num_secs, s32 sync)
 {
 	u64 count;
 	struct buffer_head *bh2;
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
-#ifdef CONFIG_EXFAT_DBG_IOCTL
-	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-	long flags = sbi->debug_flags;
-
-	if (flags & EXFAT_DEBUGFLAGS_ERROR_RW)
-		return -EIO;
-#endif /* CONFIG_EXFAT_DBG_IOCTL */
 
 	if (!fsi->bd_opened)
 		return -EIO;
@@ -226,16 +171,9 @@ no_bh:
 	return -EIO;
 }
 
-s32 bdev_sync_all(struct super_block *sb)
+s32 exfat_bdev_sync_all(struct super_block *sb)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
-#ifdef CONFIG_EXFAT_DBG_IOCTL
-	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-	long flags = sbi->debug_flags;
-
-	if (flags & EXFAT_DEBUGFLAGS_ERROR_RW)
-		return -EIO;
-#endif /* CONFIG_EXFAT_DBG_IOCTL */
 
 	if (!fsi->bd_opened)
 		return -EIO;
@@ -246,7 +184,7 @@ s32 bdev_sync_all(struct super_block *sb)
 /*
  *  Sector Read/Write Functions
  */
-s32 read_sect(struct super_block *sb, u64 sec, struct buffer_head **bh, s32 read)
+s32 exfat_read_sect(struct super_block *sb, u64 sec, struct buffer_head **bh, s32 read)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 
@@ -257,7 +195,7 @@ s32 read_sect(struct super_block *sb, u64 sec, struct buffer_head **bh, s32 read
 		return -EIO;
 	}
 
-	if (bdev_mread(sb, sec, bh, 1, read)) {
+	if (exfat_bdev_mread(sb, sec, bh, 1, read)) {
 		exfat_fs_error_ratelimit(sb,
 				"%s: I/O error (sect:%llu)", __func__, sec);
 		return -EIO;
@@ -266,7 +204,7 @@ s32 read_sect(struct super_block *sb, u64 sec, struct buffer_head **bh, s32 read
 	return 0;
 }
 
-s32 write_sect(struct super_block *sb, u64 sec, struct buffer_head *bh, s32 sync)
+s32 exfat_write_sect(struct super_block *sb, u64 sec, struct buffer_head *bh, s32 sync)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 
@@ -277,50 +215,9 @@ s32 write_sect(struct super_block *sb, u64 sec, struct buffer_head *bh, s32 sync
 		return -EIO;
 	}
 
-	if (bdev_mwrite(sb, sec, bh, 1, sync)) {
+	if (exfat_bdev_mwrite(sb, sec, bh, 1, sync)) {
 		exfat_fs_error_ratelimit(sb, "%s: I/O error (sect:%llu)",
 						__func__, sec);
-		return -EIO;
-	}
-
-	return 0;
-}
-
-s32 read_msect(struct super_block *sb, u64 sec, struct buffer_head **bh, u64 num_secs, s32 read)
-{
-	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
-
-	BUG_ON(!bh);
-	if (((sec+num_secs) > fsi->num_sectors) && (fsi->num_sectors > 0)) {
-		exfat_fs_error_ratelimit(sb, "%s: out of range(sect:%llu len:%llu)",
-						__func__, sec, num_secs);
-		return -EIO;
-	}
-
-	if (bdev_mread(sb, sec, bh, num_secs, read)) {
-		exfat_fs_error_ratelimit(sb, "%s: I/O error (sect:%llu len:%llu)",
-						__func__, sec, num_secs);
-		return -EIO;
-	}
-
-	return 0;
-}
-
-s32 write_msect(struct super_block *sb, u64 sec, struct buffer_head *bh, u64 num_secs, s32 sync)
-{
-	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
-
-	BUG_ON(!bh);
-	if (((sec+num_secs) > fsi->num_sectors) && (fsi->num_sectors > 0)) {
-		exfat_fs_error_ratelimit(sb, "%s: out of range(sect:%llu len:%llu)",
-						__func__, sec, num_secs);
-		return -EIO;
-	}
-
-
-	if (bdev_mwrite(sb, sec, bh, num_secs, sync)) {
-		exfat_fs_error_ratelimit(sb, "%s: I/O error (sect:%llu len:%llu)",
-						__func__, sec, num_secs);
 		return -EIO;
 	}
 
@@ -403,7 +300,7 @@ error:
 	return err;
 }
 
-s32 write_msect_zero(struct super_block *sb, u64 sec, u64 num_secs)
+s32 exfat_write_msect_zero(struct super_block *sb, u64 sec, u64 num_secs)
 {
 	FS_INFO_T *fsi = &(EXFAT_SB(sb)->fsi);
 
@@ -418,6 +315,4 @@ s32 write_msect_zero(struct super_block *sb, u64 sec, u64 num_secs)
 		return -EAGAIN;
 
 	return 0;
-} /* end of write_msect_zero */
-
-/* end of blkdev.c */
+}

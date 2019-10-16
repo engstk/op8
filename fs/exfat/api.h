@@ -1,18 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
- *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef _EXFAT_API_H
@@ -21,14 +9,6 @@
 #include "config.h"
 #include "exfat_fs.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-
-/*----------------------------------------------------------------------*/
-/*  Configure Constant & Macro Definitions                              */
-/*----------------------------------------------------------------------*/
 /* cache size (in number of sectors)                */
 /* (should be an exponential value of 2)            */
 #define FAT_CACHE_SIZE          128
@@ -41,9 +21,6 @@ extern "C" {
 #define FCACHE_MAX_RA_SIZE	(PAGE_SIZE)
 #define DCACHE_MAX_RA_SIZE	(128*1024)
 
-/*----------------------------------------------------------------------*/
-/*  Constant & Macro Definitions                                        */
-/*----------------------------------------------------------------------*/
 /* type values */
 #define TYPE_UNUSED             0x0000
 #define TYPE_DELETED            0x0001
@@ -77,10 +54,6 @@ extern "C" {
 #define VOL_AU_STAT_CLEAN	(1)
 #define VOL_AU_STAT_FULL	(2)
 
-/*----------------------------------------------------------------------*/
-/*  NLS Type Definitions                                                    */
-/*----------------------------------------------------------------------*/
-
 /* DOS name structure */
 typedef struct {
 	u8       name[DOS_NAME_LENGTH];
@@ -94,9 +67,6 @@ typedef struct {
 	u8       name_len;
 } UNI_NAME_T;
 
-/*----------------------------------------------------------------------*/
-/*  Type Definitions                                                    */
-/*----------------------------------------------------------------------*/
 /* should be merged it to DATE_TIME_T */
 typedef struct {
 	u16      sec;        /* 0 ~ 59               */
@@ -213,14 +183,6 @@ typedef struct __cache_entry {
 	struct buffer_head   *bh;
 } cache_ent_t;
 
-/*----------------------------------------------------------------------*/
-/*  Type Definitions : Wrapper & In-Core                                */
-/*----------------------------------------------------------------------*/
-typedef struct __FATENT_OPS_T {
-	s32 (*ent_get)(struct super_block *sb, u32 loc, u32 *content);
-	s32 (*ent_set)(struct super_block *sb, u32 loc, u32 content);
-} FATENT_OPS_T;
-
 typedef struct {
 	s32      (*alloc_cluster)(struct super_block *, u32, CHAIN_T *, s32);
 	s32      (*free_cluster)(struct super_block *, CHAIN_T *, s32);
@@ -280,7 +242,6 @@ typedef struct __FS_INFO_T {
 	u32      prev_eio;            // block device operation error flag
 
 	FS_FUNC_T   *fs_func;
-	FATENT_OPS_T   *fatent_ops;
 
 	s32       reserved_clusters;  // # of reserved clusters (DA)
 	void        *amap;                  // AU Allocation Map
@@ -301,10 +262,4 @@ typedef struct __FS_INFO_T {
 	} dcache;
 } FS_INFO_T;
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
 #endif /* _EXFAT_API_H */
-
-/* end of api.h */

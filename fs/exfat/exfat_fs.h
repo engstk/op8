@@ -1,18 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
- *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef _EXFAT_FS_H
@@ -22,9 +10,6 @@
 #include <linux/magic.h>
 #include <asm/byteorder.h>
 
-/*----------------------------------------------------------------------*/
-/*  Constant & Macro Definitions                                        */
-/*----------------------------------------------------------------------*/
 #ifndef MSDOS_SUPER_MAGIC
 #define MSDOS_SUPER_MAGIC       0x4d44          /* MD */
 #endif
@@ -152,31 +137,6 @@
  * ioctl command
  */
 #define EXFAT_IOCTL_GET_VOLUME_ID	_IOR('r', 0x12, __u32)
-#define EXFAT_IOCTL_PANIC               _IOC(_IOC_NONE, 'E', 0x17, sizeof(u32))
-
-/*
- * ioctl command for debugging
- */
-
-/*
- * IOCTL code 'f' used by
- *   - file systems typically #0~0x1F
- *   - embedded terminal devices #128~
- *   - exts for debugging purpose #99
- * number 100 and 101 is available now but has possible conflicts
- *
- * NOTE : This is available only If CONFIG_EXFAT_DVBG_IOCTL is enabled.
- *
- */
-#define EXFAT_IOC_GET_DEBUGFLAGS       _IOR('f', 100, long)
-#define EXFAT_IOC_SET_DEBUGFLAGS       _IOW('f', 101, long)
-
-#define EXFAT_DEBUGFLAGS_INVALID_UMOUNT        0x01
-#define EXFAT_DEBUGFLAGS_ERROR_RW              0x02
-
-/*----------------------------------------------------------------------*/
-/*  On-Disk Type Definitions                                            */
-/*----------------------------------------------------------------------*/
 
 /* FAT12/16 BIOS parameter block (64 bytes) */
 typedef struct {

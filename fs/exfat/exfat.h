@@ -1,18 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *  Copyright (C) 2012-2013 Samsung Electronics Co., Ltd.
- *
- *  This program is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License
- *  as published by the Free Software Foundation; either version 2
- *  of the License, or (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef _EXFAT_H
@@ -29,9 +17,6 @@
 #include <linux/kobject.h>
 #include "api.h"
 
-/*************************************************************************
- * FUNCTIONS WHICH HAS KERNEL VERSION DEPENDENCY
- *************************************************************************/
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 #include <linux/iversion.h>
 #define INC_IVERSION(x)		(inode_inc_iversion(x))
@@ -157,17 +142,7 @@ struct exfat_sb_info {
 	spinlock_t inode_hash_lock;
 	struct hlist_head inode_hashtable[EXFAT_HASH_SIZE];
 	struct kobject sb_kobj;
-#ifdef CONFIG_EXFAT_DBG_IOCTL
-	long debug_flags;
-#endif /* CONFIG_EXFAT_DBG_IOCTL */
 
-#ifdef CONFIG_EXFAT_TRACE_IO
-	/* Statistics for allocator */
-	unsigned int stat_n_pages_written;	/* # of written pages in total */
-	unsigned int stat_n_pages_added;	/* # of added blocks in total */
-	unsigned int stat_n_bdev_pages_written;	/* # of written pages owned by bdev inode */
-	unsigned int stat_n_pages_confused;
-#endif
 	atomic_t stat_n_pages_queued;	/* # of pages in the request queue (approx.) */
 };
 
@@ -261,12 +236,10 @@ static inline void exfat_save_attr(struct inode *inode, u32 attr)
 
 /* exfat/nls.c */
 /* NLS management function */
-s32  nls_cmp_sfn(struct super_block *sb, u8 *a, u8 *b);
-s32  nls_cmp_uniname(struct super_block *sb, u16 *a, u16 *b);
-s32  nls_uni16s_to_sfn(struct super_block *sb, UNI_NAME_T *p_uniname, DOS_NAME_T *p_dosname, s32 *p_lossy);
-s32  nls_sfn_to_uni16s(struct super_block *sb, DOS_NAME_T *p_dosname, UNI_NAME_T *p_uniname);
-s32  nls_uni16s_to_vfsname(struct super_block *sb, UNI_NAME_T *uniname, u8 *p_cstring, s32 len);
-s32  nls_vfsname_to_uni16s(struct super_block *sb, const u8 *p_cstring,
+s32  exfat_nls_cmp_uniname(struct super_block *sb, u16 *a, u16 *b);
+s32  exfat_nls_sfn_to_uni16s(struct super_block *sb, DOS_NAME_T *p_dosname, UNI_NAME_T *p_uniname);
+s32  exfat_nls_uni16s_to_vfsname(struct super_block *sb, UNI_NAME_T *uniname, u8 *p_cstring, s32 len);
+s32  exfat_nls_vfsname_to_uni16s(struct super_block *sb, const u8 *p_cstring,
 			const s32 len, UNI_NAME_T *uniname, s32 *p_lossy);
 
 /* exfat/xattr.c */
@@ -312,15 +285,9 @@ extern void exfat_time_fat2unix(struct exfat_sb_info *sbi, struct timespec_compa
 				DATE_TIME_T *tp);
 extern void exfat_time_unix2fat(struct exfat_sb_info *sbi, struct timespec_compat *ts,
 				DATE_TIME_T *tp);
-extern TIMESTAMP_T *tm_now(struct exfat_sb_info *sbi, TIMESTAMP_T *tm);
+extern TIMESTAMP_T *exfat_tm_now(struct exfat_sb_info *sbi, TIMESTAMP_T *tm);
 
 #ifdef CONFIG_EXFAT_DEBUG
-
-#ifdef CONFIG_EXFAT_DBG_CAREFUL
-void exfat_debug_check_clusters(struct inode *inode);
-#else
-#define exfat_debug_check_clusters(inode)
-#endif /* CONFIG_EXFAT_DBG_CAREFUL */
 
 #ifdef CONFIG_EXFAT_DBG_BUGON
 #define exfat_debug_bug_on(expr)        BUG_ON(expr)
@@ -336,30 +303,10 @@ void exfat_debug_check_clusters(struct inode *inode);
 
 #else /* CONFIG_EXFAT_DEBUG */
 
-#define exfat_debug_check_clusters(inode)
 #define exfat_debug_bug_on(expr)
 #define exfat_debug_warn_on(expr)
 
 #endif /* CONFIG_EXFAT_DEBUG */
-
-#ifdef CONFIG_EXFAT_TRACE_ELAPSED_TIME
-u32 exfat_time_current_usec(struct timeval *tv);
-extern struct timeval __t1;
-extern struct timeval __t2;
-
-#define TIME_GET(tv)	exfat_time_current_usec(tv)
-#define TIME_START(s)	exfat_time_current_usec(s)
-#define TIME_END(e)	exfat_time_current_usec(e)
-#define TIME_ELAPSED(s, e) ((u32)(((e)->tv_sec - (s)->tv_sec) * 1000000 + \
-			((e)->tv_usec - (s)->tv_usec)))
-#define PRINT_TIME(n)	pr_info("exFAT: Elapsed time %d = %d (usec)\n", n, (__t2 - __t1))
-#else /* CONFIG_EXFAT_TRACE_ELAPSED_TIME */
-#define TIME_GET(tv)    (0)
-#define TIME_START(s)
-#define TIME_END(e)
-#define TIME_ELAPSED(s, e)      (0)
-#define PRINT_TIME(n)
-#endif /* CONFIG_EXFAT_TRACE_ELAPSED_TIME */
 
 #define	EXFAT_MSG_LV_NONE	(0x00000000)
 #define EXFAT_MSG_LV_ERR	(0x00000001)
@@ -386,19 +333,16 @@ extern void __exfat_dmsg(int level, const char *fmt, ...) __printf(2, 3) __cold;
 #define EXFAT_IMSG(...) EXFAT_DMSG_T(EXFAT_MSG_LV_INFO, __VA_ARGS__)
 #define EXFAT_DMSG(...) EXFAT_DMSG_T(EXFAT_MSG_LV_DBG, __VA_ARGS__)
 #define EXFAT_MMSG(...) EXFAT_DMSG_T(EXFAT_MSG_LV_MORE, __VA_ARGS__)
-#define EXFAT_TMSG(...) EXFAT_DMSG_T(EXFAT_MSG_LV_TRACE, __VA_ARGS__)
 
 #define EMSG(...)
 #define IMSG(...)
 #define DMSG(...)
 #define MMSG(...)
-#define TMSG(...)
 
 #define EMSG_VAR(exp)
 #define IMSG_VAR(exp)
 #define DMSG_VAR(exp)
 #define MMSG_VAR(exp)
-#define TMSG_VAR(exp)
 
 #ifdef CONFIG_EXFAT_DBG_MSG
 
@@ -429,14 +373,6 @@ extern void __exfat_dmsg(int level, const char *fmt, ...) __printf(2, 3) __cold;
 #undef MMSG_VAR
 #define MMSG(...)	EXFAT_MMSG(__VA_ARGS__)
 #define MMSG_VAR(exp)	exp
-#endif
-
-/* should replace with trace function */
-#if (EXFAT_MSG_LEVEL >= EXFAT_MSG_LV_TRACE)
-#undef TMSG
-#undef TMSG_VAR
-#define TMSG(...)	EXFAT_TMSG(__VA_ARGS__)
-#define TMSG_VAR(exp)	exp
 #endif
 
 #endif /* CONFIG_EXFAT_DBG_MSG */

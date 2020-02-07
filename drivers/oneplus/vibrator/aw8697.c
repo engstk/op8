@@ -79,6 +79,15 @@ struct pm_qos_request pm_qos_req_vb;
 /* add haptic audio tp mask */
 extern struct shake_point record_point[10];
 /* add haptic audio tp mask end */
+
+#ifdef CONFIG_HAPTIC_FEEDBACK_DISABLE
+int ignore_next_request = 0;
+void hap_ignore_next_request(void)
+{
+    ignore_next_request = 1;
+}
+#endif
+
 /******************************************************
  *
  * variable
@@ -848,6 +857,13 @@ static int aw8697_haptic_set_bst_peak_cur(struct aw8697 *aw8697, unsigned char p
 static unsigned char aw8697_haptic_set_level(struct aw8697 *aw8697, int gain)
 {
     int val = 80;
+
+#ifdef CONFIG_HAPTIC_FEEDBACK_DISABLE
+    if ((ignore_next_request) && (gain != 0)) {
+       ignore_next_request = 0;
+       return 0;
+    }
+#endif
 
     val = aw8697->level * gain / 3;
     if (val > 255)

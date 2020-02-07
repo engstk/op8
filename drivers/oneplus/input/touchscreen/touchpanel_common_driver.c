@@ -34,6 +34,15 @@
 #include "samsung/s6sy761/sec_drivers_s6sy761.h"
 #include "util_interface/touch_interfaces.h"
 
+#ifdef CONFIG_HAPTIC_FEEDBACK_DISABLE
+#include <linux/moduleparam.h>
+
+bool haptic_feedback_disable = false;
+module_param(haptic_feedback_disable, bool, 0644);
+
+void hap_ignore_next_request(void);
+#endif
+
 /*******Part0:LOG TAG Declear************************/
 #define TPD_PRINT_POINT_NUM 150
 #define TPD_DEVICE "touchpanel"
@@ -421,6 +430,11 @@ static void tp_gesture_handle(struct touchpanel_data *ts)
 		input_sync(ts->input_dev);
 		input_report_key(ts->input_dev, KEY_F4, 0);
 		input_sync(ts->input_dev);
+
+#ifdef CONFIG_HAPTIC_FEEDBACK_DISABLE
+        if (haptic_feedback_disable)
+                hap_ignore_next_request();
+#endif
 	}
 }
 

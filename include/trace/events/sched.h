@@ -1237,6 +1237,7 @@ TRACE_EVENT(sched_task_util,
 		__field(bool,		rtg_skip_min)
 		__field(u32,		unfilter)
 		__field(unsigned long,  cpus_allowed)
+		__field(bool,		low_latency)
 		__field(bool,		is_uxtop)
 	),
 
@@ -1257,20 +1258,22 @@ TRACE_EVENT(sched_task_util,
 		__entry->rtg_skip_min		= rtg_skip_min;
 #ifdef CONFIG_SCHED_WALT
 		__entry->unfilter		= p->unfilter;
+		__entry->low_latency		= p->low_latency;
 #else
 		__entry->unfilter		= 0;
+		__entry->low_latency		= 0;
 #endif
 		__entry->cpus_allowed           = cpumask_bits(&p->cpus_allowed)[0];
 		__entry->is_uxtop		= is_uxtop;
 	),
 
-	TP_printk("pid=%d comm=%s util=%lu prev_cpu=%d candidates=%#lx best_energy_cpu=%d sync=%d need_idle=%d fastpath=%d placement_boost=%d latency=%llu stune_boosted=%d is_rtg=%d rtg_skip_min=%d unfilter=%u affine=%#lx is_uxtop=%d",
+	TP_printk("pid=%d comm=%s util=%lu prev_cpu=%d candidates=%#lx best_energy_cpu=%d sync=%d need_idle=%d fastpath=%d placement_boost=%d latency=%llu stune_boosted=%d is_rtg=%d rtg_skip_min=%d unfilter=%u affine=%#lx low_latency=%d is_uxtop=%d",
 		__entry->pid, __entry->comm, __entry->util, __entry->prev_cpu,
 		__entry->candidates, __entry->best_energy_cpu, __entry->sync,
 		__entry->need_idle, __entry->fastpath, __entry->placement_boost,
 		__entry->latency, __entry->stune_boosted,
 		__entry->is_rtg, __entry->rtg_skip_min,
-		__entry->unfilter, __entry->cpus_allowed, __entry->is_uxtop)
+		__entry->unfilter, __entry->cpus_allowed, __entry->low_latency, __entry->is_uxtop)
 );
 
 /*

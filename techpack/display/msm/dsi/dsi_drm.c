@@ -848,6 +848,9 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 	for (i = 0; i < count; i++) {
 		struct drm_display_mode *m;
 
+		if (modes[i].splash_dms)
+			modes[i].dsi_mode_flags |= DSI_MODE_FLAG_DMS;
+
 		memset(&drm_mode, 0x0, sizeof(drm_mode));
 		dsi_convert_to_drm_mode(&modes[i], &drm_mode);
 		m = drm_mode_duplicate(connector->dev, &drm_mode);
@@ -870,6 +873,10 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 			m->type |= DRM_MODE_TYPE_PREFERRED;
 		}
 		drm_mode_probed_add(connector, m);
+
+		if (modes[i].splash_dms)
+			drm_set_preferred_mode(
+				connector, m->hdisplay, m->vdisplay);
 	}
 
 	rc = dsi_drm_update_edid_name(&edid, display->panel->name);

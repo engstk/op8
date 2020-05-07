@@ -368,8 +368,8 @@ VL53L1_Error VL53L1_data_init(
 
 
 
-	if (status == VL53L1_ERROR_NONE)
-		status = VL53L1_set_preset_mode(
+    if (status == VL53L1_ERROR_NONE)
+        status = VL53L1_set_preset_mode(
 			Dev,
 			pdev->preset_mode,
 			pdev->dss_config__target_total_rate_mcps,
@@ -381,19 +381,19 @@ VL53L1_Error VL53L1_data_init(
 
 
 
-	VL53L1_init_histogram_bin_data_struct(
+    VL53L1_init_histogram_bin_data_struct(
 			0,
 			VL53L1_HISTOGRAM_BUFFER_SIZE,
 			&(pdev->hist_data));
 
-	VL53L1_init_histogram_bin_data_struct(
+    VL53L1_init_histogram_bin_data_struct(
 			0,
 			VL53L1_HISTOGRAM_BUFFER_SIZE,
 			&(pdev->hist_xtalk));
 
 
 
-	VL53L1_init_xtalk_bin_data_struct(
+    VL53L1_init_xtalk_bin_data_struct(
 			0,
 			VL53L1_XTALK_HISTO_BINS,
 			&(pdev->xtalk_shapes.xtalk_shape));
@@ -402,7 +402,7 @@ VL53L1_Error VL53L1_data_init(
 
 
 
-	VL53L1_xtalk_cal_data_init(
+    VL53L1_xtalk_cal_data_init(
 			Dev
 			);
 
@@ -410,7 +410,7 @@ VL53L1_Error VL53L1_data_init(
 
 
 
-	VL53L1_dynamic_xtalk_correction_data_init(
+    VL53L1_dynamic_xtalk_correction_data_init(
 			Dev
 			);
 
@@ -418,7 +418,7 @@ VL53L1_Error VL53L1_data_init(
 
 
 
-	VL53L1_low_power_auto_data_init(
+    VL53L1_low_power_auto_data_init(
 			Dev
 			);
 

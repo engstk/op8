@@ -12022,7 +12022,7 @@ int dsi_display_read_panel_id(struct dsi_display *dsi_display,
 	}
 	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
     if (!m_ctrl->ctrl->vaddr)
-        goto error;
+		goto error;
 
 	cmds->msg.rx_buf = buf;
 	cmds->msg.rx_len = len;

@@ -43,17 +43,6 @@
 	warm-bat-decidegc = <450>;
 	hot-bat-decidegc = <500>;
 	qcom,otg-cl-ua = <1500000>;
-	op,sw-iterm-ma = <310>;
-	op,sw-check-full-enable;
-	/* temp region settings */
-	cold-bat-decidegc = <20>;
-	little-cold-bat-decidegc = <0>;
-	cool-bat-decidegc = <50>;
-	little-cool-bat-decidegc = <120>;
-	pre-normal-bat-decidegc = <160>;
-	warm-bat-decidegc = <450>;
-	hot-bat-decidegc = <500>;
-	qcom,otg-cl-ua = <1500000>;
 	op,sw-iterm-ma = <225>;
 	op,sw-check-full-enable;
 

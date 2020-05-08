@@ -66,7 +66,7 @@ static int proc_bootloader_log_init(void)
 }
 
 
-static int __init of_bootloader_log_platform_data(struct device_node *node,
+static int of_bootloader_log_platform_data(struct device_node *node,
 	struct bootloader_log_platform_data *pdata)
 {
 	const u32 *addr;

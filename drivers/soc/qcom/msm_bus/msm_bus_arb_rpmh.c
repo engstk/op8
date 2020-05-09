@@ -1323,8 +1323,7 @@ exit_register_client:
 	return handle;
 }
 
-static int update_client_paths(struct msm_bus_client *client, bool log_trns,
-							unsigned int idx)
+static int update_client_paths(struct msm_bus_client *client, unsigned int idx)
 {
 	int lnode, src, dest, cur_idx;
 	uint64_t req_clk, req_bw, curr_clk, curr_bw, slp_clk, slp_bw;
@@ -1385,16 +1384,13 @@ static int update_client_paths(struct msm_bus_client *client, bool log_trns,
 			goto exit_update_client_paths;
 		}
 
-		if (log_trns)
-			getpath_debug(src, lnode, pdata->active_only);
 	}
 	commit_data();
 exit_update_client_paths:
 	return ret;
 }
 
-static int update_client_alc(struct msm_bus_client *client, bool log_trns,
-							unsigned int idx)
+static int update_client_alc(struct msm_bus_client *client, unsigned int idx)
 {
 	int lnode, cur_idx;
 	uint64_t req_idle_time, req_fal, dual_idle_time, dual_fal,
@@ -1573,7 +1569,7 @@ static int update_context(uint32_t cl, bool active_only,
 	pdata->active_only = active_only;
 
 	msm_bus_dbg_client_data(client->pdata, ctx_idx, cl);
-	ret = update_client_paths(client, false, ctx_idx);
+	ret = update_client_paths(client, ctx_idx);
 	if (ret) {
 		pr_err("%s: Err updating path\n", __func__);
 		goto exit_update_context;
@@ -1591,8 +1587,6 @@ static int update_request_adhoc(uint32_t cl, unsigned int index)
 	int ret = 0;
 	struct msm_bus_scale_pdata *pdata;
 	struct msm_bus_client *client;
-	const char *test_cl = "Null";
-	bool log_transaction = false;
 
 	rt_mutex_lock(&msm_bus_adhoc_lock);
 
@@ -1630,17 +1624,14 @@ static int update_request_adhoc(uint32_t cl, unsigned int index)
 		goto exit_update_request;
 	}
 
-	if (!strcmp(test_cl, pdata->name))
-		log_transaction = true;
-
 	MSM_BUS_DBG("%s: cl: %u index: %d curr: %d num_paths: %d\n", __func__,
 		cl, index, client->curr, client->pdata->usecase->num_paths);
 
 	if (pdata->alc)
-		ret = update_client_alc(client, log_transaction, index);
+		ret = update_client_alc(client, index);
 	else {
 		msm_bus_dbg_client_data(client->pdata, index, cl);
-		ret = update_client_paths(client, log_transaction, index);
+		ret = update_client_paths(client, index);
 	}
 	if (ret) {
 		pr_err("%s: Err updating path\n", __func__);

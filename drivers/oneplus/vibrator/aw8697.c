@@ -1687,7 +1687,7 @@ static void aw8697_rtp_work_routine(struct work_struct *work)
             aw8697_rtp_name[aw8697->rtp_file_num], aw8697_rtp->len);
 	if (aw8697->sin_add_flag == 1) {
 		aw8697_update_rtp_data(aw8697, rtp_file);
-		aw8697->sin_add_flag == 0;
+		aw8697->sin_add_flag = 0;
 	} else
 		memcpy(aw8697_rtp->data, rtp_file->data, rtp_file->size);
     mutex_unlock(&aw8697->rtp_lock);

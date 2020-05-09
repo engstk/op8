@@ -944,7 +944,7 @@ static void cc_record_init(void)
 
 static void cc_tsk_acq(struct cc_tsk_data* data)
 {
-	struct cc_command *cc;
+	struct cc_command *cc = NULL;
 	u32 delay_us;
 	u32 category;
 	int prio;

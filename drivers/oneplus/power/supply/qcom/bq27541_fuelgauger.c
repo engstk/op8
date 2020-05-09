@@ -1190,7 +1190,7 @@ static bool get_dash_started(void)
 
 static int bq27541_temperature_thrshold_update(int temp)
 {
-	int ret;
+	int ret = 0;
 
 	if (!bq27541_di->batt_psy)
 		return 0;

@@ -891,7 +891,7 @@ UINT8	TstActMov124( UINT8 UcDirSel )
 {
 	UINT8	UcRsltSts = 0;
 	INT32	SlMeasureParameterNum ;
-	INT32	SlMeasureParameterA , SlMeasureParameterB ;
+	INT32	SlMeasureParameterA = 0, SlMeasureParameterB = 0;
 	UnllnVal	StMeasValueA  , StMeasValueB ;
 	float		SfLimit , Sfzoom , Sflenz , Sfshift ;
 	UINT32		UlLimit , Ulzoom , Ullenz , Ulshift , UlActChkLvl ;
@@ -1643,7 +1643,7 @@ TRACE("SetGyroAccelCoef SelectAct 0x%x GyroPostion 0x%x\n", SelectAct, GyroPosti
 
 UINT32	MeasGain124 ( UINT16	UcDirSel, UINT16	UsMeasFreq , UINT32 UlMesAmp )
 {
-	INT32			SlMeasureParameterA , SlMeasureParameterB ;
+	INT32			SlMeasureParameterA = 0, SlMeasureParameterB = 0;
 	INT32			SlMeasureParameterNum , SlSineWaveOffset;
 	UnllnVal		StMeasValueA  , StMeasValueB ;
 	UINT32	UlReturnVal;

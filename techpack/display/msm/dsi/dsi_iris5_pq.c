@@ -2036,8 +2036,8 @@ int iris5_kickoff(void *phys_enc)
 	if (c_conn == NULL)
 		return -EFAULT;
 
-    if(c_conn->connector_type != DRM_MODE_CONNECTOR_DSI)
-        return 0;
+	if(c_conn->connector_type != DRM_MODE_CONNECTOR_DSI)
+		return 0;
 
 	display = c_conn->display;
 	if (display == NULL)

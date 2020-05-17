@@ -8763,6 +8763,7 @@ int dsi_display_enable(struct dsi_display *display)
 	 * resource init and hence we return early
 	 */
 	if (display->is_cont_splash_enabled) {
+		struct dsi_display_mode *adj_mode = NULL;
 
 		dsi_display_config_ctrl_for_cont_splash(display);
 #if defined(CONFIG_PXLW_IRIS)
@@ -8817,6 +8818,23 @@ int dsi_display_enable(struct dsi_display *display)
 				display->name, rc);
 			return rc;
 		}
+
+		/*
+		 * Find the entry for the current DRM mode structure:
+		 * beware that panel->cur_mode is only an internal cache.
+		 */
+		rc = dsi_display_find_mode(display, mode, &adj_mode);
+		if (unlikely(rc)) {
+			pr_err("[%s] This is impossible! Can't find mode!\n",
+				__func__);
+			return rc;
+		}
+
+		/* Reset the splash_dms flag: we're out of cont splash now */
+		adj_mode->splash_dms = false;
+
+		/* Remove the DMS flag, since we have already switched */
+		adj_mode->dsi_mode_flags &= ~DSI_MODE_FLAG_DMS;
 
 		return 0;
 	}

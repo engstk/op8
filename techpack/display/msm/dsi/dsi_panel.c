@@ -1017,7 +1017,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 #else
 		rc = mipi_dsi_dcs_set_display_brightness_samsung(dsi, bl_lvl);
 #endif
-		DSI_ERR("backlight = %d\n", bl_lvl);
+		DSI_DEBUG("backlight = %d\n", bl_lvl);
 		cur_backlight = bl_lvl;
 		cur_fps = mode_fps;
 		cur_h = panel->cur_mode->timing.h_active;
@@ -1033,7 +1033,7 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 #endif
 	}
 	if (rc < 0)
-		DSI_ERR("failed to update dcs backlight:%d\n", bl_lvl);
+		DSI_DEBUG("failed to update dcs backlight:%d\n", bl_lvl);
 
 error:
 	return rc;
@@ -5785,11 +5785,11 @@ int dsi_panel_set_dci_p3_mode(struct dsi_panel *panel, int level)
 
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DCI_P3_ON);
-            DSI_ERR("DCI-P3 Mode On.\n");
+            DSI_DEBUG("DCI-P3 Mode On.\n");
     } else {
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_DCI_P3_OFF);
-            DSI_ERR("DCI-P3 Mode Off.\n");
+            DSI_DEBUG("DCI-P3 Mode Off.\n");
     }
 	mutex_unlock(&panel->panel_lock);
 	return rc;
@@ -5811,12 +5811,12 @@ int dsi_panel_set_night_mode(struct dsi_panel *panel, int level)
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NIGHT_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NIGHT_ON);
-            DSI_ERR("night Mode On.\n");
+            DSI_DEBUG("night Mode On.\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NIGHT_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NIGHT_OFF);
-            DSI_ERR("night Mode Off.\n");
+            DSI_DEBUG("night Mode Off.\n");
     }
 	mutex_unlock(&panel->panel_lock);
 	return rc;
@@ -5838,12 +5838,12 @@ int dsi_panel_set_native_display_p3_mode(struct dsi_panel *panel, int level)
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_P3_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_ON);
-            DSI_ERR("Native Display p3 Mode On.\n");
+            DSI_DEBUG("Native Display p3 Mode On.\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_P3_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_P3_OFF);
-            DSI_ERR("Native Display p3 Mode Off.\n");
+            DSI_DEBUG("Native Display p3 Mode Off.\n");
     }
 	mutex_unlock(&panel->panel_lock);
 return rc;
@@ -5866,12 +5866,12 @@ int dsi_panel_set_native_display_wide_color_mode(struct dsi_panel *panel, int le
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_ON);
-            DSI_ERR("Native wide color Mode On.\n");
+            DSI_DEBUG("Native wide color Mode On.\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_WIDE_COLOR_OFF);
-            DSI_ERR("Native wide color Mode Off.\n");
+            DSI_DEBUG("Native wide color Mode Off.\n");
     }
 	mutex_unlock(&panel->panel_lock);
 return rc;
@@ -5894,12 +5894,12 @@ int dsi_panel_set_native_display_srgb_color_mode(struct dsi_panel *panel, int le
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
-            DSI_ERR("Native srgb color Mode On.\n");
+            DSI_DEBUG("Native srgb color Mode On.\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_OFF);
-            DSI_ERR("Native  srgb color Mode Off.\n");
+            DSI_DEBUG("Native  srgb color Mode Off.\n");
     }
 	mutex_unlock(&panel->panel_lock);
 return rc;
@@ -5923,12 +5923,12 @@ int dsi_panel_set_native_loading_effect_mode(struct dsi_panel *panel, int level)
         count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_EFFECT_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_ON);
-            DSI_ERR("turn on loading effect\n");
+            DSI_DEBUG("turn on loading effect\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_EFFECT_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_OFF);
-            DSI_ERR("turn off loading effect.\n");
+            DSI_DEBUG("turn off loading effect.\n");
     }
 	mutex_unlock(&panel->panel_lock);
 return rc;
@@ -5951,12 +5951,12 @@ int dsi_panel_set_customer_srgb_mode(struct dsi_panel *panel, int level)
         count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_RGB_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
-            DSI_ERR("turn on customer srgb\n");
+            DSI_DEBUG("turn on customer srgb\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_RGB_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
-            DSI_ERR("turn off customer srgb\n");
+            DSI_DEBUG("turn off customer srgb\n");
     }
 	mutex_unlock(&panel->panel_lock);
 return rc;
@@ -5979,12 +5979,12 @@ int dsi_panel_set_customer_p3_mode(struct dsi_panel *panel, int level)
         count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_P3_ON].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
-            DSI_ERR("turn on customer P3\n");
+            DSI_DEBUG("turn on customer P3\n");
     } else {
         count = mode->priv_info->cmd_sets[DSI_CMD_LOADING_CUSTOMER_P3_OFF].count;
 
             rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
-            DSI_ERR("turn off customer P3\n");
+            DSI_DEBUG("turn off customer P3\n");
     }
 	mutex_unlock(&panel->panel_lock);
 return rc;
@@ -6011,18 +6011,18 @@ int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 	if (level == 1) {
 		if (panel->aod_status == 0) {
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_ON_1);
-			DSI_ERR("Send DSI_CMD_SET_AOD_ON_1 cmds\n");
+			DSI_DEBUG("Send DSI_CMD_SET_AOD_ON_1 cmds\n");
 			panel->aod_status = 1;
 		}
 	} else if (level == 2) {
 		if (panel->aod_status == 0) {
 			panel->aod_status = 1;
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_ON_2);
-			DSI_ERR("Send DSI_CMD_SET_AOD_ON_2 cmds\n");
+			DSI_DEBUG("Send DSI_CMD_SET_AOD_ON_2 cmds\n");
 
 			tp_aod_flag = 100;
 			notifier_data.data = &tp_aod_flag;
-			DSI_ERR("set aod state TP flag: %d\n", tp_aod_flag);
+			DSI_DEBUG("set aod state TP flag: %d\n", tp_aod_flag);
 			if (lcd_active_panel)
 				drm_panel_notifier_call_chain(lcd_active_panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
 
@@ -6033,16 +6033,16 @@ int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 			panel->aod_status = 0;
 			if(aod_real_flag == true) {
 				rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_OFF);
-				DSI_ERR("Send DSI_CMD_SET_AOD_OFF cmds\n");
+				DSI_DEBUG("Send DSI_CMD_SET_AOD_OFF cmds\n");
 			}
 			if (aod_real_flag == false) {
 				rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_AOD_OFF_NEW);
-				DSI_ERR("Send DSI_CMD_SET_AOD_OFF_NEW cmds\n");
+				DSI_DEBUG("Send DSI_CMD_SET_AOD_OFF_NEW cmds\n");
 
 				if (level == 0) {
 					tp_aod_flag = 200;
 					notifier_data.data = &tp_aod_flag;
-					DSI_ERR("set aod state TP flag: %d\n", tp_aod_flag);
+					DSI_DEBUG("set aod state TP flag: %d\n", tp_aod_flag);
 					if (lcd_active_panel)
 						drm_panel_notifier_call_chain(lcd_active_panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
 				}
@@ -6051,7 +6051,7 @@ int dsi_panel_set_aod_mode(struct dsi_panel *panel, int level)
 	}
 
 	panel->aod_curr_mode = level;
-	DSI_ERR("AOD mode = %d\n", level);
+	DSI_DEBUG("AOD mode = %d\n", level);
 
 	return rc;
 }

@@ -62,7 +62,7 @@ void hap_ignore_next_request(void);
 #define TPD_SPECIFIC_PRINT(count, a, arg...)\
 	do{\
 		if (count++ == TPD_PRINT_POINT_NUM || LEVEL_DEBUG == tp_debug) {\
-			TPD_INFO(TPD_DEVICE ": " a, ##arg);\
+			TPD_DEBUG(TPD_DEVICE ": " a, ##arg);\
 			count = 0;\
 		}\
 	}while(0)
@@ -679,7 +679,7 @@ static void tp_touch_handle(struct touchpanel_data *ts)
 		ts->irq_slot = 0;
 		ts->corner_delay_up = -1;
 		TPD_DETAIL("all touch up,view_area_touched=%d finger_num=%d\n",ts->view_area_touched, finger_num);
-		TPD_INFO("last point x:%d y:%d\n", last_point.x, last_point.y);
+		TPD_DEBUG("last point x:%d y:%d\n", last_point.x, last_point.y);
 		if (ts->edge_limit_support)
 			ts->edge_limit.in_which_area = AREA_NOTOUCH;
 	}

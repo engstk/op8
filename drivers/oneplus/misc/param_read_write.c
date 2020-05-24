@@ -100,7 +100,7 @@ int set_param_by_index_and_offset(uint32 sid_index,
     int ret;
     uint32 file_offset;
 	mutex_lock(&param_ram_zone.mutex);
-	pr_info("%s[%d]sid_index = %d offset = %d buf = %p length = %d\n",
+	pr_debug("%s[%d]sid_index = %d offset = %d buf = %p length = %d\n",
 			__func__, __LINE__,sid_index,offset,buf,length);
 
     file_offset = PARAM_SID_LENGTH*sid_index + offset;

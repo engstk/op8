@@ -719,7 +719,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 
 	if (val != FB_EARLY_EVENT_BLANK)
 		return 0;
-	pr_info("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
+	pr_debug("[info] %s go to the goodix_fb_state_chg_callback value = %d\n",
 			__func__, (int)val);
 	gf_dev = container_of(nb, struct gf_dev, notifier);
 
@@ -753,7 +753,7 @@ static int goodix_fb_state_chg_callback(struct notifier_block *nb,
 			}
 			break;
 		default:
-			pr_info("%s defalut\n", __func__);
+			pr_debug("%s defalut\n", __func__);
 			break;
 		}
 	}
@@ -772,7 +772,7 @@ static int goodix_fb_state_chg_callback(
 	struct drm_panel_notifier *evdata = data;
 	unsigned int blank;
 	char msg = 0;
-	pr_info("[info] %s go to the msm_drm_notifier_callback value = %d\n",
+	pr_debug("[info] %s go to the msm_drm_notifier_callback value = %d\n",
 			__func__, (int)val);
 	if (val != DRM_PANEL_EARLY_EVENT_BLANK &&
 		val != DRM_PANEL_ONSCREENFINGERPRINT_EVENT)
@@ -781,7 +781,7 @@ static int goodix_fb_state_chg_callback(
 	blank = *(int *)(evdata->data);
 
 	if (val == DRM_PANEL_ONSCREENFINGERPRINT_EVENT) {
-		pr_info("[%s] UI ready enter\n", __func__);
+		pr_debug("[%s] UI ready enter\n", __func__);
 
 		switch (blank) {
 		case 0:
@@ -790,12 +790,12 @@ static int goodix_fb_state_chg_callback(
 			sendnlmsg(&msg);
 			break;
 		case 1:
-			pr_info("[%s] UI ready\n", __func__);
+			pr_debug("[%s] UI ready\n", __func__);
 			msg = GF_NET_EVENT_UI_READY;
 			sendnlmsg(&msg);
 			break;
 		default:
-			pr_info("[%s] Unknown EVENT\n", __func__);
+			pr_debug("[%s] Unknown EVENT\n", __func__);
 			break;
 		}
 		return 0;
@@ -840,7 +840,7 @@ static int goodix_fb_state_chg_callback(
 				NULL, dev_attr_screen_state.attr.name);
 			break;
 		default:
-			pr_info("%s defalut\n", __func__);
+			pr_debug("%s defalut\n", __func__);
 			break;
 		}
 	}

@@ -239,6 +239,7 @@ static bool dsi_parser_parse_prop(struct device *dev,
 {
 	bool found = false;
 	char *out = strsep(&buf, "=");
+	size_t buf_len = strlen(buf);
 
 	if (!out || !buf)
 		goto end;
@@ -247,7 +248,7 @@ static bool dsi_parser_parse_prop(struct device *dev,
 	if (!prop->raw)
 		goto end;
 
-	strlcpy(prop->raw, buf, strlen(buf) + 1);
+	strlcpy(prop->raw, buf, buf_len + 1);
 
 	found = true;
 

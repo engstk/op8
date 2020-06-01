@@ -334,7 +334,7 @@ static int ist8801_set_reg(int reg, int val)
 }
 
 
-static bool ist8801_is_power_on()
+static bool ist8801_is_power_on(void)
 {
 	if (g_ist8801_data == NULL) {
 		TRI_KEY_LOG("g_ist8801_data NULL \n");
@@ -755,7 +755,7 @@ static int ist8801_enable_irq(bool enable)
 	return 0;
 }
 
-static int ist8801_clear_irq()
+static int ist8801_clear_irq(void)
 {
 	if (g_ist8801_data == NULL) {
 		TRI_KEY_LOG("g_ist8801_data NULL \n");
@@ -767,7 +767,7 @@ static int ist8801_clear_irq()
 	return 0;
 }
 
-static int ist8801_get_irq_state()
+static int ist8801_get_irq_state(void)
 {
 	if (g_ist8801_data == NULL) {
 		TRI_KEY_LOG("g_ist8801_data NULL \n");

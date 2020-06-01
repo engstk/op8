@@ -176,9 +176,9 @@ void msm_vidc_debugfs_update(struct msm_vidc_inst *inst,
 int msm_vidc_check_ratelimit(void);
 int get_sid(u32 *sid, u32 session_type);
 void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc);
-inline char *get_codec_name(u32 sid);
-inline void put_sid(u32 sid);
-inline bool is_print_allowed(u32 sid, u32 level);
+char *get_codec_name(u32 sid);
+void put_sid(u32 sid);
+bool is_print_allowed(u32 sid, u32 level);
 
 static inline char *get_debug_level_str(int level)
 {

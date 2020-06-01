@@ -136,7 +136,7 @@ static inline bool current_is_gcd(void)
 	return current == gc_tsk;
 }
 
-bool ctech_current_is_swapind() {
+bool ctech_current_is_swapind(void) {
 	return current == swapind_tsk;
 }
 

@@ -1023,7 +1023,7 @@ static int m1120_enable_irq(bool enable)
     return 0;
 }
 
-static int m1120_clear_irq()
+static int m1120_clear_irq(void)
 {
     printk(KERN_INFO "  %s", __func__);
     if(p_m1120_data == NULL) {
@@ -1035,7 +1035,7 @@ static int m1120_clear_irq()
     return 0;
 }
 
-static int m1120_get_irq_state()
+static int m1120_get_irq_state(void)
 {
     printk(KERN_INFO "  %s", __func__);
     if(p_m1120_data == NULL) {
@@ -1114,7 +1114,7 @@ static void m1120_dump_reg(u8* buf)
 	return;
 }
 
-static bool m1120_is_power_on()
+static bool m1120_is_power_on(void)
 {
     printk(KERN_INFO "  %s", __func__);
     if (p_m1120_data == NULL) {
@@ -1345,7 +1345,7 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
     // }
 
     /*(11) register ops to abstrace level*/
-    oneplus_register_hall("hall_down", &m1120_downs_ops);//ÍùÆäÀï±ß×¢²áhall
+    oneplus_register_hall("hall_down", &m1120_downs_ops);
 	wakeup_source_init(&p_m1120_data->source, "hall_down");
 
     printk(KERN_INFO "  i2c addr : %d\n", client->addr);

@@ -13,3 +13,4 @@ ccflags-y += -I$(srctree)/techpack/camera/drivers/cam_core/
 ccflags-y += -I$(srctree)/techpack/camera/drivers/cam_sensor_module/cam_ois/
 
 obj-$(CONFIG_SPECTRA_CAMERA) += PhoneUpdate.o
+CFLAGS_REMOVE_PhoneUpdate.o += -mgeneral-regs-only

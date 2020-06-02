@@ -1432,8 +1432,8 @@ int32_t cam_sensor_flush_request(struct cam_req_mgr_flush_request *flush_req)
 	}
 
 	mutex_lock(&(s_ctrl->cam_sensor_mutex));
-	if (s_ctrl->sensor_state != CAM_SENSOR_START ||
-		s_ctrl->sensor_state != CAM_SENSOR_CONFIG) {
+	if ((s_ctrl->sensor_state != CAM_SENSOR_START) &&
+		(s_ctrl->sensor_state != CAM_SENSOR_CONFIG)) {
 		mutex_unlock(&(s_ctrl->cam_sensor_mutex));
 		return rc;
 	}

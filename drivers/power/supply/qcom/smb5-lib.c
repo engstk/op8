@@ -8584,8 +8584,8 @@ static void op_check_slow_charge_work(struct work_struct *work)
 	}
 	temp_region = op_battery_temp_region_get(chg);
 	if (temp_region == BATT_TEMP_COLD
-		&& temp_region == BATT_TEMP_HOT
-		&& temp_region == BATT_TEMP_LITTLE_COLD) {
+		|| temp_region == BATT_TEMP_HOT
+		|| temp_region == BATT_TEMP_LITTLE_COLD) {
 		chg->slow_chg_count = 0;
 		chg->slow_charger = false;
 		return;

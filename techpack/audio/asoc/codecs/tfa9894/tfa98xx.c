@@ -1901,8 +1901,8 @@ static void tfa98xx_add_widgets(struct tfa98xx *tfa98xx)
 	unsigned int num_dapm_widgets = ARRAY_SIZE(tfa98xx_dapm_widgets_common);
 
 //add by Multimedia,do not add the following non-used widgets to hold mic.
-    if(1)
-        return;
+	if(1)
+		return;
 
 	widgets = devm_kzalloc(&tfa98xx->i2c->dev,
 			sizeof(struct snd_soc_dapm_widget) *

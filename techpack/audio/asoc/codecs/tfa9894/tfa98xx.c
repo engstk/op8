@@ -760,7 +760,7 @@ static ssize_t tfa98xx_dbgfs_dsp_state_set(struct file *file,
 
 	/* Compare strings, excluding the trailing \0 */
 	if (!strncmp(buf, start_cmd, sizeof(start_cmd) - 1)) {
-		pr_info("[0x%x] Manual triggering of dsp start...\n", tfa98xx->i2c->addr);
+		pr_debug("[0x%x] Manual triggering of dsp start...\n", tfa98xx->i2c->addr);
 		mutex_lock(&tfa98xx->dsp_lock);
 		ret = tfa98xx_tfa_start(tfa98xx, tfa98xx->profile, tfa98xx->vstep);
 		mutex_unlock(&tfa98xx->dsp_lock);
@@ -772,11 +772,11 @@ static ssize_t tfa98xx_dbgfs_dsp_state_set(struct file *file,
 		mutex_unlock(&tfa98xx->dsp_lock);
 		pr_debug("[0x%x] tfa_dev_stop complete: %d\n",  tfa98xx->i2c->addr, ret);
 	} else if (!strncmp(buf, mon_start_cmd, sizeof(mon_start_cmd) - 1)) {
-		pr_info("[0x%x] Manual start of monitor thread...\n",  tfa98xx->i2c->addr);
+		pr_debug("[0x%x] Manual start of monitor thread...\n",  tfa98xx->i2c->addr);
 		queue_delayed_work(tfa98xx->tfa98xx_wq,
 					&tfa98xx->monitor_work, HZ);
 	} else if (!strncmp(buf, mon_stop_cmd, sizeof(mon_stop_cmd) - 1)) {
-		pr_info("[0x%x] Manual stop of monitor thread...\n",  tfa98xx->i2c->addr);
+		pr_debug("[0x%x] Manual stop of monitor thread...\n",  tfa98xx->i2c->addr);
 		cancel_delayed_work_sync(&tfa98xx->monitor_work);
 	} else {
 		return -EINVAL;
@@ -1313,14 +1313,14 @@ static int tfa98xx_set_profile(struct snd_kcontrol *kcontrol,
 		/* Don't call tfa_dev_start() if there is no clock. */
 		mutex_lock(&tfa98xx->dsp_lock);
 		tfa98xx_dsp_system_stable(tfa98xx->tfa, &ready);
-		pr_info("%s: ready = %d\n", __func__, ready);
+		pr_debug("%s: ready = %d\n", __func__, ready);
 		if (ready) {
 			/* Also re-enables the interrupts */
 			err = tfa98xx_tfa_start(tfa98xx, prof_idx, tfa98xx->vstep);
 			if (err) {
-				pr_info("Write profile error: %d\n", err);
+				pr_debug("Write profile error: %d\n", err);
 			} else {
-				pr_info("Changed to profile %d (vstep = %d)\n",
+				pr_debug("Changed to profile %d (vstep = %d)\n",
 				         prof_idx, tfa98xx->vstep);
 				change = 1;
 			}
@@ -2559,7 +2559,7 @@ static void tfa98xx_dsp_init(struct tfa98xx *tfa98xx)
 
 			/* Subsystem ready, tfa init complete */
 			tfa98xx->dsp_init = TFA98XX_DSP_INIT_DONE;
-			dev_info(&tfa98xx->i2c->dev,
+			dev_dbg(&tfa98xx->i2c->dev,
 						"tfa_dev_start success (%d)\n",
 						tfa98xx->init_count);
 			/* cancel other pending init works */
@@ -2870,7 +2870,7 @@ enum Tfa98xx_Error tfa98xx_adsp_send_calib_values(struct tfa98xx *tfa98xx)
 		bytes[nr++] = (uint8_t)((dsp_cal_value >> 8) & 0xff);
 		bytes[nr++] = (uint8_t)(dsp_cal_value & 0xff);
 
-		dev_err(&tfa98xx->i2c->dev, "%s: cal value 0x%x\n", __func__, dsp_cal_value);
+		dev_dbg(&tfa98xx->i2c->dev, "%s: cal value 0x%x\n", __func__, dsp_cal_value);
 
 		/* Receiver RDC */
 		if (value > 4000)
@@ -2888,7 +2888,7 @@ enum Tfa98xx_Error tfa98xx_adsp_send_calib_values(struct tfa98xx *tfa98xx)
 		bytes[nr++] = (uint8_t)((dsp_cal_value >> 8) & 0xff);
 		bytes[nr++] = (uint8_t)(dsp_cal_value & 0xff);
 
-		dev_err(&tfa98xx->i2c->dev, "%s: cal value 0x%x\n", __func__, dsp_cal_value);
+		dev_dbg(&tfa98xx->i2c->dev, "%s: cal value 0x%x\n", __func__, dsp_cal_value);
 
 		/* Speaker RDC */
 		if (value > 4000)
@@ -2902,7 +2902,7 @@ enum Tfa98xx_Error tfa98xx_adsp_send_calib_values(struct tfa98xx *tfa98xx)
 		bytes[nr++] = 0x81;
 		bytes[nr++] = 0x05;
 
-		dev_err(&tfa98xx->i2c->dev, "%s: send_tfa_cal_in_band \n", __func__);
+		dev_dbg(&tfa98xx->i2c->dev, "%s: send_tfa_cal_in_band \n", __func__);
 
 		ret = send_tfa_cal_in_band(&bytes[1], sizeof(bytes) - 1);
 
@@ -2955,7 +2955,7 @@ int tfa98xx_keyreg_print(struct tfa98xx *tfa98xx)
               return -EIO;
        }
 
-       dev_err(&tfa98xx->i2c->dev, "[00h:0x%x],[10h:0x%x],[11h:0x%x],[13h:0x%x],[14h:0x%x],[6eh:0x%x],\n",
+       dev_dbg(&tfa98xx->i2c->dev, "[00h:0x%x],[10h:0x%x],[11h:0x%x],[13h:0x%x],[14h:0x%x],[6eh:0x%x],\n",
               SYS_CONTROL0, STATUS_FLAGS0, STATUS_FLAGS1, STATUS_FLAGS3,STATUS_FLAGS4, STATUS_FLAGS5);
        return 0;
 
@@ -2967,10 +2967,10 @@ static int tfa98xx_mute(struct snd_soc_dai *dai, int mute, int stream)
 	struct snd_soc_component *component = dai->component;
 	struct tfa98xx *tfa98xx = snd_soc_component_get_drvdata(component);
 
-	dev_info(&tfa98xx->i2c->dev, "%s: state: %d, stream %d\n", __func__, mute, stream);
+	dev_dbg(&tfa98xx->i2c->dev, "%s: state: %d, stream %d\n", __func__, mute, stream);
 
 	if (no_start) {
-		pr_info("no_start parameter set no tfa_dev_start or tfa_dev_stop, returning\n");
+		pr_debug("no_start parameter set no tfa_dev_start or tfa_dev_stop, returning\n");
 		return 0;
 	}
 
@@ -2984,7 +2984,7 @@ static int tfa98xx_mute(struct snd_soc_dai *dai, int mute, int stream)
 			tfa98xx->cstream = 0;
 
 		if (tfa98xx->pstream != 0 || tfa98xx->cstream != 0) {
-			pr_err("%s: pstream = %d, cstream = %d\n",
+			pr_debug("%s: pstream = %d, cstream = %d\n",
 					__func__, tfa98xx->pstream, tfa98xx->cstream);
 			return 0;
 		}
@@ -3000,7 +3000,7 @@ static int tfa98xx_mute(struct snd_soc_dai *dai, int mute, int stream)
 		cancel_delayed_work_sync(&tfa98xx->init_work);
 
 		if (tfa98xx->dsp_fw_state != TFA98XX_DSP_FW_OK) {
-			pr_err("%s: tfa98xx->dsp_fw_state = %d\n", __func__, tfa98xx->dsp_fw_state);
+			pr_debug("%s: tfa98xx->dsp_fw_state = %d\n", __func__, tfa98xx->dsp_fw_state);
 			return 0;
         }
 
@@ -3015,7 +3015,7 @@ static int tfa98xx_mute(struct snd_soc_dai *dai, int mute, int stream)
 			tfa98xx->pstream = 1;
 
 			if (!tfa98xx_playback_enable) {
-				pr_info("%s: tfa98xx_playback_enable is %d, return\n", __func__,
+				pr_debug("%s: tfa98xx_playback_enable is %d, return\n", __func__,
 						tfa98xx_playback_enable);
 				return 0;
 			}

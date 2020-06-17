@@ -453,7 +453,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-nonnull -Wno-attributes -Wno-packed-not-aligned -Wno-error=sizeof-pointer-div -Wno-sizeof-pointer-div \
 		   -Wno-sizeof-pointer-memaccess -Wno-stringop-truncation \
 		   -Wformat=0 -Wno-address-of-packed-member -Wno-psabi -Wno-enum-compare -Wno-unused-result -Wno-pointer-to-int-cast \
-		   -Wno-sequence-point -Wno-unused-value -Wno-uninitialized -Wno-missing-attributes
+		   -Wno-sequence-point -Wno-unused-value -Wno-uninitialized -Wno-missing-attributes \
+		   -Wno-builtin-declaration-mismatch -Wno-restrict
 
 >>>>>>> 57c30d671 (makefile: add initial build changes)
 KBUILD_CPPFLAGS := -D__KERNEL__

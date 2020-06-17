@@ -438,7 +438,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-truncation -Wno-duplicate-decl-specifier -Wno-memset-elt-size -Wno-bool-operation \
 		   -Wno-int-in-bool-context -Wno-parentheses -Wno-switch-unreachable -Wno-stringop-overflow -Wno-format-overflow \
 		   -Wno-nonnull -Wno-attributes -Wno-packed-not-aligned -Wno-error=sizeof-pointer-div -Wno-sizeof-pointer-div \
-		   -Wno-sizeof-pointer-memaccess -Wno-stringop-truncation
+		   -Wno-sizeof-pointer-memaccess -Wno-stringop-truncation \
+		   -Wformat=0 -Wno-address-of-packed-member -Wno-psabi -Wno-enum-compare -Wno-unused-result -Wno-pointer-to-int-cast \
+		   -Wno-sequence-point -Wno-unused-value -Wno-uninitialized -Wno-missing-attributes
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
@@ -700,11 +702,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-ifdef CONFIG_PROFILE_ALL_BRANCHES
 KBUILD_CFLAGS	+= -O2 $(call cc-disable-warning,maybe-uninitialized,)
-else
-KBUILD_CFLAGS   += -O2
-endif
 endif
 
 KBUILD_CFLAGS += $(call cc-ifversion, -lt, 0409, \

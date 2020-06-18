@@ -161,14 +161,14 @@ static int zen_dispatch_requests(struct request_queue *q, int force)
 
 static int zen_init_queue(struct request_queue *q, struct elevator_type *e)
 {
-	struct zen_data *zdata;
+    struct zen_data *zdata;
     struct elevator_queue *eq;
     
     eq = elevator_alloc(q, e);
     if (!eq)
         return -ENOMEM;
 
-	zdata = kmalloc_node(sizeof(*zdata), GFP_KERNEL, q->node);
+    zdata = kmalloc_node(sizeof(*zdata), GFP_KERNEL, q->node);
     if (!zdata) {
         kobject_put(&eq->kobj);
         return -ENOMEM;

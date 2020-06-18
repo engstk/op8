@@ -234,13 +234,13 @@ static int do_fsync(unsigned int fd, int datasync)
 {
 	struct fd f;
 	int ret = -EBADF;
-	
-	if (!fsync_enabled)
-		return 0;
 
 #ifdef CONFIG_ONEPLUS_HEALTHINFO
 	unsigned long oneplus_fsync_time = jiffies;
 #endif
+
+	if (!fsync_enabled)
+		return 0;
 
 	f = fdget(fd);
 	if (f.file) {

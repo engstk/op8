@@ -5662,7 +5662,14 @@ CONFIG_NETWORK_FILESYSTEMS=y
 # CONFIG_NFS_FS is not set
 # CONFIG_NFSD is not set
 # CONFIG_CEPH_FS is not set
-# CONFIG_CIFS is not set
+CONFIG_CIFS=y
+# CONFIG_CIFS_STATS is not set
+# CONFIG_CIFS_ALLOW_INSECURE_LEGACY is not set
+# CONFIG_CIFS_UPCALL is not set
+# CONFIG_CIFS_XATTR is not set
+# CONFIG_CIFS_DEBUG is not set
+# CONFIG_CIFS_DFS_UPCALL is not set
+# CONFIG_CIFS_SMB311 is not set
 # CONFIG_CODA_FS is not set
 # CONFIG_AFS_FS is not set
 CONFIG_NLS=y
@@ -5715,7 +5722,7 @@ CONFIG_NLS_ISO8859_1=y
 # CONFIG_NLS_MAC_INUIT is not set
 # CONFIG_NLS_MAC_ROMANIAN is not set
 # CONFIG_NLS_MAC_TURKISH is not set
-# CONFIG_NLS_UTF8 is not set
+CONFIG_NLS_UTF8=y
 # CONFIG_DLM is not set
 # CONFIG_UNICODE is not set
 

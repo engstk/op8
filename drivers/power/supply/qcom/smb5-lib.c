@@ -8368,6 +8368,10 @@ static void op_handle_usb_removal(struct smb_charger *chg)
 	chg->ck_unplug_count = 0;
 	chg->count_run = 0;
 	chg->chg_disabled = 0;
+#ifdef CONFIG_FORCE_FAST_CHARGE
+	chg->ffc_count = 0;
+	set_sdp_current(chg, USBIN_500MA);
+#endif
 	vote(chg->fcc_votable,
 		DEFAULT_VOTER, true, SDP_CURRENT_UA);
 	vote(chg->chg_disable_votable,

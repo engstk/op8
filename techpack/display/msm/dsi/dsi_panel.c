@@ -740,7 +740,7 @@ error_disable_gpio:
 	if (gpio_is_valid(panel->bl_config.en_gpio))
 		gpio_set_value(panel->bl_config.en_gpio, 0);
 //error_disable_pinctrl:
-		(void)dsi_panel_set_pinctrl_state(panel, false);
+	(void)dsi_panel_set_pinctrl_state(panel, false);
 
 error_disable_vddr:
 	if (gpio_is_valid(panel->vddr_gpio))

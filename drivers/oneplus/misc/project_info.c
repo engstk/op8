@@ -423,10 +423,10 @@ static ssize_t component_info_get(struct device *dev,
         return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
         get_component_version(FAST_CHARGE),
         get_component_manufacture(FAST_CHARGE));
-	if (attr == &dev_attr_wireless_charge)
-		return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
-		get_component_version(WIRELESS_CHARGE),
-		get_component_manufacture(WIRELESS_CHARGE));
+    if (attr == &dev_attr_wireless_charge)
+        return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
+        get_component_version(WIRELESS_CHARGE),
+        get_component_manufacture(WIRELESS_CHARGE));
     if (attr == &dev_attr_cpu)
         return snprintf(buf, BUF_SIZE, "VER:\t%s\nMANU:\t%s\n",
         get_component_version(CPU),
@@ -752,7 +752,7 @@ static int op_aboard_read_gpio(void)
     if(data->support_aboard_gpio_1 == 1)
         gpio1 = gpio_get_value(data->aboard_gpio_1);
 
-	a_board_val = gpio0;
+    a_board_val = gpio0;
     snprintf(Aboard_version, sizeof(Aboard_version), "%d %s",
     a_board_val, a_board_version_string_arry_gpio[a_board_val].name);
 

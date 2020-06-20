@@ -1714,7 +1714,7 @@ void	MesFil2124( UINT16	UsMesFreq )
 	UINT32	UlMeasFilA1 , UlMeasFilB1 , UlMeasFilC1 , UlTempval ;
 	UINT32	UlMeasFilA2 , UlMeasFilC2 ;
 		
-	UlTempval = (UINT32)(2147483647 * (float)UsMesFreq / ((float)UsMesFreq + DivOffset ));
+	UlTempval = (UINT32)((float)2147483647 * (float)UsMesFreq / ((float)UsMesFreq + DivOffset ));
 	UlMeasFilA1	=	0x7fffffff - UlTempval;
 	UlMeasFilB1	=	~UlMeasFilA1 + 0x00000001;	
 	UlMeasFilC1	=	0x7FFFFFFF - ( UlTempval << 1 ) ;

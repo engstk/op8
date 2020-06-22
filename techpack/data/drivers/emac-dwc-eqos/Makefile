@@ -27,7 +27,7 @@ CDEFINES+=-DDWC_ETH_QOS_ENABLE_IPA
 emac_dwc_eqos-y += DWC_ETH_QOS_ipa.o
 endif
 
-obj-m := emac_dwc_eqos.o
+obj-y := emac_dwc_eqos.o
 
 emac_dwc_eqos-y += DWC_ETH_QOS_dev.o \
 			DWC_ETH_QOS_drv.o \

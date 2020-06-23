@@ -904,6 +904,7 @@
 			timing@2 {
 				qcom,mdss-dsi-panel-jitter = <0x4 0x1>;
 				qcom,mdss-dsi-timing-default;
+				qcom,mdss-dsi-splash-dms-switch-to-this-timing;
 				qcom,mdss-dsi-panel-framerate = <120>;
 				qcom,mdss-dsi-panel-width = <1440>;
 				qcom,mdss-dsi-panel-height = <3168>;

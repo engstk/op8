@@ -702,7 +702,7 @@ static int _sde_connector_update_hbm(struct sde_connector *c_conn)
 	struct dsi_display *dsi_display;
 	struct sde_connector_state *c_state;
 	int rc = 0;
-	int fingerprint_mode;
+	int fingerprint_mode = 0;
 
 	if (!c_conn) {
 		SDE_ERROR("Invalid params sde_connector null\n");

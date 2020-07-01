@@ -1275,7 +1275,7 @@ UINT_8	TstActMov( UINT_8 UcDirSel )
 {
 	UINT_8	UcRsltSts = 0;
 	INT_32	SlMeasureParameterNum ;
-	INT_32	SlMeasureParameterA , SlMeasureParameterB ;
+	INT_32	SlMeasureParameterA = 0, SlMeasureParameterB = 0;
 	UnllnVal	StMeasValueA  , StMeasValueB ;
 	float		SfLimit , Sfzoom , Sflenz , Sfshift ;
 	UINT_32		UlLimit , Ulzoom , Ullenz , Ulshift , UlActChkLvl ;

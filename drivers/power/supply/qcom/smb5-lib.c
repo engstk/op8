@@ -8713,7 +8713,7 @@ static void op_chek_apsd_done_work(struct work_struct *work)
 			op_check_apsd_work.work);
 	union power_supply_propval vbus_val;
 	int rc;
-	const struct apsd_result *apsd_result;
+	const struct apsd_result *apsd_result = NULL;
 
 	pr_debug("chg->ck_apsd_count=%d\n", chg->ck_apsd_count);
 	if (chg->pd_active) {

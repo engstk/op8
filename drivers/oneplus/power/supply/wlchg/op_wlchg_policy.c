@@ -2226,7 +2226,7 @@ static void fastchg_ffc_param_init(struct op_chg_chip *chip)
 static int fastchg_err_check(struct op_chg_chip *chip)
 {
 	bool cp2_is_ok;
-	bool cp2_is_enabled;
+	bool cp2_is_enabled = 0;
 	u8 cp1_status = CP_REEADY;
 	struct wpc_data *chg_status = &chip->wlchg_status;
 	int ret;
@@ -3052,7 +3052,7 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 	int bq_adc_vbat = 0;
 	int work_freq;
 	int temp_val;
-	bool cp2_is_enabled;
+	bool cp2_is_enabled = 0;
 	//static int wait_cep_count;
 	struct rx_chip *rx_chip = g_rx_chip;
 	union power_supply_propval pval = {0, };

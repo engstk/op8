@@ -60,7 +60,12 @@ int backlight_min = 0;
 module_param(backlight_min, int, 0644);
 
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
+#if defined(PXLW_IRIS_DUAL)
+/* FIXME: hardcode, should transfer 2nd panel info from UEFI*/
+static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN] = "qcom,mdss_dsi_samsung_ana6706_dsc_cmd_2nd:";
+#else
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
+#endif
 static char SERIAL_NUMBER_flag = 0;
 static struct dsi_display_boot_param boot_displays[MAX_DSI_ACTIVE_DISPLAY] = {
 	{.boot_param = dsi_display_primary},

@@ -942,7 +942,9 @@ int iris_configure_get(u32 display, u32 type, u32 count, u32 *values)
 {
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(display);
 	struct iris_cfg *pcfg1 = iris_get_cfg_by_index(DSI_PRIMARY);
+#if defined(PXLW_IRIS_DUAL)
 	struct iris_cfg *pcfg2 = iris_get_cfg_by_index(DSI_SECONDARY);
+#endif
 	struct iris_setting_info *iris_setting = iris_get_setting();
 	struct quality_setting *pqlt_cur_setting = &iris_setting->quality_cur;
 	u32 reg_addr, reg_val;

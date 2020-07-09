@@ -2729,7 +2729,9 @@ void iris_pwil_sdr2hdr_resolution_set(bool enter_frc_mode) {
 
 void iris_dom_set(int mode)
 {
+#if defined(PXLW_IRIS_DUAL)
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
+#endif
 	struct iris_update_ipopt popt[IP_OPT_MAX];
 	bool skiplast = 0;
 	int len;

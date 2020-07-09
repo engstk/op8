@@ -1465,10 +1465,10 @@ int iris_lp_debugfs_init(struct dsi_display *display)
 
 	debugfs_create_u32("trace", 0644, pcfg->dbg_root,
 		(u32 *)&debug_trace_opt);
-
+#if defined(PXLW_IRIS_DUAL)
 	debugfs_create_u32("dual_test", 0644, pcfg->dbg_root,
 		(u32 *)&pcfg->dual_test);
-
+#endif
 	debugfs_create_bool("esd_enable", 0644, pcfg->dbg_root,
 		&(pcfg->lp_ctrl.esd_enable));
 

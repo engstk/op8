@@ -4323,6 +4323,7 @@ int iris_osd_blending_switch(u32 val)
 	}
 
 	if (val) {
+#if defined(PXLW_IRIS_DUAL)
 		if (pcfg->dual_test & 0x100) {
 			// check MIPI_RX AUX 2b_page register
 			uint32_t *payload;
@@ -4340,7 +4341,7 @@ int iris_osd_blending_switch(u32 val)
 					break;
 			}
 		}
-
+#endif
 		pcfg->osd_enable = true;
 		if (osd_blending_work.enter_lp_st != MIPI2_LP_FINISH) {
 		//	IRIS_LOGE("osd_disable_work is still in queue entry");

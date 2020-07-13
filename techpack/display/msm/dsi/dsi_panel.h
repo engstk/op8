@@ -159,7 +159,6 @@ struct dsi_panel_reset_config {
 	int abyp_status_gpio;
 	int iris_osd_gpio;
 	bool iris_osd_autorefresh;
-	bool iris_osd_autorefresh_enabled;
 	int iris_vdd_gpio;
 #endif
 };

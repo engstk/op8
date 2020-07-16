@@ -767,6 +767,7 @@ KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
 # Disable that part of the warning because it is very noisy across the kernel and does
 # not point out any real bugs.
 KBUILD_CFLAGS += $(call cc-disable-warning, pointer-to-enum-cast)
+KBUILD_CFLAGS += $(call cc-disable-warning, pointer-to-int-cast)
 else
 
 # These warnings generated too much noise in a regular build.

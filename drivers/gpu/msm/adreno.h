@@ -1469,7 +1469,7 @@ static inline void adreno_put_gpu_halt(struct adreno_device *adreno_dev)
 void adreno_reglist_write(struct adreno_device *adreno_dev,
 		const struct adreno_reglist *list, u32 count);
 
-#ifdef CONFIG_DEBUG_FS
+#if 0
 void adreno_debugfs_init(struct adreno_device *adreno_dev);
 void adreno_context_debugfs_init(struct adreno_device *adreno_dev,
 				struct adreno_context *ctx);

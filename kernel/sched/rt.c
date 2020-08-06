@@ -9,6 +9,8 @@
 
 #include <linux/interrupt.h>
 
+#include <trace/events/sched.h>
+
 #include "walt.h"
 #ifdef CONFIG_CONTROL_CENTER
 #include <linux/oem/control_center.h>
@@ -1872,6 +1874,8 @@ retry:
 				sysctl_launcher_boost_enabled && sysctl_uxchain_enabled)
 				continue;
 #endif
+
+			trace_sched_cpu_util(cpu);
 
 			if (cpu_isolated(cpu))
 				continue;

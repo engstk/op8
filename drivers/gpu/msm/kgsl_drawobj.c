@@ -34,10 +34,6 @@
 static struct kmem_cache *memobjs_cache;
 static struct kmem_cache *sparseobjs_cache;
 
-static struct kmem_cache *drawobj_sparse_cache;
-static struct kmem_cache *drawobj_sync_cache;
-static struct kmem_cache *drawobj_cmd_cache;
-
 static void free_fence_names(struct kgsl_drawobj_sync *syncobj)
 {
 	unsigned int i;
@@ -63,14 +59,14 @@ void kgsl_drawobj_destroy_object(struct kref *kref)
 		syncobj = SYNCOBJ(drawobj);
 		free_fence_names(syncobj);
 		kfree(syncobj->synclist);
-		kmem_cache_free(drawobj_sync_cache, syncobj);
+		kfree(syncobj);
 		break;
 	case CMDOBJ_TYPE:
 	case MARKEROBJ_TYPE:
-		kmem_cache_free(drawobj_cmd_cache, CMDOBJ(drawobj));
+		kfree(CMDOBJ(drawobj));
 		break;
 	case SPARSEOBJ_TYPE:
-		kmem_cache_free(drawobj_sparse_cache, SPARSEOBJ(drawobj));
+		kfree(SPARSEOBJ(drawobj));
 		break;
 	}
 }
@@ -675,26 +671,11 @@ int kgsl_drawobj_cmd_add_ibdesc(struct kgsl_device *device,
 }
 
 static void *_drawobj_create(struct kgsl_device *device,
-	struct kgsl_context *context, unsigned int type)
+	struct kgsl_context *context, unsigned int size,
+	unsigned int type)
 {
-	void *obj;
+	void *obj = kzalloc(size, GFP_KERNEL);
 	struct kgsl_drawobj *drawobj;
-
-	switch (type) {
-	case SYNCOBJ_TYPE:
-		obj = kmem_cache_zalloc(drawobj_sync_cache, GFP_KERNEL);
-		break;
-	case CMDOBJ_TYPE:
-	case MARKEROBJ_TYPE:
-		obj = kmem_cache_zalloc(drawobj_cmd_cache, GFP_KERNEL);
-		break;
-	case SPARSEOBJ_TYPE:
-		obj = kmem_cache_zalloc(drawobj_sparse_cache, GFP_KERNEL);
-		break;
-	default:
-		// noop
-		return ERR_PTR(-ENOMEM);
-	}
 
 	if (obj == NULL)
 		return ERR_PTR(-ENOMEM);
@@ -704,18 +685,7 @@ static void *_drawobj_create(struct kgsl_device *device,
 	 * during the lifetime of this object
 	 */
 	if (!_kgsl_context_get(context)) {
-		switch (type) {
-		case SYNCOBJ_TYPE:
-			kmem_cache_free(drawobj_sync_cache, obj);
-			break;
-		case CMDOBJ_TYPE:
-		case MARKEROBJ_TYPE:
-			kmem_cache_free(drawobj_cmd_cache, obj);
-			break;
-		case SPARSEOBJ_TYPE:
-			kmem_cache_free(drawobj_sparse_cache, obj);
-			break;
-		}
+		kfree(obj);
 		return ERR_PTR(-ENOENT);
 	}
 
@@ -743,7 +713,7 @@ struct kgsl_drawobj_sparse *kgsl_drawobj_sparse_create(
 		struct kgsl_context *context, unsigned int flags)
 {
 	struct kgsl_drawobj_sparse *sparseobj = _drawobj_create(device,
-		context, SPARSEOBJ_TYPE);
+		context, sizeof(*sparseobj), SPARSEOBJ_TYPE);
 
 	if (!IS_ERR(sparseobj))
 		INIT_LIST_HEAD(&sparseobj->sparselist);
@@ -763,7 +733,7 @@ struct kgsl_drawobj_sync *kgsl_drawobj_sync_create(struct kgsl_device *device,
 		struct kgsl_context *context)
 {
 	struct kgsl_drawobj_sync *syncobj = _drawobj_create(device,
-		context, SYNCOBJ_TYPE);
+		context, sizeof(*syncobj), SYNCOBJ_TYPE);
 
 	/* Add a timer to help debug sync deadlocks */
 	if (!IS_ERR(syncobj))
@@ -787,7 +757,8 @@ struct kgsl_drawobj_cmd *kgsl_drawobj_cmd_create(struct kgsl_device *device,
 		unsigned int type)
 {
 	struct kgsl_drawobj_cmd *cmdobj = _drawobj_create(device,
-		context, (type & (CMDOBJ_TYPE | MARKEROBJ_TYPE)));
+		context, sizeof(*cmdobj),
+		(type & (CMDOBJ_TYPE | MARKEROBJ_TYPE)));
 
 	if (!IS_ERR(cmdobj)) {
 		/* sanitize our flags for drawobj's */
@@ -1182,23 +1153,14 @@ void kgsl_drawobjs_cache_exit(void)
 {
 	kmem_cache_destroy(memobjs_cache);
 	kmem_cache_destroy(sparseobjs_cache);
-
-	kmem_cache_destroy(drawobj_sparse_cache);
-	kmem_cache_destroy(drawobj_sync_cache);
-	kmem_cache_destroy(drawobj_cmd_cache);
 }
 
 int kgsl_drawobjs_cache_init(void)
 {
-	memobjs_cache = KMEM_CACHE(kgsl_memobj_node, SLAB_HWCACHE_ALIGN);
-	sparseobjs_cache = KMEM_CACHE(kgsl_sparseobj_node, SLAB_HWCACHE_ALIGN);
+	memobjs_cache = KMEM_CACHE(kgsl_memobj_node, 0);
+	sparseobjs_cache = KMEM_CACHE(kgsl_sparseobj_node, 0);
 
-	drawobj_sparse_cache = KMEM_CACHE(kgsl_drawobj_sparse, SLAB_HWCACHE_ALIGN);
-	drawobj_sync_cache = KMEM_CACHE(kgsl_drawobj_sync, SLAB_HWCACHE_ALIGN);
-	drawobj_cmd_cache = KMEM_CACHE(kgsl_drawobj_cmd, SLAB_HWCACHE_ALIGN);
-
-	if (!memobjs_cache || !sparseobjs_cache ||
-	    !drawobj_sparse_cache || !drawobj_sync_cache || !drawobj_cmd_cache)
+	if (!memobjs_cache || !sparseobjs_cache)
 		return -ENOMEM;
 
 	return 0;

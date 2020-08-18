@@ -8662,7 +8662,7 @@ static void op_check_high_vbat_chg_work(struct work_struct *work)
 	}
 	temp_region = op_battery_temp_region_get(chg);
 	if (temp_region == BATT_TEMP_COLD
-		|| temp_region == BATT_TEMP_HOT) {
+		&& temp_region == BATT_TEMP_HOT) {
 		chg->check_high_vbat_chg_count = 0;
 		return;
 	}
@@ -8713,7 +8713,7 @@ static void op_chek_apsd_done_work(struct work_struct *work)
 			op_check_apsd_work.work);
 	union power_supply_propval vbus_val;
 	int rc;
-	const struct apsd_result *apsd_result = NULL;
+	const struct apsd_result *apsd_result;
 
 	pr_debug("chg->ck_apsd_count=%d\n", chg->ck_apsd_count);
 	if (chg->pd_active) {

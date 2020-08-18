@@ -3794,8 +3794,8 @@ static inline bool is_journalled_quota(struct f2fs_sb_info *sbi)
 
 extern int f2fs_odiscard_enable;
 
-extern void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi);
-extern void wake_up_otrim_of2fs(struct f2fs_sb_info *sbi);
+extern inline void wake_up_odiscard_of2fs(struct f2fs_sb_info *sbi);
+extern inline void wake_up_otrim_of2fs(struct f2fs_sb_info *sbi);
 
 enum {
 	F2FS_TRIM_START,

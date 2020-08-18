@@ -13,5 +13,3 @@ ccflags-y += -I$(srctree)/techpack/camera/drivers/cam_core/
 ccflags-y += -I$(srctree)/techpack/camera/drivers/cam_sensor_module/cam_ois/
 
 obj-$(CONFIG_SPECTRA_CAMERA) += HighLevelCmd.o DownloadCmd.o E2PromCmd.o
-CFLAGS_REMOVE_HighLevelCmd.o += -mgeneral-regs-only
-CFLAGS_REMOVE_E2PromCmd.o += -mgeneral-regs-only

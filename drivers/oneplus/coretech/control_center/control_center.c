@@ -300,7 +300,7 @@ static struct list_head cc_request_list;
 static struct list_head cc_pending_list;
 static DEFINE_SPINLOCK(cc_async_lock);
 static struct workqueue_struct *cc_wq;
-extern int cc_cal_next_freq_with_extra_util(
+extern cc_cal_next_freq_with_extra_util(
 	struct cpufreq_policy *pol, unsigned int next_freq);
 extern void clk_get_ddr_freq(u64* val);
 static void cc_queue_rq(struct cc_command *cc);
@@ -944,7 +944,7 @@ static void cc_record_init(void)
 
 static void cc_tsk_acq(struct cc_tsk_data* data)
 {
-	struct cc_command *cc = NULL;
+	struct cc_command *cc;
 	u32 delay_us;
 	u32 category;
 	int prio;

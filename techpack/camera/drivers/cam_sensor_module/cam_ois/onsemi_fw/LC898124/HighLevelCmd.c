@@ -891,7 +891,7 @@ UINT8	TstActMov124( UINT8 UcDirSel )
 {
 	UINT8	UcRsltSts = 0;
 	INT32	SlMeasureParameterNum ;
-	INT32	SlMeasureParameterA = 0, SlMeasureParameterB = 0;
+	INT32	SlMeasureParameterA , SlMeasureParameterB ;
 	UnllnVal	StMeasValueA  , StMeasValueB ;
 	float		SfLimit , Sfzoom , Sflenz , Sfshift ;
 	UINT32		UlLimit , Ulzoom , Ullenz , Ulshift , UlActChkLvl ;
@@ -1643,7 +1643,7 @@ TRACE("SetGyroAccelCoef SelectAct 0x%x GyroPostion 0x%x\n", SelectAct, GyroPosti
 
 UINT32	MeasGain124 ( UINT16	UcDirSel, UINT16	UsMeasFreq , UINT32 UlMesAmp )
 {
-	INT32			SlMeasureParameterA = 0, SlMeasureParameterB = 0;
+	INT32			SlMeasureParameterA , SlMeasureParameterB ;
 	INT32			SlMeasureParameterNum , SlSineWaveOffset;
 	UnllnVal		StMeasValueA  , StMeasValueB ;
 	UINT32	UlReturnVal;
@@ -1714,7 +1714,7 @@ void	MesFil2124( UINT16	UsMesFreq )
 	UINT32	UlMeasFilA1 , UlMeasFilB1 , UlMeasFilC1 , UlTempval ;
 	UINT32	UlMeasFilA2 , UlMeasFilC2 ;
 		
-	UlTempval = (UINT32)(2147483648 * (float)UsMesFreq / ((float)UsMesFreq + DivOffset ));
+	UlTempval = (UINT32)(2147483647 * (float)UsMesFreq / ((float)UsMesFreq + DivOffset ));
 	UlMeasFilA1	=	0x7fffffff - UlTempval;
 	UlMeasFilB1	=	~UlMeasFilA1 + 0x00000001;	
 	UlMeasFilC1	=	0x7FFFFFFF - ( UlTempval << 1 ) ;

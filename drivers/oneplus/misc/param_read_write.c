@@ -75,8 +75,8 @@ int get_param_by_index_and_offset(uint32 sid_index,
     int ret = length;
     uint32 file_offset;
 	mutex_lock(&param_ram_zone.mutex);
-	pr_info("%s[%d]  sid_index = %d offset = %d buf = %p length = %d\n",
-			__func__, __LINE__,sid_index,offset,buf,length);
+//	pr_info("%s[%d]  sid_index = %d offset = %d buf = %p length = %d\n",
+//			__func__, __LINE__,sid_index,offset,buf,length);
 
     file_offset = PARAM_SID_LENGTH*sid_index+ offset;
 
@@ -84,8 +84,8 @@ int get_param_by_index_and_offset(uint32 sid_index,
 			(file_offset + length) <=  param_ram_zone.size)
 		memcpy(buf,(param_ram_zone.buffer +file_offset), length);
 	else{
-		pr_info("%s:invaild argument, sid_index=%d offset=%d buf=%p length=%d\n",
-				__func__, sid_index, offset, buf, length);
+//		pr_info("%s:invaild argument, sid_index=%d offset=%d buf=%p length=%d\n",
+//				__func__, sid_index, offset, buf, length);
 		ret = -EINVAL;
 	}
 
@@ -100,8 +100,8 @@ int set_param_by_index_and_offset(uint32 sid_index,
     int ret;
     uint32 file_offset;
 	mutex_lock(&param_ram_zone.mutex);
-	pr_info("%s[%d]sid_index = %d offset = %d buf = %p length = %d\n",
-			__func__, __LINE__,sid_index,offset,buf,length);
+//	pr_info("%s[%d]sid_index = %d offset = %d buf = %p length = %d\n",
+//			__func__, __LINE__,sid_index,offset,buf,length);
 
     file_offset = PARAM_SID_LENGTH*sid_index + offset;
 
@@ -109,8 +109,8 @@ int set_param_by_index_and_offset(uint32 sid_index,
 			(file_offset + length) <=  param_ram_zone.size)
 		memcpy((param_ram_zone.buffer+file_offset),buf,length);
 	else{
-		pr_info("%s:invaild argument,sid_index=%d offset=%d buf=%p length=%d\n",
-		      __func__,sid_index,offset,buf,length);
+//		pr_info("%s:invaild argument,sid_index=%d offset=%d buf=%p length=%d\n",
+//		      __func__,sid_index,offset,buf,length);
 		ret = -EINVAL;
 		goto out;
 	}
@@ -118,7 +118,7 @@ int set_param_by_index_and_offset(uint32 sid_index,
     ret = write_param_partition((param_ram_zone.buffer+file_offset),
                     length,file_offset);
 	if ( ret < 0){
-		pr_info("Error write param partition.(%d)\n",ret);
+//		pr_info("Error write param partition.(%d)\n",ret);
 	}
 out:
 	mutex_unlock(&param_ram_zone.mutex);

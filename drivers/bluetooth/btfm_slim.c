@@ -145,9 +145,9 @@ int btfm_slim_enable_ch(struct btfmslim *btfmslim, struct btfmslim_ch *ch,
 	ch_h[0] = ch->ch_hdl;
 	ch_h[1] = (grp) ? (ch+1)->ch_hdl : 0;
 
-	BTFMSLIM_INFO("channel define - prot:%d, dataf:%d, auxf:%d",
+	BTFMSLIM_DBG("channel define - prot:%d, dataf:%d, auxf:%d",
 			prop.prot, prop.dataf, prop.auxf);
-	BTFMSLIM_INFO("channel define - rates:%d, baser:%d, ratem:%d",
+	BTFMSLIM_DBG("channel define - rates:%d, baser:%d, ratem:%d",
 			rates, prop.baser, prop.ratem);
 
 	ret = slim_define_ch(btfmslim->slim_pgd, &prop, ch_h, nchan, grp,
@@ -170,7 +170,7 @@ int btfm_slim_enable_ch(struct btfmslim *btfmslim, struct btfmslim_ch *ch,
 		}
 
 		if (rxport) {
-			BTFMSLIM_INFO("slim_connect_sink(port: %d, ch: %d)",
+			BTFMSLIM_DBG("slim_connect_sink(port: %d, ch: %d)",
 				ch->port, ch->ch);
 			/* Connect Port with channel given by Machine driver*/
 			ret = slim_connect_sink(btfmslim->slim_pgd,
@@ -182,7 +182,7 @@ int btfm_slim_enable_ch(struct btfmslim *btfmslim, struct btfmslim_ch *ch,
 			}
 
 		} else {
-			BTFMSLIM_INFO("slim_connect_src(port: %d, ch: %d)",
+			BTFMSLIM_DBG("slim_connect_src(port: %d, ch: %d)",
 				ch->port, ch->ch);
 			/* Connect Port with channel given by Machine driver*/
 			ret = slim_connect_src(btfmslim->slim_pgd, ch->port_hdl,
@@ -196,7 +196,7 @@ int btfm_slim_enable_ch(struct btfmslim *btfmslim, struct btfmslim_ch *ch,
 	}
 
 	/* Activate the channel immediately */
-	BTFMSLIM_INFO(
+	BTFMSLIM_DBG(
 		"port: %d, ch: %d, grp: %d, ch->grph: 0x%x, ch_hdl: 0x%x",
 		chan->port, chan->ch, grp, chan->grph, chan->ch_hdl);
 	ret = slim_control_ch(btfmslim->slim_pgd, (grp ? chan->grph :
@@ -227,7 +227,7 @@ int btfm_slim_disable_ch(struct btfmslim *btfmslim, struct btfmslim_ch *ch,
 	if (!btfmslim || !ch)
 		return -EINVAL;
 
-	BTFMSLIM_INFO("port:%d, grp: %d, ch->grph:0x%x, ch->ch_hdl:0x%x ",
+	BTFMSLIM_DBG("port:%d, grp: %d, ch->grph:0x%x, ch->ch_hdl:0x%x ",
 		ch->port, grp, ch->grph, ch->ch_hdl);
 
 	/* For 44.1/88.2 Khz A2DP Rx, disconnect the port first */
@@ -307,7 +307,7 @@ static int btfm_slim_alloc_port(struct btfmslim *btfmslim)
 		return ret;
 
 	chipset_ver = get_chipset_version();
-	BTFMSLIM_INFO("chipset soc version:%x", chipset_ver);
+	BTFMSLIM_DBG("chipset soc version:%x", chipset_ver);
 
 	rx_chs = btfmslim->rx_chs;
 	tx_chs = btfmslim->tx_chs;
@@ -319,7 +319,7 @@ static int btfm_slim_alloc_port(struct btfmslim *btfmslim)
 				tx_chs->port = CHRKVER3_SB_PGD_PORT_TX1_FM;
 			else if (tx_chs->port == SLAVE_SB_PGD_PORT_TX2_FM)
 				tx_chs->port = CHRKVER3_SB_PGD_PORT_TX2_FM;
-			BTFMSLIM_INFO("Tx port:%d", tx_chs->port);
+			BTFMSLIM_DBG("Tx port:%d", tx_chs->port);
 		}
 		tx_chs = btfmslim->tx_chs;
 	}

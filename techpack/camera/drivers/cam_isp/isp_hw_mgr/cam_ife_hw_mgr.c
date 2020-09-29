@@ -2794,10 +2794,10 @@ static int cam_ife_mgr_acquire_hw(void *hw_mgr_priv, void *acquire_hw_args)
 		acquire_hw_info->num_inputs;
 
 	getnstimeofday64(&ife_ctx->ts);
-	CAM_INFO(CAM_ISP,
-		"Acquire HW success with total_pix: %u total_rdi: %u is_dual: %u in ctx: %u",
-		total_pix_port, total_rdi_port,
-		ife_ctx->is_dual, ife_ctx->ctx_index);
+//	CAM_INFO(CAM_ISP,
+//		"Acquire HW success with total_pix: %u total_rdi: %u is_dual: %u in ctx: %u",
+//		total_pix_port, total_rdi_port,
+//		ife_ctx->is_dual, ife_ctx->ctx_index);
 
 	cam_ife_hw_mgr_put_ctx(&ife_hw_mgr->used_ctx_list, &ife_ctx);
 
@@ -4207,8 +4207,8 @@ static int cam_ife_mgr_release_hw(void *hw_mgr_priv,
 		ctx->epoch_cnt[i] = 0;
 	}
 
-	CAM_INFO(CAM_ISP, "Release HW success ctx id: %u",
-		ctx->ctx_index);
+//	CAM_INFO(CAM_ISP, "Release HW success ctx id: %u",
+//		ctx->ctx_index);
 
 	memset(&ctx->ts, 0, sizeof(struct timespec64));
 	cam_ife_hw_mgr_put_ctx(&hw_mgr->free_ctx_list, &ctx);

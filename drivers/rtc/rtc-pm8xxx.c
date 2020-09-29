@@ -220,7 +220,7 @@ static int pm8xxx_rtc_read_time(struct device *dev, struct rtc_time *tm)
 		tm->tm_mday, tm->tm_mon, tm->tm_year);
 	if (print_cureent_time) {
 		print_cureent_time = false;
-		dev_info(dev, "current time:secs = %lu, h:m:s == %d:%d:%d, d/m/y = %d/%d/%d\n",
+		dev_dbg(dev, "current time:secs = %lu, h:m:s == %d:%d:%d, d/m/y = %d/%d/%d\n",
 			secs, tm->tm_hour, tm->tm_min, tm->tm_sec,
 			tm->tm_mday, tm->tm_mon, tm->tm_year);
 	}
@@ -246,9 +246,9 @@ static int pm8xxx_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alarm)
 	}
 	if (value[0] != pre_value_0 || value[1] != pre_value_1
 					|| value[2] != pre_value_2 || value[3] != pre_value_3) {
-		dev_info(dev, "val[0] = 0x%x, val[1] = 0x%x, val[2] = 0x%x, val[3] = 0x%x\n",
+		dev_dbg(dev, "val[0] = 0x%x, val[1] = 0x%x, val[2] = 0x%x, val[3] = 0x%x\n",
 					value[0], value[1], value[2], value[3]);
-		dev_info(dev, "Alarm Set for h:r:s=%d:%d:%d, d/m/y=%d/%d/%d\n",
+		dev_dbg(dev, "Alarm Set for h:r:s=%d:%d:%d, d/m/y=%d/%d/%d\n",
 					alarm->time.tm_hour, alarm->time.tm_min,
 					alarm->time.tm_sec, alarm->time.tm_mday,
 					alarm->time.tm_mon, alarm->time.tm_year);

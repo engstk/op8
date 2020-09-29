@@ -4248,7 +4248,7 @@ static int smblib_get_prop_typec_mode(struct smb_charger *chg)
 	} else {
 		rc = smblib_get_prop_ufp_mode(chg);
 	}
-	pr_info("typec mode is %d\n", rc);
+//	pr_info("typec mode is %d\n", rc);
 
 	return rc;
 }

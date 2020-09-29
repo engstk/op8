@@ -1155,12 +1155,12 @@ static int __cam_isp_ctx_sof_in_epoch(struct cam_isp_context *ctx_isp,
 			CAM_ISP_STATE_CHANGE_TRIGGER_SOF,
 			req->request_id);
 
-	if (ctx_isp->frame_id == 1)
-		CAM_INFO(CAM_ISP,
-			"First SOF in EPCR ctx:%d frame_id:%lld next substate %s",
-			ctx->ctx_id, ctx_isp->frame_id,
-			__cam_isp_ctx_substate_val_to_type(
-			ctx_isp->substate_activated));
+//	if (ctx_isp->frame_id == 1)
+//		CAM_INFO(CAM_ISP,
+//			"First SOF in EPCR ctx:%d frame_id:%lld next substate %s",
+//			ctx->ctx_id, ctx_isp->frame_id,
+//			__cam_isp_ctx_substate_val_to_type(
+//			ctx_isp->substate_activated));
 
 	CAM_DBG(CAM_ISP, "SOF in epoch ctx:%d frame_id:%lld next substate:%s",
 		ctx->ctx_id, ctx_isp->frame_id,

@@ -2289,7 +2289,7 @@ enum Tfa98xx_Error tfa98xx_powerdown(struct tfa_device *tfa, int powerdown)
 	if (tfa->in_use == 0)
 		return Tfa98xx_Error_NotOpen;
 
-	pr_info("tfa98xx_powerdown\n");
+//	pr_info("tfa98xx_powerdown\n");
 
 	error = TFA_SET_BF(tfa, PWDN, (uint16_t)powerdown);
 
@@ -3042,10 +3042,10 @@ enum tfa_error tfa_dev_start(struct tfa_device *tfa, int next_profile, int vstep
 		active_profile = -1;
 
 	/* TfaRun_SpeakerBoost implies un-mute */
-	pr_info("%s: Slave 0x%x, Active_profile:%s, next_profile:%s\n",
-			__func__, tfa->slave_address,
-			tfaContProfileName(tfa->cnt, tfa->dev_idx, active_profile),
-			tfaContProfileName(tfa->cnt, tfa->dev_idx, next_profile));
+//	pr_info("%s: Slave 0x%x, Active_profile:%s, next_profile:%s\n",
+//			__func__, tfa->slave_address,
+//			tfaContProfileName(tfa->cnt, tfa->dev_idx, active_profile),
+//			tfaContProfileName(tfa->cnt, tfa->dev_idx, next_profile));
 
 	err = show_current_state(tfa);
 

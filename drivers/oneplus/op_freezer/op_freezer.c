@@ -40,37 +40,37 @@ int op_freezer_report(enum message_type type, int caller_pid, int target_uid, co
 	struct nlmsghdr *nlh = NULL;
 
 	if (atomic_read(&op_freezer_deamon_port) == -1) {
-		pr_err("%s: op_freezer_deamon_port invalid!\n", __func__);
+//		pr_err("%s: op_freezer_deamon_port invalid!\n", __func__);
                 return OP_FREEZER_ERROR;
 	}
 
 	if (sock_handle == NULL) {
-		pr_err("%s: sock_handle invalid!\n", __func__);
+//		pr_err("%s: sock_handle invalid!\n", __func__);
                 return OP_FREEZER_ERROR;
 	}
 
 	if (type >= TYPE_MAX) {
-		pr_err("%s: type = %d invalid!\n", __func__, type);
+//		pr_err("%s: type = %d invalid!\n", __func__, type);
 		return OP_FREEZER_ERROR;
 	}
 
 	len = sizeof(struct op_freezer_message);
 	skb = nlmsg_new(len, GFP_ATOMIC);
 	if (skb == NULL) {
-		pr_err("%s: type =%d, nlmsg_new failed!\n", __func__, type);
+//		pr_err("%s: type =%d, nlmsg_new failed!\n", __func__, type);
 		return OP_FREEZER_ERROR;
 	}
 
 	nlh = nlmsg_put(skb, 0, 0, 0, len, 0);
 	if (nlh == NULL) {
-		pr_err("%s: type =%d, nlmsg_put failed!\n", __func__, type);
+//		pr_err("%s: type =%d, nlmsg_put failed!\n", __func__, type);
 		kfree_skb(skb);
 		return OP_FREEZER_ERROR;
 	}
 
 	data = nlmsg_data(nlh);
 	if(data == NULL) {
-		pr_err("%s: type =%d, nlmsg_data failed!\n", __func__, type);
+//		pr_err("%s: type =%d, nlmsg_data failed!\n", __func__, type);
 		return OP_FREEZER_ERROR;
 	}
 	data->type = type;

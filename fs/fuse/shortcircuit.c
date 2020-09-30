@@ -143,7 +143,7 @@ void fuse_setup_shortcircuit(struct fuse_conn *fc, struct fuse_req *req)
 		return;
 
 	req->private_lower_rw_file = rw_lower_file;
-	pr_info("fuse setup sct:%d, %d\n", fd, flags);
+//	pr_info("fuse setup sct:%d, %d\n", fd, flags);
 }
 
 static ssize_t fuse_shortcircuit_read_write_iter(struct kiocb *iocb,

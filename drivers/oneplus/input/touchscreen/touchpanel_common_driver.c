@@ -86,16 +86,16 @@ int pointx[2] = {0, 0};
 int pointy[2] = {0, 0};
 #define ABS(a,b) ((a - b > 0) ? a - b : b - a)
 
-uint8_t DouTap_enable = 0;				 // double tap
-uint8_t UpVee_enable  = 0;				 // V
-uint8_t LeftVee_enable = 0; 			 // >
-uint8_t RightVee_enable = 0;			 // <
-uint8_t Circle_enable = 0;				 // O
-uint8_t DouSwip_enable = 0; 			 // ||
-uint8_t Mgestrue_enable = 0;			 // M
-uint8_t Wgestrue_enable = 0;			 // W
-uint8_t Sgestrue_enable = 0;			 // S
-uint8_t SingleTap_enable = 0;			 // single tap
+uint8_t DouTap_enable = 1;				 // double tap
+uint8_t UpVee_enable  = 1;				 // V
+uint8_t LeftVee_enable = 1; 			 // >
+uint8_t RightVee_enable = 1;			 // <
+uint8_t Circle_enable = 1;				 // O
+uint8_t DouSwip_enable = 1; 			 // ||
+uint8_t Mgestrue_enable = 1;			 // M
+uint8_t Wgestrue_enable = 1;			 // W
+uint8_t Sgestrue_enable = 1;			 // S
+uint8_t SingleTap_enable = 1;			 // single tap
 uint8_t Enable_gesture = 0;
 
 /*******Part2:declear Area********************************/

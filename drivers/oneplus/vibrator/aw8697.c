@@ -3886,19 +3886,19 @@ static ssize_t aw8697_rtp_store(struct device *dev, struct device_attribute *att
         pr_info("%s: kstrtouint fail\n", __FUNCTION__);
         return rc;
     }
-    pr_info("%s: rtp[%d]\n", __FUNCTION__,val);
+    pr_debug("%s: rtp[%d]\n", __FUNCTION__,val);
 
     /*OP add for juge rtp on begin*/
     rtp_is_going_on = aw8697_haptic_juge_RTP_is_going_on(aw8697);
     if (rtp_is_going_on && (val == AUDIO_READY_STATUS))
     {
-        pr_info("%s: seem audio status rtp[%d]\n", __FUNCTION__,val);
+        pr_debug("%s: seem audio status rtp[%d]\n", __FUNCTION__,val);
         return count;
     }
     /*OP add for juge rtp on end*/
 
     if (!aw8697->haptic_ready && (val == AUDIO_READY_STATUS)) {
-        pr_info("%s: invalid audio ready\n", __FUNCTION__);
+        pr_debug("%s: invalid audio ready\n", __FUNCTION__);
         return count;
     }
 

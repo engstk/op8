@@ -1146,7 +1146,7 @@ void cnss_get_filename(char *filename,
 					 P805_PUBLIC_AMERICA_DEFAULT_BDF);
 			break;
 			}
-		} else if (hw_id == 15) {
+		} else if (hw_id == 15 || hw_id == 21 || hw_id == 22) {
 			switch (rf_id) {
 			case 11:
 			cnss_pr_dbg("it is China PVT version, begin to load the China BDF file");

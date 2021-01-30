@@ -2358,6 +2358,9 @@ static int bq28z610_get_time_to_full(void)
 	if (!bq27541_di->batt_bq28z610)
 		return -ENODATA;
 
+	if (get_dash_started())
+		return -ENODATA;
+
 	if (bq27541_di->allow_reading) {
 		ret = bq27541_read(BQ28Z610_REG_TIME_TO_FULL, &time_to_full, 0, bq27541_di);
 		if (ret < 0) {

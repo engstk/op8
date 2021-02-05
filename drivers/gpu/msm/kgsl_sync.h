@@ -21,6 +21,7 @@
  */
 struct kgsl_sync_timeline {
 	struct kref kref;
+	char *name;
 
 	u64 fence_context;
 

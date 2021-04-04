@@ -1256,7 +1256,7 @@ int iris_dbgfs_adb_type_init(struct dsi_display *display)
 }
 
 /* Iris log level definition, for 'dsi_iris5_log.h' */
-static int iris_log_level = 2;
+static int iris_log_level = 0;
 
 void iris_set_loglevel(int level)
 {

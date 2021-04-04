@@ -83,10 +83,10 @@
 /** @ingroup vl53l1_mod_dbg
  * @{
  */
-#if 1
+#if 0
 #define DEBUG	1
 #endif
-#if 1
+#if 0
 #define FORCE_CONSOLE_DEBUG
 #endif
 

@@ -6,6 +6,7 @@ kbuild-dir := $(if $(filter /%,$(src)),$(src),$(srctree)/$(src))
 
 ccflags-y += -include $(kbuild-dir)/compat/compat.h
 asflags-y += -include $(kbuild-dir)/compat/compat-asm.h
+LINUXINCLUDE := -DCOMPAT_VERSION=$(VERSION) -DCOMPAT_PATCHLEVEL=$(PATCHLEVEL) -DCOMPAT_SUBLEVEL=$(SUBLEVEL) -I$(kbuild-dir)/compat/version $(LINUXINCLUDE)
 
 ifeq ($(wildcard $(srctree)/include/linux/ptr_ring.h),)
 ccflags-y += -I$(kbuild-dir)/compat/ptr_ring/include
@@ -29,7 +30,7 @@ ifeq ($(wildcard $(srctree)/arch/x86/include/asm/fpu/api.h)$(CONFIG_X86),y)
 ccflags-y += -I$(kbuild-dir)/compat/fpu-x86/include
 endif
 
-ifeq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/asm/simd.h)$(shell grep -s -F "generic-y += simd.h" "$(srctree)/arch/$(SRCARCH)/Makefile" "$(srctree)/arch/$(SRCARCH)/Makefile"),)
+ifeq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/asm/simd.h)$(shell grep -s -F "generic-y += simd.h" "$(srctree)/arch/$(SRCARCH)/Kbuild" "$(srctree)/arch/$(SRCARCH)/Makefile"),)
 ccflags-y += -I$(kbuild-dir)/compat/simd-asm/include
 endif
 

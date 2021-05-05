@@ -5,7 +5,7 @@
  *  xattr.c: exFAT code for supporting xattr(Extended File Attributes)
  */
 
-#include "exfat_fs.h"
+#include "config.h"
 
 #ifdef CONFIG_EXFAT_VIRTUAL_XATTR
 
@@ -13,6 +13,7 @@
 #include <linux/fs.h>
 #include <linux/xattr.h>
 #include <linux/dcache.h>
+#include "exfat.h"
 
 #ifndef CONFIG_EXFAT_VIRTUAL_XATTR_SELINUX_LABEL
 #define CONFIG_EXFAT_VIRTUAL_XATTR_SELINUX_LABEL	("undefined")
@@ -51,6 +52,7 @@ ssize_t __exfat_getxattr(const char *name, void *value, size_t size)
 	return strlen(default_xattr);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
 static int exfat_xattr_get(const struct xattr_handler *handler,
 		struct dentry *dentry, struct inode *inode,
 		const char *name, void *buffer, size_t size)
@@ -66,7 +68,7 @@ static int exfat_xattr_set(const struct xattr_handler *handler,
 	return __exfat_xattr_check_support(name);
 }
 
-static const struct xattr_handler exfat_xattr_handler = {
+const struct xattr_handler exfat_xattr_handler = {
 	.prefix = "",  /* match anything */
 	.get = exfat_xattr_get,
 	.set = exfat_xattr_set,
@@ -76,5 +78,31 @@ const struct xattr_handler *exfat_xattr_handlers[] = {
 	&exfat_xattr_handler,
 	NULL
 };
+
+void setup_exfat_xattr_handler(struct super_block *sb)
+{
+	sb->s_xattr = exfat_xattr_handlers;
+}
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0) */
+int exfat_setxattr(struct dentry *dentry, const char *name, const void *value, size_t size, int flags)
+{
+	return __exfat_xattr_check_support(name);
+}
+
+ssize_t exfat_getxattr(struct dentry *dentry, const char *name, void *value, size_t size)
+{
+	return __exfat_getxattr(name, value, size);
+}
+
+int exfat_removexattr(struct dentry *dentry, const char *name)
+{
+	return __exfat_xattr_check_support(name);
+}
+
+void setup_exfat_xattr_handler(struct super_block *sb)
+{
+	/* DO NOTHING */
+}
+#endif
 
 #endif /* CONFIG_EXFAT_VIRTUAL_XATTR */

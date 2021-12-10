@@ -205,10 +205,6 @@ static inline int audit_log_task_context(struct audit_buffer *ab)
 static inline void audit_log_task_info(struct audit_buffer *ab,
 				       struct task_struct *tsk)
 { }
-static inline int audit_update_lsm_rules(void)
-{
-	return 0;
-}
 #define audit_enabled AUDIT_OFF
 #endif /* CONFIG_AUDIT */
 

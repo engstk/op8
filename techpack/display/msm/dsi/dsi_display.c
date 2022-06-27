@@ -87,6 +87,9 @@ static struct dsi_display *secondary_display;
 int backlight_min = 0;
 module_param(backlight_min, int, 0644);
 
+int backlight_scale = MAX_BL_SCALE_LEVEL;
+module_param(backlight_scale, int, 0644);
+
 static char dsi_display_primary[MAX_CMDLINE_PARAM_LEN];
 static char dsi_display_secondary[MAX_CMDLINE_PARAM_LEN];
 static struct dsi_display_boot_param boot_displays[MAX_DSI_ACTIVE_DISPLAY] = {
@@ -329,7 +332,7 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 
 	/* scale backlight */
 	bl_scale = panel->bl_config.bl_scale;
-	bl_temp = bl_lvl * bl_scale / MAX_BL_SCALE_LEVEL;
+	bl_temp = bl_lvl * bl_scale / min(max(0, backlight_scale), 2048);
 
 #ifdef OPLUS_BUG_STABILITY
 	if (panel->oplus_priv.is_raw_backlight)

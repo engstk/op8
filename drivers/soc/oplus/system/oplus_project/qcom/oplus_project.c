@@ -441,7 +441,7 @@ static void update_manifest(struct proc_dir_entry *parent)
         "/vendor/odm/etc/vintf/manifest_dsds.xml",
     };
     mm_segment_t fs;
-    char * substr = strstr(boot_command_line, "simcardnum.doublesim=");
+    char * substr = strstr(saved_command_line, "simcardnum.doublesim=");
 
     if(!substr)
         return;
@@ -470,7 +470,7 @@ static void update_telephony_manifest(struct proc_dir_entry *parent)
         "/vendor/odm/etc/vintf/telephony_manifest_dsds.xml",
     };
     mm_segment_t fs;
-    char * substr = strstr(boot_command_line, "simcardnum.doublesim=");
+    char * substr = strstr(saved_command_line, "simcardnum.doublesim=");
 
     if(!substr)
         return;

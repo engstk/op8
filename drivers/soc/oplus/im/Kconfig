@@ -1,0 +1,7 @@
+config OPLUS_FEATURE_IM
+	bool "identify task itself"
+	default n
+	help
+	  In many cases we need to identify task, all we do is simply string compare,
+	  but in some performance sensitive context like scheduler, it's not a good choice to
+	  do that. So this IM thing can let we check task only through one comparsion.

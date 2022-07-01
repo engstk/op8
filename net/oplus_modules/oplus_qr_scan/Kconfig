@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2020-2022 Oplus. All rights reserved.
+
+config OPLUS_FEATURE_QR_SCAN
+        tristate "Add for qr scan"
+        help
+          Add for Add for tqr scan.

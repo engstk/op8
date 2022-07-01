@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+config OPLUS_FEATURE_QCOM_PMICWD
+	tristate "qcom pmic watchdog"
+	default n
+	depends on OPLUS_SYSTEM_KERNEL
+	help
+            define this config to enable qcom pmic watchdog.
+			export pwk dump interface to android for control pwkdump.

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+config OPLUS_MULTI_KSWAPD
+       bool "Enable multi kswapd"
+       default n
+       help
+         multi kswapd
+
+config KSWAPD_UNBIND_MAX_CPU
+       bool "kswapd unbind to max capacity cpu"
+       default n
+       depends on OPLUS_MULTI_KSWAPD
+       help
+         unbind to max capacity cpu

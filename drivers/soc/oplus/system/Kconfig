@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+config OPLUS_SYSTEM_KERNEL
+  bool "config oplus system feature "
+  default y
+  help
+	define this config to add oplus sytstem kernel feature
+
+config OPLUS_ARCH_FILE
+  bool "for build directory oplus"
+  ---help---
+  say Y to buid in
+
+config OPLUS_COMMON_SOFT
+  bool "config oplus common software"
+  select OPLUS_ARCH_FILE
+  help
+	define this config to get project verion from sharemem.
+	Maybe this value is from CDT or dynamic identify by hardware
+	id.
+
+config OPLUS_BUG_STABILITY_EFFECTON_QGKI
+  tristate "config stability bug fixing effect on qgki"
+  help
+	define this config to fix stability bug only effect on qgki
+
+config OPLUS_FEATURE_DETAILHEAD
+  tristate "config detail kmsg"
+  help
+	define this config to add cpu number and current id and current comm to kmsg
+
+
+source "drivers/soc/oplus/system/feedback/Kconfig"
+source "drivers/soc/oplus/system/uboot_log/Kconfig"
+source "drivers/soc/oplus/system/shutdown_detect/Kconfig"
+source "drivers/soc/oplus/system/slabtrace/Kconfig"
+source "drivers/soc/oplus/system/oplus_project/Kconfig"
+source "drivers/soc/oplus/system/qcom_minidump/Kconfig"
+source "drivers/soc/oplus/system/hung_task_enhance/Kconfig"
+source "drivers/soc/oplus/system/oplus_phoenix/Kconfig"
+source "drivers/soc/oplus/system/oplus_pmic_monitor/Kconfig"
+source "drivers/soc/oplus/system/oplus_saupwk/Kconfig"
+source "drivers/soc/oplus/system/project_info/Kconfig"
+source "drivers/soc/oplus/system/cmdline_parser/Kconfig"
+source "drivers/soc/oplus/system/dump_device_info/Kconfig"
+source "drivers/soc/oplus/system/mdmrst/Kconfig"
+#ifdef OPLUS_FEATURE_QCOM_PMICWD
+source "drivers/soc/oplus/system/qcom_pmicwd/Kconfig"
+#endif /* OPLUS_FEATURE_QCOM_PMICWD */
+
+#ifdef OPLUS_FEATURE_DUMP_REASON
+source "drivers/soc/oplus/system/dump_reason/Kconfig"
+#endif /* OPLUS_FEATURE_DUMP_REASON */
+
+#ifdef OPLUS_FEATURE_MM_FEEDBACK
+source "drivers/soc/oplus/system/oplus_mm_fb/Kconfig"
+#endif /* OPLUS_FEATURE_MM_FEEDBACK */
+
+#ifdef OPLUS_FEATURE_QCOM_WATCHDOG
+source "drivers/soc/oplus/system/qcom_watchdog/Kconfig"
+#endif /* OPLUS_FEATURE_QCOM_WATCHDOG */
+
+#ifdef OPLUS_FEATURE_ACM
+source "drivers/soc/oplus/system/acm/Kconfig"
+#endif /* OPLUS_FEATURE_ACM */
+#ifdef OPLUS_FEATURE_THEIA
+source "drivers/soc/oplus/system/theia/Kconfig"
+#endif /* OPLUS_FEATURE_THEIA */
+#ifdef OPLUS_FEATURE_SELINUX_CONTROL_LOG
+source "drivers/soc/oplus/system/selinux/Kconfig"
+#endif /* OPLUS_FEATURE_SELINUX_CONTROL_LOG */
+#ifdef OPLUS_FEATURE_MISC
+source "drivers/soc/oplus/system/misc/Kconfig"
+#endif /* OPLUS_FEATURE_MISC */
+#ifdef OPLUS_FEATURE_RT_INFO
+source "drivers/soc/oplus/system/rt_info/Kconfig"
+#endif
+#ifdef OPLUS_FEATURE_MDMFEATURE
+source "drivers/soc/oplus/system/mdmfeature/Kconfig"
+#endif /*OPLUS_FEATURE_MDMFEATURE*/

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+#ifdef OPLUS_FEATURE_IOMONITOR
+config IOMONITOR
+	bool "Iomonitor module"
+	help
+		define this config to init iomonitor.
+
+config IOMONITOR_WITH_F2FS
+	bool "Filesystem is f2fs"
+	depends on IOMONITOR
+	help
+		define this config to support both f2fs and ext4
+#endif /*OPLUS_FEATURE_IOMONITOR*/

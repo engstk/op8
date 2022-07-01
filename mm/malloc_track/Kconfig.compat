@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+config OPLUS_MEMLEAK_DETECT
+	string
+	option env="OPLUS_MEMLEAK_DETECT"
+
+config KMALLOC_DEBUG
+	default n
+	bool "Enable Create kmalloc caches with debug flag"
+	depends on STACKTRACE
+	help
+	  If kmalloc-* slab has memleak, will replace the kmalloc cache
+	  with a new kmalloc debug cache. The new kmalloc cache will enable
+	  SLAB_STORE_USER.
+
+source "mm/malloc_track/Kconfig.in"

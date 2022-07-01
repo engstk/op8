@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config ZWB_HANDLE
+  tristate "handle for specific processes"
+  depends on ZRAM_WRITEBACK
+  default n
+  help
+    handle for specific processes.

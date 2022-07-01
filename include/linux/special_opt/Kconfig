@@ -1,0 +1,5 @@
+config OPLUS_FEATURE_UIFRIST_HEAVYLOAD
+	tristate "cpu sched for heavy load process"
+	default y
+	---help---
+	  cpu sched for heavy load process.

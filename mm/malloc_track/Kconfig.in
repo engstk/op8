@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+config VMALLOC_DEBUG
+	bool "trace vmalloc called information with a stack"
+	default n
+	help
+	  trace vmalloc called information with a stack.
+
+config MEMLEAK_DETECT_THREAD
+	bool "One kernel thread to detect memleak and dump infomation to log"
+	depends on (KMALLOC_DEBUG || VMALLOC_DEBUG) && SVELTE
+	default y if OPLUS_MEMLEAK_DETECT="true"
+	default n
+	help
+	  a daemon to monitor kernel memory leak.

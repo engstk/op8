@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+#change 'y' to 'n', if you want fo close pmic monitor
+config OPLUS_FEATURE_PMIC_MONITOR
+    tristate "oplus pmic monitor"
+    default n
+    help
+      define this config to init oplus pmic monitor.

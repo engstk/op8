@@ -12,7 +12,7 @@ config OPLUS_CHARGER_MTK
 	  Say Y here to declare charging system is on MTK
 	  
 config OPLUS_SHORT_C_BATT_CHECK
-	bool "OPLUS batt short "
+	tristate "OPLUS batt short "
 	help
 	  Say Y here to declare OPLUS batt short	  
 
@@ -22,12 +22,12 @@ config OPLUS_STANDARD_BATTERY_CHECK_ADC
 	  Say Y here to support Official Standard Battery check by ADC
 
 config OPLUS_SHORT_IC_CHECK
-	bool "OPLUS short ic"
+	tristate "OPLUS short ic"
 	help
 	  Say Y here to declare OPLUS batt short
 
 config OPLUS_SHORT_HW_CHECK
-	bool "OPLUS batt HW SHORT "
+	tristate "OPLUS batt HW SHORT "
 	help
 	  Say Y here to declare charging system is on MTK
 

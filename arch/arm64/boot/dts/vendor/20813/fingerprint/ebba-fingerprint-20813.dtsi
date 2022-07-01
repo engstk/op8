@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2018-2020 Oplus. All rights reserved.
+ */
+
+&soc {
+
+    oplus_fp_common {
+        compatible = "oplus,fp_common";
+        oplus,fp_gpio_num = <1>; /* the gpio number of fingerprint id used */
+        oplus,fp_gpio_0 = <&tlmm 53 0x0>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&gpio_id0_default>;
+        goodix_optical {
+            oplus,fp-id = <0>; /* fp id mapping table */
+            vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
+            eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
+            chip-name = "G_OPTICAL_G3S";  /* /proc/fp_id, will be displayed in engineer menu  */
+        };
+        goodix_optical_bak {
+            oplus,fp-id = <1>; /* fp id mapping table */
+            vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
+            eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
+            chip-name = "G_OPTICAL_G3S";  /* /proc/fp_id, will be displayed in engineer menu  */
+        };
+    };
+
+    goodix_fp {
+        status = "ok";
+        compatible = "goodix,goodix_fp";
+        interrupt-parent = <&tlmm>;
+        interrupts = <17 0>;
+        power-mode = <1> ; /*please refer to the struct fp_power_mode_t in oplus_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
+        ldo-supply = <&L9E>;
+        ldo-config = <3300000 3300000 150000>;
+        goodix,gpio_irq = <&tlmm 17 0x1>;
+        goodix,gpio_reset = <&tlmm 18 0x0>;
+        pinctrl-names = "default";
+	pinctrl-0 = <&gpio_goodix_irq_default>;
+        notify_tpinfo_flag = <1>;
+        power-num = <1> ;
+        power_source_1 {
+            power-mode = <1>;   /* 1 = ldo power, refer to oplus_fp_common.h*/
+            power-name = "ldo";
+            power-config = "ldo-config";
+            delay-time = <0>;
+        };
+    };
+
+
+};
+
+&tlmm {
+	oplus_fp_common{
+	    gpio_id0_default: gpio_id0_default {
+	        mux {
+	            pins = "gpio53";
+	                function = "gpio";
+	            };
+	        config {
+	            pins = "gpio53";
+	            drive-strength = <2>;
+	            bias-pull-up;
+	            input-enable;
+	        };
+	    };
+	};
+
+	goodix_fp{
+	    gpio_goodix_irq_default: gpio_goodix_irq_default {
+	        mux {
+	            pins = "gpio17";
+	            function = "gpio";
+	        };
+	        config {
+	            pins = "gpio17";
+	            drive-strength = <2>;
+	            bias-disable;
+	            input-enable;
+	        };
+	    };
+	};
+};
+

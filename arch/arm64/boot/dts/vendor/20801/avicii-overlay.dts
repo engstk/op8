@@ -1,0 +1,21 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include "lito-mtp.dtsi"
+
+#include "avicii.dtsi"
+#include "camera/lito-oem-camera-avicii.dtsi"
+
+
+/ {
+	model = "Qualcomm Technologies, Inc. Lito MTP 20801";
+	compatible = "qcom,lito-mtp", "qcom,lito", "qcom,mtp";
+	qcom,board-id = <8 0>;
+	oplus,dtsi_no = <20801>;
+	oplus,pcb_range = <0  55>;
+};
+
+&ufsphy_mem {
+	/delete-property/ vdda-phy-always-on;
+};

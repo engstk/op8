@@ -1,0 +1,57 @@
+
+/ {
+	reserved_memory: reserved-memory {
+		removed_region: removed_region@c0000000 {
+			/delete-property/ reg;
+			reg = <0x0 0xc0000000 0x0 0x7b00000>;
+		};
+		//#endif /* OPLUS_FEATURE_FINGERPRINT */
+
+                ramoops: ramoops@0xB7E000000 {
+                                compatible = "ramoops";
+                                reg = <0 0xB7E00000 0 0x00400000>;
+                                record-size =  <0x40000>; //256x1024
+                                console-size = <0x40000>;
+                                ftrace-size = <0x40000>;
+                                pmsg-size = <0x200000>;
+                                devinfo-size = <0x01000>;
+                                ecc-size = <0x0>;
+                };
+
+// #ifdef OPLUS_SYSTEM_UBOOT_LOG
+// xbl_uefi_mem address get from boot_images Core.dsc.inc file: PcdEmbeddedFdBaseAddress + SERIAL_BUFFER_OFFSET,0x9FE00000+0x186f7000=0xB82f7000
+// kernel boot log: 0xB8200000 ~ 0xB82f7000
+		kboot_uboot_logmem: kboot_uboot_logmem@0xB8200000 {
+			reg = <0x0 0xB8200000 0x0 0x100000>;
+			compatible = "oplus,xbl_uefi_kbootlog";
+			xbluefi-offset = <0xF7000>;
+			no-map;
+		};
+// #endif
+	};
+
+};
+
+&soc {
+	qcom_seecom: qseecom@c1700000 {
+		/delete-property/ reg;
+		reg = <0xc1700000 0x6400000>;
+	};
+
+	qcom_smcinvoke: smcinvoke@c1700000 {
+		/delete-property/ reg;
+		reg = <0xc1700000 0x6400000>;
+	};
+	//#endif /* OPLUS_FEATURE_FINGERPRINT */
+
+	// #ifdef OPLUS_FEATURE_SECURITY_COMMON
+	oplus_secure_common {
+		compatible = "oplus,secure_common";
+		oplus,sec_reg_num = <0x7804D8>;
+		oplus,sec_en_anti_reg = <0x7801CC>;
+		oplus,sec_override1_reg = <0x7860C0>;
+		oplus,override1_en_value = <0x1>;
+	};
+	// #endif /* OPLUS_FEATURE_SECURITY_COMMON */
+};
+

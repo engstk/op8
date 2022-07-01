@@ -167,7 +167,7 @@ const struct file_operations kboot_fops = {
 /*
  * Dont printk any log int this thread
  */
-int ubootback_thread_fn()
+int ubootback_thread_fn(void *)
 {
 	size_t line_len = 0;
 	u32 idx =0;

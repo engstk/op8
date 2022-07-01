@@ -28,7 +28,7 @@ source "drivers/soc/oplus/healthinfo/Kconfig"
 #endif /* OPLUS_FEATURE_HEALTHINFO */
 
 #ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-source "drivers/soc/oplus/owakelock/Kconfig"
+#source "drivers/soc/oplus/owakelock/Kconfig"
 #endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
 
 #ifdef OPLUS_FEATURE_SENSOR_SMEM

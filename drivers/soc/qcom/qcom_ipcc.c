@@ -13,7 +13,7 @@
 #include <dt-bindings/soc/qcom,ipcc.h>
 
 #ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-#include <soc/oplus/oplus_wakelock_profiler.h>
+#include "../oplus/owakelock/oplus_wakelock_profiler.h"
 #endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
 
 /* IPCC Register offsets */

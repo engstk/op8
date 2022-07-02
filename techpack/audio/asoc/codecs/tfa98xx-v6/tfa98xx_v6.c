@@ -458,7 +458,7 @@ static enum tfa_error tfa98xx_write_re25(struct tfa_device *tfa, int value)
 static struct dentry *tfa98xx_debugfs = NULL;
 #endif /* CONFIG_DEBUG_FS */
 #define TFA98XX_DEBUG_FS_NAME "ftm_tfa98xx"
-int ftm_mode = 0;
+static int ftm_mode = 0;
 static char ftm_load_file[15] = "load_file_ok";
 static char ftm_clk[9] = "clk_ok";
 char ftm_SpeakerCalibration[17] = "calibration_ok";

@@ -1,0 +1,17 @@
+### secure common config
+config OPLUS_SECURE
+       default n
+       tristate "Secure driver"
+
+config OPLUS_SECURE_COMMON
+       default n
+       tristate "Secure common"
+
+config OPLUS_SECURE_QCOM
+       default n
+       tristate "Secure base on QCOM"
+
+config OPLUS_SECURE_MTK
+       default n
+       tristate "Secure base on MTK"
+

@@ -1,0 +1,7 @@
+#ifdef OPLUS_FEATURE_HEALTHINFO
+config OPLUS_MEM_MONITOR
+	bool "memory monitor "
+	default n
+	help
+	 memory monitor.
+#endif /* OPLUS_FEATURE_HEALTHINFO */

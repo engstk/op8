@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+#ifdef OPLUS_FEATURE_MIDAS
+config OPLUS_FEATURE_MIDAS
+bool "config oplus midas feature"
+help
+	This selects midas driver
+#endif /*OPLUS_FEATURE_MIDAS*/

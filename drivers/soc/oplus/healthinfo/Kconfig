@@ -1,0 +1,11 @@
+#ifdef OPLUS_FEATURE_HEALTHINFO
+config OPLUS_HEALTHINFO
+bool "config healthinfo"
+help
+    define this config to init  healthinfo.
+config MMAP_LOCK_OPT
+	bool "config mmap lock opt boos"
+	default n
+	help
+	  reduce sleep time in mmap lock
+#endif /* OPLUS_FEATURE_HEALTHINFO */

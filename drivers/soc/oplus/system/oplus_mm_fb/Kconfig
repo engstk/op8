@@ -1,0 +1,5 @@
+config OPLUS_FEATURE_MM_FEEDBACK
+  bool "Oplus multimedia kevent feedback"
+  default n
+  help
+    define this config to init oplus multimedia kevent feedback driver

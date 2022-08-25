@@ -1,0 +1,16 @@
+config OPLUS_FEATURE_SCHED_ASSIST
+	tristate "sched_assist"
+	default n
+	help
+	  turning sched for ui, render and so on to improve UX
+config OPLUS_FEATURE_SCHED_SPREAD
+	bool "sched_spread"
+	default n
+	help
+	  This is the uifirst 5.0 feature, which will spread tasks,
+	  kick runnable time from task demand and adjust bg's time slice.
+config OPLUS_FEATURE_AUDIO_OPT
+	bool "config audio opt"
+	default n
+	help
+	  audio task schedule opt.

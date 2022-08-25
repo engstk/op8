@@ -1,0 +1,513 @@
+/*this is for different project dtsi*/
+&thermal_zones {
+	skin-therm {
+		trips {
+			skin_trip0: skin-trip0 {
+				temperature = <46000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			skin_trip1: skin-trip1 {
+				temperature = <48000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			skin_trip2: skin-trip2 {
+				temperature = <50000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			skin_trip3: skin-trip3 {
+				temperature = <52000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			skin_cpu7_cdev0 {
+				trip = <&skin_trip0>;
+					/* throttle from fmax to 1766400KHz */
+				cooling-device =
+					<&CPU7 (THERMAL_MAX_LIMIT-3)
+						(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			skin_cpu6_cdev0 {
+				trip = <&skin_trip0>;
+					/* throttle from fmax to 1728000KHz */
+				cooling-device =
+					<&CPU6 (THERMAL_MAX_LIMIT-4)
+						(THERMAL_MAX_LIMIT-4)>;
+			};
+
+			skin_cpu7_cdev1 {
+				trip = <&skin_trip1>;
+					/* throttle from fmax to 1401600KHz */
+				cooling-device = <&CPU7 (THERMAL_MAX_LIMIT-2)
+						(THERMAL_MAX_LIMIT-2)>;
+			};
+
+			skin_cpu6_cdev1 {
+				trip = <&skin_trip1>;
+					/* throttle from fmax to 1478400KHz */
+				cooling-device =
+					<&CPU6 (THERMAL_MAX_LIMIT-3)
+						(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			skin_gpu_cdev1 {
+				trip = <&skin_trip1>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-2)
+						(THERMAL_MAX_LIMIT-2)>;
+			};
+
+			skin_cpu0_cdev1 {
+				trip = <&skin_trip2>;
+					/* throttle from fmax to 864000KHz */
+				cooling-device =
+					<&CPU0 (THERMAL_MAX_LIMIT-3)
+						(THERMAL_MAX_LIMIT-3)>;
+			};
+
+			skin_cpu7_cdev2 {
+				trip = <&skin_trip2>;
+					/* throttle to close cpu7 */
+				cooling-device = <&cpu7_isolate 1 1>;
+			};
+
+			skin_cpu6_cdev2 {
+				trip = <&skin_trip2>;
+					/* throttle to close cpu6 */
+				cooling-device = <&cpu6_isolate 1 1>;
+			};
+
+			skin_cpu5_cdev2 {
+				trip = <&skin_trip2>;
+					/* throttle to close cpu5 */
+				cooling-device = <&cpu5_isolate 1 1>;
+			};
+
+			skin_cpu4_cdev2 {
+				trip = <&skin_trip2>;
+					/* throttle to close cpu4 */
+				cooling-device = <&cpu4_isolate 1 1>;
+			};
+
+			skin_cpu0_cdev3 {
+				trip = <&skin_trip3>;
+					/* throttle from fmax to 614400KHz */
+				cooling-device =
+					<&CPU0 (THERMAL_MAX_LIMIT-2)
+						(THERMAL_MAX_LIMIT-2)>;
+			};
+		};
+	};
+
+	msm-therm {
+		trips {
+			msm_trip0: msm-trip0 {
+				temperature = <55000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+
+			msm_trip1: msm-trip1 {
+				temperature = <57000>;
+				hysteresis = <2000>;
+				type = "passive";
+			};
+		};
+
+		cooling-maps {
+			msm_cpu7_cdev0 {
+				trip = <&msm_trip0>;
+					/* throttle from fmax to 2304000KHz */
+				cooling-device =
+					<&CPU7 (THERMAL_MAX_LIMIT-6)
+						(THERMAL_MAX_LIMIT-6)>;
+			};
+
+			msm_cpu6_cdev0 {
+				trip = <&msm_trip0>;
+					/* throttle from fmax to 1900800KHz */
+				cooling-device =
+					<&CPU6 (THERMAL_MAX_LIMIT-5)
+						(THERMAL_MAX_LIMIT-5)>;
+			};
+
+			msm_cpu7_cdev1 {
+				trip = <&msm_trip1>;
+					/* throttle from fmax to 1996800KHz */
+				cooling-device = <&CPU0 (THERMAL_MAX_LIMIT-4)
+						(THERMAL_MAX_LIMIT-4)>;
+			};
+
+			msm_cpu6_cdev1 {
+				trip = <&msm_trip1>;
+					/* throttle from fmax to 1728000KHz */
+				cooling-device = <&CPU0 (THERMAL_MAX_LIMIT-4)
+						(THERMAL_MAX_LIMIT-4)>;
+			};
+
+			msm_gpu_cdev1 {
+				trip = <&msm_trip1>;
+				cooling-device = <&msm_gpu (THERMAL_MAX_LIMIT-1)
+						(THERMAL_MAX_LIMIT-1)>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	oneplus_fastchg {
+		usb_sw_active: usb_sw_active {
+			mux {
+				pins = "gpio4", "gpio126";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio4", "gpio126";
+				drive-strength = <16>;
+				bias-pull-down;
+			};
+		};
+
+		usb_sw_suspend: usb_sw_suspend {
+			mux {
+				pins = "gpio4", "gpio126";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio4", "gpio126";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		fastchg_active: fastchg_active {
+			mux {
+				pins = "gpio24";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio24";
+				drive-strength = <16>;
+				bias-pull-up;
+			};
+		};
+
+		fastchg_suspend: fastchg_suspend {
+			mux {
+				pins = "gpio24";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio24";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		ap_clk_active: ap_clk_active {
+			mux {
+				pins = "gpio44";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio44";
+				drive-strength = <16>;
+				bias-pull-up;
+			};
+		};
+
+		ap_clk_suspend: ap_clk_suspend {
+			mux {
+				pins = "gpio44";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio44";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+
+		ap_data_active: ap_data_active {
+			mux {
+				pins = "gpio45";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio45";
+				drive-strength = <16>;
+				bias-pull-up;
+			};
+		};
+
+		ap_data_suspend: ap_data_suspend {
+			mux {
+				pins = "gpio45";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio45";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	};
+
+	ab_id0_active: ab_id0_active {
+		mux {
+			pins = "gpio58";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio58";
+			drive-strength = <2>;
+			bias-pull-up;
+		};
+	};
+	ab_id0_suspend: ab_id0_suspend {
+		mux {
+			pins = "gpio58";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio58";
+			drive-strength = <2>;
+			bias-pull-down;
+		};
+	};
+	ab_id0_sleep: ab_id0_sleep {
+		mux {
+			pins = "gpio58";
+			function = "gpio";
+		};
+		config {
+			pins = "gpio58";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+        rf_cable_ant1_active: rf_cable_ant1_active {
+            mux {
+                pins = "gpio90";
+                function = "gpio";
+            };
+            config {
+                pins = "gpio90";
+                drive-strength = <2>;
+                bias-pull-up;
+            };
+        };
+        rf_cable_ant2_active: rf_cable_ant2_active {
+            mux {
+                pins = "gpio66";
+                function = "gpio";
+            };
+            config {
+                pins = "gpio66";
+                drive-strength = <2>;
+                bias-pull-up;
+            };
+        };
+        rf_cable_ant3_active: rf_cable_ant3_active {
+            mux {
+                pins = "gpio67";
+                function = "gpio";
+            };
+            config {
+                pins = "gpio67";
+                drive-strength = <2>;
+                bias-pull-up;
+            };
+        };
+};
+
+&spmi_bus {
+	qcom,pm8150@0 {
+		qcom,power-on@800 {
+			interrupts = <0x0 0x8 0x0 IRQ_TYPE_EDGE_BOTH>,
+			             <0x0 0x8 0x1 IRQ_TYPE_EDGE_BOTH>,
+			             <0x0 0x8 0x5 IRQ_TYPE_EDGE_BOTH>;
+			interrupt-names = "kpdpwr", "resin", "kpdpwr-resin-bark";
+			qcom,s3-src = "kpdpwr-and-resin";
+
+			qcom,pon_1 {
+				qcom,support-reset = <0>;
+				qcom,s1-timer = <6720>;
+				qcom,s2-timer = <2000>;
+				qcom,s2-type = <PON_POWER_OFF_TYPE_HARD_RESET>;
+				qcom,pull-up;
+			};
+
+			qcom,pon_2 {
+				qcom,support-reset = <0>;
+				qcom,s1-timer = <6720>;
+				qcom,s2-timer = <2000>;
+				qcom,s2-type = <PON_POWER_OFF_TYPE_HARD_RESET>;
+				qcom,pull-up;
+			};
+
+			qcom,pon_3 {
+				qcom,pon-type = <PON_POWER_ON_TYPE_KPDPWR_RESIN>;
+				qcom,support-reset = <0>;
+				qcom,s1-timer = <6720>;
+				qcom,s2-timer = <2000>;
+				qcom,s2-type = <PON_POWER_OFF_TYPE_HARD_RESET>;
+				qcom,pull-up;
+			};
+		};
+	};
+};
+
+&soc {
+	/* #ifdef OPLUS_FEATURE_SECURITY_COMMON */
+	oplus_secure_common {
+		compatible = "oplus,secure_common";
+		oplus,sec_reg_num = <0x7805E8>;
+		oplus,sec_en_anti_reg = <0x7801F4>;
+		oplus,sec_override1_reg = <0x7860C0>;
+		oplus,override1_en_value = <0x1>;
+		oplus,cryptokey_unsupport_status = <0x1>;
+	};
+	/* #endif OPLUS_FEATURE_SECURITY_COMMON */
+
+	oplus_fp_common {
+        compatible = "oplus,fp_common";
+        oplus,fp_gpio_num = <1>;
+        oplus,fp_gpio_0 = <&tlmm 65 0x0>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&gpio_id2_default>;
+        goodix_optical {
+            oplus,fp-id = <1>; /* fp id mapping table */
+            vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+            eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
+            chip-name = "G_OPTICAL_20801_G3";  /* /proc/fp_id, will be displayed in engineer menu  */
+        };
+	};
+	goodix_fp {
+		status = "ok";
+		compatible = "goodix,goodix_fp";
+		interrupt-parent = <&tlmm>;
+
+		goodix,gpio_irq = <&tlmm 112 0x1>;
+		goodix,gpio_reset = <&tlmm 63 0x0>;
+
+		goodix,goodix_pwr_1 = <&pm8150_gpios 7 0x0>;
+		goodix,goodix_pwr_2 = <&pm8150_gpios 6 0x0>;
+
+		ldo-supply = <&pm8150a_l9>; // pm660l_l5 for goodix_fp
+		pinctrl-names = "default";
+        	pinctrl-0 = <&gpio_goodix_irq_default>;
+        	power-num = <2>;
+                gpios = <&pm8150_gpios 7 0x00>,
+                        <&pm8150_gpios 6 0x00 >,
+                        <&tlmm 112 0x00>;
+
+       		power_source_1 {
+            		power-mode = <2>;
+            		power-name = "goodix,goodix_pwr_1";
+            		delay-time = <0>;
+        	};
+                power_source_2 {
+                        power-mode = <2>;
+                        power-name = "goodix,goodix_pwr_2";
+                        delay-time = <0>;
+                };
+        };
+
+	oem_aboard_check:oem_aboard_check {
+		compatible = "oem,aboard";
+		interrupt-parent = <&tlmm>;
+		oem,aboard-gpio-0 = <&tlmm 58 0>;
+		pinctrl-names = "oem_aboard_active","oem_aboard_sleep","oem_aboard_suspend";
+		pinctrl-0 = <&ab_id0_active>;
+		pinctrl-1 = <&ab_id0_sleep>;
+		pinctrl-2 = <&ab_id0_suspend>;
+	};
+
+	oem_rf_cable:oem_rf_cable {
+		compatible = "oem,rf_cable";
+		interrupt-parent = <&tlmm>;
+		rf,cable-gpio-0 = <&tlmm 90 0>;
+		rf,cable-gpio-1 = <&tlmm 66 0>;
+		rf,cable-gpio-2 = <&tlmm 67 0>;
+		rf,cable-support-timer = <0>;
+		oem,rf_uevent_feature_enable;
+		rf,cable-gpio-num = <3>;
+		pinctrl-names = "oem_rf_cable_active";
+		pinctrl-0 = <&rf_cable_ant1_active &rf_cable_ant2_active &rf_cable_ant3_active>;
+	};
+
+	devinfo {
+		compatible = "oplus-devinfo";
+                interrupt-parent = <&tlmm>;
+		Hw,sub_hwid_1 = <&tlmm 58 0>;
+		pinctrl-names = "active","sleep","suspend";
+		pinctrl-0 = <&ab_id0_active>;
+		pinctrl-1 = <&ab_id0_sleep>;
+		pinctrl-2 = <&ab_id0_suspend>;
+
+	};
+};
+
+&reserved_memory {
+	param_mem: param_mem@0xCC200000 {
+		reg = <0 0xCC200000 0 0x00100000>;
+		label = "param_mem";
+	};
+
+	ramoops: ramoops@0xCBE00000 {
+		compatible = "ramoops";
+		reg = <0 0xCBE00000 0 0x00400000>;
+		record-size =  <0x40000>; //256x1024
+		console-size = <0x40000>;
+		ftrace-size =  <0x40000>;
+		pmsg-size=         <0x200000>;
+		devinfo-size=  <0x01000>;
+		ecc-size=          <0x0>;
+	};
+
+	mtp_mem: mtp_mem@cc300000 {
+		reg = <0 0xCC300000 0 0x00B00000>;
+		label = "mtp_mem";
+	};
+
+	// #ifdef OPLUS_BUG_STABILITY
+        /* Add for get current xbl_uefi log, add reserved size 2M for kernelboot xbl uefis*/
+	// xbl_uefi_mem address get from boot_images Core.dsc.inc file: PcdEmbeddedFdBaseAddress + SERIAL_BUFFER_OFFSET,0x9FC00000+0x186f7000=0xB82f7000
+	// kernel boot log: 0xB8200000 ~ 0xB82f7000
+        kboot_uboot_logmem: kboot_uboot_logmem@0xB8200000 {
+                reg = <0x0 0xB8200000 0x0 0x100000>;
+                compatible = "oplus,xbl_uefi_kbootlog";
+                xbluefi-offset = <0xF7000>;
+                no-map;
+        };
+       // #endif
+
+};
+
+&wdog{
+	qcom,bark-time = <15000>;
+};
+
+&usb2_phy0 {
+	qcom,param-override-seq =
+		<0x47 0x6c /*Disconnection voltage +21.56%*/
+		0x1e 0x70 /*Pre-emphasis:4x DC voltage level:+17.80%*/
+		0x37 0x74>;
+};

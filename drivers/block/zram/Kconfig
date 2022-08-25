@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: GPL-2.0
+config ZRAM
+	tristate "Compressed RAM block device support"
+	depends on BLOCK && SYSFS && ZSMALLOC && CRYPTO
+	select CRYPTO_LZO
+	default n
+	help
+	  Creates virtual block devices called /dev/zramX (X = 0, 1, ...).
+	  Pages written to these disks are compressed and stored in memory
+	  itself. These disks allow very fast I/O and compression provides
+	  good amounts of memory savings.
+
+	  It has several use cases, for example: /tmp storage, use as swap
+	  disks and maybe many more.
+
+	  See Documentation/blockdev/zram.txt for more information.
+
+config ZRAM_DEDUP
+	bool "Deduplication support for ZRAM data"
+	depends on ZRAM
+	default n
+	help
+	  Deduplicate ZRAM data to reduce amount of memory consumption.
+	  Advantage largely depends on the workload. In some cases, this
+          option reduces memory usage to the half. However, if there is no
+	  duplicated data, the amount of memory consumption would be
+	  increased due to additional metadata usage. And, there is
+	  computation time trade-off. Please check the benefit before
+	  enabling this option. Experiment shows the positive effect when
+	  the zram is used as blockdev and is used to store build output.
+
+config ZRAM_WRITEBACK
+       bool "Write back incompressible or idle page to backing device"
+       depends on ZRAM
+       default n
+       help
+	 With incompressible page, there is no memory saving to keep it
+	 in memory. Instead, write it out to backing device.
+	 For this feature, admin should set up backing device via
+	 /sys/block/zramX/backing_dev.
+
+	 With /sys/block/zramX/{idle,writeback}, application could ask
+	 idle page's writeback to the backing device to save in memory.
+
+	 See Documentation/blockdev/zram.txt for more information.
+
+config ZRAM_MEMORY_TRACKING
+	bool "Track zRam block status"
+	depends on ZRAM && DEBUG_FS
+	help
+	  With this feature, admin can track the state of allocated blocks
+	  of zRAM. Admin could see the information via
+	  /sys/kernel/debug/zram/zramX/block_state.
+
+	  See Documentation/blockdev/zram.txt for more information.
+
+#ifdef OPLUS_FEATURE_ZRAM_OPT
+config OPLUS_ZRAM_OPT
+	bool "oplus zram  optimization"
+	depends on ZRAM
+	default y
+	help
+	oplus zram optimization
+#endif /*OPLUS_FEATURE_ZRAM_OPT*/
+
+#ifdef OPLUS_FEATURE_ZRAM_WRITEBACK
+source "drivers/block/zram/zwb_handle/Kconfig"
+#endif /* OPLUS_FEATURE_ZRAM_WRITEBACK */
+
+config HYBRIDSWAP
+	bool "Enable Hybridswap"
+	depends on MEMCG && ZRAM && !ZRAM_DEDUP && !ZRAM_WRITEBACK && !ZWB_HANDLE
+	default n
+	help
+	  Hybridswap is a intelligent memory management solution.
+
+config HYBRIDSWAP_SWAPD
+	bool "Enable hybridswap swapd thread to reclaim anon pages in background"
+	default n
+	depends on HYBRIDSWAP
+	help
+	  swapd is a kernel thread that reclaim anonymous pages in the
+	  background. When the use of swap pages reaches the watermark
+	  and the refault of anonymous pages is high, the content of
+	  zram will exchanged to eswap by a certain percentage.
+
+# Selected when system need hybridswap container
+config HYBRIDSWAP_CORE
+	bool "Hybridswap container device support"
+	depends on ZRAM && HYBRIDSWAP
+	default n
+	help
+	  Say Y here if you want to use the hybridswap
+	  as the backend device in ZRAM.
+	  If unsure, say N here.
+	  This module can't be compiled as a module,
+	  the module is as one part of the ZRAM driver.
+
+config HYBRIDSWAP_ASYNC_COMPRESS
+	bool "hypbridswap support asynchronous compress anon pages"
+	depends on ZRAM && HYBRIDSWAP
+	default n
+	help
+	  Say Y here if you want to create asynchronous thread
+	  for compress anon pages.
+	  If unsure, say N here.
+	  This feature will reduce the kswapd cpu load.

@@ -1,0 +1,158 @@
+/dts-v1/;
+
+#include "lagoon.dtsi"
+#include "lagoon-oem-common.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. Lagoon SoC";
+	compatible = "qcom,lagoon";
+	qcom,board-id = <0 0>;
+	oplus,dtsi_no = <20813>;
+};
+
+&tlmm {
+		ts_int_active {
+			ts_int_active: ts_int_active {
+				mux {
+					pins = "gpio22";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio22";
+					drive-strength = <8>;
+					bias-pull-up;
+				};
+			};
+		};
+
+		ts_reset_active {
+			ts_reset_active: ts_reset_active {
+				mux {
+					pins = "gpio21";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio21";
+					drive-strength = <8>;
+					bias-pull-up;
+				};
+			};
+		};
+};
+
+&wdog {
+	qcom,bark-time = <20000>;
+};
+
+&tlmm {
+		qupv3_se9_2uart_pins: qupv3_se9_2uart_pins {
+			qupv3_se9_2uart_active: qupv3_se9_2uart_active {
+				mux {
+					pins = "gpio25", "gpio26";
+					function = "qup13_f2";
+				};
+
+				config {
+					pins = "gpio25", "gpio26";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+
+			qupv3_se9_2uart_sleep: qupv3_se9_2uart_sleep {
+				mux {
+					pins = "gpio25", "gpio26";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio25", "gpio26";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
+
+		//add for config NC pins to input and pull down state
+		qupv3_se0_spi_pins: qupv3_se0_spi_pins {
+			qupv3_se0_spi_active: qupv3_se0_spi_active {
+				mux {
+					pins = "gpio0", "gpio1",
+							"gpio2", "gpio3";
+					function = "qup00";
+				};
+
+				config {
+					pins = "gpio0", "gpio1",
+							"gpio2", "gpio3";
+					drive-strength = <6>;
+					bias-pull-down;
+				};
+			};
+
+			qupv3_se0_spi_sleep: qupv3_se0_spi_sleep {
+				mux {
+					pins = "gpio0", "gpio1",
+							"gpio2", "gpio3";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio0", "gpio1",
+							"gpio2", "gpio3";
+					drive-strength = <6>;
+					bias-pull-down;
+				};
+			};
+		};
+
+		qupv3_se0_i2c_pins: qupv3_se0_i2c_pins {
+			qupv3_se0_i2c_active: qupv3_se0_i2c_active {
+				mux {
+					pins = "gpio0", "gpio1";
+					function = "qup00";
+				};
+
+				config {
+					pins = "gpio0", "gpio1";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+
+			qupv3_se0_i2c_sleep: qupv3_se0_i2c_sleep {
+				mux {
+					pins = "gpio0", "gpio1";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio0", "gpio1";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
+
+		ebba_unused_gpios_default {
+			ebba_unused_gpios_default: ebba_unused_gpios_default {
+				mux {
+					pins = "gpio6", "gpio94", "gpio97", "gpio99";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio6", "gpio94", "gpio97", "gpio99";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
+};
+
+&icnss {
+	/delete-property/ vdd-3.3-ch1-supply;
+	/delete-property/ qcom,vdd-3.3-ch1-config;
+};

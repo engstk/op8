@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+config OPLUS_FEATURE_UXIO_FIRST
+	bool "Support for ux io first opt"
+	default y
+	help
+	  Enable ux io first opt.

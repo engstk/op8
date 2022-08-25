@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+config OPLUS_FEATURE_SELINUX_CONTROL_LOG
+  bool "config control selinux log"
+  default y
+  help
+	define this config to control selinux log.

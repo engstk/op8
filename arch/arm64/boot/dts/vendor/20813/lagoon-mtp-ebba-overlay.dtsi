@@ -1,0 +1,606 @@
+/ {
+};
+#include "display/dsi-panel-oplus20813samsung-ams643ye01-1080-2400-dsi-cmd.dtsi"
+//#include "lagoon_camera/lagoon-camera-sensor-mtp.dtsi"
+#include <dt-bindings/msm/msm-bus-ids.h>
+&qupv3_se8_i2c {
+	status = "ok";
+	Focaltech20813@38 {
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		chip-name = "FT3518";
+
+		/* Interrupt && Irq-gpio */
+		interrupt-parent = <&tlmm>;
+		interrupts = <22 0x2002>;
+
+		/* Power Config */
+		vdd_2v8-supply = <&L11E>;
+		vcc_1v8-supply = <&L1E>;
+		vdd_2v8_volt = <3100000>;
+
+		/* Other HW Resource */
+		irq-gpio = <&tlmm 22 0x2002>;
+		reset-gpio = <&tlmm 21 0x1>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+
+		vid_len = <2>;
+		tp_type = <8>;
+		platform_support_project = <20813>;
+		platform_support_project_dir = <20813>;
+		platform_support_project_commandline = "default_commandline", "default_commandline";
+		platform_support_project_external_name = "AA058", "AA058";
+		touchpanel,max-num-support = <10>;
+		touchpanel,tx-rx-num = <16 34>;
+		touchpanel,panel-coords = <4320 9600>;
+		touchpanel,display-coords = <1080 2400>;
+		touchpanel,touchmajor-limit = <0 216>;
+		touchpanel,report-rate = <120 180>;
+		touchpanel,smooth-level = <255 2 15 25 45 60>;
+		touchpanel,smooth-level-charging = <255 15 20 25 45 60>;
+		touchpanel,sensitive-level = <255 20 16 13 10 5>;
+		touchpanel,single-optimized-time = <8>;
+
+		/* SW Support Feature Control */
+		black_gesture_support;
+		fw_edge_limit_support;
+		pressure_report_support;
+		charger_pump_support;
+		game_switch_support;
+		smart_gesture_support;
+		fw_update_app_support;
+		fingerprint_underscreen_support;
+		headset_pump_support;
+		irq_need_dev_resume_ok;
+		health_monitor_v2_support;
+		high_resolution_support;
+		lcd_tp_refresh_support;
+		/*
+		 *Virtual Key Config:
+		 *1:touchpanel,button-type: <virtualkey_type  supportted_button-map>
+		 *virtualkey_type:
+		 *Type 1: using board_properties
+		 *Type 2: using same IC (button zone&& touch zone are seprate)
+		 *Type 3: using diffrent IC (button zone&& touch zone are seprate)
+		 *Type 4: No need of virtual key process
+		 *supportted_button-map:select|menu|home|back
+		 *
+		 *2:touchpanel,button-map
+		 *type (X1,Y1)(X2,Y2)(X3,Y3)(Width_X,Hight_Y)--Only when button-type is 0
+		 */
+		touchpanel,button-type = <4>;
+		touchpanel.button-TRx = <0 0>;
+	};
+};
+
+&soc {
+	gpio_keys {
+		pinctrl-0 = <&key_vol_up_default &key_vol_down_default>;
+
+		vol_down {
+			label = "volume_down";
+			gpios = <&pm7250b_gpios  3 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_VOLUMEDOWN>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
+	//#ifdef OPLUS_FEATURE_THERMAL_HORAE
+	shell_front {
+		compatible = "oplus,shell-temp";
+	};
+
+	shell_frame {
+		compatible = "oplus,shell-temp";
+	};
+
+	shell_back {
+		compatible = "oplus,shell-temp";
+	};
+	//#endif /* OPLUS_FEATURE_THERMAL_HORAE */
+};
+
+&pm7250b_gpios {
+	key_vol_down {
+		key_vol_down_default: key_vol_down_default {
+			pins = "gpio3";
+			function = "normal";
+			input-enable;
+			bias-pull-up;
+			power-source = <0>;
+		};
+	};
+};
+//#endif
+
+&pm7250b_charger {
+	status = "ok";
+	io-channels = <&pm7250b_vadc ADC_USB_IN_V_16>,
+		      <&pm7250b_vadc ADC_USB_IN_I>,
+		      <&pm7250b_vadc ADC_CHG_TEMP>,
+              <&pm7250b_vadc ADC_AMUX_THM4_PU2>,
+//#endif
+		      <&pm7250b_vadc ADC_DIE_TEMP>,
+		      <&pm7250b_vadc ADC_AMUX_THM3_PU2>,
+		      <&pm7250b_vadc ADC_SBUx>,
+		      <&pm7250b_vadc ADC_VPH_PWR>,
+		      <&pm7250b_vadc ADC_AMUX_THM1_PU2>;
+	io-channel-names = "usb_in_voltage",
+			   "usb_in_current",
+			   "chg_temp",
+                "usb_temp_l",
+//#endif
+			   "die_temp",
+               "usb_temp_r",
+//#else
+               //"conn_temp",
+//#endif
+			   "sbux_res",
+			   "vph_voltage",
+			   "skin_temp";
+	qcom,battery-data = <&mtp_batterydata>;
+	qcom,sec-charger-config = <1>;
+	qcom,auto-recharge-soc = <98>;
+	qcom,step-charging-enable;
+	qcom,sw-jeita-enable;
+	qcom,charger-temp-max = <800>;
+	qcom,smb-temp-max = <800>;
+	qcom,suspend-input-on-debug-batt;
+	qcom,fcc-stepping-enable;
+	qcom,fcc-step-delay-ms = <100>;
+	qcom,fcc-step-size-ua = <100000>;
+	qcom,smb-internal-pull-kohm = <0>;
+	qcom,en-skin-therm-mitigation;
+	qcom,hvdcp3-standalone-config;
+
+	qcom,misc@1600 {
+		reg = <0x1600 0x100>;
+		interrupts =
+			<0x2 0x16 0x0 IRQ_TYPE_EDGE_RISING>,
+			<0x2 0x16 0x1 IRQ_TYPE_EDGE_RISING>,
+			<0x2 0x16 0x2 IRQ_TYPE_EDGE_RISING>,
+			<0x2 0x16 0x5 IRQ_TYPE_EDGE_RISING>;
+		interrupt-names = "wdog-snarl",
+				  "wdog-bark",
+				  "aicl-fail",
+				  "imp-trigger";
+	};
+};
+
+&pm7250b_qg {
+        status = "ok";
+        io-channels = <&pm7250b_vadc ADC_BAT_THERM_PU1>,
+                      <&pm7250b_vadc ADC_BAT_ID_PU2>;
+        io-channel-names = "batt-therm",
+                           "batt-id";
+        qcom,qg-iterm-ma = <300>;
+        qcom,qg-fast-chg-config;
+        qcom,hold-soc-while-full;
+        qcom,linearize-soc;
+        qcom,cl-feedback-on;
+        qcom,tcss-enable;
+        qcom,tcss-entry-soc = <98>;
+        qcom,fvss-enable;
+        qcom,fvss-vbatt-mv = <3300>;
+        qcom,bass-enable;
+        qcom,qg-ext-sns;
+        qcom,s3-entry-ibat-ua = <35000>;
+        qcom,s3-exit-ibat-ua = <65000>;
+        //qcom,use-cp-iin-sns;
+        qcom,ignore-shutdown-soc-secs = <7200>;
+        qcom,shutdown-temp-diff = <200>;
+	qcom,pm7250b-qg-feture;
+};
+
+&soc {
+        ssusb@a600000 {
+		qcom,core-clk-rate = <200000000>;
+		qcom,msm-bus,vectors-KBps =
+			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_EBI_CH0 0 0>,
+			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 0 0>,
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 0 0>,
+			<MSM_BUS_MASTER_USB3
+				MSM_BUS_SLAVE_EBI_CH0 2500000 2500000>,
+			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 2400 2400>,
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 40000 40000>,
+			<MSM_BUS_MASTER_USB3
+				MSM_BUS_SLAVE_EBI_CH0 2500000 2500000>,
+			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 2400 2400>,
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 40000 40000>,
+			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_EBI_CH0 1 1>,
+			<MSM_BUS_MASTER_USB3 MSM_BUS_SLAVE_IPA_CFG 1 1>,
+			<MSM_BUS_MASTER_AMPSS_M0 MSM_BUS_SLAVE_USB3 1 1>;
+
+                dwc3@a600000 {
+//#ifndef OPLUS_FEATRUE_CHG_BASIC
+                        //usb-phy = <&qusb_phy0>, <&usb_qmp_dp_phy>;
+//#else
+                        usb-phy = <&qusb_phy0>, <&usb_nop_phy>;
+//#endif
+
+//#ifdef OPLUS_FEATRUE_CHG_BASIC
+                        xhci-imod-value = <160>;
+                        qcom,pm-qos-latency= <62>;
+//#endif
+
+//#ifndef OPLUS_FEATRUE_CHG_BASIC
+                        //maximum-speed = "super-speed";
+//#else
+                        maximum-speed = "high-speed";
+//#endif
+				};
+        };
+        usb_qmp_dp_phy {
+//#ifndef OPLUS_FEATRUE_CHG_BASIC
+                //status = "ok";
+//#else
+                status = "disabled";
+//endif
+        };
+};
+
+&spmi_bus {
+        qcom,pm7250b@2 {
+                vadc@3100 {
+                        qcom,pmic-revid = <&pm7250b_revid>;
+                        //#endif
+                };
+
+                pm7250b_bcl {
+                        status = "disabled";
+//#endif
+                };
+
+                bcl_soc {
+                        status = "disabled";
+//#endif
+                };
+        };
+};
+
+&qusb_phy0 {
+	qcom,qusb-phy-init-seq =
+		/* <value reg_offset> */
+		<0x23 0x210 /* PWR_CTRL1 */
+		0x03 0x04  /* PLL_ANALOG_CONTROLS_TWO */
+		0x7c 0x18c /* PLL_CLOCK_INVERTERS */
+		0x80 0x2c  /* PLL_CMODE */
+		0x0a 0x184 /* PLL_LOCK_DELAY */
+		0x19 0xb4  /* PLL_DIGITAL_TIMERS_TWO */
+		0x40 0x194 /* PLL_BIAS_CONTROL_1 */
+		0x15 0x198 /* PLL_BIAS_CONTROL_2 */
+		0x21 0x214 /* PWR_CTRL2 */
+		0x08 0x220 /* IMP_CTRL1 */
+		0x58 0x224 /* IMP_CTRL2 */
+		0x47 0x240 /* TUNE1 */
+		0x2b 0x244 /* TUNE2 */
+		0xca 0x248 /* TUNE3 */
+		0x04 0x24c /* TUNE4 */
+		0x03 0x250 /* TUNE5 */
+		0x30 0x23c /* CHG_CTRL2 */
+		0x22 0x210>; /* PWR_CTRL1 */
+
+	qcom,qusb-phy-host-init-seq =
+		/* <value reg_offset> */
+		<0x23 0x210 /* PWR_CTRL1 */
+		0x03 0x04  /* PLL_ANALOG_CONTROLS_TWO */
+		0x7c 0x18c /* PLL_CLOCK_INVERTERS */
+		0x80 0x2c  /* PLL_CMODE */
+		0x0a 0x184 /* PLL_LOCK_DELAY */
+		0x19 0xb4  /* PLL_DIGITAL_TIMERS_TWO */
+		0x40 0x194 /* PLL_BIAS_CONTROL_1 */
+		0x16 0x198 /* PLL_BIAS_CONTROL_2 */
+		0x21 0x214 /* PWR_CTRL2 */
+		0x08 0x220 /* IMP_CTRL1 */
+		0x58 0x224 /* IMP_CTRL2 */
+		0x47 0x240 /* TUNE1 */
+		0x2b 0x244 /* TUNE2 */
+		0xca 0x248 /* TUNE3 */
+		0x04 0x24c /* TUNE4 */
+		0x03 0x250 /* TUNE5 */
+		0x30 0x23c /* CHG_CTRL2 */
+		0x22 0x210>; /* PWR_CTRL1 */
+};
+
+&soc {
+	devinfo {
+		compatible = "oplus-devinfo";
+
+		io-channels= <&pm7250b_vadc ADC_GPIO1>;
+		io-channel-names= "vph_pwr_voltage_sub";
+		pinctrl-names = "default", "active", "sleep";
+		pinctrl-0 = <&gpio11_adc_default &ebba_unused_gpios_default>;
+		pinctrl-1 = <&hw_id_active>;
+		pinctrl-2 = <&hw_id_sleep>;
+
+		main-sub {
+			compatible = "hw-match, main-sub";
+			use_pmic_adc;
+			adc_ranges = <0 80
+						81 180
+						181 300
+						301 420
+						421 550
+						551 650
+						651 760
+						761 850
+						851 850
+						951 1050
+						1051 1150
+						1151 1300>;
+			aboard-patterns = <0 0>;
+
+			/*main board*/
+			match-projects = <20813 20058 20813>;
+		};
+
+		device_0 {
+			compatible = "hw, devices";
+			label = "distribution";
+			hw-id0 = <&pm7250b_gpios 4 GPIO_ACTIVE_LOW>;
+			hw-combs = <1 0>;
+			hw-names = "Silvery", "Black/Blue";
+		};
+	};
+
+    //#ifdef OPLUS_FEATURE_TP_BASIC
+	oplus_sim_detect {
+		compatible = "oplus, sim_detect";
+		Hw,sim_det = <&tlmm 82 0>;
+	};
+    //#endif /* OPLUS_FEATURE_TP_BASIC */
+
+        oplus_rf_cable {
+                compatible = "oplus,rf_cable";
+                interrupt-parent = <&tlmm>;
+                rf_cable_support_num = <1>;
+                rf,cable0-gpio = <&tlmm 90 0>;
+                rf,cable-support-timer = <0>;
+                pinctrl-names = "rf_cable_active";
+                pinctrl-0 = <&rf_cable0_active>;
+        };
+	//#endif /* VENDOR_EDIT */
+};
+
+&pm7250b_vadc {
+			board_id {
+				reg = <ADC_GPIO1>;
+				label = "board_id_vdata";
+				qcom,ratiometric;
+				qcom,pre-scaling = <1 1>;
+			}; 
+};
+
+&pm7250b_gpios {
+	hw_id_active {
+		hw_id_active: hw_id_active {
+			pins = "gpio4"; /* GPIO 4 */
+			function = "normal"; /* normal */
+			input-enable;
+			bias-pull-up;
+			power-source = <0>; /*lv 1.8V input supply */
+		};
+	};
+
+	hw_id_sleep {
+		hw_id_sleep: hw_id_sleep {
+			pins = "gpio4"; /* GPIO 4 */
+			function = "normal"; /* normal */
+			input-enable;
+			bias-pull-down;
+			power-source = <0>; /*lv 1.8V input supply */
+		};
+	};
+
+	gpio11_adc {
+		gpio11_adc_default: gpio11_adc_default {
+			pins = "gpio11"; /* GPIO 11 */
+			function = "normal"; /* normal */
+			bias-high-impedance; /* DISABLE GPIO11 for ADC*/
+		};
+	};
+};
+
+&sdhc_2 {
+        /delete-property/ status;
+        status = "disabled";
+};
+
+&spmi_bus {
+	qcom,pm6350@0 {
+		qcom,power-on@800 {
+			qcom,pmicwd;
+		};
+	};
+};
+
+&soc {
+	dsi_panel_pwr_supply {
+		qcom,panel-supply-entry@1 {
+			qcom,supply-enable-load = <857000>;
+			qcom,supply-disable-load = <0>;
+			qcom,supply-post-on-sleep = <0>;
+		};
+	};
+
+	dsi_panel_pwr_supply_vout: dsi_panel_pwr_supply_vout {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,panel-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "vddio";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1800000>;
+			qcom,supply-enable-load = <62000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-post-on-sleep = <20>;
+		};
+
+		qcom,panel-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "vdd";
+			qcom,supply-min-voltage = <3000000>;
+			qcom,supply-max-voltage = <3000000>;
+			qcom,supply-enable-load = <857000>;
+			qcom,supply-disable-load = <0>;
+			qcom,supply-post-on-sleep = <0>;
+		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "vout";
+			qcom,supply-min-voltage = <1500000>;
+			qcom,supply-max-voltage = <1510000>;
+			qcom,supply-enable-load = <857000>;
+			qcom,supply-disable-load = <0>;
+			qcom,supply-post-on-sleep = <0>;
+			regular-boot-on;
+		};
+	};
+
+	dsi_panel_pwr_supply_labibb: dsi_panel_pwr_supply_labibb {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,panel-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "vddio";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1800000>;
+			qcom,supply-enable-load = <62000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-post-on-sleep = <20>;
+		};
+
+		qcom,panel-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "lab";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "ibb";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+			qcom,supply-post-on-sleep = <20>;
+		};
+	};
+
+	qcom,dsi-display-primary {
+		vddio-supply = <&L1E>;
+		vdd-supply = <&L8A>;
+		//vout-supply = <&L5P>;
+		qcom,platform-te-gpio = <&tlmm 23 0>;
+		qcom,platform-reset-gpio = <&pm6150l_gpios 3 0>;
+		qcom,dsi-default-panel = <&dsi_s6e3fc3_samsung_amoled_cmd>;
+	};
+
+	qcom,dsi-display-secondary {
+		status = "disable";
+	};
+
+	qcom,dp_display@ae90000 {
+		status = "disable";
+	};
+};
+
+&L5P {
+        regulator-min-microvolt = <1500000>;
+        regulator-max-microvolt = <3400000>;
+        //qcom,min-dropout-voltage = <300000>;
+        regulator-boot-on;
+};
+
+&L1P {
+        regulator-min-microvolt = <528000>;
+        regulator-max-microvolt = <1504000>;
+};
+
+&L2P {
+        regulator-min-microvolt = <528000>;
+        regulator-max-microvolt = <1504000>;
+};
+
+&L3P {
+        regulator-min-microvolt = <1500000>;
+        regulator-max-microvolt = <3400000>;
+};
+
+&L4P {
+        regulator-min-microvolt = <1500000>;
+        regulator-max-microvolt = <3400000>;
+};
+
+&L6P {
+        regulator-min-microvolt = <1500000>;
+        regulator-max-microvolt = <3400000>;
+};
+
+&L7P {
+        regulator-min-microvolt = <1500000>;
+        regulator-max-microvolt = <3400000>;
+};
+//#endif /*OPLUS_BUG_STABALITY*/
+//#endif
+//#ifdef OPLUS_FEATURE_TEMP_ADAPTER
+&thermal_zones {
+	board-therm-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm6150l_adc_tm ADC_GPIO4_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <125000>;
+				hysteresis = <1000>;
+				type = "passive";
+			};
+		};
+	};
+	msm-s-therm-usr {
+		polling-delay-passive = <0>;
+		polling-delay = <0>;
+		thermal-governor = "user_space";
+		thermal-sensors = <&pm6150l_adc_tm_iio ADC_AMUX_THM2_PU2>;
+		wake-capable-sensor;
+		trips {
+			active-config0 {
+				temperature = <125000>;
+				hysteresis = <1000>;
+				type = "passive";
+			};
+		};
+	};
+};
+
+/* delete low battery policy for performance */
+&thermal_soc_cooling_maps {
+	/delete-node/ soc_cpu6;
+	/delete-node/ soc_cpu7;
+};
+
+&pm6150l_vadc {
+	/delete-property/ compatible;
+	compatible = "qcom,spmi-adc5-temp";
+};
+//#endif /*OPLUS_FEATURE_TEMP_ADAPTER*/
+&spmi_bus {
+	qcom,pm6350@0 {
+		qcom,power-on@800 {
+			qcom,pon_2 {
+				linux,code = <KEY_VOLUMEUP>;
+			};
+		};
+	};
+	};

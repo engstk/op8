@@ -1,0 +1,7 @@
+# PDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2020-2022 Oplus. All rights reserved.
+
+config OPLUS_FEATURE_DNS_HOOK
+        tristate "Add for quick app support dns hook"
+        help
+          Add for quick app support dns hook

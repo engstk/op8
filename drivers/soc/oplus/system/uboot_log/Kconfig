@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+config OPLUS_FEATURE_UBOOT_LOG
+  bool "oplus system uboot log"
+  default n
+  depends on OPLUS_SYSTEM_KERNEL
+  help
+    define this config to enable QCOM platform uboot log .
+

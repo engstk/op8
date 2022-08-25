@@ -1,0 +1,5 @@
+config OPLUS_FEATURE_TPP
+	bool "Support for TPP"
+	default n
+	help
+	  This feature is developed for optimizing unity game which have multi workerthread

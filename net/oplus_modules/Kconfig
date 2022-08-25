@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2018-2020 Oplus. All rights reserved.
+
+source "net/oplus_modules/oplus_dns_hook/Kconfig"
+
+source "net/oplus_modules/oplus_stats_calc/Kconfig"
+
+source "net/oplus_modules/oplus_qr_scan/Kconfig"

@@ -1,0 +1,3 @@
+
+source "drivers/input/touchscreen/oplus_touchscreen/Synaptics/S3706/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Synaptics/Syna_tcm_oncell/Kconfig"

@@ -453,7 +453,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mcpu=cortex-a55 -fdiagnostics-color=always -pipe \
 		   -Wno-void-pointer-to-enum-cast -Wno-misleading-indentation -Wno-unused-function -Wno-bool-operation \
 		   -Wno-unsequenced -Wno-void-pointer-to-int-cast -Wno-unused-variable -Wno-pointer-to-int-cast -Wno-pointer-to-enum-cast \
-		   -Wno-fortify-source -Wno-strlcpy-strlcat-size -Wno-align-mismatch -Wno-unused-but-set-variable
+		   -Wno-fortify-source -Wno-strlcpy-strlcat-size -Wno-align-mismatch -Wno-unused-but-set-variable \
+		   -Wno-unused-result -Wno-deprecated -Wno-deprecated-declarations -Wformat=0
 
 >>>>>>> 57c30d671 (makefile: add initial build changes)
 KBUILD_CPPFLAGS := -D__KERNEL__

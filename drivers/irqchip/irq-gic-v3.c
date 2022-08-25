@@ -45,7 +45,7 @@
 #include <linux/syscore_ops.h>
 
 #ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-#include <soc/oplus/oplus_wakelock_profiler.h>
+#include "../soc/oplus/owakelock/oplus_wakelock_profiler.h"
 #endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
 
 #include "irq-gic-common.h"

@@ -1,31 +1,3 @@
-#code deprecated ... start (Todo : delete this code section)
-#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-#SunFaliang@BSP.Power.Basic, 2020/05/01, add for wakelock profiler
-config OPPO_WAKELOCK_PROFILER
-bool "config oppo wakelock profiler"
-help
-    Select this config to enable oppo wakelock profiler
-#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
-
-#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-#NanweiDeng@BSP.Power.Basic, 2020/08/08, add for wakelock profiler
-config OPPO_POWER_QCOM
-bool "QCOM Config"
-help
-    Select this config to enable oppo wakelock profiler
-#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
-
-#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-#WuWeiZhong@BSP.Power.Basic, 2020/06/12, add for wakelock profiler
-config OPPO_POWER_MTK
-bool "MTK Config"
-help
-    Select this config to enable oppo wakelock profiler
-#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
-#code deprecated ... end (Todo : delete this code section)
-
-
-
 #ifdef OPLUS_FEATURE_POWERINFO_STANDBY
 #SunFaliang@BSP.Power.Basic, 2020/05/01, add for wakelock profiler
 config OPLUS_WAKELOCK_PROFILER

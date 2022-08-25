@@ -90,6 +90,10 @@
 #define PLATFORM_BLAIR "blair"
 #define PLATFORM_BENGAL "bengal"
 
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
+#define CONFIG_OPLUS_WAKELOCK_PROFILER 1
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
+
 struct ws_desc_t {
 	int prop;
 	/* abstract irq name */

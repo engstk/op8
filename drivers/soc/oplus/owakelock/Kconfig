@@ -1,0 +1,72 @@
+#code deprecated ... start (Todo : delete this code section)
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
+#SunFaliang@BSP.Power.Basic, 2020/05/01, add for wakelock profiler
+config OPPO_WAKELOCK_PROFILER
+bool "config oppo wakelock profiler"
+help
+    Select this config to enable oppo wakelock profiler
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
+
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
+#NanweiDeng@BSP.Power.Basic, 2020/08/08, add for wakelock profiler
+config OPPO_POWER_QCOM
+bool "QCOM Config"
+help
+    Select this config to enable oppo wakelock profiler
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
+
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
+#WuWeiZhong@BSP.Power.Basic, 2020/06/12, add for wakelock profiler
+config OPPO_POWER_MTK
+bool "MTK Config"
+help
+    Select this config to enable oppo wakelock profiler
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
+#code deprecated ... end (Todo : delete this code section)
+
+
+
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
+#SunFaliang@BSP.Power.Basic, 2020/05/01, add for wakelock profiler
+config OPLUS_WAKELOCK_PROFILER
+bool "config wakelock profiler"
+help
+    Select this config to enable wakelock profiler
+
+config OPLUS_POWER_QCOM
+bool "QCOM Config"
+help
+    Select this config to enable wakelock profiler
+
+config OPLUS_POWER_MTK
+bool "MTK Config"
+help
+    Select this config to enable wakelock profiler
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
+
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY_DEBUG
+#yunqingzeng@BSP.Power.Basic, 2020/09/19, add for powerinfo standby debug
+config OPLUS_POWERINFO_STANDBY_DEBUG
+bool "powerinfo standby config"
+default n
+help
+    Select this config to enable powerinfo standby debug
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY_DEBUG */
+
+#ifdef OPLUS_FEATURE_POWERINFO_RPMH
+#yunqingzeng@BSP.Power.Basic, 2020/09/19, add for powerinfo rpmh
+config OPLUS_POWERINFO_RPMH
+bool "powerinfo rpmh config"
+default n
+help
+    Select this config to enable powerinfo rpmh
+#endif /* OPLUS_FEATURE_POWERINFO_RPMH */
+
+#ifdef OPLUS_FEATURE_POWERINFO_FTM
+#yunqingzeng@BSP.Power.Basic, 2020/09/19, add for powerinfo ftm
+config OPLUS_POWERINFO_FTM
+bool "powerinfo ftm config"
+default n
+help
+    Select this config to enable powerinfo ftm
+#endif /* OPLUS_FEATURE_POWERINFO_FTM */

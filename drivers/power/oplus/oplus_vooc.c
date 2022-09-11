@@ -85,7 +85,7 @@ bool oplus_vooc_get_fw_update_status(void)
 		return g_vooc_chip->mcu_update_ing;
 	}
 }
-void oplus_vooc_battery_update()
+void oplus_vooc_battery_update(void)
 {
 	struct oplus_vooc_chip *chip = g_vooc_chip;
 
@@ -2266,7 +2266,7 @@ void oplus_vooc_set_fastchg_to_warm_full_false(void)
 	}
 }
 
-bool oplus_vooc_get_fastchg_low_temp_full()
+bool oplus_vooc_get_fastchg_low_temp_full(void)
 {
 	if (!g_vooc_chip) {
 		return false;

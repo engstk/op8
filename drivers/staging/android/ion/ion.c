@@ -1076,7 +1076,7 @@ static const struct dma_buf_ops dma_buf_ops = {
 pid_t alloc_svc_tgid;
 
 /* TODO use task comm may not safe. */
-inline is_allocator_svc(struct task_struct *tsk)
+inline bool is_allocator_svc(struct task_struct *tsk)
 {
 	return (tsk->tgid == alloc_svc_tgid);
 }

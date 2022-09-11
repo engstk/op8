@@ -23,7 +23,7 @@ extern int cpu_idle_pc_state[NR_CPUS];
 unsigned int smp_call_any_cpu;
 unsigned long smp_call_many_cpumask;
 int recovery_tried;
-static oplus_print_utc_cnt = 0;
+static int oplus_print_utc_cnt = 0;
 
 static const char *recoverable_procs[] = {"SearchDaemon", "libsu.so", "NotificationObs"};
 
@@ -154,7 +154,7 @@ static void print_top10_irqs(void)
 		irqno_sort[8], o_irq_counter.irqs_delta[irqno_sort[8]], irqno_sort[9], o_irq_counter.irqs_delta[irqno_sort[9]], o_irq_counter.all_irqs_delta);
 }
 
-void dump_cpu_online_mask()
+void dump_cpu_online_mask(void)
 {
 	static char alive_mask_buf[MASK_SIZE];
 	struct cpumask avail_mask;
@@ -179,7 +179,7 @@ void get_cpu_ping_mask(cpumask_t *pmask)
 		*cpumask_bits(&avail_mask), *cpumask_bits(pmask), o_irq_counter.all_irqs_delta);
 }
 
-void print_smp_call_cpu()
+void print_smp_call_cpu(void)
 {
 	printk(KERN_INFO "cpu of last smp_call_function_any: %d\n",
 		smp_call_any_cpu);
@@ -243,7 +243,7 @@ int try_to_recover_pending(struct task_struct *w_task)
 	return 0;
 }
 
-void reset_recovery_tried()
+void reset_recovery_tried(void)
 {
 	recovery_tried = 0;
 }

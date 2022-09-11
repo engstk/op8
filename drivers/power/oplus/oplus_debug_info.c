@@ -1943,7 +1943,7 @@ static int oplus_chg_soc_notified_flag_is_set(int flag)
 
 static int oplus_chg_chg_batt_capacity_jump_check(struct oplus_chg_chip *chip)
 {
-	static ui_to_soc_jump_flag = false;
+	static bool ui_to_soc_jump_flag = false;
 
 	union power_supply_propval pval = {0, };
 	int status;
@@ -2058,7 +2058,7 @@ static int oplus_chg_chg_batt_capacity_jump_check(struct oplus_chg_chip *chip)
 }
 
 static int oplus_chg_mcu_update_check(struct oplus_chg_chip *chip) {
-	static flag = false;
+	static bool flag = false;
 
 	if((charger_abnormal_log == CRITICAL_LOG_VOOC_FW_UPDATE_ERR && flag == false)
 		|| (mcu_update_flag == 1 && (chg_check_point_debug&OPEN_LOG_BIT))){
@@ -2122,7 +2122,7 @@ void oplus_chg_vooc_mcu_error( int error ) {
 }
 
 /*add for wireless chg*/
-static void oplus_chg_wireless_udpate_param()
+static void oplus_chg_wireless_udpate_param(void)
 {
 	struct oplus_wpc_chip *wpc_chip = NULL;
 	oplus_get_wpc_chip_handle(&wpc_chip);

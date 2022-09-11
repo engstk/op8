@@ -221,7 +221,7 @@ static void remove_he_ie_from_probe_request_stub(int remove) {
 	debug("remove_he_ie_from_probe_request_stub");
 }
 
-static int get_dbs_capacity_stub() {
+static int get_dbs_capacity_stub(void) {
 	debug("get_dbs_capacity_stub");
 	return 0;
 }

@@ -122,7 +122,7 @@ static int get_status(void)
 #endif
 }
 
-static bool get_log_swich()
+static bool get_log_swich(void)
 {
     return  (BRIGHT_STATUS_CHECK_ENABLE == get_status()||BRIGHT_STATUS_CHECK_DEBUG == get_status())&& g_bright_data.get_log;
 }
@@ -154,7 +154,7 @@ static void dump_freeze_log(void)
     send_bright_screen_dcs_msg();
 }
 
-static bool is_bright_last_stage_skip()
+static bool is_bright_last_stage_skip(void)
 {
 	int i = 0, nLen;
 	char stage[64] = {0};;
@@ -175,7 +175,7 @@ static bool is_bright_last_stage_skip()
 	return false;
 }
 
-static bool is_bright_contain_skip_stage()
+static bool is_bright_contain_skip_stage(void)
 {
 	char stages[512] = {0};
 	int i = 0, nArrayLen;
@@ -192,7 +192,7 @@ static bool is_bright_contain_skip_stage()
 	return false;
 }
 
-static bool is_need_skip()
+static bool is_need_skip(void)
 {
 	if (is_bright_last_stage_skip()) {
 		return true;
@@ -206,7 +206,7 @@ static bool is_need_skip()
 }
 
 //if the error id contain current pid, we think is a normal resume
-static bool is_normal_resume()
+static bool is_normal_resume(void)
 {
 	char current_pid_str[32];
 	sprintf(current_pid_str, "%d", get_systemserver_pid());

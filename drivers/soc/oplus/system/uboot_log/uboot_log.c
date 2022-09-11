@@ -59,7 +59,7 @@ static u32 	uboot_log_buf_len;
 /*
  * init uboot/kboot log buffer addr/size
  */
-static int uboot_kboot_buffer_init()
+static int uboot_kboot_buffer_init(void)
 {
 	struct reserved_mem *r_mem = NULL;
 	struct device_node *reserved_memory, *kboot_uboot_logmemory;
@@ -167,7 +167,7 @@ const struct file_operations kboot_fops = {
 /*
  * Dont printk any log int this thread
  */
-static int ubootback_thread_fn()
+static int ubootback_thread_fn(void *)
 {
 	size_t line_len = 0;
 	u32 idx =0;
@@ -191,7 +191,7 @@ static int ubootback_thread_fn()
 	return 0;
 }
 
-static int __init kernel_uboot_log_init()
+static int __init kernel_uboot_log_init(void)
 {
 	struct proc_dir_entry *pEntry = NULL;
 

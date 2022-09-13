@@ -1290,8 +1290,8 @@
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply_samsung>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,mdss-dsi-bl-min-level = <1>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
-	qcom,mdss-brightness-max-level = <4095>;
+	qcom,mdss-dsi-bl-max-level = <2047>;
+	qcom,mdss-brightness-max-level = <2047>;
 	qcom,mdss-dsi-bl-normal-max-level = <2047>;
 	qcom,mdss-brightness-normal-max-level = <2047>;
 	qcom,mdss-brightness-default-level = <320>;

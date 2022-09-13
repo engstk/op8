@@ -677,9 +677,9 @@
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-normal-max-level = <2047>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-dsi-bl-max-level = <2047>;
 	qcom,mdss-brightness-normal-max-level = <2047>;
-	qcom,mdss-brightness-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <2047>;
 	qcom,mdss-brightness-default-level = <360>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 	qcom,platform-reset-gpio =  <&tlmm 75 0>;

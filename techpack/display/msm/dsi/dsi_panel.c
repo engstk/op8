@@ -85,6 +85,9 @@ __attribute__((weak)) int tp_control_cs_gpio(bool enable) {return 0;}
 static int tp_black_power_on_ff_flag = 0;
 static int tp_cs_flag = 0;
 
+int backlight_max = 2047;
+module_param(backlight_max, int, 0644);
+
 static int mdss_tp_black_gesture_status(void){
 	int ret = 0;
 	/*default disable tp gesture*/
@@ -3344,7 +3347,7 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 			 panel->name);
 		panel->bl_config.bl_max_level = MAX_BL_LEVEL;
 	} else {
-		panel->bl_config.bl_max_level = val;
+		panel->bl_config.bl_max_level = backlight_max;
 	}
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-brightness-max-level",
@@ -3354,7 +3357,7 @@ static int dsi_panel_parse_bl_config(struct dsi_panel *panel)
 			 panel->name);
 		panel->bl_config.brightness_max_level = 255;
 	} else {
-		panel->bl_config.brightness_max_level = val;
+		panel->bl_config.brightness_max_level = backlight_max;
 	}
 
 	rc = utils->read_u32(utils->data, "qcom,mdss-dsi-bl-ctrl-dcs-subtype",

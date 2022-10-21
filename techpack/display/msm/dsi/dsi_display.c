@@ -332,7 +332,7 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 
 	/* scale backlight */
 	bl_scale = panel->bl_config.bl_scale;
-	bl_temp = bl_lvl * bl_scale / min(max(0, backlight_scale), 2048);
+	bl_temp = bl_lvl * bl_scale / min(max(0, backlight_scale), 2047);
 
 #ifdef OPLUS_BUG_STABILITY
 	if (panel->oplus_priv.is_raw_backlight)

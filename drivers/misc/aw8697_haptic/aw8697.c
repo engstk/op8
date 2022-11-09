@@ -8555,22 +8555,6 @@ static ssize_t aw8697_vmax_store(struct device *dev,
         aw8697->gain = AW8697_HAPTIC_RAM_VBAT_COMP_GAIN;
     }
 
-#ifdef CONFIG_OPLUS_HAPTIC_OOS
-	if (val == 100 || val == 101 || val == 102 || val == 105) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x50;
-	} else if (val == 103 || val == 106) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x60;
-	} else if (val == 104 || val == 107) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x70;
-	} else if (val == 108 || val == 109) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x80;
-	}
-#endif
-
     aw8697_haptic_set_gain(aw8697, aw8697->gain);
     aw8697_haptic_set_bst_vol(aw8697, aw8697->vmax);
 #else

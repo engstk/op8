@@ -448,7 +448,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-unsequenced -Wno-void-pointer-to-int-cast -Wno-unused-variable -Wno-pointer-to-int-cast -Wno-pointer-to-enum-cast \
 		   -Wno-fortify-source -Wno-strlcpy-strlcat-size -Wno-align-mismatch -Wno-unused-but-set-variable \
 		   -Wno-unused-result -Wno-deprecated -Wno-deprecated-declarations -Wformat=0 \
-		   -Wno-enum-conversion -Wno-vla-extension -Wno-c2x-extensions
+		   -Wno-enum-conversion -Wno-vla-extension -Wno-c2x-extensions -Wno-void-ptr-dereference
 
 >>>>>>> 57c30d671 (makefile: add initial build changes)
 KBUILD_CPPFLAGS := -D__KERNEL__

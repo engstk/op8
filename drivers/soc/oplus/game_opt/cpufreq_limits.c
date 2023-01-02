@@ -241,7 +241,7 @@ static struct notifier_block game_stat_cpufreq_nb = {
 	.notifier_call = game_stat_adjust_notify,
 };
 
-int cpufreq_limits_init()
+int cpufreq_limits_init(void)
 {
 	unsigned int cpu;
 

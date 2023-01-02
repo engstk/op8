@@ -990,7 +990,6 @@ int __init create_kmalloc_debug(struct proc_dir_entry *parent)
 #endif
 	return 0;
 }
-EXPORT_SYMBOL(create_kmalloc_debug);
 #endif
 
 #if defined(CONFIG_MEMLEAK_DETECT_THREAD) && defined(CONFIG_SVELTE)

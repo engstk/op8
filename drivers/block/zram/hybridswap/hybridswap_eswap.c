@@ -541,7 +541,7 @@ ssize_t hybridswap_report_show(struct device *dev,
 	return hybridswap_fail_record_show(buf);
 }
 
-static inline meminfo_show(struct hybstatus *stat, char *buf, ssize_t len)
+static inline ssize_t meminfo_show(struct hybstatus *stat, char *buf, ssize_t len)
 {
 	unsigned long eswap_total_pages = 0, eswap_compressed_pages = 0;
 	unsigned long eswap_used_pages = 0;

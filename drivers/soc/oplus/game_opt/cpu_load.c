@@ -250,7 +250,7 @@ static const struct file_operations cpu_load_proc_ops = {
 	.release	= single_release,
 };
 
-int cpu_load_init()
+int cpu_load_init(void)
 {
 	if (unlikely(!game_opt_dir))
 		return -ENOTDIR;

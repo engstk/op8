@@ -3548,6 +3548,5 @@ int __init __weak create_vmalloc_debug(struct proc_dir_entry *parent)
 	pr_warn("OPLUS_FEATURE_MEMLEAK_DETECT is off.\n");
 	return 0;
 }
-EXPORT_SYMBOL(create_vmalloc_debug);
 #endif
 #endif

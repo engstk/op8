@@ -429,7 +429,7 @@ static const struct file_operations rt_num_proc_ops = {
 	.release	= single_release,
 };
 
-int rt_info_init()
+int rt_info_init(void)
 {
 	if (unlikely(!game_opt_dir))
 		return -ENOTDIR;

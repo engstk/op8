@@ -54,7 +54,10 @@ int gt1x_init_tool_node(struct touchpanel_data *ts, struct fw_update_info *updat
     struct proc_dir_entry *gt1x_tool_proc_entry;
     struct Goodix_tool_info *gt_tool_info;
     gt_tool_info = kzalloc(sizeof(struct Goodix_tool_info), GFP_KERNEL);
-
+	 if (NULL == gt_tool_info) {
+		 TPD_INFO("Apply for memory gt_tool_info failed.");
+		goto OUT3;
+	}
     gt_tool_info->is_suspended = &ts->is_suspended;
     gt_tool_info->esd_handle_support = ts->esd_handle_support;
     gt_tool_info->esd_info = &ts->esd_info;
@@ -83,14 +86,11 @@ int gt1x_init_tool_node(struct touchpanel_data *ts, struct fw_update_info *updat
     return 0;
 
 OUT1:
-    if (gt_tool_info->cmd_head.data) {
-        kfree(gt_tool_info->cmd_head.data);
-    }
+	kfree(gt_tool_info->cmd_head.data);
 OUT2:
-    if (gt_tool_info) {
-        kfree(gt_tool_info);
-    }
-    return -1;
+	kfree(gt_tool_info);
+OUT3:
+	return -1;
 }
 
 #if 0
@@ -228,7 +228,7 @@ static ssize_t gt1x_tool_write(struct file *filp, const char __user * buff, size
         return -1;
     }
 
-    ret = copy_from_user(cmd_head, buff, CMD_HEAD_LENGTH);
+    ret = copy_from_user(cmd_head, (struct st_cmd_head __user *)buff, CMD_HEAD_LENGTH);
     if (ret) {
         TPD_INFO("copy_from_user failed.");
     }

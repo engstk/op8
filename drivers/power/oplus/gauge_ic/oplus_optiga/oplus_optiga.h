@@ -48,6 +48,7 @@ struct oplus_optiga_chip {
 	int cpu_id;
 	int key_id;
 	int data_gpio;
+	bool support_optiga_in_lk;
 	int try_count;
 	spinlock_t slock;
 	struct optiga_test_result test_result;

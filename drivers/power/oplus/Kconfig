@@ -10,54 +10,61 @@ config OPLUS_CHARGER_MTK
 	bool "OPLUS charger on MTK"
 	help
 	  Say Y here to declare charging system is on MTK
-	  
-config OPLUS_SHORT_C_BATT_CHECK
-	bool "OPLUS batt short "
-	help
-	  Say Y here to declare OPLUS batt short	  
 
-config OPLUS_STANDARD_BATTERY_CHECK_ADC
-	bool "OPLUS Official Standard Battery check by ADC"
-	help
-	  Say Y here to support Official Standard Battery check by ADC
-
-config OPLUS_SHORT_IC_CHECK
-	bool "OPLUS short ic"
-	help
-	  Say Y here to declare OPLUS batt short
-
-config OPLUS_SHORT_HW_CHECK
-	bool "OPLUS batt HW SHORT "
-	help
-	  Say Y here to declare charging system is on MTK
-
-config MTK_DISABLE_GAUGE
-	bool "OPLUS MTK disable gauge "
-	help
-	  Say Y here to include support
-
-config OPLUS_SMOOTH_SOC
-	bool "OPLUS config smooth soc "
-	help
-	  Say Y here to include smooth soc
-
-config OPLUS_SHORT_USERSPACE
-	bool "OPLUS batt userspace"
+config OPLUS_CALL_MODE_SUPPORT
+	bool "OPLUS call mode support"
 	help
 	  Say Y to include support
 
-config OPLUS_CHIP_SOC_NODE
-	bool "OPLUS chip soc node"
+config OPLUS_SMART_CHARGER_SUPPORT
+	bool "OPLUS smart charger support"
 	help
 	  Say Y to include support
 
-config OPLUS_CHARGER_WIRELESS_PEN
-        bool "OPLUS charger wireless pen"
-        help
-          Say Y to include support
-
-config OPLUS_CHARGER_OPTIGA
-	bool "OPLUS OPTIGA soc node"
+config OPLUS_RTC_DET_SUPPORT
+	bool "OPLUS RTC DET SUPPORT"
+	default n
 	help
 	  Say Y to include support
+
+config OPLUS_CHECK_CHARGERID_VOLT
+	bool "OPLUS CHECK CHARGERID VOLT"
+	default n
+	help
+	  Say Y to include support
+
+config OPLUS_SHIP_MODE_SUPPORT
+	bool "OPLUS_SHIP_MODE_SUPPORT"
+	default n
+	help
+	  Say Y to include support
+
+config OPLUS_CHG_DYNAMIC_CONFIG
+	bool "OPLUS_CHG_DYNAMIC_CONFIG"
+	default n
+	help
+	  Say Y to include support
+
+menuconfig OPLUS_CHG
+	tristate "OPLUS CHARGER KO module"
+	default n
+depends on I2C
+	select REGMAP_I2C
+	help
+	  Enables support for the oplus charging v1 framework
+
+source "drivers/power/oplus/v1/Kconfig"
+
+menuconfig OPLUS_CHG_V2
+	tristate "OPLUS charging V2 system"
+	default n
+	depends on I2C
+	select REGMAP_I2C
+	help
+	  Enables support for the oplus charging v2 framework
+
+if OPLUS_CHG_V2
+source "drivers/power/oplus/v2/Kconfig"
+endif
+
 endif #OPLUS_CHARGER

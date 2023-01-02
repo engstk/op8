@@ -472,6 +472,7 @@ struct oplus_vooc_operations oplus_pic16f_ops = {
 
 static void register_vooc_devinfo(void)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int ret = 0;
 	char *version;
 	char *manufacture;
@@ -482,6 +483,7 @@ static void register_vooc_devinfo(void)
 	if (ret) {
 		chg_err("register_vooc_devinfo fail\n");
 	}
+#endif
 }
 
 static int pic16f_driver_probe(struct i2c_client *client, const struct i2c_device_id *id)

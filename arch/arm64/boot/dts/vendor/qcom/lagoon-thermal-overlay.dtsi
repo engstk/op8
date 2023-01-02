@@ -77,7 +77,7 @@
 	};
 
 	soc {
-		thermal_soc_cooling_maps:cooling-maps {
+		cooling-maps {
 			soc_cpu6 {
 				trip = <&soc_trip>;
 				cooling-device = <&cpu6_isolate 1 1>;

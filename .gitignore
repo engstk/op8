@@ -136,10 +136,6 @@ all.config
 # fetched Android config fragments
 kernel/configs/android-*.cfg
 
-# ln the wakelock_profiler
-drivers/soc/oplus/owakelock
-include/soc/oplus/oplus_wakelock_profiler.h
-
 #
 #Ignoring Android.bp link file
 #

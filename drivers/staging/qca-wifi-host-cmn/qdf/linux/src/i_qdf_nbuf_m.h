@@ -77,6 +77,10 @@
 	 (((struct qdf_nbuf_cb *)((skb)->cb))->u.rx.dev.priv_cb_m. \
 	 exc_frm)
 
+#define  QDF_NBUF_CB_RX_PACKET_REO_DEST_IND(skb) \
+	(((struct qdf_nbuf_cb *)((skb)->cb))->u.rx.dev.priv_cb_m. \
+	reo_dest_ind)
+
 #define  QDF_NBUF_CB_RX_PACKET_IPA_SMMU_MAP(skb) \
 	 (((struct qdf_nbuf_cb *)((skb)->cb))->u.rx.dev.priv_cb_m. \
 	 ipa_smmu_map)

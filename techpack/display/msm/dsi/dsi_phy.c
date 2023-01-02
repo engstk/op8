@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/of_device.h>
@@ -880,8 +881,8 @@ int dsi_phy_enable(struct msm_dsi_phy *phy,
 
 	memcpy(&phy->mode, &config->video_timing, sizeof(phy->mode));
 	memcpy(&phy->cfg.lane_map, &config->lane_map, sizeof(config->lane_map));
-	phy->data_lanes = config->common_config.data_lanes;
 	phy->dst_format = config->common_config.dst_format;
+	phy->cfg.data_lanes = config->common_config.data_lanes;
 	phy->cfg.pll_source = pll_source;
 	phy->cfg.bit_clk_rate_hz = config->bit_clk_rate_hz;
 
@@ -1101,33 +1102,6 @@ int dsi_phy_set_timing_params(struct msm_dsi_phy *phy,
 
 	if (phy->hw.ops.commit_phy_timing && commit)
 		phy->hw.ops.commit_phy_timing(&phy->hw, &phy->cfg.timing);
-
-	mutex_unlock(&phy->phy_lock);
-	return rc;
-}
-
-/* TODO: Deduplicate this ASAP */
-int dsi_phy_set_timing_params_commit(struct msm_dsi_phy *phy,
-				     u32 *timing, u32 size)
-{
-	int rc = 0;
-
-	if (!phy || !timing || !size) {
-		pr_err("Invalid params\n");
-		return -EINVAL;
-	};
-
-	mutex_lock(&phy->phy_lock);
-
-	if (phy->hw.ops.phy_timing_val)
-		rc = phy->hw.ops.phy_timing_val(&phy->cfg.timing, timing, size);
-	if (!rc)
-		phy->cfg.is_phy_timing_present = true;
-
-	if (phy->hw.ops.commit_phy_timing)
-		phy->hw.ops.commit_phy_timing(&phy->hw, &phy->cfg.timing);
-	else
-		pr_warn("WARNING: No function to commit PHY timing!!\n");
 
 	mutex_unlock(&phy->phy_lock);
 	return rc;

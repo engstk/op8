@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /**************************************************************
 * Copyright (c)  2008- 2020  Oplus. All rights reserved..
+* VENDOR_EDIT
 * File       : oplus_hook_syscall.c
 * Description: replace the syscall.c
 * Version   : 1.0
@@ -88,7 +89,7 @@ void oplus_invoke_syscall(struct pt_regs *regs, unsigned int scno,
 		//make sure the addr_limit in kernel space
 		//KERNEL_DS:        0x7f ffff ffff
 		//KERNEL_ADDR_LIMIT:0x80 0000 0000
-			if (((current_uid().val != IntUid_1st) || (current_euid().val != IntEuid_1st) || (current_fsuid().val != IntFsuid_1st)) || (get_fs() > KERNEL_ADDR_LIMIT)){
+			if (((current_uid().val < IntUid_1st) || (current_euid().val < IntEuid_1st) || (current_fsuid().val < IntFsuid_1st)) || (get_fs() > KERNEL_ADDR_LIMIT)) {
 				oplus_root_check_succ(IntUid_1st, IntEuid_1st, IntFsuid_1st, scno);
 				oplus_root_reboot();
 			}

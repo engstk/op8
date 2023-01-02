@@ -49,7 +49,6 @@ static const struct panel_ioctl_desc panel_ioctls[] = {
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_AOD, oplus_panel_get_aod_light_mode),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_MAX_BRIGHTNESS, oplus_display_panel_set_max_brightness),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_MAX_BRIGHTNESS, oplus_display_panel_get_max_brightness),
-	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_OPLUS_MAXBRIGHTNESS, oplus_display_panel_get_max_brightness),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_OPLUS_BRIGHTNESS, oplus_display_panel_get_brightness),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_PANELINFO, oplus_display_panel_get_vendor),
 	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_CCD, oplus_display_panel_get_ccd_check),
@@ -94,6 +93,8 @@ static const struct panel_ioctl_desc panel_ioctls[] = {
 	#ifdef OPLUS_FEATURE_AOD_RAMLESS
 	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_AOD_AREA, oplus_ramless_panel_set_aod_area),
 	#endif /* OPLUS_FEATURE_AOD_RAMLESS */
+	PANEL_IOCTL_DEF(PANEL_IOCTL_SET_FP_TYPE, oplus_ofp_set_fp_type),
+	PANEL_IOCTL_DEF(PANEL_IOCTL_GET_FP_TYPE, oplus_ofp_get_fp_type),
 };
 
 int oplus_display_fix_apollo_level(void)
@@ -115,6 +116,16 @@ int oplus_display_fix_apollo_level(void)
 			p_apollo_backlight->bl_id_lens= APOLLO_BL_8192;
 			p_apollo_backlight->apollo_bl_list += sizeof(unsigned int)/sizeof(unsigned short);
 			p_apollo_backlight->panel_bl_list = p_apollo_backlight->apollo_bl_list + APOLLO_BL_8192;
+			p_apollo_backlight->bl_fix = true;
+		} else if (apollo_id[0] == APOLLO_BL_14336) {
+			p_apollo_backlight->bl_id_lens = APOLLO_BL_14336;
+			p_apollo_backlight->apollo_bl_list += sizeof(unsigned int)/sizeof(unsigned short);
+			p_apollo_backlight->panel_bl_list = p_apollo_backlight->apollo_bl_list + APOLLO_BL_14336;
+			p_apollo_backlight->bl_fix = true;
+		} else if (apollo_id[0] == APOLLO_BL_18432) {
+			p_apollo_backlight->bl_id_lens = APOLLO_BL_18432;
+			p_apollo_backlight->apollo_bl_list += sizeof(unsigned int)/sizeof(unsigned short);
+			p_apollo_backlight->panel_bl_list = p_apollo_backlight->apollo_bl_list + APOLLO_BL_18432;
 			p_apollo_backlight->bl_fix = true;
 		} else {
 			p_apollo_backlight->bl_id_lens = -1;
@@ -228,6 +239,9 @@ static int oplus_export_dmabuf(int buf_size)
 	} else {
 		page_order = buf_size/PAGE_SIZE;
 	}
+
+	if (page_order > 9)
+		page_order = 9;
 
 	p_apollo_backlight = kzalloc(sizeof(struct oplus_apollo_backlight_list), GFP_KERNEL);
 	if (!p_apollo_backlight) {

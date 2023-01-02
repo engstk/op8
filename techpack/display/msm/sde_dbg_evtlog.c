@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"sde_dbg:[%s] " fmt, __func__
@@ -103,27 +104,22 @@ exit:
 
 void sde_reglog_log(u8 blk_id, u32 val, u32 addr)
 {
-	unsigned long flags;
 	struct sde_dbg_reglog_log *log;
 	struct sde_dbg_reglog *reglog = sde_dbg_base_reglog;
+	int index;
 
 	if (!reglog)
 		return;
 
-	spin_lock_irqsave(&reglog->spin_lock, flags);
+	index = abs(atomic64_inc_return(&reglog->curr) % SDE_REGLOG_ENTRY);
 
-	log = &reglog->logs[reglog->curr];
-
+	log = &reglog->logs[index];
 	log->blk_id = blk_id;
 	log->val = val;
 	log->addr = addr;
 	log->time = local_clock();
 	log->pid = current->pid;
-
-	reglog->curr = (reglog->curr + 1) % SDE_REGLOG_ENTRY;
 	reglog->last++;
-
-	spin_unlock_irqrestore(&reglog->spin_lock, flags);
 }
 
 /* always dump the last entries which are not dumped yet */
@@ -224,7 +220,7 @@ struct sde_dbg_evtlog *sde_evtlog_init(void)
 {
 	struct sde_dbg_evtlog *evtlog;
 
-	evtlog = kzalloc(sizeof(*evtlog), GFP_KERNEL);
+	evtlog = vzalloc(sizeof(*evtlog));
 	if (!evtlog)
 		return ERR_PTR(-ENOMEM);
 
@@ -240,11 +236,11 @@ struct sde_dbg_reglog *sde_reglog_init(void)
 {
 	struct sde_dbg_reglog *reglog;
 
-	reglog = kzalloc(sizeof(*reglog), GFP_KERNEL);
+	reglog = vzalloc(sizeof(*reglog));
 	if (!reglog)
 		return ERR_PTR(-ENOMEM);
 
-	spin_lock_init(&reglog->spin_lock);
+	atomic64_set(&reglog->curr, 0);
 
 	return reglog;
 }
@@ -348,7 +344,7 @@ void sde_evtlog_destroy(struct sde_dbg_evtlog *evtlog)
 		list_del(&filter_node->list);
 		kfree(filter_node);
 	}
-	kfree(evtlog);
+	vfree(evtlog);
 }
 
 void sde_reglog_destroy(struct sde_dbg_reglog *reglog)
@@ -356,5 +352,5 @@ void sde_reglog_destroy(struct sde_dbg_reglog *reglog)
 	if (!reglog)
 		return;
 
-	kfree(reglog);
+	vfree(reglog);
 }

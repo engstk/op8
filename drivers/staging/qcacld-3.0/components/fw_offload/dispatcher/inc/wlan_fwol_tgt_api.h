@@ -23,6 +23,7 @@
 #define _WLAN_FWOL_TGT_API_H
 
 #include "wlan_fwol_public_structs.h"
+
 #define FWOL_WILDCARD_PDEV_ID   0
 
 /**

@@ -9,8 +9,25 @@ config OPLUS_FEATURE_SCHED_SPREAD
 	help
 	  This is the uifirst 5.0 feature, which will spread tasks,
 	  kick runnable time from task demand and adjust bg's time slice.
+config OPLUS_UX_IM_FLAG
+	bool "config ux im_flag"
+	default n
+	help
+	  export im_flag proc node for mark thread.
+config OPLUS_RELEASE_BUFFER_CALLBACK_UX
+	bool "config launcher async release buffer callback ux"
+	default n
+	help
+	  the binder thread of launcher which response async release buffer
+	  callback from sf is set to UX from ONCE_UX.
 config OPLUS_FEATURE_AUDIO_OPT
 	bool "config audio opt"
 	default n
 	help
 	  audio task schedule opt.
+config OPLUS_CRTC_COMMIT_MUTEX_OPT
+	bool "config crtc_commit mutex opt"
+	default n
+	help
+	  crtc_commit thread and CFS thread frequently compete for mutex
+	  lock optimization.

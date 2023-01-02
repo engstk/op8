@@ -118,21 +118,21 @@ static int oplus_nfc_probe(struct platform_device *pdev)
 	//project contains letters is big then 0x10000 == 65536
 	if (project > 0x10000)
 	{
-		sprintf(prop_name, "chipset-%X", project);
+		snprintf(prop_name, sizeof(prop_name), "chipset-%X", project);
 	} else
 	{
-		sprintf(prop_name, "chipset-%d", project);
+		snprintf(prop_name, sizeof(prop_name), "chipset-%u", project);
 	}
 	pr_err("%s, prop to be read = %s", __func__, prop_name);
 	np = dev->of_node;
 
 	if (of_property_read_string(dev->of_node, prop_name, &chipset_node))
 	{
-		sprintf(current_chipset, "NULL");
+		snprintf(current_chipset, sizeof(current_chipset), "NULL");
 	} else
 	{
 		pr_err("%s, get chipset_node content = %s", __func__, chipset_node);
-		strcpy(current_chipset, chipset_node);
+		strncpy(current_chipset, chipset_node, sizeof(current_chipset));
 		support_nfc = true;
 	}
 

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -530,8 +531,7 @@ static bool def_msg_decision(struct mac_context *mac_ctx,
 	if (mac_ctx->lim.gLimSmeState == eLIM_SME_OFFLINE_STATE) {
 		/* Defer processing this message */
 		if (lim_defer_msg(mac_ctx, lim_msg) != TX_SUCCESS) {
-			QDF_TRACE(QDF_MODULE_ID_PE, LOGE,
-					FL("Unable to Defer Msg"));
+			pe_err_rl("Unable to Defer Msg");
 			lim_log_session_states(mac_ctx);
 			lim_handle_defer_msg_error(mac_ctx, lim_msg);
 		}
@@ -1018,7 +1018,8 @@ uint32_t lim_defer_msg(struct mac_context *mac, struct scheduler_msg *pMsg)
 			(mac, NO_SESSION,
 			LIM_TRACE_MAKE_RXMSG(pMsg->type, LIM_MSG_DEFERRED)));
 	} else {
-		pe_err("Dropped lim message (0x%X) Message %s", pMsg->type, lim_msg_str(pMsg->type));
+		pe_err_rl("Dropped lim message (0x%X) Message %s", pMsg->type,
+			  lim_msg_str(pMsg->type));
 		MTRACE(mac_trace_msg_rx
 			(mac, NO_SESSION,
 			LIM_TRACE_MAKE_RXMSG(pMsg->type, LIM_MSG_DROPPED)));
@@ -2135,6 +2136,9 @@ static void lim_process_messages(struct mac_context *mac_ctx,
 		msg->bodyptr = NULL;
 		break;
 	case SIR_LIM_PROCESS_DEFERRED_QUEUE:
+		break;
+	case eWNI_SME_ABORT_CONN_TIMER:
+		lim_deactivate_timers_for_vdev(mac_ctx, msg->bodyval);
 		break;
 	default:
 		qdf_mem_free((void *)msg->bodyptr);

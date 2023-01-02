@@ -388,6 +388,8 @@ enum dsi_cmd_set_type {
 	DSI_GAMMA_LOWBL_COMMAND,
 /* add for optimizing the display effect under low backlight brightness */
 	DSI_CMD_DIMMING_GAMMA,
+	DSI_CMD_SET_FPS60,
+	DSI_CMD_SET_FPS120,
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
 	DSI_CMD_SET_ABYP,
 #endif
@@ -647,7 +649,6 @@ struct dsi_video_engine_cfg {
 	bool hsa_lp11_en;
 	bool eof_bllp_lp11_en;
 	bool bllp_lp11_en;
-	bool splash_dms;
 	enum dsi_video_traffic_mode traffic_mode;
 	u32 vc_id;
 	u32 dma_sched_line;
@@ -766,7 +767,6 @@ struct dsi_display_mode {
 #endif /*OPLUS_FEATURE_ADFR*/
 	enum dsi_op_mode panel_mode;
 	bool is_preferred;
-	bool splash_dms;
 	struct dsi_display_mode_priv_info *priv_info;
 };
 

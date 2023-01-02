@@ -210,6 +210,7 @@ void ohm_schedstats_record(int sched_type, struct task_struct *task, u64 delta_m
 
 		ktime_get_real_ts64(&ts);
 		plwr->timestamp = (u64)ts.tv_sec;
+		plwr->timestamp_ns = (u64)ts.tv_nsec;
 
 		plwr->ms = delta_ms;
 	}
@@ -442,10 +443,11 @@ do {																									\
 	int index;																							\
 																										\
 	for (index = 0; index < LWR_SIZE; index++) {														\
-		LENGTH += sprintf(BUF + LENGTH, "long wait record slot %d: %u %u %llu %u\n", index,				\
+		LENGTH += sprintf(BUF + LENGTH, "long wait record slot %d: %u %u %llu %llu %u\n", index,		\
 						SCHED_STAT->last_n_lwr[index].pid,												\
 						SCHED_STAT->last_n_lwr[index].priv,												\
 						SCHED_STAT->last_n_lwr[index].timestamp,										\
+						SCHED_STAT->last_n_lwr[index].timestamp_ns,										\
 						SCHED_STAT->last_n_lwr[index].ms);												\
 	}																									\
 }																										\

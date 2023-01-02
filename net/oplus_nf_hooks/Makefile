@@ -1,5 +1,6 @@
 #/************************************************************************************
 #** File: - Makefile
+#** VENDOR_EDIT
 #** Copyright (C), 2008-2020, OPLUS Mobile Comm Corp., Ltd
 #**
 #** Description:

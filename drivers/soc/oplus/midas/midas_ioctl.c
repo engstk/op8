@@ -7,10 +7,15 @@
 #define pr_fmt(fmt) KBUILD_MODNAME " %s: " fmt, __func__
 
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/workqueue.h>
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && defined(CONFIG_ENERGY_MODEL)
+#include <linux/energy_model.h>
+#endif
 
 #include "midas_dev.h"
 
@@ -32,6 +37,7 @@
 #define MIDAS_IOCTL_SET_TRACK_UID	MIDAS_IOR(0x2, unsigned int)
 #define MIDAS_IOCTL_REMOVE_TRACK_UID	MIDAS_IOR(0x3, unsigned int)
 #define MIDAS_IOCTL_CLEAR_TRACK_UID	MIDAS_IOR(0x4, unsigned int)
+#define MIDAS_IOCTL_GET_EM		MIDAS_IOR(0x10, struct em_data)
 
 #define SYS_UID				1000
 #define ROOT_UID			0
@@ -124,7 +130,9 @@ static void update_or_create_entry_locked(uid_t uid, struct task_struct *p, u64 
 		rcu_read_lock();
 		task = find_task_by_vpid(midas_mmap_buf.entrys[i].id[ID_TGID]);
 		rcu_read_unlock();
-		strncpy(midas_mmap_buf.entrys[i].tgid_name, task->comm, TASK_COMM_LEN);
+		if (task != NULL) {
+		    strncpy(midas_mmap_buf.entrys[i].tgid_name, task->comm, TASK_COMM_LEN);
+		}
 	}
 	/* the unit of time_in_state is ms */
 	midas_mmap_buf.entrys[i].time_in_state[state] += DIV_ROUND_CLOSEST(cputime, NSEC_PER_MSEC);
@@ -219,12 +227,47 @@ static int midas_ioctl_set_track_uid(void *kdata, void *priv_info)
 	return 0;
 }
 
+static int midas_ioctl_get_em(void *kdata, void *priv_info)
+{
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) && defined(CONFIG_ENERGY_MODEL)
+	struct em_perf_domain *em_pd = NULL;
+	struct em_data data;
+	int index = 0, i, cpu;
+
+	memset(&data, 0, sizeof(struct em_data));
+
+	for_each_possible_cpu(cpu) {
+		if ((em_pd != NULL) && cpumask_test_cpu(cpu, to_cpumask((em_pd)->cpus)))
+			continue;
+
+		em_pd = em_cpu_get(cpu);
+		if (!em_pd) {
+			pr_err("find %d em_pd failed!\n", cpu);
+			return -EINVAL;
+		}
+
+		for (i = 0; i < em_pd->nr_cap_states; i++) {
+			data.power[index] = em_pd->table[i].power;
+			index++;
+		}
+		data.cnt += em_pd->nr_cap_states;
+	}
+
+	memcpy(kdata, &data, sizeof(struct em_data));
+
+	return 0;
+#else
+	return -EINVAL;
+#endif
+}
+
 /* Ioctl table */
 static const struct midas_ioctl_desc midas_ioctls[] = {
 	MIDAS_IOCTL_DEF(MIDAS_IOCTL_GET_TIME_IN_STATE, midas_ioctl_get_time_in_state),
 	MIDAS_IOCTL_DEF(MIDAS_IOCTL_SET_TRACK_UID, midas_ioctl_set_track_uid),
 	MIDAS_IOCTL_DEF(MIDAS_IOCTL_REMOVE_TRACK_UID, midas_ioctl_remove_track_uid),
 	MIDAS_IOCTL_DEF(MIDAS_IOCTL_CLEAR_TRACK_UID, midas_ioctl_clear_track_uid),
+    MIDAS_IOCTL_DEF(MIDAS_IOCTL_GET_EM, midas_ioctl_get_em),
 };
 
 #define KDATA_SIZE 	512

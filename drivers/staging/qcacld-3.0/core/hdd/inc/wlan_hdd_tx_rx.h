@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -395,6 +396,25 @@ void hdd_reset_pktcapture_cb(uint8_t pdev_id)
 
 void hdd_send_rps_ind(struct hdd_adapter *adapter);
 void hdd_send_rps_disable_ind(struct hdd_adapter *adapter);
+
+/**
+ * hdd_adapter_set_rps() - Enable/disable RPS for mode specified
+ * @vdev_id: vdev id of adapter for which RPS needs to be enabled
+ * @enable: Set true to enable RPS in SAP mode
+ *
+ * Callback function registered with ipa
+ *
+ * Return: none
+ */
+#ifdef IPA_LAN_RX_NAPI_SUPPORT
+void hdd_adapter_set_rps(uint8_t vdev_id, bool enable);
+#else
+static inline
+void hdd_adapter_set_rps(uint8_t vdev_id, bool enable)
+{
+}
+#endif
+
 void wlan_hdd_classify_pkt(struct sk_buff *skb);
 
 #ifdef WLAN_FEATURE_DP_BUS_BANDWIDTH

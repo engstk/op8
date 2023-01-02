@@ -21,8 +21,10 @@
 #include <linux/kobject.h>
 #include <linux/platform_device.h>
 #include <asm/atomic.h>
-
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 #include <linux/xlog.h>
+#endif
 //#include <upmu_common.h>
 //#include <mt-plat/mtk_gpio.h>
 //#include <linux/irqchip/mtk-eic.h>
@@ -153,6 +155,24 @@ enum {
 	VOOC_FW_TYPE_RT5125_4500_VOOC_FFC_5V6A_7BIT_walle,
 };
 
+enum {
+	BCC_BATT_SOC_0_TO_50,
+	BCC_BATT_SOC_50_TO_75,
+	BCC_BATT_SOC_75_TO_85,
+	BCC_BATT_SOC_85_TO_90,
+	BCC_BATT_SOC_90_TO_100,
+};
+
+enum {
+	BATT_BCC_CURVE_TEMP_LITTLE_COLD,
+	BATT_BCC_CURVE_TEMP_COOL,
+	BATT_BCC_CURVE_TEMP_LITTLE_COOL,
+	BATT_BCC_CURVE_TEMP_NORMAL_LOW,
+	BATT_BCC_CURVE_TEMP_NORMAL_HIGH,
+	BATT_BCC_CURVE_TEMP_WARM,
+	BATT_BCC_CURVE_MAX,
+};
+
 extern int g_hw_version;
 extern void init_hw_version(void);
 extern int get_vooc_mcu_type(struct oplus_vooc_chip *chip);
@@ -198,9 +218,13 @@ extern void reset_fastchg_after_usbout(struct oplus_vooc_chip *chip);
 void oplus_vooc_eint_register(struct oplus_vooc_chip *chip);
 void oplus_vooc_eint_unregister(struct oplus_vooc_chip *chip);
 
-void oplus_pps_eint_register(struct oplus_vooc_chip *chip);
-void oplus_pps_eint_unregister(struct oplus_vooc_chip *chip);
-int oplus_pps_get_gpio_value(struct oplus_vooc_chip *chip);
+void oplus_vooc_set_mcu_pps_mode(struct oplus_vooc_chip *chip, bool mode);
+int oplus_vooc_get_mcu_pps_mode(struct oplus_vooc_chip *chip);
+
+int oplus_mcu_bcc_svooc_batt_curves(struct oplus_vooc_chip *chip);
+int oplus_mcu_bcc_stop_curr_dt(struct oplus_vooc_chip *chip);
+int oplus_chg_bcc_get_stop_curr(struct oplus_vooc_chip *chip);
+void oplus_vooc_bcc_curves_init(struct oplus_vooc_chip *chip);
 
 // Add for vooc batt 4.40
 void oplus_vooc_fw_type_dt(struct oplus_vooc_chip *chip);

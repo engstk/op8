@@ -828,9 +828,10 @@ sap_validate_chan(struct sap_context *sap_context,
 						mac_ctx->psoc, con_ch_freq)) &&
 			    (!wlan_reg_is_dfs_for_freq(
 					mac_ctx->pdev, con_ch_freq) ||
-                           sta_sap_scc_on_dfs_chan)) {
-                           if (is_mcc_preferred(sap_context, con_ch_freq))
-                               goto validation_done;
+			    sta_sap_scc_on_dfs_chan)) {
+				if (is_mcc_preferred(sap_context, con_ch_freq))
+					goto validation_done;
+
 				QDF_TRACE(QDF_MODULE_ID_SAP,
 					QDF_TRACE_LEVEL_DEBUG,
 					"%s: Override ch freq %d to %d due to CC Intf",
@@ -2434,7 +2435,7 @@ static QDF_STATUS sap_fsm_handle_radar_during_cac(struct sap_context *sap_ctx,
 }
 
 /**
- * sap_fsm_handle_start_failure() - handle start failure or stop during cac wait
+ * sap_fsm_handle_start_failure() - handle sap start failure
  * @sap_ctx: SAP context
  * @msg: event msg
  * @mac_handle: Opaque handle to the global MAC context
@@ -2447,13 +2448,9 @@ static QDF_STATUS sap_fsm_handle_start_failure(struct sap_context *sap_ctx,
 {
 	QDF_STATUS qdf_status = QDF_STATUS_E_FAILURE;
 
-	if (msg == eSAP_HDD_STOP_INFRA_BSS &&
-	    (QDF_IS_STATUS_SUCCESS(wlan_vdev_is_dfs_cac_wait(sap_ctx->vdev)) ||
-	     QDF_IS_STATUS_SUCCESS(
-	     wlan_vdev_is_restart_progress(sap_ctx->vdev)))) {
+	if (msg == eSAP_HDD_STOP_INFRA_BSS) {
 		/* Transition from SAP_STARTING to SAP_STOPPING */
-		QDF_TRACE(QDF_MODULE_ID_SAP, QDF_TRACE_LEVEL_INFO_HIGH,
-			  FL("In cac wait state from state %s => %s"),
+		sap_debug("SAP start is in progress, state from state %s => %s",
 			  "SAP_STARTING", "SAP_STOPPING");
 		/*
 		 * Stop the CAC timer only in following conditions
@@ -3096,6 +3093,8 @@ sapconvert_to_csr_profile(struct sap_config *config, eCsrRoamBssType bssType,
 			config->extended_rates.numRates;
 	}
 
+	profile->require_h2e = config->require_h2e;
+
 	qdf_status = ucfg_mlme_get_sap_chan_switch_rate_enabled(
 					mac_ctx->psoc,
 					&chan_switch_hostapd_rate_enabled);
@@ -3389,6 +3388,8 @@ static QDF_STATUS sap_get_freq_list(struct sap_context *sap_ctx,
 	struct acs_weight_range *range_list;
 	bool freq_present_in_list = false;
 	uint8_t i;
+	bool srd_chan_enabled;
+	enum QDF_OPMODE vdev_opmode;
 
 	mac_ctx = sap_get_mac_context();
 	if (!mac_ctx) {
@@ -3507,15 +3508,19 @@ static QDF_STATUS sap_get_freq_list(struct sap_context *sap_ctx,
 				mac_ctx->mlme_cfg->acs.np_chan_weightage);
 			freq_present_in_list = true;
 		}
-		/* Dont scan ETSI13 SRD channels if the ETSI13 SRD channels
-		 * are not enabled in master mode
-		 */
-		if (!wlan_reg_is_etsi13_srd_chan_allowed_master_mode(mac_ctx->
-								     pdev) &&
-		    wlan_reg_is_etsi13_srd_chan_for_freq(
-					mac_ctx->pdev,
-					WLAN_REG_CH_TO_FREQ(loop_count)))
+
+		vdev_opmode = wlan_vdev_mlme_get_opmode(sap_ctx->vdev);
+		wlan_mlme_get_srd_master_mode_for_vdev(mac_ctx->psoc,
+						       vdev_opmode,
+						       &srd_chan_enabled);
+
+		if (!srd_chan_enabled &&
+		    wlan_reg_is_etsi13_srd_chan_for_freq(mac_ctx->pdev,
+					WLAN_REG_CH_TO_FREQ(loop_count))) {
+			sap_debug("vdev opmode %d not allowed on SRD freq %d",
+				  vdev_opmode, WLAN_REG_CH_TO_FREQ(loop_count));
 			continue;
+		}
 
 		/* Check if the freq is present in range list */
 		for (i = 0; i < mac_ctx->mlme_cfg->acs.num_weight_range; i++) {

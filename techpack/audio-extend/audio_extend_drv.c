@@ -20,6 +20,10 @@
 
 #define AUDIO_EXTEND_DRIVER_NAME "audio-extend-drv"
 
+/*modified for tfa98xx 4PA tdm audio support*/
+extern void set_smartpa_info(int port_id_flag, int mi2s_id);
+static void (*extend_set_smartpa_info)(int port_id_flag, int mi2s_id);
+
 enum {
 	CODEC_VENDOR_NXP = 0,
 	CODEC_VENDOR_MAXIM,
@@ -87,6 +91,30 @@ static struct snd_soc_dai_link_component tfa98xx_dails[] = {
 	},
 };
 
+/*modified for tfa98xx 4PA tdm audio support*/
+static struct snd_soc_dai_link_component tfa98xx_tdm_dails[] = {
+	{
+		.name = "tfa98xx.0-0035",
+		.dai_name = "tfa98xx-aif-0-35",
+	},
+
+	{
+		.name = "tfa98xx.0-0034",
+		.dai_name = "tfa98xx-aif-0-34",
+	},
+
+	{
+		.name = "tfa98xx.0-0037",
+		.dai_name = "tfa98xx-aif-0-37",
+	},
+
+	{
+		.name = "tfa98xx.0-0036",
+		.dai_name = "tfa98xx-aif-0-36",
+	},
+};
+
+
 static int maxim_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 				  struct snd_pcm_hw_params *params)
 {
@@ -131,6 +159,7 @@ static int ak4376_audrx_init(struct snd_soc_pcm_runtime *rtd)
 static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[], struct codec_prop_info *codec_info)
 {
 	int ret = 0;
+	u32 tdm_port_id_flag = 0;
 
 	ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR], &codec_info->codec_vendor);
 	if (ret) {
@@ -183,6 +212,22 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 			__func__, codec_prop[CODEC_DAI_NAME], dev->of_node->full_name);
 		return -EINVAL;
 	}
+	/*modified for tfa98xx 4PA tdm audio support*/
+	ret = of_property_read_u32(dev->of_node, "oplus,speaker-tdm-port-id-flag", &tdm_port_id_flag);
+	if (ret) {
+		pr_err("%s: No DT match  oplus,speaker-tdm-port-id-flag\n", __func__);
+	} else {
+		pr_err("%s: oplus,speaker-tdm-port-id-flag tdm_port_id_flag = %d i2s id: %d\n",
+			__func__, tdm_port_id_flag, g_extend_pdata->spk_pa_info->i2s_id);
+		if (tdm_port_id_flag) {
+			extend_set_smartpa_info = symbol_request(set_smartpa_info);
+			if (extend_set_smartpa_info) {
+				extend_set_smartpa_info(tdm_port_id_flag, g_extend_pdata->spk_pa_info->i2s_id);
+			} else {
+				pr_err("%s: extend_set_smartpa_info is null \n", __func__);
+			}
+		}
+	}
 
 	return 0;
 }
@@ -232,6 +277,26 @@ static void extend_codec_be_dailink(struct codec_prop_info *codec_info, struct s
 				dailink[i2s_id*2].codec_dai_name = NULL;
 				dailink[i2s_id*2].codecs = tfa98xx_dails;
 				dailink[i2s_id*2].num_codecs = ARRAY_SIZE(tfa98xx_dails);
+			}
+		} else if (codec_info->dev_cnt == 4) {
+		    /*modified for tfa98xx 4PA tdm audio support*/
+			if (soc_find_component(NULL, codec_info->codec_name[0])
+				|| soc_find_component(NULL, codec_info->codec_name[1])
+				|| soc_find_component(NULL, codec_info->codec_name[2])
+				|| soc_find_component(NULL, codec_info->codec_name[3])) {
+				pr_info("%s: use %s stereo dailink replace\n", __func__, codec_info->codec_vendor);
+				for (i = 0; i < codec_info->dev_cnt; i++) {
+					tfa98xx_tdm_dails[i].name = codec_info->codec_name[i];
+					tfa98xx_tdm_dails[i].dai_name = codec_info->codec_dai_name[i];
+				}
+				pr_info("%s: tfa98xx_tdm_dails[0] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[0].name, tfa98xx_tdm_dails[0].dai_name);
+				pr_info("%s: tfa98xx_tdm_dails[1] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[1].name, tfa98xx_tdm_dails[1].dai_name);
+				pr_info("%s: tfa98xx_tdm_dails[2] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[2].name, tfa98xx_tdm_dails[2].dai_name);
+				pr_info("%s: tfa98xx_tdm_dails[3] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[3].name, tfa98xx_tdm_dails[3].dai_name);
+				dailink[i2s_id*2].codec_name = NULL;
+				dailink[i2s_id*2].codec_dai_name = NULL;
+				dailink[i2s_id*2].codecs = tfa98xx_tdm_dails;
+				dailink[i2s_id*2].num_codecs = ARRAY_SIZE(tfa98xx_tdm_dails);
 			}
 		}
 	}

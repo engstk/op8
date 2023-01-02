@@ -176,7 +176,7 @@
 /* Maximum status buffer size in bytes of interrupt URB. */
 #define UVC_MAX_STATUS_SIZE	16
 
-#define UVC_CTRL_CONTROL_TIMEOUT	500
+#define UVC_CTRL_CONTROL_TIMEOUT	5000
 #define UVC_CTRL_STREAMING_TIMEOUT	5000
 
 /* Maximum allowed number of control mappings per device */
@@ -535,9 +535,9 @@ struct uvc_streaming {
 		u32 max_payload_size;
 	} bulk;
 
-	struct urb *urb[UVC_URBS];
-	char *urb_buffer[UVC_URBS];
-	dma_addr_t urb_dma[UVC_URBS];
+	struct urb **urb;
+	char **urb_buffer;
+	dma_addr_t *urb_dma;
 	unsigned int urb_size;
 
 	u32 sequence;
@@ -570,6 +570,15 @@ struct uvc_streaming {
 
 		spinlock_t lock;
 	} clock;
+
+	/* Maximum number of URBs that can be submitted */
+	u32 max_urb;
+
+	/* Maximum number of packets per URB */
+	u32 max_urb_packets;
+
+	/*set if stream in progress */
+	u8 refcnt;
 };
 
 struct uvc_device {

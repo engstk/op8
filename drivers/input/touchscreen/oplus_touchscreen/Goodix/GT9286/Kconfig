@@ -1,0 +1,11 @@
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+
+
+config TOUCHPANEL_GOODIX_GT9286
+#   default y
+    bool "TP goodix gt9286 IC enable or not for OPLUS"
+    ---help---
+    say Y to enable driver for Touchpanel useing goodix gt9286
+
+#endif

@@ -258,7 +258,9 @@ enum country_code {
 	CTRY_JAPAN48 = 4048,
 	CTRY_JAPAN55 = 4055,
 	CTRY_JAPAN60 = 4060,
+	//#ifdef VENDOR_EDIT
 	CTRY_MYANMAR = 4061,
+	//#endif /* VENDOR_EDIT */
 	CTRY_XA = 4100,
 };
 

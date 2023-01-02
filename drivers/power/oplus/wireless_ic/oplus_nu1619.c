@@ -33,9 +33,12 @@
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
 #include <uapi/linux/qg.h>
 #endif
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
 #include <soc/oplus/system/oplus_project.h>
+#endif
 
+#include "../op_wlchg_v2/oplus_chg_wls.h"
 #include "../oplus_vooc.h"
 #include "../oplus_gauge.h"
 #include "../oplus_charger.h"
@@ -43,8 +46,9 @@
 #include "oplus_chargepump.h"
 #include "oplus_nu1619.h"
 #include "oplus_nu1619_fw.h"
-#include "../oplus_debug_info.h"
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/system/boot_mode.h>
+#endif
 
 #define DEBUG_BY_FILE_OPS
 #define DEBUG_FASTCHG_BY_ADB
@@ -87,7 +91,6 @@ static void wlchg_reset_variables(struct oplus_nu1619_ic *chip);
 static void nu1619_idt_connect_shedule_work(void);
 static void oplus_set_wls_pg_value(int value);
 static int oplus_get_wls_pg_value(void);
-static void oplus_wpc_update_chg_debug_info(struct oplus_nu1619_ic *chip);
 static int nu1619_wpc_get_online_status(void);
 static int nu1619_get_tx_vout(struct oplus_nu1619_ic *chip);
 static int nu1619_get_tx_iout(struct oplus_nu1619_ic *chip);
@@ -121,21 +124,6 @@ void __attribute__((weak)) switch_wireless_charger_state(int wireless_state) {re
 static DEFINE_MUTEX(nu1619_i2c_access);
 static DEFINE_MUTEX(gpio_lock);
 
-static struct wireless_chg_debug_info chg_debug_info = {
-	.tx_version = 0,
-	.rx_version = 0,
-	.boot_version = 0,
-	.dock_version = 0,
-	.adapter_type = 0,
-	.vout = 0,
-	.iout = 0,
-	.rx_temperature = 0,
-	.wpc_dischg_status = 0,
-	.work_silent_mode = 0,
-	.break_count = 0,
-	.fastchg_ing = false,
-	.wpc_chg_err = WPC_CHG_IC_ERR_NULL,
-};
 
 static struct wls_pwr_table oplus_chg_wls_pwr_table[] = {/*(f2_id, r_power, t_power)*/
 	{0x00, 12, 15}, {0x01, 12, 20}, {0x02, 12, 30}, {0x03, 35, 50}, {0x04, 45, 65},
@@ -180,6 +168,16 @@ static int cool_down_bpp[] = {
 	0, 500, 500, 500, 500, 500, 500,
 };
 
+static struct wpc_trx_err_reason_table trx_err_reason_table[] = {
+	{WPC_DISCHG_IC_ERR_TX_RXAC, "rxac"},
+	{WPC_DISCHG_IC_ERR_TX_OCP, "ocp"},
+	{WPC_DISCHG_IC_ERR_TX_OVP, "ovp"},
+	{WPC_DISCHG_IC_ERR_TX_LVP, "lvp"},
+	{WPC_DISCHG_IC_ERR_TX_FOD, "fod"},
+	{WPC_DISCHG_IC_ERR_TX_OTP, "otp"},
+	{WPC_DISCHG_IC_ERR_TX_CEPTIMEOUT, "ceptimeout"},
+	{WPC_DISCHG_IC_ERR_TX_RXEPT, "rxept"},
+};
 #define FASTCHG_CUR_CV	400
 #define EPP_CUR_CV		400
 #define BPP_CUR_CV		200
@@ -1032,6 +1030,9 @@ static int nu1619_increase_vout_to_target(struct oplus_nu1619_ic *chip, int vout
 static void nu1619_reset_variables(struct oplus_nu1619_ic *chip)
 {
 	chip->nu1619_chg_status.tx_online = false;
+	chip->nu1619_chg_status.trx_transfer_start_time = 0;
+	chip->nu1619_chg_status.trx_transfer_end_time = 0;
+	chip->nu1619_chg_status.trx_usb_present_once = 0;
 	chip->nu1619_chg_status.freq_threshold = 135;
 	chip->nu1619_chg_status.freq_check_count = 0;
 	chip->nu1619_chg_status.freq_thr_inc = false;
@@ -1411,9 +1412,97 @@ static int oplus_set_tx_start(void)
 	return nu1619_start_tx(nu1619_chip);
 }
 
+#define WPC_TRX_INFO_UPLOAD_THD_2MINS	(1 * 20)
+#define WPC_LOCAL_T_NS_TO_S_THD		1000000000
+#define WPC_TRX_INFO_THD_1MIN		60
+static int oplus_wpc_get_local_time_s(void)
+{
+	int local_time_s;
+
+	local_time_s = local_clock() / WPC_LOCAL_T_NS_TO_S_THD;
+	pr_info("local_time_s:%d\n", local_time_s);
+
+	return local_time_s;
+}
+
+static void oplus_wpc_update_track_info(
+	struct oplus_nu1619_ic *chip, char *crux_info)
+{
+	int index = 0;
+	struct wpc_data *chg_status;
+
+	if (!chip || !crux_info)
+		return;
+
+	chg_status = &chip->nu1619_chg_status;
+	index += snprintf(
+		&crux_info[index], OPLUS_CHG_TRACK_CURX_INFO_LEN - index,
+		"$$wls_general_info@@tx_version=%d,rx_version=%d,boot_version=%"
+		"d,adapter_type_wpc=%d,"
+		"dock_version=%d,fastchg_ing=%d,vout=%d,iout=%d,rx_temperature="
+		"%d,wpc_dischg_status=%d,break_count=%d,"
+		"wpc_chg_err=%d,highest_temp=%d,max_iout=%d,min_cool_down=%d,"
+		"min_skewing_current=%d,"
+		"wls_auth_fail=%d,work_silent_mode=%d",
+		chg_status->tx_version, chg_status->rx_version,
+		chg_status->boot_version, chg_status->adapter_type,
+		chg_status->dock_version, chg_status->fastchg_ing,
+		chg_status->vout, chg_status->iout, chg_status->rx_temperature,
+		chg_status->wpc_dischg_status, chg_status->break_count,
+		chg_status->wpc_chg_err, chg_status->highest_temp,
+		chg_status->max_iout, chg_status->min_cool_down,
+		chg_status->min_skewing_current, chg_status->wls_auth_fail,
+		chg_status->work_silent_mode);
+	pr_info("%s\n", crux_info);
+}
+
+static int nu1619_wpc_get_break_sub_crux_info(char *crux_info)
+{
+	struct oplus_nu1619_ic *chip = nu1619_chip;
+
+	if (!chip || !crux_info)
+		return -1;
+
+	oplus_wpc_update_track_info(chip, crux_info);
+
+	return 0;
+}
+
+static int oplus_wpc_track_upload_trx_general_info(struct oplus_nu1619_ic *chip,
+						   char *trx_crux_info,
+						   bool usb_present_once)
+{
+	int index = 0;
+
+	memset(chip->trx_info_load_trigger.crux_info, 0,
+	       sizeof(chip->trx_info_load_trigger.crux_info));
+	index += snprintf(&(chip->trx_info_load_trigger.crux_info[index]),
+			  OPLUS_CHG_TRACK_CURX_INFO_LEN - index,
+			  "$$total_time@@%d",
+			  (chip->nu1619_chg_status.trx_transfer_end_time -
+			   chip->nu1619_chg_status.trx_transfer_start_time) /
+				  WPC_TRX_INFO_THD_1MIN);
+
+	index += snprintf(&(chip->trx_info_load_trigger.crux_info[index]),
+			  OPLUS_CHG_TRACK_CURX_INFO_LEN - index,
+			  "$$usb_present_once@@%d", usb_present_once);
+
+	if (trx_crux_info && strlen(trx_crux_info))
+		index += snprintf(
+			&(chip->trx_info_load_trigger.crux_info[index]),
+			OPLUS_CHG_TRACK_CURX_INFO_LEN - index, "%s",
+			trx_crux_info);
+
+	schedule_delayed_work(&chip->trx_info_load_trigger_work, 0);
+	pr_info("%s\n", chip->trx_info_load_trigger.crux_info);
+
+	return 0;
+}
+
 void nu1619_set_rtx_function(bool is_on)
 {
 	struct oplus_nu1619_ic *chip = nu1619_chip;
+	char trx_crux_info[OPLUS_CHG_TRACK_CURX_INFO_LEN] = {0};
 
 	if (!g_oplus_chip || !g_oplus_chip->chg_ops) {
 		chg_err("<~WPC~> g_oplus_chip is NULL\n");
@@ -1504,8 +1593,6 @@ void nu1619_set_rtx_function(bool is_on)
 		nu1619_start_tx(chip);
 		chip->nu1619_chg_status.wpc_dischg_status = WPC_DISCHG_STATUS_ON;
 
-		//oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_START_TX, NULL);
-
 		/*cancel_delayed_work_sync(&chip->idt_dischg_work);*/
 		schedule_delayed_work(&chip->idt_dischg_work, round_jiffies_relative(msecs_to_jiffies(200)));
 	} else {
@@ -1515,8 +1602,21 @@ void nu1619_set_rtx_function(bool is_on)
 		}
 
 		chg_err(" !!!!! <~WPC~> Disable rtx function!\n");
-
-		//oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_STOP_TX, NULL);
+		chip->nu1619_chg_status.trx_transfer_end_time = oplus_wpc_get_local_time_s();
+		chg_err("trx_online=%d, start_time=%d, end_time=%d, trx_usb_present_once\n",
+			chip->nu1619_chg_status.tx_online,
+			chip->nu1619_chg_status.trx_transfer_start_time,
+			chip->nu1619_chg_status.trx_transfer_end_time,
+			chip->nu1619_chg_status.trx_usb_present_once);
+		if (chip->nu1619_chg_status.tx_online &&
+		    chip->nu1619_chg_status.trx_transfer_start_time &&
+		   (chip->nu1619_chg_status.trx_transfer_end_time - 
+		    chip->nu1619_chg_status.trx_transfer_start_time >
+		     WPC_TRX_INFO_UPLOAD_THD_2MINS)) {
+			oplus_wpc_update_track_info(chip, trx_crux_info);
+			oplus_wpc_track_upload_trx_general_info(chip,
+			    trx_crux_info, chip->nu1619_chg_status.trx_usb_present_once);
+		}
 		chip->nu1619_chg_status.vout = 0;
 		chip->nu1619_chg_status.iout = 0;
 
@@ -2088,7 +2188,6 @@ static bool nu1619_check_firmware_version(struct oplus_nu1619_ic *chip)
 	chg_err(",g_boot_no_need_update=%d, g_rx_no_need_update=%d, g_tx_no_need_update=%d \n",
 		g_boot_no_need_update, g_rx_no_need_update, g_tx_no_need_update);
 	if ((g_boot_no_need_update) && (g_rx_no_need_update) && (g_tx_no_need_update)) {
-		oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_BOOTUP, NULL);
 		return false;
 	}
 	return true;
@@ -2102,7 +2201,6 @@ static bool nu1619_check_firmware(struct oplus_nu1619_ic *chip)
 	chip->nu1619_chg_status.boot_version = boot_version;
 	chip->nu1619_chg_status.rx_version = rx_version;
 	chip->nu1619_chg_status.tx_version = tx_version;
-	oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_BOOTUP, NULL);
 
 	if ((boot_checksum == 0x66) && (rx_checksum == 0x66) && (tx_checksum == 0x66)) {
 		return true;
@@ -4519,6 +4617,26 @@ static void nu1619_charge_set_target_ichg(struct oplus_nu1619_ic *chip)
 		ffc_input_current, skewing_input_current, vbatt);
 }
 
+static int nu1619_wpc_get_skewing_current(void)
+{
+	if (!nu1619_chip) {
+		chg_err("<~WPC~> nu1619_chip is NULL\n");
+		return 0;
+	}
+
+	return nu1619_chip->nu1619_chg_status.min_skewing_current;
+}
+
+static bool nu1619_wpc_get_verity(void)
+{
+	if (!nu1619_chip) {
+		chg_err("<~WPC~> nu1619_chip is NULL\n");
+		return 0;
+	}
+
+	return !nu1619_chip->nu1619_chg_status.wls_auth_fail;
+}
+
 static void nu1619_update_debug_info(struct oplus_nu1619_ic *chip)
 {
 	chip->nu1619_chg_status.highest_temp
@@ -5028,17 +5146,19 @@ static int nu1619_charge_status_process(struct oplus_nu1619_ic *chip)
 		if (chip->nu1619_chg_status.rx_runing_mode == RX_RUNNING_MODE_EPP_15W) {
 			if ((chip->nu1619_chg_status.epp_current_limit >= chip->nu1619_chg_status.wpc_chg_param.epp_temp_warm_input_ma
 						&& oplus_chg_get_tbatt_status() == BATTERY_STATUS__WARM_TEMP)
-					|| chip->nu1619_chg_status.epp_current_limit >= chip->nu1619_chg_status.wpc_chg_param.epp_15w_input_ma)
+					|| chip->nu1619_chg_status.epp_current_limit >= chip->nu1619_chg_status.wpc_chg_param.epp_15w_input_ma) {
 				chip->nu1619_chg_status.charge_status = WPC_CHG_STATUS_EPP_WORKING;
 				power_test_iout_threshold = 1000;
 				power_test_vout_threshold = 11000;
+			}
 		} else {
 			if ((chip->nu1619_chg_status.epp_current_limit >= chip->nu1619_chg_status.wpc_chg_param.epp_temp_warm_input_ma
 						&& oplus_chg_get_tbatt_status() == BATTERY_STATUS__WARM_TEMP)
-					|| chip->nu1619_chg_status.epp_current_limit >= chip->nu1619_chg_status.wpc_chg_param.epp_input_ma)
+					|| chip->nu1619_chg_status.epp_current_limit >= chip->nu1619_chg_status.wpc_chg_param.epp_input_ma) {
 				chip->nu1619_chg_status.charge_status = WPC_CHG_STATUS_EPP_WORKING;
 				power_test_iout_threshold = 700;
 				power_test_vout_threshold = 10000;
+			}
 		}
 		if (chip->nu1619_chg_status.charge_status == WPC_CHG_STATUS_EPP_WORKING) {
 			chg_err("<~WPC~> 2 turn to WPC_CHG_STATUS_EPP_WORKING\n");
@@ -5670,12 +5790,55 @@ static int nu1619_charge_status_process(struct oplus_nu1619_ic *chip)
 	return 0;
 }
 
+static int oplus_wpc_track_match_trx_err_reason(char *reason, u8 err)
+{
+	int i;
+
+	if (!reason)
+		return -1;
+
+	for (i = 0; i < ARRAY_SIZE(trx_err_reason_table); i++) {
+		if (err == trx_err_reason_table[i].trx_err) {
+			strcpy(reason, trx_err_reason_table[i].reason);
+			break;
+		}
+	}
+
+	return 0;
+}
+
+static int oplus_wpc_track_upload_trx_err_info(
+	struct oplus_nu1619_ic *chip, char *trx_crux_info, u8 trx_err)
+{
+	int index = 0;
+	char trx_err_reason[WPC_TRX_ERR_REASON_LEN] = {0};
+
+	oplus_wpc_track_match_trx_err_reason(trx_err_reason, trx_err);
+
+	memset(chip->trx_err_load_trigger.crux_info,
+		0, sizeof(chip->trx_err_load_trigger.crux_info));
+	index += snprintf(&(chip->trx_err_load_trigger.crux_info[index]),
+			OPLUS_CHG_TRACK_CURX_INFO_LEN - index,
+			"$$err_reason@@%s",
+			trx_err_reason);
+	if (trx_crux_info && strlen(trx_crux_info))
+		index += snprintf(&(chip->trx_err_load_trigger.crux_info[index]),
+			OPLUS_CHG_TRACK_CURX_INFO_LEN - index, "%s",
+			trx_crux_info);
+
+	schedule_delayed_work(&chip->trx_err_load_trigger_work, 0);
+	pr_info("%s\n", chip->trx_err_load_trigger.crux_info);
+
+	return 0;
+}
+
 static void nu1619_idt_dischg_status(struct oplus_nu1619_ic *chip)
 {
 	char regdata[2] = {0};
 	int rc = 0;
 	int count = 20;
 	static bool pre_tx_online = false;
+	char trx_crux_info[OPLUS_CHG_TRACK_CURX_INFO_LEN] = {0};
 
 	if (atomic_read(&chip->suspended) == 1) {
 		while (count--) {
@@ -5726,7 +5889,9 @@ static void nu1619_idt_dischg_status(struct oplus_nu1619_ic *chip)
 
 			if (chip->nu1619_chg_status.wpc_dischg_status != WPC_DISCHG_IC_ERR_TX_RXEPT) {
 				chip->nu1619_chg_status.wpc_chg_err = chip->nu1619_chg_status.wpc_dischg_status;
-				oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_WIRELESS_CHG_BREAK, NULL);
+				oplus_wpc_update_track_info(chip, trx_crux_info);
+				oplus_wpc_track_upload_trx_err_info(chip, trx_crux_info,
+					chip->nu1619_chg_status.wpc_dischg_status);
 			}
 
 			nu1619_disable_tx_power();
@@ -5749,7 +5914,6 @@ static void nu1619_idt_dischg_status(struct oplus_nu1619_ic *chip)
 */
 		if (P922X_RTX_TRANSFER & regdata[0]) {
 			chip->nu1619_chg_status.tx_online = true;
-			pre_tx_online = true;
 			wpc_battery_update();
 			chg_err("<~WPC~>rtx func in discharging now, tx_online online!\n");
 		} else {
@@ -5758,6 +5922,7 @@ static void nu1619_idt_dischg_status(struct oplus_nu1619_ic *chip)
 	} else {
 		if (P922X_RTX_READY & regdata[0]) {
 			chip->nu1619_chg_status.tx_online = false;
+			pre_tx_online = false;
 			chip->nu1619_chg_status.wpc_dischg_status = WPC_DISCHG_IC_READY;
 			rc = nu1619_write_cmd_D(chip, 0x07);
 			schedule_delayed_work(&chip->idt_dischg_work, 0);
@@ -5771,13 +5936,38 @@ static void nu1619_idt_dischg_status(struct oplus_nu1619_ic *chip)
 			}
 		} else if (P922X_RTX_TRANSFER & regdata[0]) {
 			chip->nu1619_chg_status.tx_online = true;
-			pre_tx_online = true;
+			if (!chip->nu1619_chg_status.trx_usb_present_once)
+				chip->nu1619_chg_status.trx_usb_present_once =
+				oplus_get_wired_chg_present();
 			chip->nu1619_chg_status.wpc_dischg_status = WPC_DISCHG_IC_TRANSFER;
 			wpc_battery_update();
 			chg_err("<~WPC~>rtx func in discharging now!\n");
 		}
 	}
 	if (chip->nu1619_chg_status.tx_online != pre_tx_online) {
+		chg_err("pre_trx_online=%d, trx_online=%d\n",
+			pre_tx_online, chip->nu1619_chg_status.tx_online);
+		if (pre_tx_online && !chip->nu1619_chg_status.tx_online) {
+			chip->nu1619_chg_status.trx_transfer_end_time =
+				oplus_wpc_get_local_time_s();
+			chg_err("trx_start_time=%d, trx_end_time=%d,"
+				"trx_usb_present_once=%d\n",
+			chip->nu1619_chg_status.trx_transfer_start_time,
+			chip->nu1619_chg_status.trx_transfer_end_time,
+			chip->nu1619_chg_status.trx_usb_present_once);
+			if (chip->nu1619_chg_status.trx_transfer_end_time -
+			    chip->nu1619_chg_status.trx_transfer_start_time >
+				WPC_TRX_INFO_UPLOAD_THD_2MINS) {
+				oplus_wpc_update_track_info(chip, trx_crux_info);
+				oplus_wpc_track_upload_trx_general_info(chip, trx_crux_info,
+					chip->nu1619_chg_status.trx_usb_present_once);
+			}
+			chip->nu1619_chg_status.trx_usb_present_once = false;
+		} else if (!pre_tx_online && chip->nu1619_chg_status.tx_online) {
+			chip->nu1619_chg_status.trx_usb_present_once = false;
+			chip->nu1619_chg_status.trx_transfer_start_time =
+				oplus_wpc_get_local_time_s();
+		}
 		pre_tx_online = chip->nu1619_chg_status.tx_online;
 		wpc_battery_update();
 	}
@@ -5825,7 +6015,6 @@ static void nu1619_increase_boost_vol(struct oplus_nu1619_ic *chip)
 	}
 }
 
-#define WLS_RECEIVE_POWER_DEFAULT		12
 static int nu1619_get_r_power(u8 f2_data)
 {
 	int i = 0;
@@ -6334,6 +6523,8 @@ static void nu1619_idt_connect_int_func(struct work_struct *work)
 			nu1619_chip->nu1619_chg_status.charge_online = true;
 			chip->wireless_mode = WIRELESS_MODE_RX;
 
+			oplus_chg_track_check_wls_charging_break(
+				nu1619_chip->nu1619_chg_status.charge_online);
 			oplus_chg_cancel_update_work_sync();
 			cancel_delayed_work_sync(&chip->nu1619_task_work);
 			cancel_delayed_work_sync(&chip->idt_event_int_work);
@@ -6386,6 +6577,8 @@ static void nu1619_idt_connect_int_func(struct work_struct *work)
 		chg_err(" !!!!! <~WPC~>[-TEST-] wpc dock has disconnected!< < < < < < < < < < < < <\n");
 		if (nu1619_chip->nu1619_chg_status.charge_online == true) {
 			nu1619_chip->nu1619_chg_status.charge_online = false;
+			oplus_chg_track_check_wls_charging_break(
+				nu1619_chip->nu1619_chg_status.charge_online);
 			if (g_oplus_chip->charger_type == POWER_SUPPLY_TYPE_WIRELESS)
 				g_oplus_chip->charger_type = POWER_SUPPLY_TYPE_UNKNOWN;
 			chip->wireless_mode = WIRELESS_MODE_NULL;
@@ -6400,7 +6593,6 @@ static void nu1619_idt_connect_int_func(struct work_struct *work)
 			cancel_delayed_work_sync(&chip->charger_suspend_work);
 			cancel_delayed_work_sync(&chip->charger_start_work);
 			schedule_delayed_work(&chip->charger_disconnect_work, round_jiffies_relative(msecs_to_jiffies(6000)));
-			oplus_wpc_update_chg_debug_info(chip);
 
 			if (charger_suspend || atomic_read(&chip->volt_low_flag) == 1) {
 				g_oplus_chip->chg_ops->charger_unsuspend();
@@ -8066,10 +8258,18 @@ static ssize_t nu1619_reg_show(struct file *filp, char __user *buff, size_t coun
 	return (len < count ? len : count);
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations nu1619_add_log_proc_fops = {
 	.write = nu1619_reg_store,
 	.read = nu1619_reg_show,
 };
+#else
+static const struct proc_ops nu1619_add_log_proc_fops = {
+	.proc_write = nu1619_reg_store,
+	.proc_read = nu1619_reg_show,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static void init_nu1619_add_log(void)
 {
@@ -8117,9 +8317,16 @@ static ssize_t nu1619_data_log_write(struct file *filp, const char __user *buff,
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations nu1619_data_log_proc_fops = {
 	.write = nu1619_data_log_write,
 };
+#else
+static const struct proc_ops nu1619_data_log_proc_fops = {
+	.proc_write = nu1619_data_log_write,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static void init_nu1619_data_log(void)
 {
@@ -8215,6 +8422,7 @@ static void nu1619_update_work_process(struct work_struct *work)
 	struct delayed_work *dwork = to_delayed_work(work);
 	struct oplus_nu1619_ic *chip = container_of(dwork, struct oplus_nu1619_ic, nu1619_update_work);
 	int rc;
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int boot_mode = get_boot_mode();
 
 	if (boot_mode == MSM_BOOT_MODE__FACTORY || boot_mode == MSM_BOOT_MODE__RF
@@ -8222,6 +8430,7 @@ static void nu1619_update_work_process(struct work_struct *work)
 		chg_err("<IDT UPDATE> in FACTORY/RF/WLAN mode, do not update\n");
 		return;
 	}
+#endif
 	chg_err("<IDT UPDATE> nu1619_update_work_process\n");
 
 	if (!chip->nu1619_chg_status.check_fw_update) {
@@ -8298,11 +8507,9 @@ static void charger_disconnect_work_process(struct work_struct *work)
 		chip->nu1619_chg_status.break_count++;
 		chg_err("<~WPC~> wireless disconnect less than 6s, count=%d\n", chip->nu1619_chg_status.break_count);
 	} else {
-		oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_WIRELESS_CHG_END, &chg_debug_info);
 		chg_err("<~WPC~> wireless disconnect more than 6s, charging stop\n");
 		chip->nu1619_chg_status.break_count = 0;
 		nu1619_clear_debug_info(chip);
-		oplus_wpc_update_chg_debug_info(chip);
 	}
 }
 
@@ -8317,7 +8524,6 @@ static void charger_start_work_process(struct work_struct *work)
 			if (wpc_online_cnt >= 10) {
 				wpc_online_cnt = 0;
 				if (chip->nu1619_chg_status.break_count == 0) {
-					oplus_chg_wireless_error(OPLUS_NOTIFY_WIRELESS_START_CHG, NULL);
 					chg_err("<~WPC~> wireless chg start after connect 30s\n");
 				}
 			} else {
@@ -8327,25 +8533,6 @@ static void charger_start_work_process(struct work_struct *work)
 		chg_err("<~WPC~> wireless chg not online within connect 30s,cnt=%d\n", wpc_online_cnt);
 		wpc_online_cnt = 0;
 	}
-}
-
-static void oplus_wpc_update_chg_debug_info(struct oplus_nu1619_ic *chip)
-{
-	struct wpc_data *chg_status = &chip->nu1619_chg_status;
-
-	chg_debug_info.tx_version = chg_status->tx_version;
-	chg_debug_info.rx_version = chg_status->rx_version;
-	chg_debug_info.boot_version = chg_status->boot_version;
-	chg_debug_info.rx_temperature = chg_status->rx_temperature;
-	chg_debug_info.rx_temperature = chg_status->rx_temperature;
-	chg_debug_info.dock_version = chg_status->dock_version;
-	chg_debug_info.adapter_type = chg_status->adapter_type;
-	chg_debug_info.vout = chg_status->vout;
-	chg_debug_info.iout = chg_status->iout;
-	chg_debug_info.wpc_dischg_status = chg_status->wpc_dischg_status;
-	chg_debug_info.work_silent_mode = chg_status->work_silent_mode;
-	chg_debug_info.fastchg_ing = chg_status->fastchg_ing;
-	chg_debug_info.break_count = chg_status->break_count;
 }
 
 static void wlchg_reset_variables(struct oplus_nu1619_ic *chip)
@@ -8359,6 +8546,9 @@ static void wlchg_reset_variables(struct oplus_nu1619_ic *chip)
 	chg_status->fastchg_startup_step = FASTCHG_EN_CHGPUMP1_STEP;
 	chg_status->charge_online = false;
 	chg_status->tx_online = false;
+	chg_status->trx_transfer_start_time = 0;
+	chg_status->trx_transfer_end_time = 0;
+	chg_status->trx_usb_present_once = 0;
 	chg_status->tx_present = false;
 	chg_status->charge_voltage = 0;
 	chg_status->charge_current = 0;
@@ -8428,6 +8618,7 @@ static ssize_t proc_wireless_voltage_rect_write(struct file *file, const char __
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_voltage_rect_ops =
 {
 	.read = proc_wireless_voltage_rect_read,
@@ -8435,6 +8626,15 @@ static const struct file_operations proc_wireless_voltage_rect_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_voltage_rect_ops =
+{
+	.proc_read = proc_wireless_voltage_rect_read,
+	.proc_write  = proc_wireless_voltage_rect_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_current_out_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -8466,14 +8666,20 @@ static ssize_t proc_wireless_current_out_write(struct file *file, const char __u
 	char cur_string[8] = {0};
 	int cur = 0;
 	int len = count < 8 ? count : 8;
+	int rc;
 
 	if (nu1619_chip == NULL) {
 		chg_err("%s: nu1619_chip is not ready\n", __func__);
 		return -ENODEV;
 	}
 
-	copy_from_user(cur_string, buf, len);
-	kstrtoint(cur_string, 0, &cur);
+	if (copy_from_user(cur_string, buf, len)) {
+		chg_err("copy from user error\n");
+		return -EFAULT;
+	}
+	rc = kstrtoint(cur_string, 0, &cur);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("set current: cur_string = %s, cur = %d.", cur_string, cur);
 	nu1619_chip->nu1619_chg_status.iout_stated_current = cur;
 
@@ -8484,6 +8690,7 @@ static ssize_t proc_wireless_current_out_write(struct file *file, const char __u
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_current_out_ops =
 {
 	.read = proc_wireless_current_out_read,
@@ -8491,6 +8698,15 @@ static const struct file_operations proc_wireless_current_out_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_current_out_ops =
+{
+	.proc_read = proc_wireless_current_out_read,
+	.proc_write  = proc_wireless_current_out_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_ftm_mode_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -8519,6 +8735,7 @@ static ssize_t proc_wireless_ftm_mode_write(struct file *file, const char __user
 {
 	char buffer[4] = {0};
 	int ftm_mode = 0;
+	int rc;
 	struct oplus_nu1619_ic *chip = nu1619_chip;
 
 	if (chip == NULL) {
@@ -8537,7 +8754,9 @@ static ssize_t proc_wireless_ftm_mode_write(struct file *file, const char __user
 	}
 
 	chg_err("ftm mode: buffer=%s\n", buffer);
-	kstrtoint(buffer, 0, &ftm_mode);
+	rc = kstrtoint(buffer, 0, &ftm_mode);
+	if (rc != 0)
+		return -EINVAL;
 
 	if (ftm_mode == FTM_MODE_DISABLE) {
 		nu1619_enable_ftm(false);
@@ -8552,6 +8771,7 @@ static ssize_t proc_wireless_ftm_mode_write(struct file *file, const char __user
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_ftm_mode_ops =
 {
 	.read = proc_wireless_ftm_mode_read,
@@ -8559,6 +8779,15 @@ static const struct file_operations proc_wireless_ftm_mode_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_ftm_mode_ops =
+{
+	.proc_read = proc_wireless_ftm_mode_read,
+	.proc_write  = proc_wireless_ftm_mode_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_voltage_read(struct file *file,
 					     char __user *buf, size_t count,
@@ -8569,7 +8798,10 @@ static ssize_t proc_wireless_rx_voltage_read(struct file *file,
 	len = snprintf(vol_string, 8, "%d",
 		       nu1619_chip->nu1619_chg_status.charge_voltage);
 
-	copy_to_user(buf, vol_string, len);
+	if (copy_to_user(buf, vol_string, len)) {
+		chg_err("copy to user error\n");
+		return -EFAULT;
+	}
 
 	return 0;
 }
@@ -8580,14 +8812,20 @@ static ssize_t proc_wireless_rx_voltage_write(struct file *file,
 	char vol_string[8] = {0};
 	int vol = 0;
 	int len = count < 8 ? count : 8;
+	int rc;
 
 	if (nu1619_chip == NULL) {
 		chg_err("%s: nu1619_chip is not ready\n", __func__);
 		return -ENODEV;
 	}
 
-	copy_from_user(vol_string, buf, len);
-	kstrtoint(vol_string, 0, &vol);
+	if (copy_from_user(vol_string, buf, len)) {
+		chg_err("copy from user error\n");
+		return -EFAULT;
+	}
+	rc = kstrtoint(vol_string, 0, &vol);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("set voltage: vol_string = %s, vol = %d.", vol_string, vol);
 	nu1619_set_rx_charge_voltage(nu1619_chip, vol);
 
@@ -8599,12 +8837,21 @@ static ssize_t proc_wireless_rx_voltage_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_voltage = {
 	.read = proc_wireless_rx_voltage_read,
 	.write = proc_wireless_rx_voltage_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_voltage = {
+	.proc_read = proc_wireless_rx_voltage_read,
+	.proc_write = proc_wireless_rx_voltage_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_tx_read(struct file *file, char __user *buf,
 				     size_t count, loff_t *ppos)
@@ -8636,6 +8883,7 @@ static ssize_t proc_wireless_tx_write(struct file *file, const char __user *buf,
 	char buffer[5] = { 0 };
 	struct oplus_nu1619_ic *chip = nu1619_chip;
 	int val;
+	int rc;
 
 	if (chip == NULL) {
 		chg_err("%s: nu1619 driver is not ready\n", __func__);
@@ -8667,7 +8915,9 @@ static ssize_t proc_wireless_tx_write(struct file *file, const char __user *buf,
 	}
 
 	chg_err("buffer=%s", buffer);
-	kstrtoint(buffer, 0, &val);
+	rc = kstrtoint(buffer, 0, &val);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("val = %d", val);
 
 	if (val == 1) {
@@ -8679,12 +8929,21 @@ static ssize_t proc_wireless_tx_write(struct file *file, const char __user *buf,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_tx_ops = {
 	.read = proc_wireless_tx_read,
 	.write = proc_wireless_tx_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_tx_ops = {
+	.proc_read = proc_wireless_tx_read,
+	.proc_write = proc_wireless_tx_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_epp_read(struct file *file, char __user *buf,
 				      size_t count, loff_t *ppos)
@@ -8722,6 +8981,7 @@ static ssize_t proc_wireless_epp_write(struct file *file,
 #ifdef oplus_wireless
 	char buffer[5] = { 0 };
 	int val = 0;
+	int rc;
 
 	chg_err("%s: len[%d] start.\n", __func__, count);
 	if (count > 5) {
@@ -8733,7 +8993,9 @@ static ssize_t proc_wireless_epp_write(struct file *file,
 		return -EFAULT;
 	}
 	chg_err("buffer=%s", buffer);
-	kstrtoint(buffer, 0, &val);
+	rc = kstrtoint(buffer, 0, &val);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("val=%d", val);
 	if (val == 1) {
 		force_bpp = true;
@@ -8756,12 +9018,22 @@ static ssize_t proc_wireless_epp_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_epp_ops = {
 	.read = proc_wireless_epp_read,
 	.write = proc_wireless_epp_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_epp_ops = {
+	.proc_read = proc_wireless_epp_read,
+	.proc_write = proc_wireless_epp_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
+
 static int proc_charge_pump_status;
 static ssize_t proc_wireless_charge_pump_read(struct file *file, char __user *buf,
 					   size_t count, loff_t *ppos)
@@ -8844,12 +9116,21 @@ static ssize_t proc_wireless_charge_pump_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_charge_pump_ops = {
 	.read = proc_wireless_charge_pump_read,
 	.write = proc_wireless_charge_pump_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_charge_pump_ops = {
+	.proc_read = proc_wireless_charge_pump_read,
+	.proc_write = proc_wireless_charge_pump_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_bat_mult_read(struct file *file, char __user *buf,
 					   size_t count, loff_t *ppos)
@@ -8877,6 +9158,7 @@ static ssize_t proc_wireless_bat_mult_write(struct file *file,
 #ifdef oplus_wireless
 	char buffer[5] = { 0 };
 	int val = 0;
+	int rc;
 
 	chg_err("%s: len[%d] start.\n", __func__, count);
 	if (count > 5) {
@@ -8888,19 +9170,30 @@ static ssize_t proc_wireless_bat_mult_write(struct file *file,
 		return -EFAULT;
 	}
 	chg_err("buffer=%s", buffer);
-	kstrtoint(buffer, 0, &val);
+	rc = kstrtoint(buffer, 0, &val);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("val=%d", val);
 	test_bat_val = val;
 #endif
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_bat_mult_ops = {
 	.read = proc_wireless_bat_mult_read,
 	.write = proc_wireless_bat_mult_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_bat_mult_ops = {
+	.proc_read = proc_wireless_bat_mult_read,
+	.proc_write = proc_wireless_bat_mult_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_deviated_read(struct file *file, char __user *buf,
 					   size_t count, loff_t *ppos)
@@ -8925,12 +9218,21 @@ static ssize_t proc_wireless_deviated_read(struct file *file, char __user *buf,
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_deviated_ops = {
 	.read = proc_wireless_deviated_read,
 	.write = NULL,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_deviated_ops = {
+	.proc_read = proc_wireless_deviated_read,
+	.proc_write = NULL,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_read(struct file *file, char __user *buf,
 					    size_t count, loff_t *ppos)
@@ -8957,6 +9259,7 @@ static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf,
 	char buffer[5] = { 0 };
 	struct oplus_nu1619_ic *chip = nu1619_chip;
 	int val;
+	int rc;
 
 	if (chip == NULL) {
 		chg_err("%s: nu1619 driver is not ready\n", __func__);
@@ -8973,7 +9276,9 @@ static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf,
 	}
 
 	chg_err("buffer=%s", buffer);
-	kstrtoint(buffer, 0, &val);
+	rc = kstrtoint(buffer, 0, &val);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("val = %d", val);
 
 	if (val == 0) {
@@ -8990,13 +9295,23 @@ static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_ops = {
 	.read = proc_wireless_rx_read,
 	.write = proc_wireless_rx_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_ops = {
+	.proc_read = proc_wireless_rx_read,
+	.proc_write = proc_wireless_rx_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
+#ifdef OPLUS_CHG_ADB_FW_DEBUG
 #define UPGRADE_START 0
 #define UPGRADE_FW    1
 #define UPGRADE_END   2
@@ -9277,7 +9592,10 @@ start:
 			return -EINVAL;
 		}
 		memset(temp_buf, 0, sizeof(struct idt_fw_head));
-		copy_from_user(temp_buf, buf, sizeof(struct idt_fw_head));
+		if (copy_from_user(temp_buf, buf, sizeof(struct idt_fw_head))) {
+			chg_err("copy from user error\n");
+			return -EFAULT;
+		}
 		fw_head = (struct idt_fw_head *)temp_buf;
 		if (fw_head->magic[0] == 0x02 && fw_head->magic[1] == 0x00 &&
 		    fw_head->magic[2] == 0x03 && fw_head->magic[3] == 0x00) {
@@ -9288,7 +9606,10 @@ start:
 				return -ENOMEM;
 			}
 			chg_err("<IDT UPDATE>image header verification succeeded, fw_size=%d\n", fw_size);
-			copy_from_user(fw_buf, buf + sizeof(struct idt_fw_head), count - sizeof(struct idt_fw_head));
+			if (copy_from_user(fw_buf, buf + sizeof(struct idt_fw_head), count - sizeof(struct idt_fw_head))) {
+				chg_err("copy from user error\n");
+				return -EFAULT;
+			}
 			fw_index = count - sizeof(struct idt_fw_head);
 			chg_err("<IDT UPDATE>Receiving image, fw_size=%d, fw_index=%d\n", fw_size, fw_index);
 			if (fw_index >= fw_size) {
@@ -9310,7 +9631,10 @@ start:
 		}
 		break;
 	case UPGRADE_FW:
-		copy_from_user(fw_buf + fw_index, buf, count);
+		if (copy_from_user(fw_buf + fw_index, buf, count)) {
+			chg_err("copy from user error\n");
+			return -EFAULT;
+		}
 		fw_index += count;
 		chg_err("<IDT UPDATE>Receiving image, fw_size=%d, fw_index=%d\n", fw_size, fw_index);
 		if (fw_index >= fw_size) {
@@ -9382,12 +9706,22 @@ start:
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_upgrade_firmware_ops = {
 	.read = NULL,
 	.write = proc_wireless_upgrade_firmware_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_upgrade_firmware_ops = {
+	.proc_read = NULL,
+	.proc_write = proc_wireless_upgrade_firmware_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
+#endif /* OPLUS_CHG_ADB_FW_DEBUG */
 
 static ssize_t proc_wireless_rx_freq_read(struct file *file,
 					  char __user *buf, size_t count,
@@ -9416,6 +9750,7 @@ static ssize_t proc_wireless_rx_freq_write(struct file *file,
 {
 	char string[16];
 	int freq = 0;
+	int rc;
 	struct oplus_nu1619_ic *chip = nu1619_chip;
 
 	if (chip == NULL) {
@@ -9427,21 +9762,35 @@ static ssize_t proc_wireless_rx_freq_write(struct file *file,
 		return -EFAULT;
 
 	memset(string, 0, 16);
-	copy_from_user(string, buf, count);
+	if (copy_from_user(string, buf, count)) {
+		chg_err("copy from user error\n");
+		return -EFAULT;
+	}
 	chg_err("buf = %s, len = %d\n", string, count);
-	kstrtoint(string, 0, &freq);
+	rc = kstrtoint(string, 0, &freq);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("set freq threshold to %d\n", freq);
 	chip->nu1619_chg_status.freq_threshold = freq;
 
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_freq_ops = {
 	.read = proc_wireless_rx_freq_read,
 	.write = proc_wireless_rx_freq_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_freq_ops = {
+	.proc_read = proc_wireless_rx_freq_read,
+	.proc_write = proc_wireless_rx_freq_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 #ifdef HW_TEST_EDITION
 static ssize_t proc_wireless_w30w_time_read(struct file *file, char __user *buf,
@@ -9470,6 +9819,7 @@ static ssize_t proc_wireless_w30w_time_write(struct file *file,
 #ifdef oplus_wireless
 	char buffer[4] = { 0 };
 	int timeminutes = 0;
+	int rc;
 	struct op_chg_chip *chip = g_op_chip;
 
 	if (chip == NULL) {
@@ -9487,7 +9837,9 @@ static ssize_t proc_wireless_w30w_time_write(struct file *file,
 		return -EFAULT;
 	}
 	chg_err("buffer=%s", buffer);
-	kstrtoint(buffer, 0, &timeminutes);
+	rc = kstrtoint(buffer, 0, &timeminutes);
+	if (rc != 0)
+		return -EINVAL;
 	chg_err("set w30w_time = %dm", timeminutes);
 	if (timeminutes >= 0 && timeminutes <= 60)
 		chip->w30w_time = timeminutes;
@@ -9497,12 +9849,21 @@ static ssize_t proc_wireless_w30w_time_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_w30w_time_ops = {
 	.read = proc_wireless_w30w_time_read,
 	.write = proc_wireless_w30w_time_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_w30w_time_ops = {
+	.proc_read = proc_wireless_w30w_time_read,
+	.proc_write = proc_wireless_w30w_time_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 #endif /*HW_TEST_EDITION*/
 
 static ssize_t proc_wireless_user_sleep_mode_read(struct file *file, char __user *buf,
@@ -9553,7 +9914,9 @@ static ssize_t proc_wireless_user_sleep_mode_write(struct file *file, const char
 	}
 
 	chg_err("user mode: buffer=%s\n", buffer);
-	kstrtoint(buffer, 0, &pmw_pulse);
+	rc = kstrtoint(buffer, 0, &pmw_pulse);
+	if (rc != 0)
+		return -EINVAL;
 	if (chip->cep_timeout_ack == false)
 		return -EBUSY;
 	if (pmw_pulse == FASTCHG_MODE) {
@@ -9593,12 +9956,21 @@ static ssize_t proc_wireless_user_sleep_mode_write(struct file *file, const char
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_user_sleep_mode_ops = {
 	.read = proc_wireless_user_sleep_mode_read,
 	.write = proc_wireless_user_sleep_mode_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_user_sleep_mode_ops = {
+	.proc_read = proc_wireless_user_sleep_mode_read,
+	.proc_write = proc_wireless_user_sleep_mode_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_idt_adc_test_read(struct file *file, char __user *buf,
 		size_t count, loff_t *ppos)
@@ -9630,6 +10002,7 @@ static ssize_t proc_wireless_idt_adc_test_write(struct file *file, const char __
 {
 	char buffer[4] = {0};
 	int idt_adc_cmd = 0;
+	int rc;
 	struct oplus_nu1619_ic *chip = nu1619_chip;
 
 	if (chip == NULL) {
@@ -9647,7 +10020,9 @@ static ssize_t proc_wireless_idt_adc_test_write(struct file *file, const char __
 		return -EFAULT;
 	}
 
-	kstrtoint(buffer, 0, &idt_adc_cmd);
+	rc = kstrtoint(buffer, 0, &idt_adc_cmd);
+	if (rc != 0)
+		return -EINVAL;
 	if (idt_adc_cmd == 0) {
 		chg_err("<~WPC~> idt_adc_test: set 0.\n");
 		chip->nu1619_chg_status.idt_adc_test_enable = false;
@@ -9661,12 +10036,21 @@ static ssize_t proc_wireless_idt_adc_test_write(struct file *file, const char __
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_idt_adc_test_ops = {
 	.read = proc_wireless_idt_adc_test_read,
 	.write = proc_wireless_idt_adc_test_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_idt_adc_test_ops = {
+	.proc_read = proc_wireless_idt_adc_test_read,
+	.proc_write = proc_wireless_idt_adc_test_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_power_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -9699,6 +10083,7 @@ static ssize_t proc_wireless_rx_power_write(struct file *file, const char __user
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_power_ops =
 {
 	.read = proc_wireless_rx_power_read,
@@ -9706,6 +10091,15 @@ static const struct file_operations proc_wireless_rx_power_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_power_ops =
+{
+	.proc_read = proc_wireless_rx_power_read,
+	.proc_write  = proc_wireless_rx_power_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_tx_power_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -9736,6 +10130,7 @@ static ssize_t proc_wireless_tx_power_write(struct file *file, const char __user
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_tx_power_ops =
 {
 	.read = proc_wireless_tx_power_read,
@@ -9743,6 +10138,15 @@ static const struct file_operations proc_wireless_tx_power_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_tx_power_ops =
+{
+	.proc_read = proc_wireless_tx_power_read,
+	.proc_write  = proc_wireless_tx_power_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_version_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -9773,6 +10177,7 @@ static ssize_t proc_wireless_rx_version_write(struct file *file, const char __us
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_version_ops =
 {
 	.read = proc_wireless_rx_version_read,
@@ -9780,6 +10185,15 @@ static const struct file_operations proc_wireless_rx_version_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_version_ops =
+{
+	.proc_read = proc_wireless_rx_version_read,
+	.proc_write  = proc_wireless_rx_version_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wired_otg_online_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -9814,6 +10228,7 @@ static ssize_t proc_wired_otg_online_write(struct file *file, const char __user 
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wired_otg_online_ops =
 {
 	.read = proc_wired_otg_online_read,
@@ -9821,6 +10236,15 @@ static const struct file_operations proc_wired_otg_online_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wired_otg_online_ops =
+{
+	.proc_read = proc_wired_otg_online_read,
+	.proc_write  = proc_wired_otg_online_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static int init_wireless_charge_proc(struct oplus_nu1619_ic *chip)
 {
@@ -9915,6 +10339,7 @@ static int init_wireless_charge_proc(struct oplus_nu1619_ic *chip)
 			  __LINE__);
 	}
 
+#ifdef OPLUS_CHG_ADB_FW_DEBUG
 	prEntry_tmp = proc_create_data("upgrade_firmware", 0664, prEntry_da,
 				       &proc_upgrade_firmware_ops, chip);
 	if (prEntry_tmp == NULL) {
@@ -9922,6 +10347,7 @@ static int init_wireless_charge_proc(struct oplus_nu1619_ic *chip)
 		chg_debug("%s: Couldn't create proc entry, %d\n", __func__,
 			  __LINE__);
 	}
+#endif
 
 	prEntry_tmp = proc_create_data("rx_freq", 0664, prEntry_da,
 				       &proc_wireless_rx_freq_ops, chip);
@@ -10485,7 +10911,53 @@ struct oplus_wpc_operations nu1619_ops = {
 	.wpc_set_wls_pg = oplus_set_wls_pg_value,
 	.wpc_dis_tx_power = nu1619_disable_tx_power,
 	.wpc_print_log = nu1619_wpc_print_log,
+	.wpc_get_break_sub_crux_info = nu1619_wpc_get_break_sub_crux_info,
+	.wpc_get_skewing_curr = nu1619_wpc_get_skewing_current,
+	.wpc_get_verity = nu1619_wpc_get_verity,
 };
+
+static void nu1619_wpc_track_trx_info_load_trigger_work(
+					struct work_struct *work)
+{
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct oplus_nu1619_ic *chip =
+		container_of(dwork, struct oplus_nu1619_ic, trx_info_load_trigger_work);
+
+	if (!chip)
+		return;
+
+	oplus_chg_track_upload_trigger_data(chip->trx_info_load_trigger);
+}
+
+static void nu1619_wpc_track_trx_err_load_trigger_work(
+					struct work_struct *work)
+{
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct oplus_nu1619_ic *chip =
+		container_of(dwork, struct oplus_nu1619_ic, trx_err_load_trigger_work);
+
+	if (!chip)
+		return;
+
+	oplus_chg_track_upload_trigger_data(chip->trx_err_load_trigger);
+}
+
+static int nu1619_wpc_track_init(struct oplus_nu1619_ic *chip)
+{
+	int rc = 0;
+
+	chip->trx_err_load_trigger.type_reason = TRACK_NOTIFY_TYPE_DEVICE_ABNORMAL;
+	chip->trx_err_load_trigger.flag_reason = TRACK_NOTIFY_FLAG_WLS_TRX_ABNORMAL;
+	chip->trx_info_load_trigger.type_reason = TRACK_NOTIFY_TYPE_GENERAL_RECORD;
+	chip->trx_info_load_trigger.flag_reason = TRACK_NOTIFY_FLAG_WLS_TRX_INFO;
+
+	INIT_DELAYED_WORK(&chip->trx_err_load_trigger_work,
+		nu1619_wpc_track_trx_err_load_trigger_work);
+	INIT_DELAYED_WORK(&chip->trx_info_load_trigger_work,
+		nu1619_wpc_track_trx_info_load_trigger_work);
+
+	return rc;
+}
 
 static int nu1619_driver_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
@@ -10560,6 +11032,7 @@ static int nu1619_driver_probe(struct i2c_client *client, const struct i2c_devic
 	INIT_DELAYED_WORK(&chip->charger_start_work, charger_start_work_process);
 
 	nu1619_chip = chip;
+	nu1619_wpc_track_init(chip);
 	oplus_wpc_init(wpc_chip);
 
 	if (g_oplus_chip && !g_oplus_chip->charger_exist) {

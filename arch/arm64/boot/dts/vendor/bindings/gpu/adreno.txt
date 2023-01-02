@@ -140,6 +140,19 @@ Optional Properties:
 				mask   - mask for the relevant bits in the efuse register.
 				shift  - number of bits to right shift to get the speed bin
 				value.
+
+- qcom,gpu-speed-bin-vectors:
+				GPU speed bin vectors property is the series of all the vectors
+				in format specified below. Values from individual fuses are read,
+				masked and shifted to form a value. At the end all fuse values
+				are ordered together to form final speed bin value.
+				<offset mask shift>
+				<offset mask shift>
+				<  ..   ..    ..  >
+				offset - offset of the efuse register from the base.
+				mask   - mask for the relevant bits in the efuse register.
+				shift  - number of bits to right shift.
+
 - qcom,gpu-disable-fuse:	GPU disable fuse
 				<offset mask shift>
 				offset - offset of the efuse register from the base.
@@ -201,9 +214,9 @@ Optional Properties:
 				baseAddr - base address of the qtimer memory region
 				size     - size of the qtimer region
 
-- qcom,tsens-name:
-				Specify the name of GPU temperature sensor. This name will be used
-				to get the temperature from the thermal driver API.
+- qcom,tzone-names:
+				Specify the names of GPU thermal zones. These will be used
+				to get gpu temperature from the thermal driver API.
 
 - qcom,enable-midframe-timer:
 				Boolean. Enables the use of midframe sampling timer. This timer

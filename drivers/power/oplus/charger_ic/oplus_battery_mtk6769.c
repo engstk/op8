@@ -2320,6 +2320,8 @@ void mtk_charger_int_handler(void)
 #endif /*CONFIG_OPLUS_CHARGER_MTK6769*/
 		charger_manager_notifier(pinfo, CHARGER_NOTIFY_START_CHARGING);
 	}
+	if (g_oplus_chip && g_oplus_chip->usb_psy)
+		power_supply_changed(g_oplus_chip->usb_psy);
 	chr_err("wake_up_charger\n");
 	_wake_up_charger(pinfo);
 }

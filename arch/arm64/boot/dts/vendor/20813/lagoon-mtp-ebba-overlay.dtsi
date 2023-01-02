@@ -3,7 +3,7 @@
 #include "display/dsi-panel-oplus20813samsung-ams643ye01-1080-2400-dsi-cmd.dtsi"
 //#include "lagoon_camera/lagoon-camera-sensor-mtp.dtsi"
 #include <dt-bindings/msm/msm-bus-ids.h>
-&qupv3_se8_i2c {
+&qupv3_se0_i2c {
 	status = "ok";
 	Focaltech20813@38 {
 		compatible = "focaltech,fts";
@@ -74,6 +74,7 @@
 	};
 };
 
+//#ifdef VENDOR_EDIT
 &soc {
 	gpio_keys {
 		pinctrl-0 = <&key_vol_up_default &key_vol_down_default>;
@@ -245,16 +246,19 @@
 &spmi_bus {
         qcom,pm7250b@2 {
                 vadc@3100 {
+                        //#ifdef VENDOR_EDIT
                         qcom,pmic-revid = <&pm7250b_revid>;
                         //#endif
                 };
 
                 pm7250b_bcl {
+//#ifdef VENDOR_EDIT
                         status = "disabled";
 //#endif
                 };
 
                 bcl_soc {
+//#ifdef VENDOR_EDIT
                         status = "disabled";
 //#endif
                 };
@@ -305,6 +309,7 @@
 		0x22 0x210>; /* PWR_CTRL1 */
 };
 
+//#ifdef VENDOR_EDIT
 &soc {
 	devinfo {
 		compatible = "oplus-devinfo";
@@ -331,7 +336,7 @@
 						951 1050
 						1051 1150
 						1151 1300>;
-			aboard-patterns = <0 0>;
+			aboard-patterns = <1 0 2>;
 
 			/*main board*/
 			match-projects = <20813 20058 20813>;
@@ -403,6 +408,7 @@
 		};
 	};
 };
+//#endif VENDOR_EDIT
 
 &sdhc_2 {
         /delete-property/ status;

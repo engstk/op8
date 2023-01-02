@@ -14,6 +14,7 @@
 #define STATE_MAX    60
 #define CNT_MAX      1024
 #define CPU_MAX      8
+#define EM_CNT_MAX   100
 
 enum {
         ID_PID = 0,
@@ -56,6 +57,11 @@ typedef int midas_ioctl_t(void *kdata, void *priv_info);
 struct midas_ioctl_desc {
         unsigned int cmd;
         midas_ioctl_t *func;
+};
+
+struct em_data {
+        unsigned int cnt;
+        unsigned int power[EM_CNT_MAX];
 };
 
 long midas_dev_ioctl(struct file *filp,

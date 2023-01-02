@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -347,6 +348,7 @@ const int dp_stats_mapping_table[][STATS_TYPE_MAX] = {
 	{TXRX_FW_STATS_INVALID, TXRX_SOC_INTERRUPT_STATS},
 	{TXRX_FW_STATS_INVALID, TXRX_SOC_FSE_STATS},
 	{TXRX_FW_STATS_INVALID, TXRX_HAL_REG_WRITE_STATS},
+	{TXRX_FW_STATS_INVALID, TXRX_SOC_REO_HW_DESC_DUMP},
 };
 
 /* MCL specific functions */
@@ -1373,7 +1375,7 @@ void dp_context_free_mem(struct dp_soc *soc, enum dp_ctxt_type ctxt_type,
 
 	if (soc->cdp_soc.ol_ops->dp_prealloc_put_context) {
 		status = soc->cdp_soc.ol_ops->dp_prealloc_put_context(
-								DP_PDEV_TYPE,
+								ctxt_type,
 								vaddr);
 	} else {
 		dp_warn("dp_prealloc_get_context null!");
@@ -2352,6 +2354,7 @@ static void dp_soc_interrupt_detach(struct cdp_soc_t *txrx_soc)
 	if (soc->intr_mode == DP_INTR_POLL) {
 		qdf_timer_free(&soc->int_timer);
 	} else {
+		hif_deconfigure_ext_group_interrupts(soc->hif_handle);
 		hif_deregister_exec_group(soc->hif_handle, "dp_intr");
 	}
 
@@ -3799,6 +3802,28 @@ static QDF_STATUS dp_htt_ppdu_stats_attach(struct dp_pdev *pdev)
 }
 
 #ifdef WLAN_FEATURE_DP_RX_RING_HISTORY
+#ifndef RX_DEFRAG_DO_NOT_REINJECT
+/**
+ * dp_soc_rx_reinject_ring_history_attach - Attach the reo reinject ring
+ *					    history.
+ * @soc: DP soc handle
+ *
+ * Return: None
+ */
+static void dp_soc_rx_reinject_ring_history_attach(struct dp_soc *soc)
+{
+	soc->rx_reinject_ring_history = dp_context_alloc_mem(
+			soc, DP_RX_REINJECT_RING_HIST_TYPE, rx_ring_hist_size);
+	if (soc->rx_reinject_ring_history)
+		qdf_atomic_init(&soc->rx_reinject_ring_history->index);
+}
+#else /* RX_DEFRAG_DO_NOT_REINJECT */
+static inline void
+dp_soc_rx_reinject_ring_history_attach(struct dp_soc *soc)
+{
+}
+#endif /* RX_DEFRAG_DO_NOT_REINJECT */
+
 /**
  * dp_soc_rx_history_attach() - Attach the ring history record buffers
  * @soc: DP soc structure
@@ -3818,23 +3843,23 @@ static void dp_soc_rx_history_attach(struct dp_soc *soc)
 	uint32_t rx_err_ring_hist_size;
 	uint32_t rx_reinject_hist_size;
 
-	rx_ring_hist_size = sizeof(*soc->rx_ring_history[i]);
+	rx_ring_hist_size = sizeof(*soc->rx_ring_history[0]);
 	rx_err_ring_hist_size = sizeof(*soc->rx_err_ring_history);
 	rx_reinject_hist_size = sizeof(*soc->rx_reinject_ring_history);
 
 	for (i = 0; i < MAX_REO_DEST_RINGS; i++) {
-		soc->rx_ring_history[i] = qdf_mem_malloc(rx_ring_hist_size);
+		soc->rx_ring_history[i] = dp_context_alloc_mem(
+				soc, DP_RX_RING_HIST_TYPE, rx_ring_hist_size);
 		if (soc->rx_ring_history[i])
 			qdf_atomic_init(&soc->rx_ring_history[i]->index);
 	}
 
-	soc->rx_err_ring_history = qdf_mem_malloc(rx_err_ring_hist_size);
+	soc->rx_err_ring_history = dp_context_alloc_mem(
+			soc, DP_RX_ERR_RING_HIST_TYPE, rx_ring_hist_size);
 	if (soc->rx_err_ring_history)
 		qdf_atomic_init(&soc->rx_err_ring_history->index);
 
-	soc->rx_reinject_ring_history = qdf_mem_malloc(rx_reinject_hist_size);
-	if (soc->rx_reinject_ring_history)
-		qdf_atomic_init(&soc->rx_reinject_ring_history->index);
+	dp_soc_rx_reinject_ring_history_attach(soc);
 }
 
 static void dp_soc_rx_history_detach(struct dp_soc *soc)
@@ -3842,10 +3867,18 @@ static void dp_soc_rx_history_detach(struct dp_soc *soc)
 	int i;
 
 	for (i = 0; i < MAX_REO_DEST_RINGS; i++)
-		qdf_mem_free(soc->rx_ring_history[i]);
+		dp_context_free_mem(soc, DP_RX_RING_HIST_TYPE,
+				    soc->rx_ring_history[i]);
 
-	qdf_mem_free(soc->rx_err_ring_history);
-	qdf_mem_free(soc->rx_reinject_ring_history);
+	dp_context_free_mem(soc, DP_RX_ERR_RING_HIST_TYPE,
+			    soc->rx_err_ring_history);
+
+	/*
+	 * No need for a featurized detach since qdf_mem_free takes
+	 * care of NULL pointer.
+	 */
+	dp_context_free_mem(soc, DP_RX_REINJECT_RING_HIST_TYPE,
+			    soc->rx_reinject_ring_history);
 }
 
 #else
@@ -5425,7 +5458,8 @@ static QDF_STATUS dp_vdev_attach_wifi3(struct cdp_soc_t *cdp_soc,
 	qdf_spin_unlock_bh(&pdev->vdev_list_lock);
 	pdev->vdev_count++;
 
-	if (wlan_op_mode_sta != vdev->opmode)
+	if (wlan_op_mode_sta != vdev->opmode &&
+	    wlan_op_mode_ndi != vdev->opmode)
 		vdev->ap_bridge_enabled = true;
 	else
 		vdev->ap_bridge_enabled = false;
@@ -5761,6 +5795,7 @@ static inline void dp_peer_delete_ast_entries(struct dp_soc *soc,
 {
 	struct dp_ast_entry *ast_entry, *temp_ast_entry;
 
+	dp_debug("peer: %pK, self_ast: %pK", peer, peer->self_ast_entry);
 	DP_PEER_ITERATE_ASE_LIST(peer, ast_entry, temp_ast_entry)
 		dp_peer_del_ast(soc, ast_entry);
 
@@ -7884,6 +7919,10 @@ dp_print_host_stats(struct dp_vdev *vdev,
 	case TXRX_HAL_REG_WRITE_STATS:
 		hal_dump_reg_write_stats(pdev->soc->hal_soc);
 		hal_dump_reg_write_srng_stats(pdev->soc->hal_soc);
+		break;
+	case TXRX_SOC_REO_HW_DESC_DUMP:
+		dp_get_rx_reo_queue_info((struct cdp_soc_t *)pdev->soc,
+					 vdev->vdev_id);
 		break;
 	default:
 		dp_info("Wrong Input For TxRx Host Stats");
@@ -10136,6 +10175,15 @@ static uint32_t dp_get_cfg(struct cdp_soc_t *soc, enum cdp_dp_cfg cfg)
 	case cfg_dp_gro_enable:
 		value = dpsoc->wlan_cfg_ctx->gro_enabled;
 		break;
+	case cfg_dp_sg_enable:
+		value = dpsoc->wlan_cfg_ctx->sg_enabled;
+		break;
+	case cfg_dp_tc_based_dyn_gro_enable:
+		value = dpsoc->wlan_cfg_ctx->tc_based_dynamic_gro;
+		break;
+	case cfg_dp_tc_ingress_prio:
+		value = dpsoc->wlan_cfg_ctx->tc_ingress_prio;
+		break;
 	case cfg_dp_tx_flow_start_queue_offset:
 		value = dpsoc->wlan_cfg_ctx->tx_flow_start_queue_offset;
 		break;
@@ -10491,45 +10539,6 @@ static struct cdp_cfr_ops dp_ops_cfr = {
 
 #ifdef FEATURE_RUNTIME_PM
 /**
- * dp_runtime_suspend() - ensure DP is ready to runtime suspend
- * @soc_hdl: Datapath soc handle
- * @pdev_id: id of data path pdev handle
- *
- * DP is ready to runtime suspend if there are no pending TX packets.
- *
- * Return: QDF_STATUS
- */
-static QDF_STATUS dp_runtime_suspend(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
-{
-	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
-	struct dp_pdev *pdev;
-
-	pdev = dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
-	if (!pdev) {
-		dp_err("pdev is NULL");
-		return QDF_STATUS_E_INVAL;
-	}
-
-	/* Abort if there are any pending TX packets */
-	if (dp_get_tx_pending(dp_pdev_to_cdp_pdev(pdev)) > 0) {
-		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO,
-			  FL("Abort suspend due to pending TX packets"));
-		return QDF_STATUS_E_AGAIN;
-	}
-
-	if (dp_runtime_get_refcount(soc)) {
-		dp_info("refcount: %d", dp_runtime_get_refcount(soc));
-
-		return QDF_STATUS_E_AGAIN;
-	}
-
-	if (soc->intr_mode == DP_INTR_POLL)
-		qdf_timer_stop(&soc->int_timer);
-
-	return QDF_STATUS_SUCCESS;
-}
-
-/**
  * dp_flush_ring_hptp() - Update ring shadow
  *			  register HP/TP address when runtime
  *                        resume
@@ -10550,6 +10559,58 @@ void dp_flush_ring_hptp(struct dp_soc *soc, hal_ring_handle_t hal_srng)
 		hal_srng_set_flush_last_ts(hal_srng);
 		dp_debug("flushed");
 	}
+}
+
+/**
+ * dp_runtime_suspend() - ensure DP is ready to runtime suspend
+ * @soc_hdl: Datapath soc handle
+ * @pdev_id: id of data path pdev handle
+ *
+ * DP is ready to runtime suspend if there are no pending TX packets.
+ *
+ * Return: QDF_STATUS
+ */
+static QDF_STATUS dp_runtime_suspend(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
+{
+	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
+	struct dp_pdev *pdev;
+	uint8_t i;
+
+	pdev = dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
+	if (!pdev) {
+		dp_err("pdev is NULL");
+		return QDF_STATUS_E_INVAL;
+	}
+
+	/* Abort if there are any pending TX packets */
+	if (dp_get_tx_pending(dp_pdev_to_cdp_pdev(pdev)) > 0) {
+		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO,
+			  FL("Abort suspend due to pending TX packets"));
+
+		/* perform a force flush if tx is pending */
+		for (i = 0; i < soc->num_tcl_data_rings; i++) {
+#ifdef IPA_OFFLOAD
+			if (i == IPA_TCL_DATA_RING_IDX)
+				continue;
+#endif
+			hal_srng_set_event(soc->tcl_data_ring[i].hal_srng,
+					   HAL_SRNG_FLUSH_EVENT);
+			dp_flush_ring_hptp(soc, soc->tcl_data_ring[i].hal_srng);
+		}
+
+		return QDF_STATUS_E_AGAIN;
+	}
+
+	if (dp_runtime_get_refcount(soc)) {
+		dp_info("refcount: %d", dp_runtime_get_refcount(soc));
+
+		return QDF_STATUS_E_AGAIN;
+	}
+
+	if (soc->intr_mode == DP_INTR_POLL)
+		qdf_timer_stop(&soc->int_timer);
+
+	return QDF_STATUS_SUCCESS;
 }
 
 #define DP_FLUSH_WAIT_CNT 10
@@ -11147,7 +11208,7 @@ static struct cdp_peer_ops dp_ops_peer = {
 	.get_vdev_by_peer_addr = dp_get_vdev_by_peer_addr,
 	.peer_get_peer_mac_addr = dp_peer_get_peer_mac_addr,
 	.get_peer_state = dp_get_peer_state,
-	.peer_flush_frags = dp_peer_flush_frags,	
+	.peer_flush_frags = dp_peer_flush_frags,
 };
 #endif
 

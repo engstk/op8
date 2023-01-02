@@ -7,6 +7,7 @@
 #include "lagoon-mtp-ebba-overlay.dtsi"
 #include "charge/oplus_charge_ebba.dtsi"
 #include "sensor/ebba-sensor-20813.dtsi"
+#include "nord_ce_nfc/nord-ce-nfc-pn557.dtsi"
 #include "fingerprint/ebba-fingerprint-20813.dtsi"
 #include "storage/ebba-stg.dtsi"
 /* #ifdef OPLUS_ARCH_EXTENDS */

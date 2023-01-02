@@ -29,8 +29,9 @@
 #include <linux/device.h>
 #include <linux/regmap.h>
 #include <linux/iio/consumer.h>
+#ifndef CONFIG_OPLUS_CHARGER_MTK
 #include <uapi/linux/qg.h>
-
+#endif
 #include <soc/oplus/device_info.h>
 #include <soc/oplus/system/oplus_project.h>
 
@@ -5441,10 +5442,18 @@ static ssize_t p922x_reg_show(struct file *filp, char __user *buff, size_t count
 	return (len < count ? len : count);
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations p922x_add_log_proc_fops = {
 	.write = p922x_reg_store,
 	.read = p922x_reg_show,
 };
+#else
+static const struct proc_ops p922x_add_log_proc_fops = {
+	.proc_write = p922x_reg_store,
+	.proc_read = p922x_reg_show,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static void init_p922x_add_log(void)
 {
@@ -5487,21 +5496,28 @@ static ssize_t p922x_data_log_write(struct file *filp, const char __user *buff, 
 	rc = p922x_config_interface(p922x_chip, p922x_add, critical_log, 0xFF);
 	if (rc) {
 		 chg_err("Couldn't write 0x%02x rc = %d\n", p922x_add, rc);
-	} 
+	}
 
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations p922x_data_log_proc_fops = {
 	.write = p922x_data_log_write,
 };
+#else
+static const struct proc_ops p922x_data_log_proc_fops = {
+	.proc_write = p922x_data_log_write,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static void init_p922x_data_log(void)
 {
 	struct proc_dir_entry *p = NULL;
 
 	p = proc_create("p922x_data_log", 0664, NULL, &p922x_data_log_proc_fops);
-	if (!p) 
+	if (!p)
 		pr_err("proc_create init_p922x_data_log_proc_fops fail!\n");
 
 }
@@ -5719,6 +5735,7 @@ static ssize_t proc_wireless_voltage_rect_write(struct file *file, const char __
     return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_voltage_rect_ops =
 {
     .read = proc_wireless_voltage_rect_read,
@@ -5726,6 +5743,15 @@ static const struct file_operations proc_wireless_voltage_rect_ops =
     .open  = simple_open,
     .owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_voltage_rect_ops =
+{
+	.proc_read = proc_wireless_voltage_rect_read,
+	.proc_write  = proc_wireless_voltage_rect_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_current_out_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -5775,6 +5801,7 @@ static ssize_t proc_wireless_current_out_write(struct file *file, const char __u
     return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_current_out_ops =
 {
 	.read = proc_wireless_current_out_read,
@@ -5782,7 +5809,15 @@ static const struct file_operations proc_wireless_current_out_ops =
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
-
+#else
+static const struct proc_ops proc_wireless_current_out_ops =
+{
+	.proc_read = proc_wireless_current_out_read,
+	.proc_write  = proc_wireless_current_out_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_ftm_mode_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -5829,6 +5864,7 @@ static ssize_t proc_wireless_ftm_mode_write(struct file *file, const char __user
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_ftm_mode_ops =
 {
     .read = proc_wireless_ftm_mode_read,
@@ -5836,6 +5872,15 @@ static const struct file_operations proc_wireless_ftm_mode_ops =
     .open  = simple_open,
     .owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_ftm_mode_ops =
+{
+	.proc_read = proc_wireless_ftm_mode_read,
+	.proc_write  = proc_wireless_ftm_mode_write,
+	.proc_open  = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_voltage_read(struct file *file,
 					     char __user *buf, size_t count,
@@ -5876,12 +5921,21 @@ static ssize_t proc_wireless_rx_voltage_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_voltage = {
 	.read = proc_wireless_rx_voltage_read,
 	.write = proc_wireless_rx_voltage_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_voltage = {
+	.proc_read = proc_wireless_rx_voltage_read,
+	.proc_write = proc_wireless_rx_voltage_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_tx_read(struct file *file, char __user *buf,
 				     size_t count, loff_t *ppos)
@@ -5958,12 +6012,21 @@ static ssize_t proc_wireless_tx_write(struct file *file, const char __user *buf,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_tx_ops = {
 	.read = proc_wireless_tx_read,
 	.write = proc_wireless_tx_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_tx_ops = {
+	.proc_read = proc_wireless_tx_read,
+	.proc_write = proc_wireless_tx_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_epp_read(struct file *file, char __user *buf,
 				      size_t count, loff_t *ppos)
@@ -6035,12 +6098,22 @@ static ssize_t proc_wireless_epp_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_epp_ops = {
 	.read = proc_wireless_epp_read,
 	.write = proc_wireless_epp_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_epp_ops = {
+	.proc_read = proc_wireless_epp_read,
+	.proc_write = proc_wireless_epp_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
+
 static int proc_charge_pump_status;
 static ssize_t proc_wireless_charge_pump_read(struct file *file, char __user *buf,
 					   size_t count, loff_t *ppos)
@@ -6123,12 +6196,21 @@ static ssize_t proc_wireless_charge_pump_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_charge_pump_ops = {
 	.read = proc_wireless_charge_pump_read,
 	.write = proc_wireless_charge_pump_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_charge_pump_ops = {
+	.proc_read = proc_wireless_charge_pump_read,
+	.proc_write = proc_wireless_charge_pump_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_bat_mult_read(struct file *file, char __user *buf,
 					   size_t count, loff_t *ppos)
@@ -6174,12 +6256,21 @@ static ssize_t proc_wireless_bat_mult_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_bat_mult_ops = {
 	.read = proc_wireless_bat_mult_read,
 	.write = proc_wireless_bat_mult_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_bat_mult_ops = {
+	.proc_read = proc_wireless_bat_mult_read,
+	.proc_write = proc_wireless_bat_mult_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_deviated_read(struct file *file, char __user *buf,
 					   size_t count, loff_t *ppos)
@@ -6204,12 +6295,21 @@ static ssize_t proc_wireless_deviated_read(struct file *file, char __user *buf,
 	return ret;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_deviated_ops = {
 	.read = proc_wireless_deviated_read,
 	.write = NULL,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_deviated_ops = {
+	.proc_read = proc_wireless_deviated_read,
+	.proc_write = NULL,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_read(struct file *file, char __user *buf,
 					    size_t count, loff_t *ppos)
@@ -6269,12 +6369,21 @@ static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_ops = {
 	.read = proc_wireless_rx_read,
 	.write = proc_wireless_rx_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_ops = {
+	.proc_read = proc_wireless_rx_read,
+	.proc_write = proc_wireless_rx_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 #define UPGRADE_START 0
 #define UPGRADE_FW    1
@@ -6364,12 +6473,21 @@ start:
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_upgrade_firmware_ops = {
 	.read = NULL,
 	.write = proc_wireless_upgrade_firmware_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_upgrade_firmware_ops = {
+	.proc_read = NULL,
+	.proc_write = proc_wireless_upgrade_firmware_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_rx_freq_read(struct file *file,
 					  char __user *buf, size_t count,
@@ -6415,12 +6533,21 @@ static ssize_t proc_wireless_rx_freq_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_rx_freq_ops = {
 	.read = proc_wireless_rx_freq_read,
 	.write = proc_wireless_rx_freq_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_rx_freq_ops = {
+	.proc_read = proc_wireless_rx_freq_read,
+	.proc_write = proc_wireless_rx_freq_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 #ifdef HW_TEST_EDITION
 static ssize_t proc_wireless_w30w_time_read(struct file *file, char __user *buf,
@@ -6476,12 +6603,21 @@ static ssize_t proc_wireless_w30w_time_write(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_w30w_time_ops = {
 	.read = proc_wireless_w30w_time_read,
 	.write = proc_wireless_w30w_time_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_w30w_time_ops = {
+	.proc_read = proc_wireless_w30w_time_read,
+	.proc_write = proc_wireless_w30w_time_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 #endif
 
@@ -6573,12 +6709,21 @@ static ssize_t proc_wireless_user_sleep_mode_write(struct file *file, const char
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_user_sleep_mode_ops = {
 	.read = proc_wireless_user_sleep_mode_read,
 	.write = proc_wireless_user_sleep_mode_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_user_sleep_mode_ops = {
+	.proc_read = proc_wireless_user_sleep_mode_read,
+	.proc_write = proc_wireless_user_sleep_mode_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static ssize_t proc_wireless_idt_adc_test_read(struct file *file, char __user *buf,
 		size_t count, loff_t *ppos)
@@ -6641,12 +6786,21 @@ static ssize_t proc_wireless_idt_adc_test_write(struct file *file, const char __
 	return len;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations proc_wireless_idt_adc_test_ops = {
 	.read = proc_wireless_idt_adc_test_read,
 	.write = proc_wireless_idt_adc_test_write,
 	.open = simple_open,
 	.owner = THIS_MODULE,
 };
+#else
+static const struct proc_ops proc_wireless_idt_adc_test_ops = {
+	.proc_read = proc_wireless_idt_adc_test_read,
+	.proc_write = proc_wireless_idt_adc_test_write,
+	.proc_open = simple_open,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static int init_wireless_charge_proc(struct oplus_p922x_ic *chip)
 {

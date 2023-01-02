@@ -861,7 +861,7 @@ static ssize_t proc_colorctrl_read(struct file *file, char __user *user_buf, siz
 
     colorctrl_set_awake(cd, true);
     mutex_lock(&cd->rw_lock);
-    snprintf(page, PAGESIZE - 1, "%d\n", cd->color_status);
+    snprintf(page, PAGESIZE - 1, "%u\n", cd->color_status);
     ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
     mutex_unlock(&cd->rw_lock);
     COLOR_INFO("read value: %d.", cd->color_status);

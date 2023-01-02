@@ -27,7 +27,12 @@
 //#include <mtk_boot_common.h>
 #include <mt-plat/mtk_rtc.h>
 //#include <mt-plat/charging.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include <mt-plat/charger_type.h>
+#else
+#include <mt-plat/v1/charger_type.h>
+#endif
 #include <soc/oplus/device_info.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
@@ -303,6 +308,7 @@ int max77932_hardware_init(void)
 		return 0;
 	}
 	chg_err("max77932 hardware init\n");
+	da9313_work_mode_set(DA9313_WORK_MODE_AUTO);
 	da9313_config_interface(0x5, (BIT(4) | BIT(5)), (BIT(0) | BIT(4) | BIT(5)));
 	da9313_config_interface(0x6, BIT(5), BIT(5));
 	da9313_config_interface(0x7, BIT(3), BIT(3));
@@ -478,6 +484,7 @@ HWID_HANDLE:
 		sd77313_hardware_init();
 		break;
 	default:
+		da9313_hardware_init();
 		chg_err("No half voltage chip hwid matched!!!\n");
 		break;
 	}
@@ -705,12 +712,14 @@ static const struct proc_ops proc_work_mode_ops =
     .proc_read = proc_work_mode_read,
     .proc_write  = proc_work_mode_write,
     .proc_open  = simple_open,
+    .proc_lseek = seq_lseek,
 };
 static const struct proc_ops proc_set_reg_ops =
 {
     .proc_read = proc_set_reg_read,
     .proc_write = proc_set_reg_write,
     .proc_open  = simple_open,
+    .proc_lseek = seq_lseek,
 };
 #endif
 
@@ -756,9 +765,6 @@ static int da9313_driver_probe(struct i2c_client *client, const struct i2c_devic
     the_chip = divider_ic;
     divider_ic->fixed_mode_set_by_dev_file = false;
     halfv_chip_init(divider_ic);
-    da9313_dump_registers();
-
-    da9313_hardware_init();
     init_da9313_proc(divider_ic);
 
     return 0;

@@ -1,0 +1,7 @@
+
+source "drivers/input/touchscreen/oplus_touchscreen/ilitek/ilitek9881h/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/ilitek/ilitek9881h_v2/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/ilitek/ilitek9881h_v3/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/ilitek/ilitek9882n/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/ilitek/ilitek7807s/Kconfig"
+

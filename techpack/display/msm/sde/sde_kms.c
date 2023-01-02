@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -1113,9 +1114,10 @@ static void _sde_kms_release_splash_resource(struct sde_kms *sde_kms,
 	/* remove the votes if all displays are done with splash */
 	if (!sde_kms->splash_data.num_splash_displays) {
 		for (i = 0; i < SDE_POWER_HANDLE_DBUS_ID_MAX; i++)
-			sde_power_data_bus_set_quota(&priv->phandle, i,
-				SDE_POWER_HANDLE_ENABLE_BUS_AB_QUOTA,
-				SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA);
+			if (sde_kms->perf.sde_rsc_available)
+				sde_power_data_bus_set_quota(&priv->phandle, i,
+					SDE_POWER_HANDLE_ENABLE_BUS_AB_QUOTA,
+					SDE_POWER_HANDLE_ENABLE_BUS_IB_QUOTA);
 
 		pm_runtime_put_sync(sde_kms->dev->dev);
 	}
@@ -1148,10 +1150,12 @@ static void sde_kms_check_for_ext_vote(struct sde_kms *sde_kms,
 	 * cases, allow the target to go through a gdsc toggle after
 	 * crtc is disabled.
 	 */
-	if (!crtc_enabled && phandle->is_ext_vote_en) {
+	if (!crtc_enabled && (phandle->is_ext_vote_en ||
+				!dev->dev->power.runtime_auto)) {
 		pm_runtime_put_sync(sde_kms->dev->dev);
-		SDE_EVT32(phandle->is_ext_vote_en);
 		pm_runtime_get_sync(sde_kms->dev->dev);
+		SDE_EVT32(phandle->is_ext_vote_en,
+				dev->dev->power.runtime_auto);
 	}
 
 	mutex_unlock(&phandle->ext_client_lock);
@@ -1471,6 +1475,7 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 		// enable qsync on/off cmds
 		.prepare_commit = dsi_display_pre_commit,
 #endif
+		.get_qsync_min_fps = dsi_display_get_qsync_min_fps,
 	};
 	static const struct sde_connector_ops wb_ops = {
 		.post_init =    sde_wb_connector_post_init,
@@ -1488,6 +1493,7 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 		.get_panel_vfp = NULL,
 	};
 	static const struct sde_connector_ops dp_ops = {
+		.set_info_blob = dp_connnector_set_info_blob,
 		.post_init  = dp_connector_post_init,
 		.detect     = dp_connector_detect,
 		.get_modes  = dp_connector_get_modes,
@@ -2153,7 +2159,8 @@ static int _sde_kms_remove_fbs(struct sde_kms *sde_kms, struct drm_file *file,
 			list_move_tail(&fb->filp_head, &fbs);
 
 			drm_for_each_plane(plane, dev) {
-				if (plane->state && plane->state->fb == fb) {
+				if (plane->state &&
+					plane->state->fb == fb) {
 					if (plane->state->crtc)
 						crtc_mask |= drm_crtc_mask(
 							plane->state->crtc);
@@ -2868,11 +2875,10 @@ retry:
 	}
 
 	state->acquire_ctx = &ctx;
+
 	ret = sde_kms_set_crtc_for_conn(dev, enc, state);
-	if (ret) {
-		SDE_ERROR("error %d setting the crtc\n", ret);
+	if (ret)
 		goto end;
-	}
 
 	ret = drm_atomic_commit(state);
 	if (ret)

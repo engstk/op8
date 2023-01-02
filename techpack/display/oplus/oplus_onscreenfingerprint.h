@@ -61,4 +61,11 @@ int sde_plane_check_fingerprint_layer(const struct drm_plane_state *drm_state);
 int oplus_display_panel_set_dimlayer_hbm(void *data);
 int oplus_display_panel_get_dimlayer_hbm(void *data);
 int oplus_display_panel_notify_fp_press(void *data);
+int oplus_ofp_set_fp_type(void *buf);
+int oplus_ofp_get_fp_type(void *buf);
+ssize_t oplus_ofp_set_fp_type_attr(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count);
+ssize_t oplus_ofp_get_fp_type_attr(struct device *dev,
+				struct device_attribute *attr, char *buf);
 #endif /*_OPLUS_ONSCREENFINGERPRINT_H_*/

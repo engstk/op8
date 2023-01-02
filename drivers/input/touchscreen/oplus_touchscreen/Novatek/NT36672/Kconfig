@@ -1,0 +1,12 @@
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+
+
+config TOUCHPANEL_NOVA_NT36672
+#	default y
+	bool "TP nova nt36672 IC enable or not for OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel useing nova nt36672
+
+#endif
+

@@ -37,11 +37,12 @@
 #define PROBE_CNT_MAX			30
 /* 10ms * 100 = 1000ms = 1s */
 #define USB_TYPE_POLLING_INTERVAL	10
-#define USB_TYPE_POLLING_CNT_MAX	100
+#define USB_TYPE_POLLING_CNT_MAX	200
 #define UNIT_TRANS_1000			1000
 
 extern void oplus_otg_enable_by_buckboost(void);
 extern void oplus_otg_disable_by_buckboost(void);
+extern void tcpc_late_sync(void);
 
 enum dr {
 	DR_IDLE,
@@ -1160,6 +1161,7 @@ static int rt_pd_manager_probe(struct platform_device *pdev)
 	}
 
 	g_rpmd = rpmd;
+	tcpc_late_sync();
 out:
 	platform_set_drvdata(pdev, rpmd);
 	dev_info(rpmd->dev, "%s %s!!\n", __func__, ret == -EPROBE_DEFER ?

@@ -142,6 +142,11 @@ struct adc_channel_prop {
 	unsigned int			lut_index;
 	enum vadc_scale_fn_type		scale_fn_type;
 	const char			*datasheet_name;
+	
+#ifdef OPLUS_FEATURE_CHG_BASIC
+		int 		cust_type;
+		int 		cust_scale_fn_type;
+#endif
 };
 
 /**
@@ -1026,6 +1031,130 @@ static const struct adc_channels adc_chans_pmic5[ADC_MAX_CHANNEL] = {
 			SCALE_HW_CALIB_CUR)
 };
 
+static const struct adc_channels adc_chans_pmic5_21027[ADC_MAX_CHANNEL] = {
+	[ADC_REF_GND]		= ADC_CHAN_VOLT("ref_gnd", 1,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_1P25VREF]		= ADC_CHAN_VOLT("vref_1p25", 1,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_VPH_PWR]		= ADC_CHAN_VOLT("vph_pwr", 3,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_VBAT_SNS]		= ADC_CHAN_VOLT("vbat_sns", 3,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_VCOIN]		= ADC_CHAN_VOLT("vcoin", 3,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_DIE_TEMP]		= ADC_CHAN_TEMP("die_temp", 1,
+					SCALE_HW_CALIB_PMIC_THERM)
+	[ADC_USB_IN_I]		= ADC_CHAN_VOLT("usb_in_i_uv", 1,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_USB_IN_V_16]	= ADC_CHAN_VOLT("usb_in_v_div_16", 16,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_CHG_TEMP]		= ADC_CHAN_TEMP("chg_temp", 1,
+					SCALE_HW_CALIB_PM5_CHG_TEMP)
+	/* Charger prescales SBUx and MID_CHG to fit within 1.8V upper unit */
+	[ADC_SBUx]		= ADC_CHAN_VOLT("chg_sbux", 3,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_MID_CHG_DIV6]	= ADC_CHAN_VOLT("chg_mid_chg", 6,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_XO_THERM_PU2]	= ADC_CHAN_TEMP("xo_therm", 1,
+					SCALE_HW_CALIB_XOTHERM)
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* gaoxian,2021/10/29, add for battemp_adc */
+	[ADC_BAT_THERM_PU2]	= ADC_CHAN_VOLT("bat_therm_pu2", 1,
+					SCALE_HW_CALIB_BATT_THERM_100K)
+#else
+	[ADC_BAT_THERM_PU2]	= ADC_CHAN_TEMP("bat_therm_pu2", 1,
+					SCALE_HW_CALIB_BATT_THERM_100K)
+#endif
+	[ADC_BAT_THERM_PU1]	= ADC_CHAN_TEMP("bat_therm_pu1", 1,
+					SCALE_HW_CALIB_BATT_THERM_30K)
+	[ADC_BAT_THERM_PU3]	= ADC_CHAN_TEMP("bat_therm_pu3", 1,
+					SCALE_HW_CALIB_BATT_THERM_400K)
+	[ADC_BAT_ID_PU2]	= ADC_CHAN_TEMP("bat_id", 1,
+					SCALE_HW_CALIB_DEFAULT)
+	[ADC_AMUX_THM1_PU2]	= ADC_CHAN_TEMP("amux_thm1_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* gaoxian,2021/10/29, add for usbtemp_adc */
+	[ADC_AMUX_THM2_PU2]	= ADC_CHAN_TEMP("amux_thm2_pu2", 1,
+					SCALE_HW_CALIB_DEFAULT)
+#else
+	[ADC_AMUX_THM2_PU2]	= ADC_CHAN_TEMP("amux_thm2_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+#endif
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	[ADC_AMUX_THM3_PU2]	= ADC_CHAN_TEMP("amux_thm3_pu2", 1,
+					SCALE_HW_CALIB_DEFAULT)
+#else
+	[ADC_AMUX_THM3_PU2]	= ADC_CHAN_TEMP("amux_thm3_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+#endif
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	[ADC_AMUX_THM4_PU2]	= ADC_CHAN_VOLT("amux_thm4_pu2", 1,
+					SCALE_HW_CALIB_DEFAULT)
+#else
+	[ADC_AMUX_THM4_PU2]	= ADC_CHAN_TEMP("amux_thm4_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+#endif
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* yangmingjin,2020/3/9, add for usbtemp_adc */
+	[ADC_AMUX_THM4]	        = ADC_CHAN_VOLT("amux_thm4", 1,
+					SCALE_HW_CALIB_DEFAULT)
+#endif
+	[ADC_PARALLEL_ISENSE]	= ADC_CHAN_VOLT("parallel_isense", 1,
+					SCALE_HW_CALIB_CUR)
+	[ADC_INT_EXT_ISENSE_VBAT_VDATA]	= ADC_CHAN_POWER(
+					"int_ext_vbat_isense", 1,
+						SCALE_HW_CALIB_CUR)
+	[ADC_EXT_ISENSE_VBAT_VDATA]	= ADC_CHAN_POWER("ext_vbat_isense", 1,
+					SCALE_HW_CALIB_CUR)
+	[ADC_PARALLEL_ISENSE_VBAT_VDATA] = ADC_CHAN_POWER(
+					"parallel_vbat_isense", 1,
+						SCALE_HW_CALIB_CUR)
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* gaoxian,2021/10/29, add for usbtemp_adc */
+	[ADC_AMUX_THM2]			= ADC_CHAN_TEMP("amux_thm2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+#else
+	[ADC_AMUX_THM2]			= ADC_CHAN_TEMP("amux_thm2", 1,
+					SCALE_HW_CALIB_PM5_SMB_TEMP)
+#endif
+
+	[ADC_AMUX_THM3]			= ADC_CHAN_TEMP("amux_thm3", 1,
+					SCALE_HW_CALIB_PM5_SMB_TEMP)
+	[ADC_GPIO1_PU2]	= ADC_CHAN_TEMP("gpio1_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+	[ADC_GPIO2_PU2]	= ADC_CHAN_TEMP("gpio2_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+	[ADC_GPIO3_PU2]	= ADC_CHAN_TEMP("gpio3_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+	[ADC_GPIO3] = ADC_CHAN_VOLT("gpio7_v", 1,
+                    SCALE_HW_CALIB_DEFAULT)
+
+	[ADC_GPIO3_DIV3] = ADC_CHAN_VOLT("gpio7_div3", 1,
+                    SCALE_HW_CALIB_DEFAULT)
+
+#ifdef CONFIG_OPLUS_SM7250R_CHARGER  //OPLUS_FEATURE_CHG_BASIC
+	[ADC_GPIO4_PU2]	= ADC_CHAN_TEMP("gpio4_pu2", 1,
+					SCALE_HW_CALIB_THERM_100K_PULLUP)
+#else
+    [ADC_GPIO4_PU2] = ADC_CHAN_VOLT("gpio8_v", 1,
+                    SCALE_HW_CALIB_DEFAULT)
+#endif
+
+#ifdef OPLUS_FEATURE_CHG_BASIC
+/* yangmingjin,2020/3/9, add for usbtemp_adc */
+    [ADC_GPIO4] = ADC_CHAN_VOLT("gpio8_vol", 1,
+                    SCALE_HW_CALIB_DEFAULT)
+#endif
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	[ADC_GPIO1] 	= ADC_CHAN_VOLT("board_id_vdata", 1,
+						SCALE_HW_CALIB_DEFAULT)
+#endif
+};
+
 //#ifdef OPLUS_FEATURE_TEMP_ADAPTER
 static const struct adc_channels adc_chans_pmic5_temp[ADC_MAX_CHANNEL] = {
 	[ADC_REF_GND]		= ADC_CHAN_VOLT("ref_gnd", 1,
@@ -1495,6 +1624,17 @@ static int adc_get_dt_channel_data(struct adc_chip *adc,
 	else
 		prop->cal_method = ADC_ABSOLUTE_CAL;
 
+#ifdef OPLUS_FEATURE_CHG_BASIC
+		if (!of_property_read_u32(node, "oplus,cust_type", &value))
+			prop->cust_type = value;
+		else
+			prop->cust_type = -1;
+	
+		if (!of_property_read_u32(node, "oplus,cust_scale_fn_type", &value))
+			prop->cust_scale_fn_type = value;
+		else
+			prop->cust_scale_fn_type = -1;
+#endif
 	/*
 	 * Default to using timer calibration. Using a fresh calibration value
 	 * for every conversion will increase the overall time for a request.
@@ -1514,6 +1654,17 @@ const struct adc_data data_pmic5 = {
 	.decimation = (unsigned int []) {250, 420, 840},
 	.hw_settle = (unsigned int []) {15, 100, 200, 300, 400, 500, 600, 700,
 					800, 900, 1, 2, 4, 6, 8, 10},
+};
+
+const struct adc_data data_pmic5_21027 = {
+	.full_scale_code_volt = 0x70e4,
+	/* On PM8150B, IBAT LSB = 10A/32767 */
+	.full_scale_code_cur = 10000,
+	.adc_chans = adc_chans_pmic5_21027,
+	.decimation = (unsigned int []) {250, 420, 840},
+	.hw_settle = (unsigned int []) {15, 100, 200, 300, 400, 500, 600, 700,
+					800, 900, 1, 2, 4, 6, 8, 10},
+	.battemp_for_adc = 1,
 };
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
@@ -1602,6 +1753,12 @@ static const struct of_device_id adc_match_table[] = {
 		.data = &data_pmic5_7225_s,
 	},
 #endif
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	{
+		.compatible = "qcom,spmi-adc5_21027",
+		.data = &data_pmic5_21027,
+	},
+#endif
 	{
 		.compatible = "qcom,spmi-adc7",
 		.data = &adc7_data_pmic,
@@ -1671,6 +1828,15 @@ static int adc_get_dt_data(struct adc_chip *adc, struct device_node *node)
 		iio_chan->info_mask_separate = adc_chan->info_mask;
 		iio_chan->type = adc_chan->type;
 		iio_chan->address = index;
+		
+#ifdef OPLUS_FEATURE_CHG_BASIC
+		if(prop.cust_type != -1 && prop.cust_scale_fn_type != -1) {
+			pr_err("%s: force to cust_type %d, cust_scale_fn_type %d\n", prop.datasheet_name, prop.cust_type, prop.cust_scale_fn_type);
+			iio_chan->type = prop.cust_type;
+			iio_chan->info_mask_separate = BIT(IIO_CHAN_INFO_RAW) | BIT(IIO_CHAN_INFO_PROCESSED);
+			adc->chan_props[index].scale_fn_type = prop.cust_scale_fn_type;
+		}
+#endif			
 		iio_chan++;
 		index++;
 	}

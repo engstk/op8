@@ -7,5 +7,5 @@
 	compatible = "qcom,kona";
 	qcom,board-id = <0 0>;
 	oplus,dtsi_no = <19855>;
-	oplus,pcb_range = <0  55>;
+	oplus,pcb_range = <0  56>;
 };

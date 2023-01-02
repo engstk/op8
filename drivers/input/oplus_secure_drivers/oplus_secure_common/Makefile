@@ -1,9 +1,14 @@
-ifeq ($(CONFIG_OPLUS_SECURE_QCOM),y)
-ccflags-y += -DQCOM_PLATFORM
-else ifeq ($(CONFIG_OPLUS_SECURE_MTK),y)
-ccflags-y += -DMTK_PLATFORM
+KBUILD_OPTIONS += CONFIG_OPLUS_SECURE_COMMON=m
+KBUILD_OPTIONS += OPLUS_OUT_OF_TREE_KO=y
+
+ifeq ($(CHIPSET_COMPANY), QCOM)
+KBUILD_OPTIONS += CONFIG_OPLUS_SECURE_QCOM=y
+KBUILD_OPTIONS += CONFIG_QCOM_QSEELOG_ENCRYPT=y
+else ifeq ($(CHIPSET_COMPANY), MTK)
+KBUILD_OPTIONS += CONFIG_OPLUS_SECURE_MTK=y
 endif
 
-ifneq ($(TARGET_PRODUCT),qssi)
-obj-$(CONFIG_OPLUS_SECURE_COMMON)     +=  oplus_secure_common.o
-endif
+KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
+M ?= $(shell pwd)
+modules modules_install clean:
+	$(MAKE) -C $(KERNEL_SRC) M=$(M) $(KBUILD_OPTIONS) $(@)

@@ -283,7 +283,12 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 		pr_err("aod backlight level changed %d -> %d\n",
 		      panel->bl_config.bl_level, bl_lvl);
 	}
-
+#ifdef OPLUS_FEATURE_AOD_RAMLESS
+	if (dsi_display->panel->oplus_priv.is_aod_ramless) {
+		panel->bl_config.bl_level = bl_lvl;
+		DSI_DEBUG("debug: bl_config.bl_level=%u\n", panel->bl_config.bl_level);
+	}
+#endif
 	/* Add some delay to avoid screen flash */
 	if (panel->need_power_on_backlight && bl_lvl) {
 		panel->need_power_on_backlight = false;
@@ -300,7 +305,9 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 			DSI_CORE_CLK, DSI_CLK_OFF);
 
-		atomic_set(&panel->esd_pending, 0);
+		if (!panel->oplus_priv.esd_err_flag_enabled) {
+			atomic_set(&panel->esd_pending, 0);
+		}
 
 		if (rc) {
 			pr_err("[%s] failed to send DSI_CMD_POST_ON_BACKLIGHT cmds, rc=%d\n",
@@ -321,7 +328,12 @@ int dsi_display_set_backlight(struct drm_connector *connector,
 	bl_scale = panel->bl_config.bl_scale;
 	bl_temp = bl_lvl * bl_scale / MAX_BL_SCALE_LEVEL;
 
-	bl_scale_sv = panel->bl_config.bl_scale_sv;
+#ifdef OPLUS_BUG_STABILITY
+	if (panel->oplus_priv.is_raw_backlight)
+		bl_scale_sv = MAX_SV_BL_SCALE_LEVEL;
+	else
+		bl_scale_sv = panel->bl_config.bl_scale_sv;
+#endif /* OPLUS_BUG_STABILITY */
 	bl_temp = (u32)bl_temp * bl_scale_sv / MAX_SV_BL_SCALE_LEVEL;
 
 	DSI_DEBUG("bl_lvl = %u, bl_scale = %u, bl_scale_sv = %u, bl_level = %u\n",
@@ -1117,7 +1129,7 @@ int dsi_display_check_status(struct drm_connector *connector, void *display,
 		goto release_panel_lock;
 
 #ifdef OPLUS_BUG_STABILITY
-	if (atomic_read(&panel->esd_pending)) {
+	if (atomic_read(&panel->esd_pending) && !panel->oplus_priv.esd_err_flag_enabled) {
 		DSI_WARN("Skip the check because esd is pending\n");
 		goto release_panel_lock;
 	}
@@ -2762,8 +2774,6 @@ static int dsi_display_ctrl_init(struct dsi_display *display)
 	int rc = 0;
 	int i;
 	struct dsi_display_ctrl *ctrl;
-	struct dsi_display_mode *cur_mode = display->panel->cur_mode;
-	bool is_cont_splash_enabled = display->is_cont_splash_enabled;
 
 	/* when ULPS suspend feature is enabled, we will keep the lanes in
 	 * ULPS during suspend state and clamp DSI phy. Hence while resuming
@@ -2775,17 +2785,8 @@ static int dsi_display_ctrl_init(struct dsi_display *display)
 	if (!display->panel->ulps_suspend_enabled || !display->ulps_enabled) {
 		display_for_each_ctrl(i, display) {
 			ctrl = &display->ctrl[i];
-
-			if ((cur_mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) &&
-			    is_cont_splash_enabled) {
-				pr_info("[%s] Forcing DSI CTRL reinit for "
-					"Dynamic Mode Setting usecase during "
-					"continuous splash.\n", display->name);
-				is_cont_splash_enabled = false;
-			}
-
 			rc = dsi_ctrl_host_init(ctrl->ctrl,
-					is_cont_splash_enabled);
+					display->is_cont_splash_enabled);
 			if (rc) {
 				DSI_ERR("[%s] failed to init host_%d, rc=%d\n",
 				       display->name, i, rc);
@@ -5066,27 +5067,13 @@ static int dsi_display_set_mode_sub(struct dsi_display *display,
 				goto error;
 			}
 		}
-		if ((mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) &&
-				(display->panel->panel_mode == DSI_OP_CMD_MODE)) {
-			atomic_set(&display->clkrate_change_pending, 1);
-		}
 		if (priv_info->phy_timing_len) {
 			display_for_each_ctrl(i, display) {
 				ctrl = &display->ctrl[i];
-				if ((mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) &&
-					(display->panel->panel_mode == DSI_OP_CMD_MODE)) {
-					rc = dsi_phy_set_timing_params_commit(ctrl->phy,
-						priv_info->phy_timing_val,
-						priv_info->phy_timing_len);
-					pr_info("[%s] Force commit PHY timing params "
-						"for seamless DMS usecase\n",
-						display->name);
-				} else {
-					rc = dsi_phy_set_timing_params(ctrl->phy,
+				rc = dsi_phy_set_timing_params(ctrl->phy,
 						priv_info->phy_timing_val,
 						priv_info->phy_timing_len,
 						commit_phy_timing);
-				}
 				if (rc)
 					DSI_ERR("Fail to add timing params\n");
 			}
@@ -7685,22 +7672,10 @@ int dsi_display_prepare(struct dsi_display *display)
 	dsi_display_ctrl_isr_configure(display, true);
 
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
-		if (display->is_cont_splash_enabled) {
-			pr_err("DMS is not supposed to be set on first frame, "
-			       "%s\n",
-			       display->config.panel_mode == DSI_OP_CMD_MODE ?
-			       "but command mode can handle it. Let's go!" :
-			       "video mode cannot handle it. Bailing out.");
-			if (display->config.panel_mode == DSI_OP_VIDEO_MODE) {
-				rc = -EINVAL;
-				goto error;
-			}
-		} else {
-			/* update dsi ctrl for new mode */
-			rc = dsi_display_pre_switch(display);
-			if (rc)
-				pr_err("[%s] panel pre-prepare-res-switch failed, rc=%d\n",
-						display->name, rc);
+		if (display->is_cont_splash_enabled &&
+		    display->config.panel_mode == DSI_OP_VIDEO_MODE) {
+			DSI_ERR("DMS not supported on first frame\n");
+			rc = -EINVAL;
 			goto error;
 		}
 
@@ -8156,7 +8131,6 @@ int dsi_display_enable(struct dsi_display *display)
 	 * resource init and hence we return early
 	 */
 	if (display->is_cont_splash_enabled) {
-		struct dsi_display_mode *adj_mode = NULL;
 
 		dsi_display_config_ctrl_for_cont_splash(display);
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
@@ -8172,7 +8146,6 @@ int dsi_display_enable(struct dsi_display *display)
 
 		display->panel->panel_initialized = true;
 		DSI_DEBUG("cont splash enabled, display enable not required\n");
-
 #ifdef OPLUS_BUG_STABILITY
 		set_oplus_display_power_status(OPLUS_DISPLAY_POWER_ON);
 #endif
@@ -8183,62 +8156,6 @@ int dsi_display_enable(struct dsi_display *display)
 		dsi_display_gamma_read(display);
 	}
 #endif /*OPLUS_BUG_STABILITY*/
-
-		/*
-		 * Start re-setting during continuous splash to perform mode
-		 * set before the first frame, if requested by the DT
-		 * configuration property
-		 */
-		mode = display->panel->cur_mode;
-		if (!(mode->dsi_mode_flags & DSI_MODE_FLAG_DMS))
-			return 0;
-
-		/*
-		 * At this point the panel is ON from bootloader (displaying
-		 * the splash screen) and the Command Mode Engine is also up:
-		 * send the commands to switch the resolution NOW!
-		 */
-		pr_info("[%s] Dynamic Mode Setting: switching now!\n",
-			display->name);
-		rc = dsi_panel_post_switch(display->panel);
-		if (rc)
-			pr_warn("[%s] Cannot send post-switch cmd: %d\n",
-				display->name, rc);
-
-		/* If Display Stream Compression is required, update params. */
-		if (mode->priv_info->dsc_enabled) {
-			mode->priv_info->dsc.pic_width *= display->ctrl_count;
-			rc = dsi_panel_update_pps(display->panel);
-			if (rc)
-				pr_warn("[%s] Cannot update PPS: %d\n",
-					display->name, rc);
-		}
-
-		rc = dsi_panel_switch(display->panel);
-		if (rc) {
-			pr_err("[%s] CRITICAL: Cannot switch resolution: "
-			       "rc = %d - Returning failure and "
-			       "hoping for DSI recovery...\n",
-				display->name, rc);
-			return rc;
-		}
-
-		/*
-		 * Find the entry for the current DRM mode structure:
-		 * beware that panel->cur_mode is only an internal cache.
-		 */
-		rc = dsi_display_find_mode(display, mode, &adj_mode);
-		if (unlikely(rc)) {
-			pr_err("[%s] This is impossible! Can't find mode!\n",
-				__func__);
-			return rc;
-		}
-
-		/* Reset the splash_dms flag: we're out of cont splash now */
-		adj_mode->splash_dms = false;
-
-		/* Remove the DMS flag, since we have already switched */
-		adj_mode->dsi_mode_flags &= ~DSI_MODE_FLAG_DMS;
 
 		return 0;
 	}

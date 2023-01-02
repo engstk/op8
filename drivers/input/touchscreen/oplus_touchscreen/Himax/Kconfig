@@ -1,0 +1,6 @@
+
+source "drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112b/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112a_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112b_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Himax/hx83102d_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Himax/hx83112f_noflash/Kconfig"

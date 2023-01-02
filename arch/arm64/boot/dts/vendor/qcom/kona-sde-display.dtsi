@@ -22,11 +22,8 @@
 #include "dsi-panel-sim-sec-hd-cmd.dtsi"
 #include "dsi-panel-xrsmrtvwr-jdi-dual-video.dtsi"
 #include "dsi-panel-r66451-dsc-fhd-plus-144hz-cmd.dtsi"
-//#ifdef OPLUS_BUG_STABILITY
-#include "dsi-panel-samsung_oplus_dsc.dtsi"
-#include "dsi-panel-oplus19065-samsung-1440-3168-dsc-cmd.dtsi"
-#include "pxlw-iris5-cfg-oplus19065_samsung_1440_3168_cmd.dtsi"
-//#endif /*OPLUS_BUG_STABILITY*/
+#include "dsi-panel-arglass-seeya-dual-1080p-video.dtsi"
+#include "dsi-panel-nt36672e-fhd-plus-60hz-video.dtsi"
 #include <dt-bindings/clock/mdss-7nm-pll-clk.h>
 
 &tlmm {
@@ -53,26 +50,7 @@
 			compatible = "qcom,msm-ext-disp-audio-codec-rx";
 		};
 	};
-	//#ifdef OPLUS_BUG_STABILITY
-	/* #if defined(CONFIG_PXLW_IRIS5) */
-	dsi_iris_pwr_supply: dsi_iris_pwr_supply {
-		#address-cells = <1>;
-		#size-cells = <0>;
 
-		qcom,panel-supply-entry@0 {
-			reg = <0>;
-			qcom,supply-name = "px_v18r";
-			qcom,supply-min-voltage = <1800000>;
-			qcom,supply-max-voltage = <1800000>;
-			qcom,supply-enable-load = <62000>;
-			qcom,supply-disable-load = <80>;
-			qcom,supply-post-on-sleep = <0>;
-		};
-	};
-        /*endif */
-        //#endif /*OPLUS_BUG_STABILITY*/
-
-        //#ifdef OPLUS_BUG_STABILITY
 	dsi_panel_pwr_supply: dsi_panel_pwr_supply {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -84,30 +62,39 @@
 			qcom,supply-max-voltage = <1800000>;
 			qcom,supply-enable-load = <62000>;
 			qcom,supply-disable-load = <80>;
-			qcom,supply-post-on-sleep = <0>;
+			qcom,supply-post-on-sleep = <20>;
 		};
 
 		qcom,panel-supply-entry@1 {
 			reg = <1>;
-			qcom,supply-name = "vout";
-			qcom,supply-min-voltage = <1280000>;
-			qcom,supply-max-voltage = <1280000>;
-			qcom,supply-enable-load = <62000>;
-			qcom,supply-disable-load = <80>;
+			qcom,supply-name = "vdd";
+			qcom,supply-min-voltage = <3300000>;
+			qcom,supply-max-voltage = <3300000>;
+			qcom,supply-enable-load = <857000>;
+			qcom,supply-disable-load = <0>;
 			qcom,supply-post-on-sleep = <0>;
 		};
 
 		qcom,panel-supply-entry@2 {
 			reg = <2>;
-			qcom,supply-name = "vdd";
-			qcom,supply-min-voltage = <3000000>;
-			qcom,supply-max-voltage = <3000000>;
-			qcom,supply-enable-load = <857000>;
-			qcom,supply-disable-load = <0>;
-			qcom,supply-post-on-sleep = <0>;
+			qcom,supply-name = "lab";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+		};
+
+		qcom,panel-supply-entry@3 {
+			reg = <3>;
+			qcom,supply-name = "ibb";
+			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-max-voltage = <6000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+			qcom,supply-post-on-sleep = <20>;
 		};
 	};
-        //#endif /*OPLUS_BUG_STABILITY*/
+
 	dsi_panel_pwr_supply_lab_ibb: dsi_panel_pwr_supply_lab_ibb {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -125,7 +112,7 @@
 		qcom,panel-supply-entry@1 {
 			reg = <1>;
 			qcom,supply-name = "lab";
-			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-min-voltage = <5600000>;
 			qcom,supply-max-voltage = <6000000>;
 			qcom,supply-enable-load = <100000>;
 			qcom,supply-disable-load = <100>;
@@ -134,7 +121,7 @@
 		qcom,panel-supply-entry@2 {
 			reg = <2>;
 			qcom,supply-name = "ibb";
-			qcom,supply-min-voltage = <4600000>;
+			qcom,supply-min-voltage = <5600000>;
 			qcom,supply-max-voltage = <6000000>;
 			qcom,supply-enable-load = <100000>;
 			qcom,supply-disable-load = <100>;
@@ -172,11 +159,11 @@
 		regulator-min-microvolt = <5500000>;
 		regulator-max-microvolt = <5500000>;
 		regulator-enable-ramp-delay = <233>;
-		//gpio = <&tlmm 61 0>;
+		gpio = <&tlmm 61 0>;
 		enable-active-high;
 		regulator-boot-on;
-		//pinctrl-names = "default";
-		//pinctrl-0 = <&display_panel_avdd_default>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&display_panel_avdd_default>;
 	};
 
 	sde_dsi: qcom,dsi-display-primary {
@@ -205,12 +192,7 @@
 			 <&mdss_dsi1_pll SHADOW_BYTECLK_SRC_1_CLK>,
 			 <&mdss_dsi1_pll SHADOW_PCLK_SRC_1_CLK>,
 			 <&mdss_dsi1_pll SHADOW_CPHY_BYTECLK_SRC_1_CLK>,
-			 <&mdss_dsi1_pll SHADOW_CPHY_PCLK_SRC_1_CLK>,
-			 <&clock_rpmh RPMH_LN_BB_CLK2>;
-
-			 /* #if defined(CONFIG_PXLW_IRIS5) */
-			 /*TODO: <&rpmhcc RPMH_LN_BB_CLK2>;*/
-			 /* #endif */
+			 <&mdss_dsi1_pll SHADOW_CPHY_PCLK_SRC_1_CLK>;
 
 		clock-names = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",
@@ -221,34 +203,23 @@
 				"src_byte_clk1", "src_pixel_clk1",
 				"cphy_byte_clk1", "cphy_pixel_clk1",
 				"shadow_byte_clk1", "shadow_pixel_clk1",
-				"shadow_cphybyte_clk1", "shadow_cphypixel_clk1",
-				"pw_bb_clk2";
-				/* #if defined(CONFIG_PXLW_IRIS5) */
-				/*TODO: "ln_bb_clk2"*/
-				/* #endif */
+				"shadow_cphybyte_clk1", "shadow_cphypixel_clk1";
 
 		pinctrl-names = "panel_active", "panel_suspend";
-		/* #if defined(CONFIG_PXLW_IRIS5) */
-		pinctrl-0 = <&sde_dsi_active &panel_vout_active &sde_te_active &iris_reset_active &iris_wakeup_active &iris_ready_status_active>;
-		pinctrl-1 = <&sde_dsi_suspend &panel_vout_suspend &sde_te_suspend &iris_wakeup_suspend &iris_reset_suspend &iris_ready_status_suspend>;
-		/* #endif */
+		pinctrl-0 = <&sde_dsi_active &sde_te_active>;
+		pinctrl-1 = <&sde_dsi_suspend &sde_te_suspend>;
 
 		qcom,platform-te-gpio = <&tlmm 66 0>;
 		qcom,panel-te-source = <0>;
 
-		//#ifdef OPLUS_BUG_STABILITY
-		px_v18r-supply = <&pm8150_l7>;
 		vddio-supply = <&pm8150_l14>;
 		vdd-supply = <&pm8150a_l11>;
-		vout-supply = <&L2C>;
-		//#endif /*OPLUS_BUG_STABILITY*/
 		avdd-supply = <&display_panel_avdd>;
+		lab-supply = <&ab_vreg>;
+		ibb-supply = <&ibb_vreg>;
 
 		qcom,mdp = <&mdss_mdp>;
-		//#ifdef OPLUS_BUG_STABILITY
-		qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
-		pxlw,iris-lightup-config = <&mdss_iris_cfg_oplus19065_samsung_1440_3168_dsc_cmd>;
-                //#endif /*OPLUS_BUG_STABILITY*/
+		qcom,dsi-default-panel = <&dsi_sw43404_amoled_cmd>;
 	};
 
 	sde_dsi1: qcom,dsi-display-secondary {
@@ -278,15 +249,10 @@
 		qcom,platform-te-gpio = <&tlmm 67 0>;
 		qcom,panel-te-source = <1>;
 
-		//#ifdef OPLUS_BUG_STABILITY
-		px_v18r-supply = <&pm8150_l7>;
 		vddio-supply = <&pm8150_l14>;
 		vdd-supply = <&pm8150a_l11>;
-		vout-supply = <&L2C>;
-
 		avdd-supply = <&display_panel_avdd>;
-		qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
-		//#endif /*OPLUS_BUG_STABILITY*/
+
 		qcom,mdp = <&mdss_mdp>;
 	};
 
@@ -295,12 +261,12 @@
 		cell-index = <0>;
 		label = "wb_display";
 	};
-	//#ifdef OPLUS_BUG_STABILITY
+
 	msm_notifier: qcom,msm_notifier@0 {
 		compatible = "qcom,msm-notifier";
-		panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
+		panel = <&dsi_sw43404_amoled_cmd &dsi_sharp_qsync_wqhd_cmd
+			&dsi_dual_sim_dsc_375_cmd>;
 	};
-	//#endif /*OPLUS_BUG_STABILITY*/
 };
 
 &sde_dp {
@@ -338,6 +304,25 @@
 		timing@0 {
 			qcom,mdss-dsi-panel-phy-timings = [00 3a 0f 0f 2e 2b 0f
 				10 0b 02 04 00 2e 1e];
+			qcom,display-topology = <2 0 2>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_dual_arglass_seeya_video {
+	qcom,mdss-dsi-min-refresh-rate = <60>;
+	qcom,mdss-dsi-max-refresh-rate = <60>;
+	qcom,mdss-dsi-panel-status-command = [06 01 00 01 00 00 01 0a];
+	qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
+	qcom,mdss-dsi-panel-status-value = <0x9c>;
+	qcom,mdss-dsi-panel-on-check-value = <0x9c>;
+	qcom,mdss-dsi-panel-status-read-length = <1>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings =  [00 11 04 04 12 1E
+				04 04 04 03 02 04 0F 09];
 			qcom,display-topology = <2 0 2>;
 			qcom,default-topology-index = <0>;
 		};
@@ -568,6 +553,18 @@
 			qcom,mdss-dsi-panel-phy-timings = [00 16 06 05 20 1f 06
 				06 03 02 04 00 13 15];
 			qcom,display-topology = <2 2 2>;
+			qcom,default-topology-index = <0>;
+		};
+	};
+};
+
+&dsi_nt36672e_fhd_plus_60_video {
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0";
+	qcom,mdss-dsi-display-timings {
+		timing@0 {
+			qcom,mdss-dsi-panel-phy-timings = [00 13 05 04 1f 1e 05
+				05 03 02 04 00 12 14];
+			qcom,display-topology = <1 0 1>;
 			qcom,default-topology-index = <0>;
 		};
 	};

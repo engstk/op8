@@ -11046,7 +11046,7 @@ static int oplus_get_otg_online_status(void)
 				__func__, level ? "H" : "L", typec_otg, online);
 	}
 
-	chip->otg_online = online;
+	chip->otg_online = typec_otg;
 	return online;
 }
 

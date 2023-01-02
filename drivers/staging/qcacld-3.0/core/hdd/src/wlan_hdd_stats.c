@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -440,7 +440,10 @@ static bool put_wifi_interface_info(struct wifi_interface_info *stats,
 		    CFG_COUNTRY_CODE_LEN, stats->apCountryStr) ||
 	    nla_put(vendor_event,
 		    QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_INFO_COUNTRY_STR,
-		    CFG_COUNTRY_CODE_LEN, stats->countryStr)) {
+		    CFG_COUNTRY_CODE_LEN, stats->countryStr) ||
+	    nla_put_u32(vendor_event,
+			QCA_WLAN_VENDOR_ATTR_LL_STATS_IFACE_INFO_TS_DUTY_CYCLE,
+			stats->time_slice_duty_cycle)) {
 		hdd_err("QCA_WLAN_VENDOR_ATTR put fail");
 		return false;
 	}
@@ -6210,13 +6213,15 @@ int wlan_hdd_get_temperature(struct hdd_adapter *adapter, int *temperature)
 
 void wlan_hdd_display_txrx_stats(struct hdd_context *ctx)
 {
-	struct hdd_adapter *adapter = NULL;
+	struct hdd_adapter *adapter = NULL, *next_adapter = NULL;
 	struct hdd_tx_rx_stats *stats;
 	int i = 0;
 	uint32_t total_rx_pkt, total_rx_dropped,
 		 total_rx_delv, total_rx_refused;
+	wlan_net_dev_ref_dbgid dbgid = NET_DEV_HOLD_CACHE_STATION_STATS_CB;
 
-	hdd_for_each_adapter_dev_held(ctx, adapter) {
+	hdd_for_each_adapter_dev_held_safe(ctx, adapter, next_adapter,
+					   dbgid) {
 		total_rx_pkt = 0;
 		total_rx_dropped = 0;
 		total_rx_delv = 0;
@@ -6224,7 +6229,7 @@ void wlan_hdd_display_txrx_stats(struct hdd_context *ctx)
 		stats = &adapter->hdd_stats.tx_rx_stats;
 
 		if (adapter->vdev_id == INVAL_VDEV_ID) {
-			dev_put(adapter->dev);
+			hdd_adapter_dev_put_debug(adapter, dbgid);
 			continue;
 		}
 
@@ -6237,7 +6242,7 @@ void wlan_hdd_display_txrx_stats(struct hdd_context *ctx)
 		}
 
 		/* dev_put has to be done here */
-		dev_put(adapter->dev);
+		hdd_adapter_dev_put_debug(adapter, dbgid);
 
 		hdd_debug("TX - called %u, dropped %u orphan %u",
 			  stats->tx_called, stats->tx_dropped,

@@ -43,7 +43,9 @@
 #endif
 #include <linux/ktime.h>
 #include <linux/kernel.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/system/boot_mode.h>
+#endif
 #endif
 
 #include "oplus_charger.h"
@@ -108,6 +110,17 @@ ssize_t __attribute__((weak)) vfs_read(struct file *file, char __user *buf, size
 ssize_t __attribute__((weak)) vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
 {
 	return -EINVAL;
+}
+
+/*kernel-5.10 GKI2.0 NOT allow drivers to use filp_open...*/
+struct file* __attribute__((weak)) filp_open(const char *filename, int flags, umode_t mode)
+{
+	return ERR_PTR(-EINVAL);
+}
+
+int  __attribute__((weak)) filp_close(struct file *filp, fl_owner_t id)
+{
+	return 0;
 }
 #endif
 

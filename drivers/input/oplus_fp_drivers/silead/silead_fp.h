@@ -178,6 +178,10 @@ struct fp_dev_touch_info {
   #define BSP_SIL_PLAT_COMM
 #endif /* ! BSP_SIL_PLAT_MTK & ! BSP_SIL_PLAT_QCOM */
 
+#ifdef CONFIG_REGULATOR_OPLUS_WL2868C_FP_LDO
+#define BSP_SIL_FP_EXT_PMIC
+#endif
+
 /* Todo: enable correct power supply mode */
 #define BSP_SIL_POWER_SUPPLY_REGULATOR
 //#define BSP_SIL_POWER_SUPPLY_PINCTRL

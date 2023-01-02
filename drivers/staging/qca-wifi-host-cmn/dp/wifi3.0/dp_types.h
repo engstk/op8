@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -284,9 +285,15 @@ enum dp_cpu_ring_map_types {
 /**
  * enum dp_ctxt - context type
  * @DP_PDEV_TYPE: PDEV context
+ * @DP_RX_RING_HIST_TYPE: Datapath rx ring history
+ * @DP_RX_ERR_RING_HIST_TYPE: Datapath rx error ring history
+ * @DP_RX_REINJECT_RING_HIST_TYPE: Datapath reinject ring history
  */
 enum dp_ctxt_type {
-	DP_PDEV_TYPE
+	DP_PDEV_TYPE,
+	DP_RX_RING_HIST_TYPE,
+	DP_RX_ERR_RING_HIST_TYPE,
+	DP_RX_REINJECT_RING_HIST_TYPE,
 };
 
 /**
@@ -580,6 +587,7 @@ struct dp_rx_tid {
 	uint8_t pn_size;
 	/* REO TID queue descriptors */
 	void *hw_qdesc_vaddr_unaligned;
+	void *hw_qdesc_vaddr_aligned;
 	qdf_dma_addr_t hw_qdesc_paddr_unaligned;
 	qdf_dma_addr_t hw_qdesc_paddr;
 	uint32_t hw_qdesc_alloc_size;
@@ -827,12 +835,6 @@ struct dp_soc_stats {
 			uint32_t hal_wbm_rel_dup;
 			/* HAL RXDMA error Duplicate count */
 			uint32_t hal_rxdma_err_dup;
-			/* ipa smmu map duplicate count */
-			uint32_t ipa_smmu_map_dup;
-			/* ipa smmu unmap duplicate count */
-			uint32_t ipa_smmu_unmap_dup;
-			/* ipa smmu unmap while ipa pipes is disabled */
-			uint32_t ipa_unmap_no_pipe;
 			/* REO cmd send fail/requeue count */
 			uint32_t reo_cmd_send_fail;
 			/* REO cmd send drain count */
@@ -867,10 +869,12 @@ struct dp_soc_stats {
 			uint32_t nbuf_sanity_fail;
 			/* Duplicate link desc refilled */
 			uint32_t dup_refill_link_desc;
-			/* Non Eapol pkt drop cnt due to peer not authorized */
-			uint32_t peer_unauth_rx_pkt_drop;
 			/* EAPOL drop count in intrabss scenario */
 			uint32_t intrabss_eapol_drop;
+			/* Non Eapol pkt drop cnt due to peer not authorized */
+			uint32_t peer_unauth_rx_pkt_drop;
+			/* MSDU len err count */
+			uint32_t msdu_len_err;
 		} err;
 
 		/* packet count per core - per ring */
@@ -2489,6 +2493,7 @@ struct dp_fisa_rx_sw_ft {
 	uint32_t last_hal_aggr_count;
 	uint32_t cur_aggr_gso_size;
 	struct udphdr *head_skb_udp_hdr;
+	uint32_t reo_dest_indication;
 };
 
 #define DP_RX_GET_SW_FT_ENTRY_SIZE sizeof(struct dp_fisa_rx_sw_ft)

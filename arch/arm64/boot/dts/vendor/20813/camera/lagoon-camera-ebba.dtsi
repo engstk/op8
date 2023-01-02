@@ -493,6 +493,7 @@
 		cam_vaf-supply = <&L6P>;
 		regulator-names = "cam_vio", "cam_vaf";
 		rgltr-cntrl-support;
+		need-check-pid;
 		rgltr-min-voltage = <1800000 2800000>;
 		rgltr-max-voltage = <1800000 2800000>;
 		rgltr-load-current = <2000000 100000>;

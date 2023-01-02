@@ -624,7 +624,7 @@
 			//#ifndef OPLUS_BUG_STABILITY
 			//#size = <0x0 0x1400000>;
 			//#else
-			size = <0x0 0x1800000>;
+			size = <0x0 0x1C00000>;
 			//#endif /* OPLUS_BUG_STABILITY */
 		};
 		// #ifdef OPLUS_FEATURE_DUMPDEVICE
@@ -663,6 +663,10 @@
 		#size-cells = <1>;
 		ranges = <0 0 0 0xffffffff>;
 		compatible = "simple-bus";
+	};
+
+	midas_pdev {
+                compatible = "oplus,midas-pdev";
 	};
 };
 
@@ -4776,7 +4780,7 @@
 		qcom,wlan-rc-num = <0>;
 		qcom,wlan-ramdump-dynamic = <0x420000>;
 		qcom,smmu-s1-enable;
-                qcom,converged-dt;
+		qcom,converged-dt;
                 cnss-daemon-support;
 		qcom,cmd_db_name = "smpf2";
 		qcom,set-wlaon-pwr-ctrl;

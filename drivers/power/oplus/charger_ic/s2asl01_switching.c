@@ -21,7 +21,13 @@
 #include <linux/delay.h>
 #include "../oplus_charger.h"
 #include "../oplus_gauge.h"
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/system/oplus_project.h>
+#endif
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+#include <mt-plat/mtk_boot_common.h>
+#endif
+
 struct s2asl01_switching_data *g_switching;
 static int s2asl01_boot_mode;
 int s2asl01_switching_set_fastcharge_current(int charge_curr_ma);
@@ -1369,6 +1375,7 @@ int get_switching_charge_enable(void)
 
 int switching_hw_enable(int enable)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 	if(s2asl01_boot_mode == ATE_FACTORY_BOOT || s2asl01_boot_mode == FACTORY_BOOT || g_switching->switching_chip->error_status != 0) {
 #else
@@ -1377,7 +1384,9 @@ int switching_hw_enable(int enable)
 		chg_err(" boot_mode:%d, disabled switch\n",s2asl01_boot_mode);
 		s2asl01_switch_enable(g_switching->pdata,0);
 		return -1;
-	} else {
+	} else
+#endif
+	{
 		s2asl01_switch_enable(g_switching->pdata,enable);
 		return 0;
 	}
@@ -1389,6 +1398,7 @@ int s2asl01_switching_set_discharge_current(int discharge_current_ma)
 		chg_err("switch not enabled\n");
 		return 0;
 	}
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 	if(s2asl01_boot_mode == ATE_FACTORY_BOOT || s2asl01_boot_mode == FACTORY_BOOT) {
 #else
@@ -1396,7 +1406,9 @@ int s2asl01_switching_set_discharge_current(int discharge_current_ma)
 #endif
 		chg_err(" boot_mode:%d, disabled switch\n",s2asl01_boot_mode);
 		return -1;
-	} else {
+	} else
+#endif
+	{
 		chg_err("discharge_current_ma:%d\n", discharge_current_ma);
 		s2asl01_set_dischg_charging_current_limit(g_switching, discharge_current_ma);
 		s2asl01_set_supllement_mode(g_switching, false);
@@ -1635,7 +1647,7 @@ static int s2asl01_switching_probe(struct i2c_client *client,
 	g_switching->switching_chip->dev = g_switching->dev;
 	g_switching->switching_chip->error_status = error_status;
 	atomic_set(&g_switching->suspended, 0);
-	oplus_switching_init(g_switching->switching_chip);
+	oplus_switching_init(g_switching->switching_chip, PARALLEL_SWITCH_IC);
 
 	if (error_status != 0) {
 		s2asl01_switch_enable(pdata, 0);
@@ -1643,6 +1655,7 @@ static int s2asl01_switching_probe(struct i2c_client *client,
 		return 0;
 	}
 
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 	if(s2asl01_boot_mode == ATE_FACTORY_BOOT || s2asl01_boot_mode == FACTORY_BOOT) {
 #else
@@ -1650,7 +1663,9 @@ static int s2asl01_switching_probe(struct i2c_client *client,
 #endif
 		chg_err(" boot_mode:%d, disabled switch\n",s2asl01_boot_mode);
 		s2asl01_switch_enable(pdata,0);
-	} else {
+	} else
+#endif
+	{
 		s2asl01_switch_enable(pdata,1);
 		s2asl01_set_dischg_mode(switching, 0x0);
 		s2asl01_set_chg_mode(switching, 0x0);

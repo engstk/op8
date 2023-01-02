@@ -46,6 +46,22 @@
 //device i2c address
 #define CHIP_LEFT_ADDR		(0x34)
 #define CHIP_RIGHT_ADDR		(0x35)
+
+/*modified for pad tdm pa count*/
+#define CHIP_4PA_COUNT    (4)
+/*modified for pad tdm chip select*/
+#define CHIP_SELECTOR_4PA_LEFT_UP      (1)
+#define CHIP_SELECTOR_4PA_LEFT_DOWN    (2)
+#define CHIP_SELECTOR_4PA_RIGHT_UP     (3)
+#define CHIP_SELECTOR_4PA_RIGHT_DOWN   (4)
+#define CHIP_SELECTOR_4PA_LEFT_BOTH    (5)
+#define CHIP_SELECTOR_4PA_RIGHT_BOTH   (6)
+
+/*modified for pad tdm device i2c address*/
+#define CHIP_LEFT_UP_ADDR       (0x35)
+#define CHIP_LEFT_DOWN_ADDR     (0x34)
+#define CHIP_RIGHT_UP_ADDR      (0x36)
+#define CHIP_RIGHT_DOWN_ADDR    (0x37)
 #endif /* OPLUS_ARCH_EXTENDS */
 
 #define TFA98XX_NUM_RATES		9

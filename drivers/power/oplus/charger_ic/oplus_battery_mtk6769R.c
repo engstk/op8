@@ -3501,7 +3501,7 @@ void charger_debug_init(void)
 {
 	struct proc_dir_entry *charger_dir;
 
-	charger_dir = proc_mkdir("charger", NULL);
+	charger_dir = proc_mkdir("mtk_charger", NULL);
 	if (!charger_dir) {
 		chr_err("fail to mkdir /proc/charger\n");
 		return;

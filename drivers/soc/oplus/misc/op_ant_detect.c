@@ -54,6 +54,46 @@ struct cable_data {
     bool uevent_feature;
 };
 static struct cable_data *rf_cable_data;
+static ProjectInfoOCDT *g_project = NULL;
+#define rf_v2_status_index    0
+#define rf_v3_status_index    1
+#define SMEM_PROJECT    135
+
+int modify_rf_v3_info(int status)
+{
+    size_t size;
+
+    g_project = (ProjectInfoOCDT *)qcom_smem_get(QCOM_SMEM_HOST_ANY,
+        SMEM_PROJECT,
+        &size); 
+
+    if (IS_ERR_OR_NULL(g_project))
+        pr_err("%s: get project_info failure\n", __func__);
+    else {
+        g_project->nDataBCDT.Feature[rf_v3_status_index] = status;
+        pr_err("%s: rf_cable: %d\n",
+                __func__,g_project->nDataBCDT.Feature[rf_v3_status_index]);
+    }
+    return 0;
+}
+
+int modify_rf_v2_info(int status)
+{
+    size_t size;
+
+    g_project = (ProjectInfoOCDT *)qcom_smem_get(QCOM_SMEM_HOST_ANY,
+        SMEM_PROJECT,
+        &size);
+
+    if (IS_ERR_OR_NULL(g_project)) {
+        pr_err("%s: get project_info failure\n", __func__);
+    } else {
+        g_project->nDataBCDT.Feature[rf_v2_status_index] = status;
+        pr_err("%s: rf_cable: %d\n",
+                __func__,g_project->nDataBCDT.Feature[rf_v2_status_index]);
+    }
+    return 0;
+}
 
 int local_pow(int x,int y)
 {
@@ -67,11 +107,10 @@ int local_pow(int x,int y)
 
 int get_all_gpio_val(void)
 {
-    int i = 0;
+   // int i = 0;
     int gpiostate = 0;
-    for (i = 0; i < rf_cable_data->gpio_num; i++) {
-        gpiostate = gpiostate + (gpio_get_value(rf_cable_data->cable_gpio[i]) *local_pow(10, rf_cable_data->gpio_num - i - 1));
-    }
+    gpiostate = gpio_get_value(rf_cable_data->cable_gpio[0])*10 +
+                                gpio_get_value(rf_cable_data->cable_gpio[1]);
     return gpiostate;
 }
 
@@ -128,12 +167,15 @@ static void rf_cable_work(struct work_struct *work)
         goto out;
     }
 
-    rf_cable_data->rf_state = current_gpio_state;
+    rf_cable_data->rf_state =	gpio_get_value(rf_cable_data->cable_gpio[0]) ||
+		gpio_get_value(rf_cable_data->cable_gpio[1]);
 
     if (rf_cable_data->rf_state != rf_cable_data->rf_state_pre) {
+		modify_rf_v3_info(rf_cable_data->rf_state);
         rc_cable_state_change(rf_cable_data->rf_state,1);
     }
-    rf_cable_data->rf_state_pre =current_gpio_state;
+    rf_cable_data->rf_state_pre =	gpio_get_value(rf_cable_data->cable_gpio[0]) ||
+		gpio_get_value(rf_cable_data->cable_gpio[1]);;
 
 out:
     irq_cable_enable(1);
@@ -313,11 +355,12 @@ static int op_rf_cable_probe(struct platform_device *pdev)
         pr_err("requested irq %d\n", rf_cable_data->irq[i]);
         enable_irq_wake(rf_cable_data->irq[i]);
     }
-    create_rf_cable_procfs();
-    cable_state = get_all_gpio_val();
-    rf_cable_data->rf_state = cable_state;
-    pr_err("%s gpio=%d ,\n", __func__, cable_state);
+    cable_state = gpio_get_value(rf_cable_data->cable_gpio[0]) ||
+					gpio_get_value(rf_cable_data->cable_gpio[1]);
+    pr_err("%s gpio0=%d gpio1=%d,\n", __func__, cable_state);
+    modify_rf_v3_info(cable_state);
     rc_cable_state_change(cable_state,0);
+    create_rf_cable_procfs();
     pr_err("%s: probe success!\n", __func__);
     return 0;
 

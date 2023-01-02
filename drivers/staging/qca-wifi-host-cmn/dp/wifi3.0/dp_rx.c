@@ -1979,7 +1979,7 @@ dp_rx_ring_record_entry(struct dp_soc *soc, uint8_t ring_num,
 	struct hal_buf_info hbi;
 	uint32_t idx;
 
-	if (qdf_unlikely(!&soc->rx_ring_history[ring_num]))
+	if (qdf_unlikely(!soc->rx_ring_history[ring_num]))
 		return;
 
 	hal_rx_reo_buf_paddr_get(ring_desc, &hbi);
@@ -2042,7 +2042,6 @@ bool dp_rx_intrabss_fwd_wrapper(struct dp_soc *soc, struct dp_peer *ta_peer,
 #define DP_RX_INTRABSS_FWD(soc, peer, rx_tlv_hdr, nbuf, msdu_metadata) \
 		dp_rx_intrabss_fwd(soc, peer, rx_tlv_hdr, nbuf, msdu_metadata)
 #endif
-
 
 /**
  * dp_rx_process() - Brain of the Rx processing functionality
@@ -2325,6 +2324,9 @@ more_data:
 
 		qdf_nbuf_set_tid_val(rx_desc->nbuf,
 				     HAL_RX_REO_QUEUE_NUMBER_GET(ring_desc));
+		qdf_nbuf_set_rx_reo_dest_ind(
+				rx_desc->nbuf,
+				HAL_RX_REO_MSDU_REO_DST_IND_GET(ring_desc));
 
 		QDF_NBUF_CB_RX_PKT_LEN(rx_desc->nbuf) = msdu_desc_info.msdu_len;
 
@@ -2457,17 +2459,25 @@ done:
 		 * Check if DMA completed -- msdu_done is the last bit
 		 * to be written
 		 */
-		if (qdf_unlikely(!qdf_nbuf_is_rx_chfrag_cont(nbuf) &&
-				 !hal_rx_attn_msdu_done_get(rx_tlv_hdr))) {
-			dp_err("MSDU DONE failure");
-			DP_STATS_INC(soc, rx.err.msdu_done_fail, 1);
-			hal_rx_dump_pkt_tlvs(hal_soc, rx_tlv_hdr,
-					     QDF_TRACE_LEVEL_INFO);
-			tid_stats->fail_cnt[MSDU_DONE_FAILURE]++;
-			qdf_nbuf_free(nbuf);
-			qdf_assert(0);
-			nbuf = next;
-			continue;
+		if (qdf_likely(!qdf_nbuf_is_rx_chfrag_cont(nbuf))) {
+			if (qdf_unlikely(!hal_rx_attn_msdu_done_get(
+								 rx_tlv_hdr))) {
+				dp_err_rl("MSDU DONE failure");
+				DP_STATS_INC(soc, rx.err.msdu_done_fail, 1);
+				hal_rx_dump_pkt_tlvs(hal_soc, rx_tlv_hdr,
+						     QDF_TRACE_LEVEL_INFO);
+				tid_stats->fail_cnt[MSDU_DONE_FAILURE]++;
+				qdf_assert(0);
+				qdf_nbuf_free(nbuf);
+				nbuf = next;
+				continue;
+			} else if (qdf_unlikely(hal_rx_attn_msdu_len_err_get(
+								 rx_tlv_hdr))) {
+				DP_STATS_INC(soc, rx.err.msdu_len_err, 1);
+				qdf_nbuf_free(nbuf);
+				nbuf = next;
+				continue;
+			}
 		}
 
 		DP_HIST_PACKET_COUNT_INC(vdev->pdev->pdev_id);

@@ -29,6 +29,7 @@
 #ifdef CONFIG_OPLUS_SYSTEM_KERNEL_QCOM
 #include <linux/soc/qcom/smem.h>
 #endif
+#include <linux/proc_fs.h>
 
 /*****xueqian.zheng ******/
 #define OPLUS_RESERVE1_BLOCK_SZ             (4096)
@@ -151,6 +152,66 @@ static int mdmfeature_release (struct inode *inode, struct file *file)
         return 0;
 }
 
+#define MDMFEATURE_UPDATE_MAGIC 'M'
+#define MDMFEATURE_UPDATE_DSDS _IOWR(MDMFEATURE_UPDATE_MAGIC, 0, int)
+#define MDMFEATURE_UPDATE_SSSS _IOWR(MDMFEATURE_UPDATE_MAGIC, 1, int)
+
+struct proc_dir_entry *manifest_parent = NULL;
+
+static void update_manifest(unsigned int update_type)
+{
+        static const char *telephony_manifest_src[2] = {
+                "/vendor/odm/etc/vintf/network_manifest_ssss.xml",
+                "/vendor/odm/etc/vintf/network_manifest_dsds.xml",
+        };
+
+        mm_segment_t fs;
+        static struct proc_dir_entry *telephony_manifest_ssss = NULL;
+        static struct proc_dir_entry *telephony_manifest_dsds = NULL;
+
+        printk("update_manifest update_type %d\n", update_type - MDMFEATURE_UPDATE_DSDS);
+        fs = get_fs();
+        set_fs(KERNEL_DS);
+
+        if (manifest_parent) {
+                if (telephony_manifest_ssss) {
+                        proc_remove(telephony_manifest_ssss);
+                        telephony_manifest_ssss = NULL;
+                }
+                if (telephony_manifest_dsds) {
+                        proc_remove(telephony_manifest_dsds);
+                        telephony_manifest_dsds = NULL;
+                }
+
+                if (update_type == MDMFEATURE_UPDATE_SSSS) {
+                        telephony_manifest_ssss = proc_symlink("network_manifest", manifest_parent, telephony_manifest_src[0]);
+                } else {
+                        telephony_manifest_dsds = proc_symlink("network_manifest", manifest_parent, telephony_manifest_src[1]);
+                }
+        }
+
+        set_fs(fs);
+        printk("update_manifest update_type %d done\n", update_type - MDMFEATURE_UPDATE_DSDS);
+}
+
+
+static long mdmfeature_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+        long ret = 0;
+
+        printk("mdmfeature_ioctl cmd %d\n", cmd - MDMFEATURE_UPDATE_DSDS);
+
+        switch (cmd) {
+        case MDMFEATURE_UPDATE_SSSS:
+        case MDMFEATURE_UPDATE_DSDS:
+                update_manifest(cmd);
+                break;
+        default:
+                ret = -EINVAL;
+        }
+        return ret;
+}
+
 
 static const struct file_operations mdmfeature_device_fops = {
         .owner  = THIS_MODULE,
@@ -159,6 +220,7 @@ static const struct file_operations mdmfeature_device_fops = {
         .poll        = mdmfeature_poll,
         .llseek = generic_file_llseek,
         .release = mdmfeature_release,
+        .unlocked_ioctl = mdmfeature_ioctl,
 };
 
 static struct miscdevice mdmfeature_device = {
@@ -166,15 +228,31 @@ static struct miscdevice mdmfeature_device = {
 };
 
 
-
+#if IS_MODULE(CONFIG_OPLUS_FEATURE_SIMCARDNUM)
+extern char sim_card_num[];
+#endif
 static int __init mdmfeature_init(void)
 {
+        int ret = -1;
+        manifest_parent = proc_mkdir("oplusManifest", NULL);
+#if IS_MODULE(CONFIG_OPLUS_FEATURE_SIMCARDNUM)
+        if (sim_card_num[0] == '0') {
+                update_manifest(MDMFEATURE_UPDATE_SSSS);
+        } else {
+                update_manifest(MDMFEATURE_UPDATE_DSDS);
+        }
+#else
+        update_manifest(MDMFEATURE_UPDATE_DSDS);
+#endif
         init_waitqueue_head(&mdmfeature_wq);
-        return misc_register(&mdmfeature_device);
+        ret = misc_register(&mdmfeature_device);
+        printk("mdmfeature_init ret = %d done\n", ret);
+        return ret;
 }
 
 static void __exit mdmfeature_exit(void)
 {
+        proc_remove(manifest_parent);
         misc_deregister(&mdmfeature_device);
 }
 

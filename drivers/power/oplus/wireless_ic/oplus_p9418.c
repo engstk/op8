@@ -47,21 +47,30 @@
 #include <soc/oplus/system/boot_mode.h>
 
 #define DEBUG_BY_FILE_OPS
-#define P9418_WAIT_TIME 120		/* sec */
+#define P9418_WAIT_TIME 50		/* sec */
 #define POWER_EXPIRED_TIME_DEFAULT 120
 #define CHECK_PRIVATE_DELAY 300
 #define CHECK_IRQ_DELAY 5
 #define DEBUG_BUFF_SIZE 32
 #define FULL_SOC 100
+#define NUM_0 0
+#define NUM_1 1
+#define NUM_3 3
+#define NUM_4 4
+#define NUM_5 5
+#define ERR_NUM -1
+#define MS_10 10
+#define P9418_ID_H 0x94
+#define P9418_ID_L 0x18
+#define P9415_ID_L 0x15
 struct oplus_p9418_ic *p9418_chip = NULL;
 
 static int g_pen_ornot;
-static int g_count;
-struct delayed_work idt_timer_work;
+static struct work_struct idt_timer_work;
+static struct wakeup_source *present_wakelock;
 static unsigned long long g_ble_timeout_cnt = 0;
 static unsigned long long g_verify_failed_cnt = 0;
 static DECLARE_WAIT_QUEUE_HEAD(i2c_waiter);
-
 extern struct oplus_chg_chip *g_oplus_chip;
 extern int oplus_get_idt_en_val(void);
 extern struct oplus_chg_debug_info oplus_chg_debug_info;
@@ -82,7 +91,7 @@ static struct notifier_block p9418_notifier ={
 /* only for GKI compile */
 unsigned int __attribute__((weak)) get_PCB_Version(void)
 {
-    return EVT2 + 1;
+	return EVT2 + 1;
 }
 #endif
 
@@ -271,7 +280,7 @@ static void p9418_set_tx_mode(int value)
 		if (value && (P9418_RTX_READY & reg_tx)) {
 			chg_err("set tx enable\n");
 			p9418_config_interface(chip, P9418_REG_RTX_CMD, 0x01, 0xFF);
-		} else if (!value && (P9418_RTX_TRANSFER & reg_tx)){
+		} else if (!value && (P9418_RTX_TRANSFER & reg_tx)) {
 			chg_err("set tx disable\n");
 			p9418_config_interface(chip, P9418_REG_RTX_CMD, 0x04, 0xFF);
 		} else {
@@ -408,14 +417,14 @@ static void p9418_power_enable(struct oplus_p9418_ic *chip, bool enable)
 	}
 
 	if (enable) {
-		p9418_set_vbat_en_val(1);
+		p9418_set_vbat_en_val(chip, NUM_1);
 		udelay(1000);
-		p9418_set_booster_en_val(1);
+		p9418_set_booster_en_val(chip, NUM_1);
 		chip->is_power_on = true;
 	} else {
-		p9418_set_booster_en_val(0);
+		p9418_set_booster_en_val(chip, NUM_0);
 		udelay(1000);
-		p9418_set_vbat_en_val(0);
+		p9418_set_vbat_en_val(chip, NUM_0);
 		chip->is_power_on = false;
 	}
 
@@ -437,8 +446,7 @@ void p9418_reg_print(void)
 	char debug_data[6];
 
 	p9418_read_reg(p9418_chip, P9418_REG_RTX_ERR_STATUS, debug_data, 2);
-	chg_err("0x74 REG: 0x%02X 0x%02X\n",
-			debug_data[0],debug_data[1]);
+	chg_err("0x74 REG: 0x%02X 0x%02X\n", debug_data[0], debug_data[1]);
 
 	p9418_read_reg(p9418_chip, P9418_REG_RTX_STATUS, debug_data, 1);
 	chg_err("0x78 REG: 0x%02X\n", debug_data[0]);
@@ -457,38 +465,38 @@ void p9418_reg_print(void)
 static int p9418_load_bootloader(struct oplus_p9418_ic *chip)
 {
 	int rc = 0;
-	// configure the system
-	rc = __p9418_write_reg(chip, 0x3000, 0x5a); // write key
+	/* configure the system */
+	rc = __p9418_write_reg(chip, 0x3000, 0x5a); /* write key */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3000 reg error!\n");
 		return rc;
 	}
 
-	rc = __p9418_write_reg(chip, 0x3004, 0x00); // set HS clock
+	rc = __p9418_write_reg(chip, 0x3004, 0x00); /* set HS clock */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3004 reg error!\n");
 		return rc;
 	}
 
-	rc = __p9418_write_reg(chip, 0x3008, 0x09); // set AHB clock
+	rc = __p9418_write_reg(chip, 0x3008, 0x09); /* set AHB clock */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3008 reg error!\n");
 		return rc;
 	}
 
-	rc = __p9418_write_reg(chip, 0x300C, 0x05); // configure 1us pulse
+	rc = __p9418_write_reg(chip, 0x300C, 0x05); /* configure 1us pulse */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x300c reg error!\n");
 		return rc;
 	}
 
-	rc = __p9418_write_reg(chip, 0x300D, 0x1d); // configure 500ns pulse
+	rc = __p9418_write_reg(chip, 0x300D, 0x1d); /* configure 500ns pulse */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x300d reg error!\n");
 		return rc;
 	}
 
-	rc = __p9418_write_reg(chip, 0x3040, 0x11); // Enable MTP access via I2C
+	rc = __p9418_write_reg(chip, 0x3040, 0x11); /* Enable MTP access via I2C */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3040 reg error!\n");
 		return rc;
@@ -497,7 +505,7 @@ static int p9418_load_bootloader(struct oplus_p9418_ic *chip)
 	msleep(10);
 
 	chg_err("<IDT UPDATE>-b-2--!\n");
-	rc = __p9418_write_reg(chip, 0x3040, 0x10); // halt microcontroller M0
+	rc = __p9418_write_reg(chip, 0x3040, 0x10); /* halt microcontroller M0 */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3040 reg error!\n");
 		return rc;
@@ -508,28 +516,28 @@ static int p9418_load_bootloader(struct oplus_p9418_ic *chip)
 	chg_err("<IDT UPDATE>-b-3--!\n");
 	rc = p9418_write_reg_multi_byte(
 		chip, 0x0800, MTPBootloader9415,
-		sizeof(MTPBootloader9415)); // load provided by IDT array
+		sizeof(MTPBootloader9415)); /* load provided by IDT array */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x1c00 reg error!\n");
 		return rc;
 	}
 
 	chg_err("<IDT UPDATE>-b-4--!\n");
-	rc = __p9418_write_reg(chip, 0x400, 0); // initialize buffer
+	rc = __p9418_write_reg(chip, 0x400, 0); /* initialize buffer */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x400 reg error!\n");
 		return rc;
 	}
 
 	chg_err("<IDT UPDATE>-b-5--!\n");
-	rc = __p9418_write_reg(chip, 0x3048, 0xD0); // map RAM address 0x1c00 to OTP 0x0000
+	rc = __p9418_write_reg(chip, 0x3048, 0xD0); /* map RAM address 0x1c00 to OTP 0x0000 */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3048 reg error!\n");
 		return rc;
 	}
 
 	chg_err("<IDT UPDATE>-b-6--!\n");
-	rc = __p9418_write_reg(chip, 0x3040, 0x80); // run M0
+	rc = __p9418_write_reg(chip, 0x3040, 0x80); /* run M0 */
 
 	return 0;
 }
@@ -560,8 +568,8 @@ static int p9418_load_fw(struct oplus_p9418_ic *chip, unsigned char *fw_data, in
 		}
 	} while ((write_ack & 0x01) != 0);
 
-	// check status
-	if (write_ack != 2) { // not OK
+	/* check status */
+	if (write_ack != 2) { /* not OK */
 		if (write_ack == 4)
 			chg_err("<IDT UPDATE>ERROR: WRITE ERR\n");
 		else if (write_ack == 8)
@@ -584,7 +592,7 @@ static int p9418_MTP(struct oplus_p9418_ic *chip, unsigned char *fw_buf, int fw_
 	unsigned short int StartAddr;
 	unsigned short int CheckSum;
 	unsigned short int CodeLength;
-	// pure fw size not contains last 128 bytes fw version.
+	/* pure fw size not contains last 128 bytes fw version. */
 	int pure_fw_size = fw_size - 128;
 
 	chg_err("<IDT UPDATE>--1--!\n");
@@ -599,33 +607,33 @@ static int p9418_MTP(struct oplus_p9418_ic *chip, unsigned char *fw_buf, int fw_
 
 	chg_err("<IDT UPDATE>The idt firmware size: %d!\n", fw_size);
 
-	// program pages of 128 bytes
-	// 8-bytes header, 128-bytes data, 8-bytes padding to round to 16-byte boundary
+	/* program pages of 128 bytes */
+	/* 8-bytes header, 128-bytes data, 8-bytes padding to round to 16-byte boundary */
 	fw_data = kzalloc(144, GFP_KERNEL);
 	if (!fw_data) {
 		chg_err("<IDT UPDATE>can't alloc memory!\n");
 		return -EINVAL;
 	}
 
-	//ERASE FW VERSION(the last 128 byte of the MTP)
+	/* ERASE FW VERSION(the last 128 byte of the MTP) */
 	memset(fw_data, 0x00, 144);
 	StartAddr = pure_fw_size;
 	CheckSum = StartAddr;
 	CodeLength = 128;
 	for (j = 127; j >= 0; j--)
-		CheckSum += fw_data[j + 8]; // add the non zero values.
+		CheckSum += fw_data[j + 8]; /* add the non zero values. */
 
-	CheckSum += CodeLength; // finish calculation of the check sum
+	CheckSum += CodeLength; /* finish calculation of the check sum */
 	memcpy(fw_data + 2, (char *)&StartAddr, 2);
 	memcpy(fw_data + 4, (char *)&CodeLength, 2);
 	memcpy(fw_data + 6, (char *)&CheckSum, 2);
 	rc = p9418_load_fw(chip, fw_data, CodeLength);
-	if (rc < 0) { // not OK
+	if (rc < 0) { /* not OK */
 		chg_err("<IDT UPDATE>ERROR: erase fw version ERR\n");
 		goto MTP_ERROR;
 	}
 
-	// upgrade fw
+	/* upgrade fw */
 	memset(fw_data, 0x00, 144);
 	for (i = 0; i < pure_fw_size; i += 128) {
 		chg_err("<IDT UPDATE>Begin to write chunk %d!\n", i);
@@ -646,70 +654,61 @@ static int p9418_MTP(struct oplus_p9418_ic *chip, unsigned char *fw_buf, int fw_
 
 		j -= 1;
 		for (; j >= 0; j--)
-			CheckSum += fw_data[j + 8]; // add the non zero values
+			CheckSum += fw_data[j + 8]; /* add the non zero values */
 
-		CheckSum += CodeLength; // finish calculation of the check sum
+		CheckSum += CodeLength; /* finish calculation of the check sum */
 
 		memcpy(fw_data + 2, (char *)&StartAddr, 2);
 		memcpy(fw_data + 4, (char *)&CodeLength, 2);
 		memcpy(fw_data + 6, (char *)&CheckSum, 2);
 
-		//typedef struct { // write to structure at address 0x400
-		// u16 Status;
-		// u16 StartAddr;
-		// u16 CodeLength;
-		// u16 DataChksum;
-		// u8 DataBuf[128];
-		//} P9220PgmStrType;
-		// read status is guaranteed to be != 1 at this point
-
 		rc = p9418_load_fw(chip, fw_data, CodeLength);
-		if (rc < 0) { // not OK
+		if (rc < 0) {
 			chg_err("<IDT UPDATE>ERROR: write chunk %d ERR\n", i);
 			goto MTP_ERROR;
 		}
 	}
 
 	msleep(100);
-	//disable power P9415
+	/* disable power P9415 */
 	chg_err("<IDT UPDATE> Disable power P9415.\n");
 	p9418_power_enable(chip, false);
 	msleep(3000);
 
-	//power P9415 again
+	/* power P9415 again */
 	chg_err("<IDT UPDATE> Power P9415 again.\n");
 	p9418_power_enable(chip, true);
 	msleep(500);
 
-	// Verify
+	/* Verify */
 	rc = p9418_load_bootloader(chip);
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Update bootloader 2 error!\n");
 		return rc;
 	}
 	msleep(100);
-	rc = __p9418_write_reg(chip, 0x402, 0x00); // write start address
+	rc = __p9418_write_reg(chip, 0x402, 0x00); /* write start address */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x402 reg error!\n");
 		return rc;
 	}
-	rc = __p9418_write_reg(chip, 0x403, 0x00); // write start address
+	rc = __p9418_write_reg(chip, 0x403, 0x00); /* write start address */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x402 reg error!\n");
 		return rc;
 	}
-	rc = __p9418_write_reg(chip, 0x404, pure_fw_size & 0xff); // write FW length low byte
+	rc = __p9418_write_reg(chip, 0x404, pure_fw_size & 0xff); /* write FW length low byte */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x404 reg error!\n");
 		return rc;
 	}
-	rc = __p9418_write_reg(chip, 0x405, (pure_fw_size >> 8) & 0xff); // write FW length high byte
+	rc = __p9418_write_reg(chip, 0x405, (pure_fw_size >> 8) & 0xff); /* write FW length high byte */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x405 reg error!\n");
 		return rc;
 	}
 
-	// write CRC from FW release package
+	/* write CRC from FW release package */
 	fw_data[0] = fw_buf[pure_fw_size + 0x08];
 	fw_data[1] = fw_buf[pure_fw_size + 0x09];
 	p9418_write_reg_multi_byte(chip, 0x406, fw_data, 2);
@@ -727,8 +726,8 @@ static int p9418_MTP(struct oplus_p9418_ic *chip, unsigned char *fw_buf, int fw_
 			goto MTP_ERROR;
 		}
 	} while ((write_ack & 0x01) != 0);
-	// check status
-	if (write_ack != 2) { // not OK
+	/* check status */
+	if (write_ack != 2) { /* not OK */
 		if (write_ack == 4)
 			chg_err("<IDT UPDATE>ERROR: CRC WRITE ERR\n");
 		else if (write_ack == 8)
@@ -739,15 +738,6 @@ static int p9418_MTP(struct oplus_p9418_ic *chip, unsigned char *fw_buf, int fw_
 		goto MTP_ERROR;
 	}
 
-	//Program FW VERSION(the last 128 byte of the MTP)
-	// typedef struct {		// base address: 0x5f80
-	//	 // Version		8 Byte
-	//	 u16 ChipType;
-	//	 u8	CustomerCode;
-	//	 u8	empty_a;
-	//	 u32 EPRFWRev;
-	//	 u16 crc16;
-	// } FwSettingType;
 	memset(fw_data, 0x00, 144);
 	StartAddr = pure_fw_size;
 	CheckSum = StartAddr;
@@ -755,27 +745,27 @@ static int p9418_MTP(struct oplus_p9418_ic *chip, unsigned char *fw_buf, int fw_
 	memcpy(fw_data + 8, fw_buf + StartAddr, 128);
 	j = 127;
 	for (; j >= 0; j--)
-		CheckSum += fw_data[j + 8]; // add the non zero values.
+		CheckSum += fw_data[j + 8]; /* add the non zero values. */
 
-	CheckSum += CodeLength; // finish calculation of the check sum
+	CheckSum += CodeLength; /* finish calculation of the check sum */
 	memcpy(fw_data + 2, (char *)&StartAddr, 2);
 	memcpy(fw_data + 4, (char *)&CodeLength, 2);
 	memcpy(fw_data + 6, (char *)&CheckSum, 2);
 
 	rc = p9418_load_fw(chip, fw_data, CodeLength);
-	if (rc < 0) { // not OK
+	if (rc < 0) { /* not OK */
 		chg_err("<IDT UPDATE>ERROR: erase fw version ERR\n");
 		goto MTP_ERROR;
 	}
 
-	// restore system
-	rc = __p9418_write_reg(chip, 0x3000, 0x5a); // write key
+	/* restore system */
+	rc = __p9418_write_reg(chip, 0x3000, 0x5a); /* write key */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3000 reg error!\n");
 		goto MTP_ERROR;
 	}
 
-	rc = __p9418_write_reg(chip, 0x3048, 0x00); // remove code remapping
+	rc = __p9418_write_reg(chip, 0x3048, 0x00); /* remove code remapping */
 	if (rc != 0) {
 		chg_err("<IDT UPDATE>Write 0x3048 reg error!\n");
 		goto MTP_ERROR;
@@ -1161,8 +1151,8 @@ static irqreturn_t irq_idt_event_int_handler(int irq, void *dev_id)
 
 static void p9418_set_idt_int_active(struct oplus_p9418_ic *chip)
 {
-	gpio_direction_input(chip->idt_int_gpio);	// in
-	pinctrl_select_state(chip->pinctrl,chip->idt_int_active);	// no_PULL
+	gpio_direction_input(chip->idt_int_gpio);	/* in */
+	pinctrl_select_state(chip->pinctrl, chip->idt_int_active);	/* no_PULL */
 }
 
 static void p9418_idt_int_irq_init(struct oplus_p9418_ic *chip)
@@ -1275,10 +1265,8 @@ static int p9418_vbat_en_gpio_init(struct oplus_p9418_ic *chip)
 	return 0;
 }
 
-void p9418_set_vbat_en_val(int value)
+void p9418_set_vbat_en_val(struct oplus_p9418_ic *chip, int value)
 {
-    struct oplus_p9418_ic *chip = p9418_chip;
-
 	if (!chip) {
 		printk(KERN_ERR "[OPLUS_CHG][%s]: oplus_p9418_ic not ready!\n", __func__);
 		return;
@@ -1381,10 +1369,8 @@ static int p9418_booster_en_gpio_init(struct oplus_p9418_ic *chip)
 	return 0;
 }
 
-void p9418_set_booster_en_val(int value)
+void p9418_set_booster_en_val(struct oplus_p9418_ic *chip, int value)
 {
-    struct oplus_p9418_ic *chip = p9418_chip;
-
 	if (!chip) {
 		printk(KERN_ERR "[OPLUS_CHG][%s]: oplus_p9418_ic not ready!\n", __func__);
 		return;
@@ -1471,32 +1457,32 @@ void p9418_update_cc_cv(struct oplus_p9418_ic *chip)
 void p9418_timer_inhall_function(struct work_struct *work)
 {
 	struct oplus_p9418_ic *chip = p9418_chip;
+	int count = 0;
 
-	if (chip->is_power_on && chip->present) {/*check present flag */
-		g_count = 0;
+	__pm_stay_awake(present_wakelock);
+
+	chg_err("%s:  enter!\n", __func__);
+
+	while (count++ < P9418_WAIT_TIME && !chip->present && chip->is_power_on) {
+		msleep(100);
+	}
+
+	if (chip->present) {/*check present flag */
+		chg_err("%s:  find pen,count=%d\n", __func__, count);
+		p9418_update_cc_cv(chip);
 		g_pen_ornot = 1;
-	}
-
-	if (g_pen_ornot == 1) {/* pen ,read voltage current return */
-		chg_err("%s:  find pen g_count: %d\n", __func__, g_count);
-		if (chip->i2c_ready) {
-			p9418_update_cc_cv(chip);
-		}
-		g_pen_ornot = 0;
-		return;
-	} else if (g_pen_ornot == 0) {/* not pen continue check */
-		g_count++;
-	}
-
-	if (g_pen_ornot == 0 && g_count >= P9418_WAIT_TIME) {/* no ss int for P9418_WAIT_TIME sec, power off */
-		chg_err("%s:  find not pen g_count: %d\n", __func__, g_count);
+	} else {
+		/* no ss int for P9418_WAIT_TIME sec, power off */
+		chg_err("%s:  find not pen,count=%d\n", __func__, count);
 		p9418_power_enable(chip, false);
-		g_count = 0;
-		return;
+		g_pen_ornot = 0;
 	}
 
-	schedule_delayed_work(&idt_timer_work, round_jiffies_relative(msecs_to_jiffies(500)));
-	chg_err("%s:  exit,g_count:%d", __func__, g_count);
+	__pm_relax(present_wakelock);
+
+	chg_err("%s:  exit!\n", __func__);
+
+	return;
 }
 
 void power_expired_check_func(struct work_struct *work)
@@ -1542,7 +1528,7 @@ static void p9418_do_switch(struct oplus_p9418_ic *chip, uint8_t status)
 		p9418_set_tx_mode(1);
 		chip->power_enable_reason = PEN_REASON_NEAR;
 		chip->tx_start_time = ktime_to_ms(ktime_get());
-		schedule_delayed_work(&idt_timer_work, round_jiffies_relative(msecs_to_jiffies(50)));
+		schedule_work(&idt_timer_work);
 		schedule_delayed_work(&chip->power_check_work, \
 						round_jiffies_relative(msecs_to_jiffies(chip->power_expired_time * MIN_TO_MS)));
 	} else if (status == PEN_STATUS_FAR) {/* hall far, power off */
@@ -1553,10 +1539,9 @@ static void p9418_do_switch(struct oplus_p9418_ic *chip, uint8_t status)
 		chip->private_pkg_data = 0;
 		chip->tx_current = 0;
 		chip->tx_voltage = 0;
-		g_count = 0;
 		update_powerdown_info(chip, PEN_REASON_FAR);
 		chg_err("p9418 hall far away,present value :%d", chip->present);
-		cancel_delayed_work(&idt_timer_work);
+		cancel_work_sync(&idt_timer_work);
 		cancel_delayed_work(&chip->power_check_work);
 		notify_pen_state(0);
 		p9418_send_uevent(chip->wireless_dev, chip->present, chip->ble_mac_addr);
@@ -1640,7 +1625,7 @@ static void p9418_enable_func(struct work_struct *work)
 	chip->power_enable_times++;
 	chip->power_enable_reason = PEN_REASON_RECHARGE;
 	chip->tx_start_time = ktime_to_ms(ktime_get());
-	schedule_delayed_work(&idt_timer_work, round_jiffies_relative(msecs_to_jiffies(50)));
+	schedule_work(&idt_timer_work);
 	cancel_delayed_work(&chip->power_check_work);
 	schedule_delayed_work(&chip->power_check_work, \
 					round_jiffies_relative(msecs_to_jiffies(chip->power_expired_time * MIN_TO_MS)));
@@ -1668,7 +1653,7 @@ static int p9418_idt_gpio_init(struct oplus_p9418_ic *chip)
 	struct device_node *node = chip->dev->of_node;
     pr_err("test %s start\n",__func__);
 
-	// Parsing gpio idt_int
+	/* Parsing gpio idt_int */
 	chip->idt_int_gpio = of_get_named_gpio(node, "qcom,idt_int-gpio", 0);
 	if (chip->idt_int_gpio < 0 ) {
 		pr_err("chip->idt_int_gpio not specified\n");
@@ -1690,7 +1675,7 @@ static int p9418_idt_gpio_init(struct oplus_p9418_ic *chip)
 		pr_err("chip->idt_int_gpio =%d\n",chip->idt_int_gpio);
 	}
 
-	// Parsing gpio vbat_en
+	/* Parsing gpio vbat_en */
 	chip->vbat_en_gpio = of_get_named_gpio(node, "qcom,vbat_en-gpio", 0);
 	if (chip->vbat_en_gpio < 0) {
 		pr_err("chip->vbat_en_gpio not specified\n");
@@ -1708,7 +1693,7 @@ static int p9418_idt_gpio_init(struct oplus_p9418_ic *chip)
 		pr_err("chip->vbat_en_gpio =%d\n",chip->vbat_en_gpio);
 	}
 
-	// Parsing gpio booster_en
+	/* Parsing gpio booster_en */
 	chip->booster_en_gpio = of_get_named_gpio(node, "qcom,booster_en-gpio", 0);
 	if (chip->booster_en_gpio < 0) {
 		pr_err("chip->booster_en_gpio not specified\n");
@@ -2080,7 +2065,7 @@ static struct device_attribute *pencil_attributes[] = {
 static enum power_supply_property p9418_wireless_props[] = {
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_PRESENT,
-	POWER_SUPPLY_PROP_BLE_MAC_ADDR,
+	/* POWER_SUPPLY_PROP_BLE_MAC_ADDR, */
 };
 
 static int p9418_wireless_get_prop(struct power_supply *psy,
@@ -2095,8 +2080,8 @@ static int p9418_wireless_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
 		break;
-	case POWER_SUPPLY_PROP_BLE_MAC_ADDR:
-		break;
+	/* case POWER_SUPPLY_PROP_BLE_MAC_ADDR: */
+	/* 	break; */
 
 	default:
 		return -EINVAL;
@@ -2117,8 +2102,8 @@ static int p9418_wireless_set_prop(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_PRESENT:
 		break;
-	case POWER_SUPPLY_PROP_BLE_MAC_ADDR:
-		break;
+	/* case POWER_SUPPLY_PROP_BLE_MAC_ADDR: */
+	/* 	break; */
 
 	default:
 		chg_err("set prop %d is not supported\n", psp);
@@ -2136,7 +2121,7 @@ static int p9418_wireless_prop_is_writeable(struct power_supply *psy,
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_PRESENT:
-	case POWER_SUPPLY_PROP_BLE_MAC_ADDR:
+	/* case POWER_SUPPLY_PROP_BLE_MAC_ADDR: */
 		rc = 1;
 		break;
 
@@ -2209,6 +2194,66 @@ bool p9418_check_chip_is_null(void)
 	return true;
 }
 
+static void p9418_idt_gpio_deinit(struct oplus_p9418_ic *chip)
+{
+	if (!chip) {
+		return;
+	}
+
+	if (gpio_is_valid(chip->idt_int_gpio)) {
+		free_irq(chip->idt_int_irq, chip);
+		gpio_free(chip->idt_int_gpio);
+	}
+
+	if (gpio_is_valid(chip->vbat_en_gpio)) {
+		gpio_free(chip->vbat_en_gpio);
+	}
+
+	if (gpio_is_valid(chip->booster_en_gpio)) {
+		gpio_free(chip->booster_en_gpio);
+	}
+
+	return;
+}
+
+static int p9418_identity_check(struct oplus_p9418_ic *chip)
+{
+	int rc = ERR_NUM;
+	char buf[NUM_5] = {NUM_0};
+	int err_cnt = NUM_0;
+
+	if (!chip) {
+		return ERR_NUM;
+	}
+
+	disable_irq(chip->idt_int_irq);
+	p9418_power_enable(chip, true);
+	msleep(MS_10);
+	rc = p9418_read_reg(chip, P9418_REG_IDENTITY, buf, NUM_5);
+	while (rc < NUM_0) {
+		err_cnt++;
+		msleep(MS_10);
+		rc = p9418_read_reg(chip, P9418_REG_IDENTITY, buf, NUM_5);
+		chg_err("p9418 read identify failed.(%d) \n", rc);
+		if (err_cnt >= NUM_3) {
+			p9418_power_enable(chip, false);
+			return rc;
+		}
+	}
+	p9418_power_enable(chip, false);
+	enable_irq_wake(chip->idt_int_irq);
+	enable_irq(chip->idt_int_irq);
+
+	chg_err("chip id = 0x%02x%02x\n", buf[NUM_0], buf[NUM_4]);
+	 if ((buf[NUM_0] == P9418_ID_H) && (buf[NUM_4] == P9415_ID_L || buf[NUM_4] == P9418_ID_L)) {
+		rc = NUM_1;
+	} else {
+		rc = ERR_NUM;
+	}
+
+	return rc;
+}
+
 static int p9418_driver_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct oplus_p9418_ic	*chip;
@@ -2231,7 +2276,17 @@ static int p9418_driver_probe(struct i2c_client *client, const struct i2c_device
 	chip->power_enable_reason = PEN_REASON_UNDEFINED;
 	p9418_idt_gpio_init(chip);
 	oplus_wpc_chg_parse_chg_dt(chip);
+
+	rc = p9418_identity_check(chip);
+	if (rc < NUM_0) {
+		chg_err("p9418 indentity check failed!\n");
+		p9418_idt_gpio_deinit(chip);
+		devm_kfree(&client->dev, chip);
+		return ERR_NUM;
+	}
+
 	chip->bus_wakelock = wakeup_source_register(NULL, "p9418_wireless_wakelock");
+	present_wakelock = wakeup_source_register(NULL, "p9418_present_wakelock");
 
 #ifdef DEBUG_BY_FILE_OPS
 	init_p9418_add_log();
@@ -2239,7 +2294,7 @@ static int p9418_driver_probe(struct i2c_client *client, const struct i2c_device
 #endif
 
 	INIT_DELAYED_WORK(&chip->p9418_update_work, p9418_update_work_process);
-	INIT_DELAYED_WORK(&idt_timer_work, p9418_timer_inhall_function);
+	INIT_WORK(&idt_timer_work, p9418_timer_inhall_function);
 	INIT_DELAYED_WORK(&chip->power_check_work, power_expired_check_func);
 	INIT_DELAYED_WORK(&chip->check_point_dwork, p9418_check_point_function);
 	INIT_WORK(&chip->power_enable_work, p9418_enable_func);
@@ -2331,6 +2386,7 @@ static void p9418_reset(struct i2c_client *client)
 
 static const struct of_device_id p9418_match[] = {
 	{ .compatible = "oplus,p9418-charger"},
+	{ .compatible = "oplus,pencil-wireless-charger"},
 	{ },
 };
 

@@ -836,45 +836,6 @@ void wma_set_sta_keep_alive(tp_wma_handle wma, uint8_t vdev_id,
 	wmi_unified_set_sta_keep_alive_cmd(wma->wmi_handle, &params);
 }
 
-/**
- * wma_vdev_install_key_complete_event_handler() - install key complete handler
- * @handle: wma handle
- * @event: event data
- * @len: data length
- *
- * This event is sent by fw once WPA/WPA2 keys are installed in fw.
- *
- * Return: 0 for success or error code
- */
-int wma_vdev_install_key_complete_event_handler(void *handle,
-						uint8_t *event,
-						uint32_t len)
-{
-	WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID_param_tlvs *param_buf = NULL;
-	wmi_vdev_install_key_complete_event_fixed_param *key_fp = NULL;
-
-	if (!event) {
-		WMA_LOGE("%s: event param null", __func__);
-		return -EINVAL;
-	}
-
-	param_buf = (WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID_param_tlvs *) event;
-	if (!param_buf) {
-		WMA_LOGE("%s: received null buf from target", __func__);
-		return -EINVAL;
-	}
-
-	key_fp = param_buf->fixed_param;
-	if (!key_fp) {
-		WMA_LOGE("%s: received null event data from target", __func__);
-		return -EINVAL;
-	}
-	/*
-	 * Do nothing for now. Completion of set key is already indicated to lim
-	 */
-	wma_debug("WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID");
-	return 0;
-}
 /*
  * 802.11n D2.0 defined values for "Minimum MPDU Start Spacing":
  *   0 for no restriction
@@ -1539,7 +1500,8 @@ QDF_STATUS wma_send_peer_assoc(tp_wma_handle wma,
 				     ((1 << cmd->peer_nss) - 1));
 			WMI_VHT_MCS_NOTIFY_EXT_SS_SET(cmd->tx_mcs_set, 1);
 		}
-		if (params->vht_extended_nss_bw_cap) {
+		if (params->vht_extended_nss_bw_cap &&
+		    (params->vht_160mhz_nss || params->vht_80p80mhz_nss)) {
 			/*
 			 * bit[2:0] : Represents value of Rx NSS for 160 MHz
 			 * bit[5:3] : Represents value of Rx NSS for 80_80 MHz
@@ -1548,9 +1510,12 @@ QDF_STATUS wma_send_peer_assoc(tp_wma_handle wma,
 			 * bit[31]  : MSB(0/1): 1 in case of valid data
 			 */
 			cmd->peer_bw_rxnss_override |= (1 << 31);
-			cmd->peer_bw_rxnss_override |= params->vht_160mhz_nss;
-			cmd->peer_bw_rxnss_override |=
-				(params->vht_80p80mhz_nss << 3);
+			if (params->vht_160mhz_nss)
+				cmd->peer_bw_rxnss_override |=
+					(params->vht_160mhz_nss - 1);
+			if (params->vht_80p80mhz_nss)
+				cmd->peer_bw_rxnss_override |=
+					((params->vht_80p80mhz_nss - 1) << 3);
 			wma_debug("peer_bw_rxnss_override %0X",
 				  cmd->peer_bw_rxnss_override);
 		}
@@ -2092,6 +2057,7 @@ static QDF_STATUS wma_unified_bcn_tmpl_send(tp_wma_handle wma,
 		tmpl_len = *(uint32_t *) &bcn_info->beacon[0];
 	else
 		tmpl_len = bcn_info->beaconLength;
+
 	if (tmpl_len > WMI_BEACON_TX_BUFFER_SIZE) {
 		wma_err("tmpl_len: %d > %d. Invalid tmpl len", tmpl_len,
 			WMI_BEACON_TX_BUFFER_SIZE);
@@ -2103,9 +2069,9 @@ static QDF_STATUS wma_unified_bcn_tmpl_send(tp_wma_handle wma,
 			wma_err("tmpl_len %d <= p2p_ie_len %d, Invalid",
 				tmpl_len, p2p_ie_len);
 			return -EINVAL;
- 		}
- 		tmpl_len -= (uint32_t) p2p_ie_len;
-        }
+		}
+		tmpl_len -= (uint32_t) p2p_ie_len;
+	}
 
 	frm = bcn_info->beacon + bytes_to_strip;
 	tmpl_len_aligned = roundup(tmpl_len, sizeof(A_UINT32));

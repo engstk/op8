@@ -14,6 +14,7 @@
 #include <linux/time.h>
 
 #include "../touchpanel_common.h"
+#include "../touchpanel_healthinfo.h"
 
 #define Limit_ItemMagic     0x4F50504F
 #define Limit_ItemMagic_V2  0x4F504C53

@@ -50,6 +50,8 @@ static ssize_t vm_fra_op_write(struct file *file, const char __user *buff, size_
 
         if (len > 31)
             len = 31;
+		if (buff == NULL || len < 1)
+			return -EFAULT;
 
         if (copy_from_user(&write_data, buff, len)) {
                 ohm_err("write error.\n");
@@ -214,6 +216,8 @@ static ssize_t vm_search_two_way_op_write(struct file *file, const char __user *
 
 		if (len > 31)
 			len = 31;
+		if (buff == NULL || len < 1)
+			return -EFAULT;
 
 		if (!mm)
 			return len;

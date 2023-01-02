@@ -51,8 +51,8 @@
 #define HTT_MASK_UPPER_TIMESTAMP 0xFFFFFFFF00000000
 
 #define HTT_HTC_PKT_STATUS_SUCCESS \
-    ((pkt->htc_pkt.Status != QDF_STATUS_E_CANCELED) && \
-     (pkt->htc_pkt.Status != QDF_STATUS_E_RESOURCES))
+	((pkt->htc_pkt.Status != QDF_STATUS_E_CANCELED) && \
+	(pkt->htc_pkt.Status != QDF_STATUS_E_RESOURCES))
 
 /*
  * dp_htt_get_ppdu_sniffer_ampdu_tlv_bitmap() - Get ppdu stats tlv

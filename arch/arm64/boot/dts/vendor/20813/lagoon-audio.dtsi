@@ -167,7 +167,7 @@
 };
 
 &qupv3_se10_i2c {
-	status = "ok";
+	status = "disable";
 	fsa4480: fsa4480@42 {
 		compatible = "qcom,fsa4480-i2c";
 		reg = <0x42>;

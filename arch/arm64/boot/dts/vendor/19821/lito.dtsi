@@ -2115,7 +2115,7 @@
 		qcom,client-id = <0x00000001>;
 	};
 
-    //#ifdef FEATURE_OPPO_NV_BACKUP
+    //#ifdef FEATURE_OPLUS_NV_BACKUP
     //add for creating a shared memory with uio for nv backup and restore
     qcom,oembackup_sharedmem@0 {
         compatible = "qcom,sharedmem-uio";
@@ -2124,7 +2124,7 @@
         qcom,client-id = <0x00000004>;
         qcom,guard-memory;
     };
-    //#endif /* FEATURE_OPPO_NV_BACKUP */
+    //#endif /* FEATURE_OPLUS_NV_BACKUP */
 
 	ipcc_mproc: qcom,ipcc@408000 {
 		compatible = "qcom,ipcc";

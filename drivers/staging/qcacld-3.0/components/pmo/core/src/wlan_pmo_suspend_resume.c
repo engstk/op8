@@ -1080,6 +1080,8 @@ pmo_resume_configure:
 	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(QDF_STATUS_SUCCESS !=
 		pmo_core_psoc_configure_resume(psoc, true));
 
+	hif_pm_set_link_state(hif_ctx, HIF_PM_LINK_STATE_UP);
+
 resume_htc:
 	PMO_CORE_PSOC_RUNTIME_PM_QDF_BUG(QDF_STATUS_SUCCESS !=
 		pmo_tgt_psoc_set_runtime_pm_inprogress(psoc, false));
@@ -1661,3 +1663,28 @@ out:
 	pmo_exit();
 	return status;
 }
+
+#ifdef SYSTEM_PM_CHECK
+void pmo_core_system_resume(struct wlan_objmgr_psoc *psoc)
+{
+	struct pmo_psoc_priv_obj *psoc_ctx;
+	QDF_STATUS status;
+
+	if (!psoc) {
+		pmo_err("psoc is NULL");
+		return;
+	}
+
+	status = pmo_psoc_get_ref(psoc);
+	if (status != QDF_STATUS_SUCCESS) {
+		pmo_err("pmo cannot get the reference out of psoc");
+		return;
+	}
+
+	psoc_ctx = pmo_psoc_get_priv(psoc);
+
+	htc_system_resume(psoc_ctx->htc_hdl);
+
+	pmo_psoc_put_ref(psoc);
+}
+#endif

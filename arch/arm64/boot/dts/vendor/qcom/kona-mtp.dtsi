@@ -5,6 +5,7 @@
 #include "kona-sde-display.dtsi"
 #include "camera/kona-camera-sensor-mtp.dtsi"
 #include "kona-audio-overlay.dtsi"
+#include "kona-audio-overlay-ar.dtsi"
 #include "kona-thermal-overlay.dtsi"
 
 &qupv3_se12_2uart {
@@ -18,8 +19,7 @@
 &qupv3_se6_4uart {
 	status = "ok";
 };
-/* #ifdef OPLUS_ARCH_EXTENDS */
-/* delete for audio pa
+
 &dai_mi2s2 {
 	qcom,msm-mi2s-tx-lines = <1>;
 };
@@ -38,9 +38,6 @@
 &kona_snd {
 	qcom,tert-mi2s-gpios = <&cdc_tert_mi2s_gpios>;
 };
-*/
-/* #endif OPLUS_ARCH_EXTENDS */
-
 
 &qupv3_se1_i2c {
 	status = "ok";
@@ -63,15 +60,6 @@
 		pinctrl-1 = <&nfc_int_suspend &nfc_enable_suspend
 				&nfc_clk_req_suspend>;
 	};
-};
-&qupv3_se2_i2c {
-       status = "ok";
-       qcom,clk-freq-out = <400000>;
-       pixelworks@26 {  //i2c: 22, i3c: 26
-               status = "ok";
-               compatible = "pixelworks,iris5";
-               reg = <0x26>;
-        };
 };
 
 &ufsphy_mem {
@@ -112,9 +100,7 @@
 		label = "gpio-keys";
 
 		pinctrl-names = "default";
-		//#ifdef OPLUS_FEATURE_TP_BASIC
-		pinctrl-0 = <&key_vol_up_default &key_vol_down_default>;
-		//#endif
+		pinctrl-0 = <&key_vol_up_default>;
 
 		vol_up {
 			label = "volume_up";
@@ -125,17 +111,6 @@
 			debounce-interval = <15>;
 			linux,can-disable;
 		};
-		//#ifdef OPLUS_FEATURE_TP_BASIC
-		vol_down {
-			label = "volume_down";
-			gpios = <&pm8150_gpios  7 GPIO_ACTIVE_LOW>;
-			linux,input-type = <1>;
-			linux,code = <KEY_VOLUMEDOWN>;
-			gpio-key,wakeup;
-			debounce-interval = <15>;
-			linux,can-disable;
-		};
-		//#endif
 	};
 
 	qcom,qbt_handler {
@@ -145,15 +120,9 @@
 		pinctrl-0 = <&key_home_default>;
 		qcom,finger-detect-gpio = <&pm8150_gpios 1 0>;
 	};
-	//#ifdef OPLUS_BUG_DEBUG
-	oplus_sim_detect {
-		compatible = "oplus, sim_detect";
-		Hw,sim_det = "modem_det";
-	};
-	//#endif /* OPLUS_BUG_DEBUG */
 };
 
-/*&qupv3_se13_i2c {
+&qupv3_se13_i2c {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -180,72 +149,6 @@
 			 &dsi_sw43404_amoled_fhd_plus_cmd>;
 	};
 };
-*/
-//#ifdef OPLUS_FEATURE_TP_BASIC
-&qupv3_se13_i2c {
-	status = "okay";
-	mtp_19065:s6sy791_19065@48 {
-		compatible = "sec-s6sy791";
-		reg = <0x48>;
-		chip-name = "S6SY791";
-
-		/* Interrupt && Irq-gpio */
-		interrupt-parent = <&tlmm>;
-		interrupts = <39 0x2008>;
-
-		/* Power Config */
-		//enable2v8_gpio = <&tlmm 26 0x1>;
-		//enable1v8_gpio = <&tlmm 32 0x1>;
-		vdd_2v8-supply = <&pm8150_l13>;
-		vcc_1v8-supply = <&pm8150a_l1>;
-		vdd_2v8_volt = <3008000>;
-
-		/* Other HW Resource */
-		irq-gpio = <&tlmm 39 0x2008>;
-		reset-gpio = <&tlmm 38 0x1>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&ts_int_active &ts_reset_active>;
-
-                touchpanel,default_hor_area = <7>;
-		touchpanel,max-num-support = <10>;
-		touchpanel,tx-rx-num = <17 38>;
-		earsense,tx-rx-num = <17 18>;
-		touchpanel,panel-coords = <1440 3168>;
-		touchpanel,display-coords = <1440 3168>;
-		touchpanel,touchmajor-limit = <32 54>;
-		project_id = <19065>;
-
-		/* SW Support Feature Control */
-		//ear_sense_support;
-		black_gesture_support;
-		fw_edge_limit_support;
-		charger_pump_support;
-		//spurious_fingerprint_support;
-		fw_update_app_support;
-		smart_gesture_support;
-		game_switch_support;
-		fingerprint_underscreen_support;
-		pressure_report_support;
-                report_point_first_support;
-
-		/*
-		 *Virtual Key Config:
-		 *1:touchpanel,button-type: <virtualkey_type  supportted_button-map>
-		 *virtualkey_type:
-		 *Type 1: using board_properties
-		 *Type 2: using same IC (button zone&& touch zone are seprate)
-		 *Type 3: using diffrent IC (button zone&& touch zone are seprate)
-		 *Type 4: No need of virtual key process
-		 *supportted_button-map:select|menu|home|back
-		 *
-		 *2:touchpanel,button-map
-		 *type (X1,Y1)(X2,Y2)(X3,Y3)(Width_X,Hight_Y)--Only when button-type is 0
-		 */
-		touchpanel,button-type = <4>;
-		touchpanel.button-TRx = <0 0>;
-	};
-};
-//#endif /*OPLUS_FEATURE_TP_BASIC*/
 
 &vendor {
 	bluetooth: bt_qca6390 {
@@ -338,15 +241,6 @@
 		label = "usb_in_v_div_16";
 		qcom,pre-scaling = <1 16>;
 	};
-//#ifdef OPLUS_FEATURE_CHG_BASIC
-	usb_supplementary_temp_adc@55 {
-		reg = <ADC_GPIO4_PU2>;
-		label = "usb_supplementary_temp_adc";
-		qcom,ratiometric;
-		qcom,pre-scaling = <1 1>;
-	};
-//#endif
-
 };
 
 &pm8150b_charger {
@@ -357,21 +251,12 @@
 		      <&pm8150b_vadc ADC_USB_IN_I>,
 		      <&pm8150b_vadc ADC_SBUx>,
 		      <&pm8150b_vadc ADC_VPH_PWR>,
-		      <&pm8150b_vadc ADC_CHG_TEMP>,
-			  <&pm8150b_vadc ADC_GPIO3>,
-			  <&pm8150b_vadc ADC_AMUX_THM4_PU2>,
-			  <&pm8150b_vadc ADC_GPIO4_PU2>;
-		      //<&pm8150b_vadc ADC_CHG_TEMP>;
-
+		      <&pm8150b_vadc ADC_CHG_TEMP>;
 	io-channel-names = "mid_voltage",
 			   "usb_in_current",
 			   "sbux_res",
 			   "vph_voltage",
-			   "chg_temp",
-			   "chgID_voltage_adc",
-			   "usb_temp_adc",
-			   "usb_supplementary_temp_adc";
-
+			   "chg_temp";
 	qcom,battery-data = <&kona_mtp_batterydata>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
@@ -382,12 +267,7 @@
 };
 
 &pm8150b_fg {
-//#ifndef OPLUS_FEATURE_CHG_BASIC
-//	status = "ok";
-//#else
-	status = "disabled";
-///#endif
-
+	status = "ok";
 	qcom,battery-data = <&kona_mtp_batterydata>;
 	qcom,hold-soc-while-full;
 	qcom,linearize-soc;
@@ -416,13 +296,11 @@
 	};
 };
 
-/*
 &smb1390 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&smb_stat_default>;
 	status = "ok";
 };
-*/
 
 &smb1390_charger {
 	io-channels = <&pm8150b_vadc ADC_AMUX_THM2>;
@@ -454,14 +332,6 @@
 		reg = <ADC_VCOIN>;
 		label = "vcoin";
 		qcom,pre-scaling = <1 3>;
-	};
-
-	xo_therm@4c {
-		reg = <ADC_XO_THERM_PU2>;
-		label = "xo_therm";
-		qcom,ratiometric;
-		qcom,hw-settle-time = <200>;
-		qcom,pre-scaling = <1 1>;
 	};
 
 	skin_therm@4d {
@@ -533,15 +403,8 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	io-channels = <&pm8150_vadc ADC_XO_THERM_PU2>,
-			<&pm8150_vadc ADC_AMUX_THM1_PU2>,
+	io-channels = <&pm8150_vadc ADC_AMUX_THM1_PU2>,
 			<&pm8150_vadc ADC_AMUX_THM2_PU2>;
-
-	xo_therm@4c {
-		reg = <ADC_XO_THERM_PU2>;
-		qcom,ratiometric;
-		qcom,hw-settle-time = <200>;
-	};
 
 	skin_therm@4d {
 		reg = <ADC_AMUX_THM1_PU2>;
@@ -667,32 +530,17 @@
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
 	qcom,platform-sec-reset-gpio = <&tlmm 128 0>;
 };
-//#ifdef OPLUS_BUG_STABILITY
+
 &sde_dsi {
-	qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
+	qcom,dsi-default-panel = <&dsi_sw43404_amoled_cmd>;
 };
-//#endif /*OPLUS_BUG_STABILITY*/
+
 &thermal_zones {
 	conn-therm-usr {
 		polling-delay-passive = <0>;
 		polling-delay = <0>;
 		thermal-governor = "user_space";
 		thermal-sensors = <&pm8150b_adc_tm ADC_AMUX_THM3_PU2>;
-		wake-capable-sensor;
-		trips {
-			active-config0 {
-				temperature = <125000>;
-				hysteresis = <1000>;
-				type = "passive";
-			};
-		};
-	};
-
-	xo-therm-usr {
-		polling-delay-passive = <0>;
-		polling-delay = <0>;
-		thermal-governor = "user_space";
-		thermal-sensors = <&pm8150_adc_tm ADC_XO_THERM_PU2>;
 		wake-capable-sensor;
 		trips {
 			active-config0 {
@@ -804,451 +652,3 @@
 &wil6210 {
 	status = "ok";
 };
-
-//#ifdef OPLUS_FEATURE_CHG_BASIC
-&pm8150b_gpios {
-      gpio7_adc {
-        gpio7_adc_default: gpio7_adc_default {
-        pins = "gpio7"; /* GPIO 7 */
-        function = "normal"; /* normal */
-        bias-high-impedance; /* DISABLE GPIO7 for ADC*/
-        };
-    };
-    gpio1_adc {
-        gpio1_adc_default: gpio1_adc_default {
-        pins = "gpio1"; /* GPIO 1 */
-        function = "normal"; /* normal */
-        bias-high-impedance; /* DISABLE GPIO1 for ADC*/
-        };
-    };
-    gpio8_adc {
-        gpio8_adc_default: gpio8_adc_default {
-        pins = "gpio8"; /* GPIO 8 */
-        function = "normal"; /* normal */
-        bias-high-impedance; /* DISABLE GPIO8 for ADC*/
-        };
-    };
-
-};
-// #endif
-&pm8150l_gpios {
-    gpio5_adc {
-        gpio5_adc_default: gpio5_adc_default {
-        pins = "gpio5"; /* GPIO 5 */
-        function = "normal"; /* normal */
-        bias-high-impedance; /* DISABLE GPIO5 for ADC*/
-        };
-    };
-};
-//#endif
-
-&pm8150_gpios {
-	dischg_enable: dischg_enable {
-		pins = "gpio9"; /* GPIO 9 */
-		function = "normal"; /* normal */
-		bias-disable; //No Pull
-		power-source = <0>;//VIN0 3.3
-		output-high; //digital output, no invert
-		qcom,drive-strength = <3>; //LOW strength
-		//drive-push-pull;//CMOS
-	};
-
-	dischg_disable: dischg_disable {
-		pins = "gpio9"; /* GPIO 9 */
-		function = "normal"; /* normal */
-		bias-disable; //No Pull
-		power-source = <0>;//VIN0 3.3
-		output-low; //digital output, no invert
-		qcom,drive-strength = <3>; //LOW strength
-		//drive-push-pull;//CMOS
-	};
-
-	mps_otg_en_active: mps_otg_en_active {
-		pins = "gpio3"; /* GPIO 3 */
-		function = "normal"; /* normal */
-		bias-disable; //No Pull
-		power-source = <0>;//VIN1 1.8
-		output-high; //digital output, no invert
-		qcom,drive-strength = <3>; //LOW strength
-		//drive-push-pull;//CMOS
-	};
-	mps_otg_en_sleep: mps_otg_en_sleep {
-		pins = "gpio3"; /* GPIO 3 */
-		function = "normal"; /* normal */
-		bias-disable; //No Pull
-		power-source = <0>;//VIN1 1.8
-		output-low; //digital output, no invert
-		qcom,drive-strength = <3>; //LOW strength
-		//drive-push-pull;//CMOS
-	};
-	mps_otg_en_default: mps_otg_en_default {
-		pins = "gpio3"; /* GPIO 3 */
-		function = "normal"; /* normal */
-		bias-disable; //No Pull
-		power-source = <0>;//VIN1 1.8
-		output-low; //digital output, no invert
-		qcom,drive-strength = <3>; //LOW strength
-		//drive-push-pull;//CMOS
-	};
-
-	hw_id_active: hw_id_active {
-		pins = "gpio1"; /* GPIO 1 */
-		function = "normal"; /* normal */
-		input-enable;
-		bias-pull-up;
-		power-source = <0>;
-	};
-
-	hw_id_sleep: hw_id_sleep {
-		pins = "gpio1"; /* GPIO 1 */
-		function = "normal"; /* normal */
-		input-enable;
-		bias-pull-down;
-		power-source = <0>;	/* 1.8V input supply */
-	};
-};
-
-&qupv3_se5_i2c {
-	status = "okay";
-	qcom,clk-freq-out = <400000>;
-	qcom,noise-rjct-scl = <3>;
-	qcom,noise-rjct-sda = <3>;
-
-	mp2650-charger@5c {
-		status = "okay";
-		compatible = "oplus,mp2650-charger";
-		reg = <0x5c 0>;
-
-		qcom,mps_otg_en-gpio = <&pm8150_gpios 3 0x00>;
-		pinctrl-names = "mps_otg_en_active", "mps_otg_en_sleep", "mps_otg_en_default";
-		pinctrl-0 = <&mps_otg_en_active>;
-		pinctrl-1 = <&mps_otg_en_sleep>;
-		pinctrl-2 = <&mps_otg_en_default>;
-
-	};
-};
-
-&qupv3_se16_i2c {
-	status = "okay";
-	qcom,clk-freq-out = <100000>;
-
-//#ifdef OPLUS_FEATURE_CHG_BASIC//Fanhong.Kong@ProDrv.CHG,add 2018/04/20 for SVOOC
-
-	da9313-divider@68 {
-		status = "okay";
-		compatible = "oplus,da9313-divider";
-		reg = <0x68 0>;
-	};
-//#endif /*OPLUS_FEATURE_CHG_BASIC*/
-
-	bq27541-battery@55 {
-		status = "okay";
-		compatible = "oplus,bq27541-battery";
-		reg = <0x55>;
-		qcom,modify-soc-smooth;
-		qcom,batt_bq28z610;
-		qcom,bq28z610_need_balancing;
-	};
-
-	stm8s_fastcg@26{
-
-		status = "okay";
-		compatible = "oplus,stm8s-fastcg";
-		reg = <0x26>;
-		qcom,vooc-low-temp = <50>;
-		qcom,oplus_batt_4400mv;
-		qcom,support_vooc_by_normal_charger_path;
-		qcom,vooc_fw_update_newmethod;
-		qcom,vooc-high-temp = <430>;
-		qcom,vooc-low-soc = <1>;
-		qcom,vooc-high-soc = <90>;
-		qcom,vooc-fw-type = <0x24>;//6A
-
-		qcom,vooc_multistep_adjust_current_support;
-		qcom,vooc_multistep_initial_batt_temp = <310>;
-		qcom,vooc_strategy_normal_current = <0x06>;
-		qcom,vooc-normal-to-little-cool-current = <0x05>;
-		qcom,vooc_batt_over_high_temp = <440>;
-		qcom,vooc_batt_over_low_temp = <45>;
-		qcom,vooc_over_high_or_low_current = <0x0>;
-
-		qcom,vooc_strategy1_batt_high_temp0 = <425>;
-		qcom,vooc_strategy1_batt_high_temp1 = <430>;
-		qcom,vooc_strategy1_batt_high_temp2 = <435>;
-		qcom,vooc_strategy1_batt_low_temp2 = <420>;
-		qcom,vooc_strategy1_batt_low_temp1 = <415>;
-		qcom,vooc_strategy1_batt_low_temp0 = <400>;
-
-		qcom,vooc_strategy1_high_current0 = <0x04>;//4A
-		qcom,vooc_strategy1_high_current1 = <0x03>;//3A
-		qcom,vooc_strategy1_high_current2 = <0x02>;//2A
-		qcom,vooc_strategy1_low_current2 = <0x03>;//3A
-		qcom,vooc_strategy1_low_current1 = <0x04>;//4A
-		qcom,vooc_strategy1_low_current0 = <0x04>;//4A
-
-		qcom,vooc_strategy2_batt_up_temp1 = <375>;
-		qcom,vooc_strategy2_batt_up_down_temp2 = <380>;
-		qcom,vooc_strategy2_batt_up_temp3 = <390>;
-		qcom,vooc_strategy2_batt_up_down_temp4 = <400>;
-		qcom,vooc_strategy2_batt_up_temp5 = <410>;
-		qcom,vooc_strategy2_batt_up_temp6 = <415>;
-		qcom,vooc_strategy2_high0_current = <0x05>;
-		qcom,vooc_strategy2_high1_current = <0x04>;
-		qcom,vooc_strategy2_high2_current = <0x03>;
-		qcom,vooc_strategy2_high3_current = <0x02>;
-
-
-		pinctrl-names = "switch1_act_switch2_act", "switch1_sleep_switch2_sleep",
-						"switch1_act_switch3_act", "switch1_sleep_switch3_sleep",
-						"switch1_act_switch2_sleep", "switch1_sleep_switch2_act",
-						"clock_active","clock_sleep",
-						"data_active","data_sleep",
-						"reset_active","reset_sleep";
-		pinctrl-0 = <&charging_switch1_active>;
-		pinctrl-1 = <&charging_switch1_sleep >;
-		pinctrl-2 = <&charging_switch1_active>;
-		pinctrl-3 = <&charging_switch1_sleep >;
-		pinctrl-4 = <&charging_switch1_active>;
-		pinctrl-5 = <&charging_switch1_sleep>;
-		pinctrl-6 = <&charging_clock_active >;
-		pinctrl-7 = <&charging_clock_sleep >;
-		pinctrl-8 = <&charging_data_active >;
-		pinctrl-9 = <&charging_data_sleep >;
-		pinctrl-10 = <&charging_reset_active >;
-		pinctrl-11 = <&charging_reset_sleep >;
-
-		qcom,charging_switch1-gpio = <&tlmm 82 0x00>;
-		//qcom,charging_switch2-gpio = <&tlmm 113 0x00>;
-		//qcom,charging_switch3-gpio = <&tlmm 38 0x00>;
-
-		qcom,charging_reset-gpio = <&tlmm 10 0x00>;
-		qcom,charging_clock-gpio = <&tlmm 131 0x00>;
-		qcom,charging_data-gpio = <&tlmm 129 0x00>;
-	};
-};
-
-
-&pm8150b_charger {
-			//for smb5:
-			qcom,usb-icl-ua = <2000000>;
-			qcom,fcc-max-ua = <2000000>;
-			//qcom,fv-max-uv = <4373000>;
-			qcom,qc3-disable;
-			qcom,hvdcp-disable;
-			//io-channels = <&pm8150b_vadc ADC_GPIO3>;
-			//io-channel-names = "chgID_voltage_adc";
-			//qcom,otg-cl-ua = <2000000>;
-			qcom,float-option = <1>;
-
-			//for oplus chg framework:
-			qcom,input_current_charger_ma = <2000>;
-			qcom,pd_input_current_charger_ma = <2000>;
-			qcom,qc_input_current_charger_ma = <2000>;
-
-			qcom,input_current_usb_ma = <500>;
-
-			qcom,input_current_cdp_ma = <1500>;
-			qcom,input_current_led_ma = <1200>;
-			qcom,input_current_led_ma_high = <1200>;
-			qcom,input_current_led_ma_warm = <1500>;
-			qcom,input_current_led_ma_normal = <2000>;
-			qcom,led_warm_bat_decidegc = <350>;
-			qcom,led_high_bat_decidegc = <370>;
-
-			qcom,input_current_camera_ma = <1200>;
-
-			qcom,input_current_vooc_led_ma_high = <1200>;
-			qcom,input_current_vooc_led_ma_warm = <1800>;
-			qcom,input_current_vooc_led_ma_normal = <3600>;
-			qcom,input_current_vooc_ma_normal = <3600>;
-			qcom,vooc_temp_bat_normal_decidegc = <350>;
-			qcom,input_current_vooc_ma_warm = <3200>;
-			qcom,vooc_temp_bat_warm_decidegc = <370>;
-			qcom,input_current_vooc_ma_high = <2200>;
-			qcom,vooc_temp_bat_hot_decidegc = <440>;
-
-			qcom,charger_current_vooc_ma_normal = <1800>;
-
-			qcom,chg_ctrl_by_calling;
-			qcom,input_current_calling_ma = <1500>;
-
-			//qcom,input_current_led_ma_overtemp = <900>;
-			qcom,overtemp_bat_decidegc = <350>;
-			qcom,iterm_disabled = <0>;
-			qcom,iterm_ma = <115>;
-			qcom,recharge-mv = <100>;
-			qcom,batt_capacity_mah = <4200>;/*typical capacity*/
-			//qcom,batt_capacity_mah = <4170>; /*rated capacity*/
-
-			qcom,removed_bat_decidegc = <190>;  /*<-19C*/
-
-			qcom,cold_bat_decidegc = <20>;  /*-2C~0C*/
-			qcom,temp_cold_vfloat_mv = <3980>;
-			qcom,temp_cold_fastchg_current_ma = <300>;
-
-			qcom,little_cold_bat_decidegc = <0>;	/*0C~5C*/
-			qcom,temp_little_cold_vfloat_mv = <4435>;
-			qcom,temp_little_cold_fastchg_current_ma_high = <950>;
-			qcom,temp_little_cold_fastchg_current_ma_low = <950>;
-			qcom,temp_little_cold_fastchg_current_ma = <950>;
-			qcom,pd_temp_little_cold_fastchg_current_ma_high = <1200>;
-			qcom,pd_temp_little_cold_fastchg_current_ma_low = <950>;
-			qcom,qc_temp_little_cold_fastchg_current_ma_high = <1200>;
-			qcom,qc_temp_little_cold_fastchg_current_ma_low = <950>;
-
-			qcom,cool_bat_decidegc = <50>;	/*5C~12C*/
-			qcom,temp_cool_vfloat_mv = <4435>;
-			qcom,temp_cool_fastchg_current_ma_high = <1100>;
-			qcom,temp_cool_fastchg_current_ma_low = <1100>;
-			qcom,pd_temp_cool_fastchg_current_ma_high = <1800>;
-			qcom,pd_temp_cool_fastchg_current_ma_low = <1200>;
-			qcom,qc_temp_cool_fastchg_current_ma_high = <1800>;
-			qcom,qc_temp_cool_fastchg_current_ma_low = <1200>;
-
-			qcom,little_cool_bat_decidegc = <120>;	/*12C~16C*/
-			qcom,temp_little_cool_vfloat_mv = <4435>;
-			qcom,temp_little_cool_fastchg_current_ma = <1100>;
-			qcom,pd_temp_little_cool_fastchg_current_ma = <2000>;
-			qcom,qc_temp_little_cool_fastchg_current_ma = <2000>;
-
-			qcom,normal_bat_decidegc = <160>;	/*16C~44C*/
-			qcom,temp_normal_fastchg_current_ma = <1100>;
-			qcom,temp_normal_vfloat_mv = <4435>;
-			qcom,pd_temp_normal_fastchg_current_ma = <2000>;
-			qcom,qc_temp_normal_fastchg_current_ma = <2000>;
-
-			qcom,warm_bat_decidegc = <450>;		/*45C~53C*/ /*8pin Bat Vooc project need add 3 degree C*/
-			qcom,temp_warm_vfloat_mv = <4130>;
-			qcom,temp_warm_fastchg_current_ma = <550>;
-			qcom,pd_temp_warm_fastchg_current_ma = <550>;
-			qcom,qc_temp_warm_fastchg_current_ma = <550>;
-			qcom,temp_warm_fastchg_current_ma_led_on = <250>;
-
-			qcom,hot_bat_decidegc = <530>;
-
-			qcom,non_standard_vfloat_mv = <3980>;
-			qcom,non_standard_fastchg_current_ma = <512>;
-
-			qcom,short_c_bat_cv_mv = <4330>;
-			qcom,short_c_bat_vfloat_mv = <3800>;
-			qcom,short_c_bat_fastchg_current_ma = <512>;
-
-			qcom,cold_vfloat_sw_limit = <3930>;
-			qcom,little_cold_vfloat_sw_limit = <4385>;
-			qcom,cool_vfloat_sw_limit = <4385>;
-			qcom,little_cool_vfloat_sw_limit = <4385>;
-			qcom,normal_vfloat_sw_limit = <4385>;
-			qcom,warm_vfloat_sw_limit = <4080>;
-			qcom,non_standard_vfloat_sw_limit = <3930>;
-			qcom,short_c_bat_vfloat_sw_limit = <3750>;
-
-			qcom,max_chg_time_sec = <36000>;
-			qcom,charger_hv_thr = <9900>;
-			qcom,charger_recv_thr = <9500>;
-			qcom,charger_lv_thr = <3400>;
-			qcom,vbatt_full_thr = <4435>;
-			qcom,vbatt_hv_thr = <4600>;
-			qcom,vfloat_step_mv = <8>;
-			qcom,non_standard_vfloat_over_sw_limit = <3990>;
-			qcom,cold_vfloat_over_sw_limit = <3990>;
-			qcom,little_cold_vfloat_over_sw_limit = <4445>;
-			qcom,cool_vfloat_over_sw_limit = <4445>;
-			qcom,little_cool_vfloat_over_sw_limit = <4445>;
-			qcom,normal_vfloat_over_sw_limit = <4445>;
-			qcom,warm_vfloat_over_sw_limit = <4140>;
-
-			qcom,vbatt_power_off = <3300>;
-			qcom,vbatt_soc_1 = <3310>;
-			qcom,vooc_project = <3>;
-			qcom,vbatt_num = <2>;
-			qcom,ffc_support;
-			recharge_after_full;
-
-			qcom,normal_vterm_hw_inc = <18>;
-			qcom,non_normal_vterm_hw_inc = <18>;
-
-			qcom,ff1_normal_fastchg_ma = <550>;
-			qcom,ff1_warm_fastchg_ma = <550>;
-			qcom,ffc2_normal_fastchg_ma = <350>;/*12C~35c*/
-			qcom,ffc2_temp_warm_decidegc = <350>;
-			qcom,ffc2_warm_fastchg_ma = <400>;/*35C~40c*/
-			qcom,ffc2_temp_high_decidegc = <400>;
-			qcom,ffc2_temp_low_decidegc = <120>;
-			qcom,ffc2_exit_step_ma = <100>;
-			qcom,ff1_exit_step_ma = <150>;
-			qcom,ff1_warm_exit_step_ma = <150>;
-
-			qcom,ffc_normal_vfloat_sw_limit = <4455>;
-			qcom,ffc2_normal_vfloat_sw_limit = <4445>;
-			qcom,ffc2_warm_vfloat_sw_limit = <4445>;
-			qcom,ffc_temp_normal_vfloat_mv = <4500>;
-			qcom,ffc1_temp_normal_vfloat_mv = <4500>;
-			qcom,ffc2_temp_normal_vfloat_mv = <4500>;
-			qcom,ffc_normal_vfloat_over_sw_limit = <4500>;
-			qcom,ffc1_normal_vfloat_over_sw_limit = <4500>;
-			qcom,ffc2_normal_vfloat_over_sw_limit = <4500>;
-
-			qcom,default_iterm_ma = <115>;
-			qcom,default_temp_normal_fastchg_current_ma = <1100>;
-			qcom,default_normal_vfloat_sw_limit = <4385>;
-			qcom,default_temp_normal_vfloat_mv = <4435>;
-			qcom,default_normal_vfloat_over_sw_limit = <4445>;
-
-			qcom,default_temp_little_cool_fastchg_current_ma = <1100>;
-			qcom,default_little_cool_vfloat_sw_limit = <4385>;
-			qcom,default_temp_little_cool_vfloat_mv = <4435>;
-			qcom,default_little_cool_vfloat_over_sw_limit = <4445>;
-
-			///qcom,offset_temp = <30>;
-			//for control:
-			//qcom,suspend_after_full;
-			qcom,check_batt_full_by_sw;
-			qcom,external_gauge;
-			qcom,chg_ctrl_by_lcd;
-			qcom,chg_ctrl_by_vooc;
-			qcom,chg_ctrl_by_camera;
-			qcom,sw_vfloat_over_protect_enable;
-			qcom,lpd-disable;
-
-			//for PD9V or QC9V
-			qcom,vbatt_pdqc_to_5v_thr = <4180>;
-
-			qcom,chargerid_switch-gpio = <&tlmm 50 0x00>;
-			qcom,ship-gpio = <&tlmm 22 0x00>;
-			qcom,ccdetect-gpio = <&tlmm 14 0x00>;
-			//qcom,shortc-gpio = <&tlmm 43 0x00>;
-			qcom,dischg-gpio = <&pm8150_gpios 9 0x00>;
-			//qcom,charger_int-gpio = <&tlmm 15 0x00>;
-			//qcom,input_pg-gpio = <&tlmm 6 0x00>;
-			//qcom,charger_error-gpio = <&tlmm 118 0x00>;
-
-			pinctrl-names = "default",
-							"chargerid_switch_active", "chargerid_switch_sleep", "chargerid_switch_default",
-							"ship_active", "ship_sleep",
-							"ccdetect_active", "ccdetect_sleep",
-							"dischg_enable", "dischg_disable",
-							"gpio1_adc_default","gpio8_adc_default","gpio5_adc_default",
-							"charger_int_default",
-							"input_pg_default",
-							"charger_error_default";
-
-
-			pinctrl-0 = <&gpio7_adc_default>;
-			pinctrl-1 = <&chargerid_switch_active>;
-			pinctrl-2 = <&chargerid_switch_sleep>;
-			pinctrl-3 = <&chargerid_switch_default>;
-			pinctrl-4 = <&ship_active>;
-			pinctrl-5 = <&ship_sleep>;
-			pinctrl-6 = <&ccdetect_active>;
-			pinctrl-7 = <&ccdetect_sleep>;
-			pinctrl-8 = <&dischg_enable>;
-			pinctrl-9 = <&dischg_disable>;
-			pinctrl-10 = <&gpio1_adc_default>;
-			pinctrl-11 = <&gpio8_adc_default>;
-			pinctrl-12 = <&gpio5_adc_default>;
-			pinctrl-13 = <&charger_int_default>;
-			pinctrl-14 = <&input_pg_default>;
-			pinctrl-15 = <&charger_error_default>;
-
-};
-

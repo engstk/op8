@@ -268,6 +268,7 @@
 			qcom,get_mcu_voltage_enable;
 			qcom,float-option = <1>;
 			qcom,oplus-pps-usbpd-detection = <&pm7250b_pdphy>;
+			qcom,suport_pd_9v2a;
 
 			//for oplus chg framework:
 			qcom,smart_charging_screenoff;
@@ -376,9 +377,11 @@
 
 			qcom,vbatt_power_off = <3300>;
 			qcom,vbatt_soc_1 = <3410>;
-			qcom,vooc_project = <4>;
+			qcom,vooc_project = <1>;//5V6A
 			qcom,vbatt_num = <1>;
+			qcom,internal_gauge_with_asic = <1>;
 			qcom,ffc_support;
+			qcom,usbtemp_parameter_20813;
 
 			qcom,normal_vterm_hw_inc = <18>;
 			qcom,non_normal_vterm_hw_inc = <18>;
@@ -471,8 +474,8 @@
 			   "sbux_res",
 			   "vph_voltage",
 			   "skin_temp",
-			   "usb_supplementary_temp_adc",
-			   "usb_temp_adc",
+			   "usb_temp_l",
+			   "usb_temp_r",
 			   "skin_therm";
 };
 
@@ -521,9 +524,9 @@
 		//qcom,vooc_fw_update_newmethod;
 		qcom,vooc-fw-type = <1>;
 		qcom,vooc_reply_mcu_bits = <7>;
+		qcom,vooc_is_platform_gauge;
 
 		qcom,vooc-low-temp = <0>;
-		qcom,support_vooc_by_normal_charger_path;
 		qcom,vooc-high-temp = <430>;
 		qcom,vooc-low-soc = <1>;
 		qcom,vooc-high-soc = <90>;
@@ -1090,19 +1093,87 @@
 
 &pm7250b_vadc {
         compatible = "qcom,spmi-adc5-7225_s";
-        chgID_voltage_adc {
-                reg = <ADC_GPIO3>;
-                label = "chgID_voltage_adc";
-                qcom,pre-scaling = <1 1>;
-                qcom,ratiometric;
-                qcom,hw-settle-time = <200>;
-        };
-        usb_temp_l {
-                reg = <ADC_AMUX_THM4_PU2>;
-                label = "usb_temp_l";
-                qcom,pre-scaling = <1 1>;
-                qcom,ratiometric;
-                qcom,hw-settle-time = <200>;
-        };
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <
+			&super_charger_therm_default
+			&fa_charge_therm_default
+	>;
+
+	charger_skin_therm {
+			reg = <ADC_AMUX_THM1_PU2>;
+			label = "charger_skin_therm";
+			qcom,ratiometric;
+			qcom,hw-settle-time = <200>;
+			qcom,pre-scaling = <1 1>;
+	};
+
+	conn_therm {
+			reg = <ADC_AMUX_THM3_PU2>;
+			label = "conn_therm";
+			qcom,ratiometric;
+			qcom,hw-settle-time = <200>;
+			qcom,pre-scaling = <1 1>;
+	};
+
+	fa_charge_therm {
+			reg = <ADC_GPIO2_PU2>;
+			label = "fa_charge_therm";
+			qcom,ratiometric;
+			qcom,hw-settle-time = <200>;
+			qcom,pre-scaling = <1 1>;
+	};
+
+	super_charger_therm {
+			reg = <ADC_AMUX_THM4_PU2>;
+			label = "super_charger_therm";
+			qcom,ratiometric;
+			qcom,hw-settle-time = <200>;
+			qcom,pre-scaling = <1 1>;
+	};
 };
+
+&pm7250b_gpios {
+		super_charger_therm {
+				super_charger_therm_default: super_charger_therm_default {
+						pins = "gpio1";
+						bias-high-impedance;
+				};
+		};
+		fa_charge_therm {
+				fa_charge_therm_default: fa_charge_therm_default {
+						pins = "gpio12";
+						bias-high-impedance;
+				};
+		};
+};
+
+&pm7250b_adc_tm {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		io-channels = <&pm7250b_vadc ADC_AMUX_THM1_PU2>,
+				<&pm7250b_vadc ADC_AMUX_THM3_PU2>,
+				<&pm7250b_vadc ADC_GPIO2_PU2>;
+
+		/* Channel nodes */
+		charger_skin_therm {
+				reg = <ADC_AMUX_THM1_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+		};
+
+		conn_therm {
+				reg = <ADC_AMUX_THM3_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+		};
+
+		fa_charge_therm {
+				reg = <ADC_GPIO2_PU2>;
+				qcom,ratiometric;
+				qcom,hw-settle-time = <200>;
+		};
+};
+
 

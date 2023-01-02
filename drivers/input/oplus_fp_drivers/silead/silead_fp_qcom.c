@@ -24,6 +24,21 @@ static irqreturn_t silfp_irq_handler(int irq, void *dev_id);
 static void silfp_work_func(struct work_struct *work);
 static int silfp_input_init(struct silfp_data *fp_dev);
 
+#ifdef BSP_SIL_FP_EXT_PMIC
+extern int fingerprint_ldo_enable(unsigned int ldo_num, unsigned int mv);
+extern int fingerprint_ldo_disable(unsigned int ldo_num, unsigned int mv);
+#else
+static int fingerprint_ldo_enable(unsigned int ldo_num, unsigned int mv)
+{
+    return 0;
+}
+
+static int fingerprint_ldo_disable(unsigned int ldo_num, unsigned int mv)
+{
+    return 0;
+}
+#endif /* BSP_SIL_FP_EXT_PMIC */
+
 /* -------------------------------------------------------------------- */
 /*                            power supply                              */
 /* -------------------------------------------------------------------- */
@@ -40,6 +55,14 @@ static void silfp_hw_poweron(struct silfp_data *fp_dev)
             err = gpio_direction_output(fp_dev->vddio_port, 1);
         }
         goto fp_out;
+    }
+    if (fp_dev->sld_ext_pmic_flag == 1) {
+        if (fingerprint_ldo_enable(fp_dev->sld_ext_pmic_ldo_num, fp_dev->sld_ext_pmic_ldo_mv_max)) {
+            LOG_MSG_DEBUG(ERR_LOG, "%s: enable EXT_LDO7 failed", __func__);
+            goto fp_out;
+        } else {
+            LOG_MSG_DEBUG(ERR_LOG, "%s: enable EXT_LDO7 success", __func__);
+        }
     }
 #ifdef BSP_SIL_POWER_SUPPLY_REGULATOR
     /* Power control by Regulators(LDO) */
@@ -90,6 +113,10 @@ static void silfp_hw_poweroff(struct silfp_data *fp_dev)
         goto fp_out;
     }
 
+    if (fp_dev->sld_ext_pmic_flag == 1) {
+        fingerprint_ldo_disable(fp_dev->sld_ext_pmic_ldo_num, fp_dev->sld_ext_pmic_ldo_mv_min);
+    }
+
     LOG_MSG_DEBUG(INFO_LOG, "[%s] enter.\n", __func__);
 #ifdef BSP_SIL_POWER_SUPPLY_REGULATOR
     /* Power control by Regulators(LDO) */
@@ -134,6 +161,10 @@ static void silfp_power_deinit(struct silfp_data *fp_dev)
             fp_dev->vddio_port = 0;
         }
         goto fp_out;
+    }
+
+    if (fp_dev->sld_ext_pmic_flag == 1) {
+        fingerprint_ldo_disable(fp_dev->sld_ext_pmic_ldo_num, fp_dev->sld_ext_pmic_ldo_mv_min);
     }
 
     LOG_MSG_DEBUG(INFO_LOG, "[%s] enter.\n", __func__);
@@ -262,6 +293,34 @@ static int silfp_parse_dts(struct silfp_data* fp_dev)
         fp_dev->sld_gpio_pwr_flag = 1;
     } else {
         fp_dev->sld_gpio_pwr_flag = 0;
+    }
+
+    if (of_property_read_bool(fp_dev->spi->dev.of_node, "sld,enable-external-pmic")) {
+        dev_err(fp_dev->dev, "%s, Using external pmic \n", __func__);
+        fp_dev->sld_ext_pmic_flag = 1;
+    } else {
+        fp_dev->sld_ext_pmic_flag = 0;
+    }
+
+    if (fp_dev->sld_ext_pmic_flag) {
+        ret = of_property_read_u32(fp_dev->spi->dev.of_node, "sld,ext-pmic-ldo-num",
+                &fp_dev->sld_ext_pmic_ldo_num);
+        if (ret) {
+            dev_err(fp_dev->dev, "%s, Unknown ldo number \n", __func__);
+            fp_dev->sld_gpio_pwr_flag = 0;
+        }
+        ret = of_property_read_u32(fp_dev->spi->dev.of_node, "sld,ext-pmic-ldo-mv-max",
+                &fp_dev->sld_ext_pmic_ldo_mv_max);
+        if (ret) {
+            dev_err(fp_dev->dev, "%s, Unknown ldo mv_max \n", __func__);
+            fp_dev->sld_gpio_pwr_flag = 0;
+        }
+        ret = of_property_read_u32(fp_dev->spi->dev.of_node, "sld,ext-pmic-ldo-mv-min",
+                &fp_dev->sld_ext_pmic_ldo_mv_min);
+        if (ret) {
+            dev_err(fp_dev->dev, "%s, Unknown ldo mv_min \n", __func__);
+            fp_dev->sld_gpio_pwr_flag = 0;
+        }
     }
 
 #ifdef BSP_SIL_POWER_SUPPLY_REGULATOR

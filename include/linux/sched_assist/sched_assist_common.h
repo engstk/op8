@@ -106,6 +106,27 @@ enum ANMATION_TYPE
         BACKUP,
 	SYSTEMUI_SPLIT_STARTM,
 };
+
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+/*
+ * new flag should be add before MAX_IM_FLAG_TYPE,
+ * never change the value of those existed flag type.
+ */
+enum IM_FLAG_TYPE {
+	IM_FLAG_NONE = 0,
+	IM_FLAG_SURFACEFLINGER,
+	IM_FLAG_HWC,
+	IM_FLAG_RENDERENGINE,
+	IM_FLAG_WEBVIEW,
+	IM_FLAG_CAMERA_HAL,
+	IM_FLAG_3RD_AUDIO,
+	IM_FLAG_HWBINDER,
+	IM_FLAG_LAUNCHER,
+	IM_FLAG_LAUNCHER_NON_UX_RENDER,
+	MAX_IM_FLAG_TYPE,
+};
+#endif
+
 struct ux_sched_cluster {
         struct cpumask cpus;
         unsigned long capacity;
@@ -185,6 +206,7 @@ extern int get_ux_state_type(struct task_struct *task);
 extern bool test_ux_task_cpu(int cpu);
 extern bool test_ux_prefer_cpu(struct task_struct *task, int cpu);
 extern void find_ux_task_cpu(struct task_struct *task, int *target_cpu);
+extern void oplus_boost_kill_signal(int sig, struct task_struct *cur, struct task_struct *p);
 static inline void find_slide_boost_task_cpu(struct task_struct *task, int *target_cpu) {}
 
 extern void sched_assist_systrace_pid(pid_t pid, int val, const char *fmt, ...);
@@ -245,6 +267,11 @@ static inline bool is_heavy_ux_task(struct task_struct *task)
 static inline void set_once_ux(struct task_struct *task)
 {
 	task->ux_state |= SA_TYPE_ONCE_UX;
+}
+
+static inline void set_heavy_ux(struct task_struct *task)
+{
+	task->ux_state |= SA_TYPE_HEAVY;
 }
 
 static inline bool sched_assist_scene(unsigned int scene)

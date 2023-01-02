@@ -304,7 +304,7 @@ static ssize_t last_resume_reason_show(struct kobject *kobj,
 		list_for_each_entry(n, &leaf_irqs, siblings)
 			buf_offset += scnprintf(buf + buf_offset,
 						PAGE_SIZE - buf_offset,
-						"%d %s\n", n->irq, n->irq_name);
+						"%d %s\n", n->irq, (strncmp(n->irq_name, "ipcc_1", strlen("ipcc_1")) == 0) ? "qmi" : n->irq_name);
 	else if (abnormal_wake)
 		buf_offset = scnprintf(buf, PAGE_SIZE, "-1 %s",
 				       non_irq_wake_reason);

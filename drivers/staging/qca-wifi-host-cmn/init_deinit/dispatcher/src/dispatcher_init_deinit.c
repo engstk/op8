@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -75,6 +75,8 @@
 #ifdef FEATURE_COEX
 #include <wlan_coex_utils_api.h>
 #endif
+
+#include <wlan_gpio_api.h>
 
 /**
  * DOC: This file provides various init/deinit trigger point for new
@@ -416,6 +418,16 @@ static QDF_STATUS dispatcher_deinit_crypto(void)
 {
 	return wlan_crypto_deinit();
 }
+
+static QDF_STATUS dispatcher_crypto_psoc_enable(struct wlan_objmgr_psoc *psoc)
+{
+	return wlan_crypto_psoc_enable(psoc);
+}
+
+static QDF_STATUS dispatcher_crypto_psoc_disable(struct wlan_objmgr_psoc *psoc)
+{
+	return wlan_crypto_psoc_disable(psoc);
+}
 #else
 static QDF_STATUS dispatcher_init_crypto(void)
 {
@@ -423,6 +435,16 @@ static QDF_STATUS dispatcher_init_crypto(void)
 }
 
 static QDF_STATUS dispatcher_deinit_crypto(void)
+{
+	return QDF_STATUS_SUCCESS;
+}
+
+static QDF_STATUS dispatcher_crypto_psoc_enable(struct wlan_objmgr_psoc *psoc)
+{
+	return QDF_STATUS_SUCCESS;
+}
+
+static QDF_STATUS dispatcher_crypto_psoc_disable(struct wlan_objmgr_psoc *psoc)
 {
 	return QDF_STATUS_SUCCESS;
 }
@@ -823,6 +845,9 @@ QDF_STATUS dispatcher_init(void)
 	if (QDF_STATUS_SUCCESS != dispatcher_coex_init())
 		goto coex_init_fail;
 
+	if (QDF_STATUS_SUCCESS != wlan_gpio_init())
+		goto gpio_init_fail;
+
 	/*
 	 * scheduler INIT has to be the last as each component's
 	 * initialization has to happen first and then at the end
@@ -834,6 +859,8 @@ QDF_STATUS dispatcher_init(void)
 	return QDF_STATUS_SUCCESS;
 
 scheduler_init_fail:
+	wlan_gpio_deinit();
+gpio_init_fail:
 	dispatcher_coex_deinit();
 coex_init_fail:
 	dispatcher_deinit_cfr();
@@ -888,6 +915,8 @@ QDF_STATUS dispatcher_deinit(void)
 	QDF_STATUS status;
 
 	QDF_BUG(QDF_STATUS_SUCCESS == scheduler_deinit());
+
+	QDF_BUG(QDF_STATUS_SUCCESS == wlan_gpio_deinit());
 
 	QDF_BUG(QDF_STATUS_SUCCESS == dispatcher_coex_deinit());
 
@@ -1055,12 +1084,17 @@ QDF_STATUS dispatcher_psoc_enable(struct wlan_objmgr_psoc *psoc)
 	if (QDF_STATUS_SUCCESS != dispatcher_dbr_psoc_enable(psoc))
 		goto dbr_psoc_enable_fail;
 
+	if (QDF_STATUS_SUCCESS != dispatcher_crypto_psoc_enable(psoc))
+		goto crypto_psoc_enable_fail;
+
 	if (QDF_STATUS_SUCCESS != wlan_mlme_psoc_enable(psoc))
 		goto mlme_psoc_enable_fail;
 
 	return QDF_STATUS_SUCCESS;
 
 mlme_psoc_enable_fail:
+	dispatcher_crypto_psoc_disable(psoc);
+crypto_psoc_enable_fail:
 	dispatcher_dbr_psoc_disable(psoc);
 dbr_psoc_enable_fail:
 	fd_psoc_disable(psoc);
@@ -1086,6 +1120,8 @@ qdf_export_symbol(dispatcher_psoc_enable);
 QDF_STATUS dispatcher_psoc_disable(struct wlan_objmgr_psoc *psoc)
 {
 	QDF_BUG(QDF_STATUS_SUCCESS == wlan_mlme_psoc_disable(psoc));
+
+	QDF_BUG(QDF_STATUS_SUCCESS == dispatcher_crypto_psoc_disable(psoc));
 
 	QDF_BUG(QDF_STATUS_SUCCESS == dispatcher_dbr_psoc_disable(psoc));
 

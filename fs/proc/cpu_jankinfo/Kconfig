@@ -1,0 +1,5 @@
+config OPLUS_FEATURE_CPU_JANKINFO
+	tristate "config cpu_jankinfo"
+	default n
+	help
+	  define this config to enable cpu jankinfo.

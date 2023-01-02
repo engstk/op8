@@ -501,6 +501,7 @@ struct  chip_data_gt9886 {
     struct goodix_register              reg_info;
     struct fw_update_info               update_info;
     struct hw_resource                  *hw_res;
+    struct monitor_data_v2              *monitor_data_v2;
     struct goodix_proc_operations       *goodix_ops;                    //goodix func provide for debug
     struct goodix_fp_coor               fp_coor_report;
     struct goodix_health_info           health_info;

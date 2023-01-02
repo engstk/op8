@@ -1,0 +1,5 @@
+config TOUCHPANEL_NOVA_NT36525B_NOFLASH
+#	default y
+	bool "TP nova nt36525B IC enable or not for OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel useing nova nt36525B

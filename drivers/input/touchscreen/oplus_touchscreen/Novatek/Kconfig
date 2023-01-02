@@ -1,0 +1,18 @@
+config TOUCHPANEL_NT_DIGITALNOISE_TEST
+#   default y
+    bool "TP nova nt36672C IC add digital noise test or not for OPLUS"
+    ---help---
+    say Y to add digital noise test
+config TOUCHPANEL_NT_PEN_SUPPORT
+	default y
+	bool "Stylus support or not for Novatek Touch Panel Driver"
+	---help---
+	say Y to enable stylus function Novatek Touchpanel
+	
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36672/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36525/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36672_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36525_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36525B_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36672C_noflash/Kconfig"
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/NT36523_noflash/Kconfig"

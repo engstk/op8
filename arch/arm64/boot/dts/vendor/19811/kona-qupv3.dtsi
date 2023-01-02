@@ -854,9 +854,11 @@
 		pinctrl-1 = <&qupv3_se16_i2c_sleep>;
 		pinctrl-2 = <&qupv3_se16_i2c_pulldown>;
 		pinctrl-3 = <&qupv3_se16_i2c_pullup>;
+//#else
 //		pinctrl-names = "default", "sleep";
 //		pinctrl-0 = <&qupv3_se16_i2c_active>;
 //		pinctrl-1 = <&qupv3_se16_i2c_sleep>;
+//#endif //OPLUS_FEATURE_CHG_BASIC
 		qcom,wrapper-core = <&qupv3_2>;
 		status = "disabled";
 	};

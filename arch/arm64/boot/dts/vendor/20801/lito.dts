@@ -7,5 +7,5 @@
 	compatible = "qcom,lito";
 	qcom,board-id = <8 0>;
 	oplus,dtsi_no = <20801>;
-	oplus,pcb_range = <0  55>;
+	oplus,pcb_range = <0  56>;
 };

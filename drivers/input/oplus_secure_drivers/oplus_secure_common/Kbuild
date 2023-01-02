@@ -1,0 +1,17 @@
+ifeq ($(CONFIG_OPLUS_SECURE_QCOM),y)
+ccflags-y += -DQCOM_PLATFORM
+else ifeq ($(CONFIG_OPLUS_SECURE_MTK),y)
+ccflags-y += -DMTK_PLATFORM
+endif
+
+ifeq ($(OPLUS_OUT_OF_TREE_KO),y)
+ccflags-y += -DCONFIG_OPLUS_SECURE_COMMON_MODULE=1
+endif
+
+ifeq ($(CONFIG_QCOM_QSEELOG_ENCRYPT),y)
+ccflags-y += -DQCOM_QSEELOG_ENCRYPT
+endif
+
+ifneq ($(TARGET_PRODUCT),qssi)
+obj-$(CONFIG_OPLUS_SECURE_COMMON) += oplus_secure_common.o
+endif

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2011-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2021, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "subsys-restart: %s(): " fmt, __func__
@@ -858,6 +858,7 @@ static int subsystem_powerup(struct subsys_device *dev, void *data)
 	pr_info("[%s:%d]: Powering up %s\n", current->comm, current->pid, name);
 	reinit_completion(&dev->err_ready);
 
+	enable_all_irqs(dev);
 	ret = dev->desc->powerup(dev->desc);
 	if (ret < 0) {
 		notify_each_subsys_device(&dev, 1, SUBSYS_POWERUP_FAILURE,
@@ -873,7 +874,6 @@ static int subsystem_powerup(struct subsys_device *dev, void *data)
 			pr_err("Powerup failure on %s\n", name);
 		return ret;
 	}
-	enable_all_irqs(dev);
 
 	ret = wait_for_err_ready(dev);
 	if (ret) {
@@ -1482,6 +1482,7 @@ int subsystem_restart_dev(struct subsys_device *dev)
 		__subsystem_restart_dev(dev);
 		break;
 	case RESET_SOC:
+	#ifdef VENDOR_EDIT
 		if (!strcmp(name, "esoc0") && oem_is_fulldump()) {
 			if (!direct_panic) {
 				delay_panic = true;
@@ -1494,6 +1495,10 @@ int subsystem_restart_dev(struct subsys_device *dev)
 			__pm_stay_awake(dev->ssr_wlock);
 			schedule_work(&dev->device_restart_work);
 		}
+	#else
+		__pm_stay_awake(dev->ssr_wlock);
+		schedule_work(&dev->device_restart_work);
+	#endif
 		return 0;
 	default:
 		panic("subsys-restart: Unknown restart level!\n");

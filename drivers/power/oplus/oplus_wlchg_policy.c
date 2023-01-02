@@ -72,7 +72,7 @@
 static struct op_chg_chip *g_op_chip;
 static struct oplus_wpc_chip *g_wpc_chip;
 static struct oplus_gauge_operations *exfg_instance;
-static struct bq2597x *exchgpump_bq;
+static struct bq2597x_wl *exchgpump_bq;
 static struct rx_chip *g_rx_chip;
 struct smb_charger *normal_charger;
 static int reverse_charge_status = 0;
@@ -99,8 +99,8 @@ int wlchg_get_usbin_val(void);
 static void update_wlchg_started(bool enabled);
 static int wlchg_disable_batt_charge(struct op_chg_chip *chip, bool en);
 
-extern int bq2597x_get_adc_data(struct bq2597x *bq, int channel, int *result);
-extern int bq2597x_enable_adc(struct bq2597x *bq, bool enable);
+extern int bq2597x_wl_get_adc_data(struct bq2597x_wl *bq, int channel, int *result);
+extern int bq2597x_wl_enable_adc(struct bq2597x_wl *bq, bool enable);
 static int reverse_charge_notifier_call_chain(unsigned long val);
 int __attribute__((weak)) op_wireless_high_vol_en(bool enable)
 {
@@ -905,7 +905,7 @@ static int wlchg_deinit_after_disconnected(struct op_chg_chip *chip)
 	wlchg_reset_variables(chip);
 	//chargepump_set_for_otg(0);
 	chargepump_disable();
-	bq2597x_enable_charge_pump(false);
+	bq2597x_wl_enable_charge_pump(false);
 	/* Resetting the RX chip when the wireless charging is disconnected */
 	if (wlchg_get_usbin_val() == 0) {
 		if (!chip->disable_charge) {
@@ -1091,7 +1091,7 @@ void exchg_information_register(struct smb_charger *chg)
 		normal_charger = chg;
 	}
 }
-void exchgpump_information_register(struct bq2597x *bq)
+void exchgpump_information_register(struct bq2597x_wl *bq)
 {
 	if (exchgpump_bq) {
 		exchgpump_bq = bq;
@@ -1375,7 +1375,7 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 		if (chip->wireless_mode == WIRELESS_MODE_RX) {
 			if (exchgpump_bq == NULL)
 				return -ENODEV;
-			bq2597x_get_adc_data(exchgpump_bq, ADC_VBUS, &tmp);
+			bq2597x_wl_get_adc_data(exchgpump_bq, ADC_VBUS, &tmp);
 			val->intval = tmp * 1000;
 		} else {
 			val->intval = 0;
@@ -1385,7 +1385,7 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 		if (chip->wireless_mode == WIRELESS_MODE_RX) {
 			if (exchgpump_bq == NULL)
 				return -ENODEV;
-			bq2597x_get_adc_data(exchgpump_bq, ADC_IBUS, &tmp);
+			bq2597x_wl_get_adc_data(exchgpump_bq, ADC_IBUS, &tmp);
 			val->intval = tmp * 1000;
 		} else {
 			val->intval = 0;
@@ -2342,8 +2342,8 @@ static int fastchg_err_check(struct op_chg_chip *chip)
 	}
 
 	if (exchgpump_bq != NULL) {
-		bq2597x_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
-		cp2_is_ok = bq2597x_charge_status_is_ok(exchgpump_bq);
+		bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
+		cp2_is_ok = bq2597x_wl_charge_status_is_ok(exchgpump_bq);
 	}
 	if (!cp2_is_enabled) {
 		chg_err("charge pump 2 is err\n");
@@ -2379,7 +2379,7 @@ static int fastchg_curr_filter(struct op_chg_chip *chip)
 		return -ENODEV;
 	}
 
-	bq2597x_check_charge_enabled(exchgpump_bq, &cp_enabled);
+	bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp_enabled);
 	if (!cp_enabled) {
 		iout_pre = 0;
 		return 0;
@@ -2388,7 +2388,7 @@ static int fastchg_curr_filter(struct op_chg_chip *chip)
 	iout = g_rx_chip->chg_data.iout;
 	if (iout_pre != 0)
 		iout_shake = iout - iout_pre;
-	bq2597x_get_adc_data(exchgpump_bq, ADC_IBUS, &bq_adc_ibus);
+	bq2597x_wl_get_adc_data(exchgpump_bq, ADC_IBUS, &bq_adc_ibus);
 	if ((iout > WPC_CHARGE_CURRENT_FASTCHG) &&
 	    ((abs(iout * 2 - bq_adc_ibus) > 500) || (abs(iout_shake) > 1000))) {
 		iout = bq_adc_ibus / 2;
@@ -2867,8 +2867,8 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 	int ret;
 
 	if (exchgpump_bq != NULL) {
-		bq2597x_get_adc_data(exchgpump_bq, ADC_VBAT, &bq_adc_vbat);
-		bq2597x_get_adc_data(exchgpump_bq, ADC_VBUS, &bq_adc_vbus);
+		bq2597x_wl_get_adc_data(exchgpump_bq, ADC_VBAT, &bq_adc_vbat);
+		bq2597x_wl_get_adc_data(exchgpump_bq, ADC_VBUS, &bq_adc_vbus);
 	} else {
 		chg_err("bq25970 err\n");
 		return -ENODEV;
@@ -2991,7 +2991,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 			}
 		case FASTCHG_SET_CHGPUMP2_VOL_AGAIN_STEP:
 			if (exchgpump_bq != NULL) {
-				bq2597x_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
+				bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
 				if (cp2_is_enabled) {
 					if (cp2_enabled_count > 1) {
 						cp2_enabled_count = 0;
@@ -3020,7 +3020,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 				    (bq_adc_vbus < temp_value) &&
 				    (cp2_enabled_count == 0)) {
 					chg_info("try enable cp2\n");
-					bq2597x_enable_charge_pump(true);
+					bq2597x_wl_enable_charge_pump(true);
 				}
 
 				if (chg_status->vol_set_ok && !cp2_is_enabled) {
@@ -3031,12 +3031,12 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 				break;
 			}
 		case FASTCHG_EN_CHGPUMP2_STEP:
-			bq2597x_enable_charge_pump(true);
+			bq2597x_wl_enable_charge_pump(true);
 			chg_status->fastchg_startup_step = FASTCHG_CHECK_CHGPUMP2_STEP;
 			break;
 		case FASTCHG_CHECK_CHGPUMP2_STEP:
 			if (exchgpump_bq != NULL)
-				bq2597x_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
+				bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
 			if (cp2_is_enabled) {
 				chg_status->fastchg_startup_step = FASTCHG_CHECK_CHGPUMP2_AGAIN_STEP;
 			} else {
@@ -3047,7 +3047,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 			break;
 		case FASTCHG_CHECK_CHGPUMP2_AGAIN_STEP:
 			if (exchgpump_bq != NULL)
-				bq2597x_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
+				bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
 			if (cp2_is_enabled) {
 				if (chip->chg_param.fastchg_fod_enable) {
 					if (chg_status->adapter_id == 0x00 || chg_status->adapter_id == 0x01)
@@ -3162,7 +3162,7 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 
 	if (exchgpump_bq != NULL) {
 		if (exchgpump_bq->adc_enabled) {
-			bq2597x_get_adc_data(exchgpump_bq, ADC_VBAT, &bq_adc_vbat);
+			bq2597x_wl_get_adc_data(exchgpump_bq, ADC_VBAT, &bq_adc_vbat);
 		} else {
 			bq_adc_vbat = chip->batt_volt;
 		}
@@ -3191,7 +3191,7 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 			if (!wlchg_status_abnormal) {
 				wlchg_status_abnormal = true;
 				chargepump_disable();
-				bq2597x_enable_charge_pump(false);
+				bq2597x_wl_enable_charge_pump(false);
 				wlchg_rx_set_chip_sleep(1);
 				return 0;
 			}
@@ -3514,8 +3514,8 @@ freq_check_done:
 		if (chip->ap_ctrl_dcdc)
 			op_set_dcdc_en_value(1);
 		if (exchgpump_bq != NULL) {
-			chg_info("enable bq2597x adc.");
-			bq2597x_enable_adc(exchgpump_bq, true);
+			chg_info("enable bq2597x_wl adc.");
+			bq2597x_wl_enable_adc(exchgpump_bq, true);
 		}
 		chg_status->wpc_ffc_charge = true;
 		chg_status->is_power_changed = true;
@@ -3661,7 +3661,7 @@ freq_check_done:
 			chg_status->startup_fast_chg = false;
 			chg_status->is_power_changed = true;
 			chargepump_disable();
-			bq2597x_enable_charge_pump(false);
+			bq2597x_wl_enable_charge_pump(false);
 			wlchg_set_rx_charge_current_step(chip, WPC_CHARGE_CURRENT_EPP);
 			chg_status->charge_status = WPC_CHG_STATUS_FAST_CHARGING_FFC;
 			if (!chg_status->cep_timeout_adjusted && chip->soc > chg_param->fastchg_soc_max)
@@ -3720,7 +3720,7 @@ freq_check_done:
 			chg_status->startup_fast_chg = false;
 			chg_status->is_power_changed = true;
 			chargepump_disable();
-			bq2597x_enable_charge_pump(false);
+			bq2597x_wl_enable_charge_pump(false);
 			wlchg_set_rx_charge_current(chip, WPC_CHARGE_CURRENT_STOP_CHG);
 			chg_status->charge_status = WPC_CHG_STATUS_DISABLE_BATT_CHARGE;
 		}
@@ -3739,10 +3739,10 @@ freq_check_done:
 		chg_err("<~WPC~> ..........WPC_CHG_STATUS_READY_FOR_FTM..........\n");
 		if (chg_status->vol_set_ok) {
 			chg_status->startup_fast_chg = false;
-			bq2597x_enable_charge_pump(true);
+			bq2597x_wl_enable_charge_pump(true);
 			msleep(500);
 			if (exchgpump_bq != NULL)
-				bq2597x_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
+				bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
 			if (cp2_is_enabled)
 				chg_status->charge_status = WPC_CHG_STATUS_FTM_WORKING;
 			else
@@ -3753,7 +3753,7 @@ freq_check_done:
 	case WPC_CHG_STATUS_FTM_WORKING:
 		chg_err("<~WPC~> ..........WPC_CHG_STATUS_FTM_WORKING..........\n");
 		if (exchgpump_bq != NULL)
-			bq2597x_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
+			bq2597x_wl_check_charge_enabled(exchgpump_bq, &cp2_is_enabled);
 		if (!cp2_is_enabled) {
 			chg_err("wkcs: charge pump 2 err\n");
 			chg_status->charge_status = WPC_CHG_STATUS_READY_FOR_FTM;
@@ -5615,7 +5615,7 @@ static ssize_t proc_wireless_charge_pump_write(struct file *file,
 	case 0:
 		chg_err("wkcs: disable all charge pump\n");
 		chargepump_disable();
-		bq2597x_enable_charge_pump(false);
+		bq2597x_wl_enable_charge_pump(false);
 		break;
 	case 1:
 		chg_err("wkcs: disable charge pump 1\n");
@@ -5629,11 +5629,11 @@ static ssize_t proc_wireless_charge_pump_write(struct file *file,
 		break;
 	case 3:
 		chg_err("wkcs: disable charge pump 2\n");
-		bq2597x_enable_charge_pump(false);
+		bq2597x_wl_enable_charge_pump(false);
 		break;
 	case 4:
 		chg_err("wkcs: enable charge pump 2\n");
-		bq2597x_enable_charge_pump(true);
+		bq2597x_wl_enable_charge_pump(true);
 		break;
 	case 5:
 		wlchg_set_rx_charge_current(g_op_chip, 0);
@@ -6012,7 +6012,7 @@ static ssize_t proc_wireless_ftm_test_read(struct file *file,
 		return -ENODEV;
 	}
 	if (exchgpump_bq == NULL) {
-		chg_err("[FTM_TEST]bq2597x driver is not ready\n");
+		chg_err("[FTM_TEST]bq2597x_wl driver is not ready\n");
 		err_no |= WLCHG_FTM_TEST_CP2_ERR;
 	}
 
@@ -6021,7 +6021,7 @@ static ssize_t proc_wireless_ftm_test_read(struct file *file,
 		return rc;
 	else if (rc > 0)
 		err_no |= rc;
-	rc = bq2597x_ftm_test(exchgpump_bq);
+	rc = bq2597x_wl_ftm_test(exchgpump_bq);
 	if (rc < 0)
 		return rc;
 	else if (rc > 0)
@@ -6350,11 +6350,30 @@ bool oplus_wpc_get_fw_updating(void)
 int oplus_wpc_get_adapter_type(void)
 {
 	if (!g_op_chip) {
-		chg_err("wlchg driver is not ready\n");
         	return false;
 	} else {
 		return g_op_chip->wlchg_status.adapter_type;
 	}
+}
+
+int oplus_wpc_get_break_sub_crux_info(char *sub_crux_info)
+{
+	return 0;
+}
+
+int oplus_wpc_get_dock_type(void)
+{
+	return 0;
+}
+
+int oplus_wpc_get_skewing_curr(void)
+{
+	return 0;
+}
+
+bool oplus_wpc_get_verity(void)
+{
+	return true;
 }
 
 void oplus_wpc_set_vbat_en_val(int value)
@@ -6392,7 +6411,6 @@ int oplus_wpc_get_max_wireless_power(void)
 	int max_wls_power = 0;
 
 	if (!g_op_chip) {
-		chg_err("wlchg driver is not ready\n");
 		return -1;
 	}
 

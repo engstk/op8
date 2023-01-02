@@ -136,6 +136,17 @@
 #define WLAN_RM_CAPABILITY_IE_MAX_LEN            5
 #define WLAN_RNR_IE_MIN_LEN                      5
 
+/* Wide band channel switch IE length */
+#define WLAN_WIDE_BW_CHAN_SWITCH_IE_LEN          3
+
+/* Number of max TX power elements supported plus size of Transmit Power
+ * Information element.
+ */
+#define WLAN_TPE_IE_MAX_LEN                      9
+
+/* Max channel switch time IE length */
+#define WLAN_MAX_CHAN_SWITCH_TIME_IE_LEN         4
+
 /* HT capability flags */
 #define WLAN_HTCAP_C_ADVCODING             0x0001
 #define WLAN_HTCAP_C_CHWIDTH40             0x0002
@@ -193,8 +204,16 @@
 #define WLAN_HE_6GHZ_CHWIDTH_160_80_80    3 /* 160/80+80 MHz Oper Ch width */
 
 #define WLAN_RATE_VAL              0x7f
+#define WLAN_BASIC_RATE_MASK       0x80
 
 #define WLAN_RV(v)     ((v) & WLAN_RATE_VAL)
+
+#define WLAN_BSS_MEMBERSHIP_SELECTOR_HT_PHY       127
+#define WLAN_BSS_MEMBERSHIP_SELECTOR_VHT_PHY      126
+#define WLAN_BSS_MEMBERSHIP_SELECTOR_GLK          125
+#define WLAN_BSS_MEMBERSHIP_SELECTOR_EPD          124
+#define WLAN_BSS_MEMBERSHIP_SELECTOR_SAE_H2E      123
+#define WLAN_BSS_MEMBERSHIP_SELECTOR_HE_PHY       122
 
 #define WLAN_CHAN_IS_5GHZ(chanidx) \
 	((chanidx > 30) ? true : false)

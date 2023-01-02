@@ -1,0 +1,8 @@
+
+config TOUCHPANEL_ILITEK_ILITEK9882N
+#	default y
+	bool "TP ilitek ilitek9882n IC enable or not for  OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel using ilitek ilitek9882n
+
+

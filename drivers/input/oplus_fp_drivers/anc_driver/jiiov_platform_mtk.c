@@ -48,7 +48,9 @@
 #include <linux/notifier.h>
 #include <linux/fb.h>
 
+#ifndef MTK_ONSCREENFINGERPRINT_EVENT
 #define MTK_ONSCREENFINGERPRINT_EVENT 20
+#endif
 
 #define ANC_COMPATIBLE_SW_FP    "jiiov,fingerprint"
 #define ANC_DEVICE_NAME         "jiiov_fp"

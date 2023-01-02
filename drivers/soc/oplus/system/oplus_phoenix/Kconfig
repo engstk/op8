@@ -6,3 +6,15 @@ config OPLUS_FEATURE_PHOENIX
     default n
     help
       define this config to init oplus phoenix project.
+
+config OPLUS_FEATURE_KMSG_WB
+    tristate "oplus phoenix2.0 project"
+    default n
+    help
+      define this config to init oplus phoenix2.0 project.
+
+config OPLUS_FEATURE_PHOENIX_REBOOT_SPEED
+    tristate "oplus phoenix project"
+    default n
+    help
+      define this config to init oplus phoenix project.

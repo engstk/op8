@@ -2473,6 +2473,9 @@ int smblib_vbus_regulator_enable(struct regulator_dev *rdev)
 	smblib_dbg(chg, PR_OTG, "enabling OTG\n");
 
 #ifdef OPLUS_FEATURE_CHG_BASIC//Fanhong.Kong@ProDrv.CHG,add 2018/06/02 for SVOOC OTG
+        if (chip->internal_gauge_with_asic == true) {
+                vooc_enable_cp_for_otg(1);
+        }
 	if(chip->vbatt_num == 2)
 	{
 		rc = chip->chg_ops->otg_enable();
@@ -2503,6 +2506,9 @@ int smblib_vbus_regulator_disable(struct regulator_dev *rdev)
 	smblib_dbg(chg, PR_OTG, "disabling OTG\n");
 
 #ifdef OPLUS_FEATURE_CHG_BASIC//Fanhong.Kong@ProDrv.CHG,add 2018/06/02 for SVOOC OTG
+        if (chip->internal_gauge_with_asic == true) {
+                vooc_enable_cp_for_otg(0);
+        }
 	if(chip->vbatt_num == 2)
 	{
 		rc = chip->chg_ops->otg_disable();
@@ -3926,6 +3932,10 @@ int smblib_get_prop_usb_voltage_max_design(struct smb_charger *chg,
 			val->intval = MICRO_9V;
 			break;
 		}
+                if (is_vooc_support_single_batt_svooc() == true) {
+                        val->intval = MICRO_9V;
+                        break;
+                }
 		/* else, fallthrough */
 	case POWER_SUPPLY_TYPE_USB_HVDCP_3:
 	case POWER_SUPPLY_TYPE_USB_PD:
@@ -9085,7 +9095,9 @@ int oplus_chg_set_pd_config(void)
 			msleep(300);
 			printk(KERN_ERR "%s: vbus[%d], ibus[%d], ret[%d]\n", __func__, 5000, 2000, ret);
 			oplus_chg_unsuspend_charger();
-		} else if ((chip->vbatt_num == 1) && (chip->vooc_project == 1)) {
+		} else if ((chip->vbatt_num == 1)
+				&& (chip->vooc_project == 1)
+				&& (chip->suport_pd_9v2a == false || (chip->suport_pd_9v2a == true && chip->charger_volt > 7500))) {
 			chip->chg_ops->input_current_write(500);
 			oplus_chg_suspend_charger();
 			oplus_chg_config_charger_vsys_threshold(0x03);//set Vsys Skip threshold 101%
@@ -9121,6 +9133,12 @@ int oplus_chg_enable_qc_detect(void)
 	if (!chip) {
 		return -1;
 	}
+
+        if (is_vooc_support_single_batt_svooc() == false &&
+	    oplus_charger_ic_chip_is_null()) {
+                return 0;
+        }
+
 	chg = &chip->pmic_spmi.smb5_chip->chg;
 
 	chg->hvdcp_disable = false;
@@ -15728,6 +15746,7 @@ struct oplus_chg_operations  smb5_chg_ops = {
 #endif
 	.check_pdphy_ready = oplus_check_pdphy_ready,
 	.set_qc_config		= oplus_chg_set_qc_config,
+        .enable_qc_detect = oplus_chg_enable_qc_detect,
 	.check_qchv_condition = oplus_chg_check_qchv_condition,
 };
 #endif /* OPLUS_FEATURE_CHG_BASIC */
@@ -16166,6 +16185,7 @@ static int smb5_probe(struct platform_device *pdev)
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
 	chg->usbtemp_parameter = of_property_read_bool(chg->dev->of_node, "qcom,usbtemp_parameter");
+	chg->usbtemp_parameter_20813 = of_property_read_bool(chg->dev->of_node, "qcom,usbtemp_parameter_20813");
 	if(chg->usbtemp_parameter) {
 		if(oplus_chip->vbatt_num == 2) {
 			oplus_chip->con_volt = con_volt_7250_svooc;
@@ -16174,6 +16194,10 @@ static int smb5_probe(struct platform_device *pdev)
 		}
 		oplus_chip->con_temp = con_temp_7250;
 		oplus_chip->len_array = ARRAY_SIZE(con_temp_7250);
+	} else if (chg->usbtemp_parameter_20813) {
+		oplus_chip->con_volt = con_volt_20813;
+		oplus_chip->con_temp = con_temp_20813;
+		oplus_chip->len_array = ARRAY_SIZE(con_temp_20813);
 	} else {
 #ifdef OPLUS_CUSTOM_OP_DEF
 		oplus_chip->con_volt = con_volt_30k;

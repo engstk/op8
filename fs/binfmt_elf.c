@@ -580,7 +580,7 @@ static unsigned long load_elf_interp(struct elfhdr *interp_elf_ex,
 				elf_prot |= PROT_EXEC;
 			vaddr = eppnt->p_vaddr;
 			if (interp_elf_ex->e_type == ET_EXEC || load_addr_set)
-				elf_type |= MAP_FIXED_NOREPLACE;
+				elf_type |= MAP_FIXED;
 			else if (no_base && interp_elf_ex->e_type == ET_DYN)
 				load_addr = -vaddr;
 
@@ -2220,6 +2220,8 @@ static elf_addr_t *oplus_coredump_addr = NULL;
 #define PREALLOC_DUMPMEM_SIZE 64 * 1024
 #endif /* OPLUS_BUG_STABILITY */
 
+static DEFINE_MUTEX(core_dump_mutex);
+
 /*
  * Actual dumper
  *
@@ -2243,6 +2245,8 @@ static int elf_core_dump(struct coredump_params *cprm)
 	elf_addr_t e_shoff;
 	elf_addr_t *vma_filesz = NULL;
 
+	if (!mutex_trylock(&core_dump_mutex))
+		goto out;
 	/*
 	 * We no longer stop all VM operations.
 	 * 
@@ -2441,6 +2445,7 @@ cleanup:
 	kfree(phdr4note);
 	kfree(elf);
 out:
+    mutex_unlock(&core_dump_mutex);
 	return has_dumped;
 }
 

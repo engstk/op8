@@ -122,6 +122,7 @@ struct qpnp_pon {
 	bool			kpdpwr_dbc_enable;
 	bool			resin_pon_reset;
 	ktime_t			kpdpwr_last_release_time;
+	bool			log_kpd_event;
 };
 
 extern const struct dev_pm_ops qpnp_pm_ops;

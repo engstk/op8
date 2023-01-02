@@ -33,7 +33,6 @@
 #define DTAP_DETECT         0x03
 #define FINGERPRINT_DOWN_DETECT 0X0f
 #define FINGERPRINT_UP_DETECT 0X1f
-#define SINGLE_TAP			0x10
 
 #define RESET_TO_NORMAL_TIME 80        /*Sleep time after reset*/
 #define POWEWRUP_TO_RESET_TIME 10
@@ -900,7 +899,6 @@ struct chip_data_s3706 {
         bool        force_update_needed;    //show what if need do force update when touch up
         bool        rt155_fdreplace_rt59_support;   //means fd RT59 test is replaced by RT155
         bool        report_120hz_support;           //report point use >=120HZ
-		bool        old_firmware_flag_check;           /* flag to check old synaptics firmware */
         unsigned long rotation_changed_time;        //remember rotation changed time
 };
 

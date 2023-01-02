@@ -55,6 +55,7 @@ static phx_action_mapping errno_handle_action_mapping[] = {
 
 static int is_system_boot_completed = 0;
 static int is_phoenix_boot_completed = 0;
+static int is_system_server_init_start = 0;
 static int is_filesystem_prepared = 0;
 static phx_baseinfo *phx_curr_info = 0;
 
@@ -188,6 +189,13 @@ void phx_get_base_info(phx_baseinfo ** baseinfo)
 
 EXPORT_SYMBOL(phx_get_base_info);
 
+int phx_is_system_server_init_start(void)
+{
+	return is_system_server_init_start;
+}
+
+EXPORT_SYMBOL(phx_is_system_server_init_start);
+
 int phx_is_system_boot_completed(void)
 {
     return is_system_boot_completed;
@@ -218,6 +226,10 @@ void phx_set_boot_stage(const char *stage)
     }
     if(!is_phoenix_boot_completed)
         phx_klog_bootstage(stage);
+
+	if (!strcmp(stage, ANDROID_SYSTEMSERVER_INIT_START)) {
+		is_system_server_init_start = 1;
+	}
 
     if(!strcmp(stage, ANDROID_BOOT_COMPLETED))
         is_system_boot_completed = 1;

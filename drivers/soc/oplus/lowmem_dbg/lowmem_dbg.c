@@ -416,6 +416,7 @@ static void oplus_show_mem(void)
 		K(unaccounted));
 }
 
+#define MAX_OOM_DUMP_TASK_CMDLINE 128
 static int dump_tasks_info(bool verbose)
 {
 	struct task_struct *p;
@@ -426,6 +427,7 @@ static int dump_tasks_info(bool verbose)
 	char frozen_mark = ' ';
 	short service_adj = 500;
 	u64 wm_task_rss = SZ_256M >> PAGE_SHIFT;
+	char cmdline[MAX_OOM_DUMP_TASK_CMDLINE];
 
 	pr_info("[ pid ]   uid  tgid total_vm      rss    nptes     swap    sheme   adj s name\n");
 
@@ -474,6 +476,12 @@ static int dump_tasks_info(bool verbose)
 			tsk->comm,
 			frozen_mark);
 		task_unlock(tsk);
+		/* add process cmdline info */
+		if (strstr(tsk->comm, "vendor.qti") != NULL) {
+			memset(cmdline, 0, MAX_OOM_DUMP_TASK_CMDLINE);
+			get_cmdline(tsk, cmdline, MAX_OOM_DUMP_TASK_CMDLINE-1);
+			pr_info("[%5d] %s\n", tsk->pid, cmdline);
+		}
 	}
 	rcu_read_unlock();
 	return 0;
@@ -564,7 +572,7 @@ static int acct_dma_dize(const void *data, struct file *file,
 	dbuf = file->private_data;
 	if (dbuf->size && dmainfo->verbose) {
 		pr_info("%s:%ldkB\n",
-			dbuf->buf_name,
+			dbuf->name,
 			dbuf->size / SZ_1K);
 	}
 

@@ -35,7 +35,13 @@ extern unsigned long get_unmmaped_area_from_reserved(struct mm_struct *mm,
 		struct vm_unmapped_area_info *info);
 extern int get_va_feature_value(unsigned int feature);
 extern void trigger_svm_oom_event(struct mm_struct *mm, bool brk_risk, bool is_locked);
-extern void dump_mm_info(unsigned long len, unsigned long flags, int dump_vma);
+#ifdef CONFIG_DUMP_MM_INFO
+void dump_mm_info(unsigned long len, unsigned long flags, int dump_vma);
+#else /* CONFIG_DUMP_MM_INFO */
+static inline void dump_mm_info(unsigned long len, unsigned long flags, int dump_vma)
+{
+}
+#endif/* CONFIG_DUMP_MM_INFO */
 
 #define GET_UNMMAPED_AREA_FIRST_TIME(info) do {    \
 	if (mm->va_feature & RESERVE_AREA)                  \

@@ -51,6 +51,9 @@ extern unsigned int max_possible_efficiency;
 extern unsigned int min_possible_efficiency;
 extern unsigned int max_possible_freq;
 extern unsigned int __read_mostly sched_load_granule;
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+extern int __read_mostly num_sched_clusters;
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 extern u64 sched_ravg_window_change_time;
 
 extern struct mutex cluster_lock;
@@ -469,7 +472,7 @@ static inline bool prefer_spread_on_idle(int cpu, bool new_ilb)
 
 #else /* CONFIG_SCHED_WALT */
 
-static inline bool prefer_spread_on_idle(int cpu)
+static inline bool prefer_spread_on_idle(int cpu, bool new_ilb)
 {
 	return false;
 }

@@ -224,6 +224,7 @@ void trigger_svm_oom_event(struct mm_struct *mm, bool brk_risk, bool is_locked)
 }
 #endif
 
+#ifdef CONFIG_DUMP_MM_INFO
 static int fetch_vma_name(struct vm_area_struct *vma, char *kbuf, int klen)
 {
 	const char __user *name = vma_get_anon_name(vma);
@@ -407,3 +408,4 @@ void dump_mm_info(unsigned long len, unsigned long flags, int dump_vma)
 			used_size >> 10, mm->map_count, len, dump_num,
 			va_feature, mm->va_feature, flags);
 }
+#endif/* CONFIG_DUMP_MM_INFO */

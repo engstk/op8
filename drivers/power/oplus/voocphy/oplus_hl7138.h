@@ -406,6 +406,11 @@
 /* Register 40h */
 #define HL7138_REG_40                       0x40	//Reg40=0x00,default value
 #define HL7138_ADC_EN_MASK                  0x01	//bit0,0=dis,1=en;
+#define HL7138_ADC_FORCEDLY_EN_MASK         0x18
+#define HL7138_ADC_AUTO_MODE                0x00
+#define HL7138_ADC_FORCEDLY_ENABLED         0x08
+#define HL7138_ADC_FORCEDLY_DISABLED_10     0x10
+#define HL7138_ADC_FORCEDLY_DISABLED_11     0x18
 #define HL7138_ADC_EN_SHIFT                 0
 #define HL7138_ADC_ENABLE                   1
 #define HL7138_ADC_DISABLE                  0

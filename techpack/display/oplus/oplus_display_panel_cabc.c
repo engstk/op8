@@ -162,11 +162,6 @@ int oplus_display_panel_set_cabc(void *data)
 	}
 
 	if (get_oplus_display_power_status() == OPLUS_DISPLAY_POWER_ON) {
-		if (display->panel->bl_config.bl_lvl_backup == 0) {
-			pr_err("%s: backlight is 0, not send cabc cmd\n", __func__);
-			return -EINVAL;
-		}
-
 		rc = panel_cabc_cmd_config(display, cabc_mode);
 	} else {
 		pr_err("%s: panel is off, set cabc_mode=%d fail\n", __func__, *temp_save);

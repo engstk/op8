@@ -13,6 +13,7 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <../fs/proc/internal.h>
+#include <linux/thread_info.h>
 
 #include "sched_assist_common.h"
 #include "sched_assist_slide.h"
@@ -21,11 +22,12 @@
 #include <linux/rwsem.h>
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#ifndef CONFIG_ARCH_HOLI
 #include <../kernel/sched/walt/walt.h>
+#endif
 #else
 #include <../kernel/sched/walt.h>
 #endif
-
 #if defined(CONFIG_OPLUS_FEATURE_INPUT_BOOST) && defined(CONFIG_OPLUS_FEATURE_IM)
 extern bool is_webview(struct task_struct *p);
 #endif
@@ -45,6 +47,7 @@ int sysctl_sched_assist_ib_duration_coedecay = 1;
 u64 sched_assist_input_boost_duration = 0;
 int sched_assist_ib_duration_coedecay = 1;
 #define S2NS_T 1000000
+#define BGAPP 3
 
 static int param_ux_debug = 0;
 module_param_named(debug, param_ux_debug, uint, 0644);
@@ -1485,6 +1488,11 @@ static inline bool is_ux_task_prefer_cpu(struct task_struct *task, int cpu)
 
 bool should_ux_task_skip_cpu(struct task_struct *task, unsigned int cpu)
 {
+	struct ux_sched_cputopo ux_cputopo = ux_sched_cputopo;
+	int cls_nr = ux_cputopo.cls_nr - 1;
+	bool is_skip_rt_cpu = true;
+	int silver_core_nr = 0;
+
 	if (!sysctl_sched_assist_enabled)
 		return false;
 
@@ -1500,8 +1508,17 @@ bool should_ux_task_skip_cpu(struct task_struct *task, unsigned int cpu)
 	if ((sysctl_sched_assist_scene & SA_LAUNCH) && !is_ux_task_prefer_cpu(task, cpu))
 		return true;
 
+	if (cls_nr > 0)
+		silver_core_nr = cpumask_weight(&ux_cputopo.sched_cls[0].cpus);
+
+#define SILVER_NR_6 (6)
+	/* avoid ux being squeezed to small core by rt in 6+2 architecture*/
+	if ((sysctl_sched_assist_scene & SA_ANIM) && (silver_core_nr == SILVER_NR_6)
+		&& !oplus_is_min_capacity_cpu(cpu))
+		is_skip_rt_cpu = false;
+
 	if (!(sysctl_sched_assist_scene & SA_LAUNCH) || !test_sched_assist_ux_type(task, SA_TYPE_HEAVY)) {
-		if (cpu_rq(cpu)->rt.rt_nr_running)
+		if (is_skip_rt_cpu && cpu_rq(cpu)->rt.rt_nr_running)
 			return true;
 
 		/* avoid placing turbo ux into cpu which has animator ux or list ux */
@@ -1592,6 +1609,58 @@ retry:
 		goto retry;
 
 	return;
+}
+
+static int boost_kill = 1;
+module_param_named(boost_kill, boost_kill, uint, 0644);
+int get_grp(struct task_struct *p)
+{
+	struct cgroup_subsys_state *css;
+
+	if (p == NULL)
+		return false;
+	rcu_read_lock();
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+	css = task_css(p, cpu_cgrp_id);
+#else
+	css = task_css(p, schedtune_cgrp_id);
+#endif
+	if (!css) {
+		rcu_read_unlock();
+		return false;
+	}
+	rcu_read_unlock();
+
+	return css->id;
+}
+
+void oplus_boost_kill_signal(int sig, struct task_struct *cur, struct task_struct *p)
+{
+	struct task_struct *tmp;
+	struct cpumask *new_mask = (struct cpumask *)cpu_possible_mask;
+
+	if (p == NULL)
+		return;
+	if (sig == SIGKILL && boost_kill && get_grp(p) == BGAPP &&
+			p->group_leader && p->group_leader->pid == p->pid) {
+		tmp = p;
+		rcu_read_lock();
+		/*walk all threads for each process */
+		do {
+			set_user_nice(tmp, -20);
+			if (!cpumask_empty(new_mask)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0)
+				cpumask_copy(&tmp->cpus_allowed, new_mask);
+				cpumask_copy(&tmp->cpus_requested, new_mask);
+#else
+				cpumask_copy(&tmp->cpus_mask, new_mask);
+				tmp->cpus_ptr = new_mask;
+#endif
+				tmp->nr_cpus_allowed = cpumask_weight(new_mask);
+			}
+		}while_each_thread(p, tmp);
+		rcu_read_unlock();
+	}
 }
 
 #ifdef CONFIG_OPLUS_FEATURE_SCHED_SPREAD
@@ -2107,11 +2176,21 @@ static ssize_t proc_ux_state_read(struct file *file, char __user *buf,
 #endif
 	put_task_struct(task);
 
-	len = snprintf(buffer, sizeof(buffer), "pid=%d ux_state=%d inherit=%llx(fu:%d mu:%d rw:%d bi:%d) grp_id=%d\n",
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+	len = snprintf(buffer, sizeof(buffer),
+		"pid=%d ux_state=%d inherit=%llx(fu:%d mu:%d rw:%d bi:%d) grp_id=%d ux_im_flag=%d\n",
+		task->pid, ux_state, task->inherit_ux,
+		test_inherit_ux(task, INHERIT_UX_FUTEX), test_inherit_ux(task, INHERIT_UX_MUTEX),
+		test_inherit_ux(task, INHERIT_UX_RWSEM), test_inherit_ux(task, INHERIT_UX_BINDER),
+		grp_id, task->ux_im_flag);
+#else
+	len = snprintf(buffer, sizeof(buffer),
+		"pid=%d ux_state=%d inherit=%llx(fu:%d mu:%d rw:%d bi:%d) grp_id=%d\n",
 		task->pid, ux_state, task->inherit_ux,
 		test_inherit_ux(task, INHERIT_UX_FUTEX), test_inherit_ux(task, INHERIT_UX_MUTEX),
 		test_inherit_ux(task, INHERIT_UX_RWSEM), test_inherit_ux(task, INHERIT_UX_BINDER),
 		grp_id);
+#endif
 
 	return simple_read_from_buffer(buf, count, ppos, buffer, len);
 }
@@ -2305,6 +2384,128 @@ static const struct file_operations proc_sched_impt_task_fops = {
 	.read		= proc_sched_impt_task_read,
 };
 
+
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+enum {
+	OPT_STR_TYPE = 0,
+	OPT_STR_PID,
+	OPT_STR_VAL,
+	OPT_STR_MAX = 3,
+};
+#define MAX_SET 128
+static pid_t global_im_flag_pid = -1;
+
+static int im_flag_set_handle(struct task_struct *task, int im_flag)
+{
+	task->ux_im_flag = im_flag;
+
+	switch (task->ux_im_flag) {
+	case IM_FLAG_LAUNCHER_NON_UX_RENDER:
+		task->ux_state |= SA_TYPE_HEAVY;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static ssize_t proc_im_flag_write(struct file *file, const char __user *buf,
+		size_t count, loff_t *ppos)
+{
+	char buffer[MAX_SET];
+	char *str, *token;
+	char opt_str[OPT_STR_MAX][16];
+	int cnt = 0;
+	int pid = 0;
+	int im_flag = 0;
+	int err = 0;
+
+	memset(buffer, 0, sizeof(buffer));
+
+	if (count > sizeof(buffer) - 1)
+		count = sizeof(buffer) - 1;
+
+	if (copy_from_user(buffer, buf, count))
+		return -EFAULT;
+
+	buffer[count] = '\0';
+	str = strstrip(buffer);
+	while ((token = strsep(&str, " ")) && *token && (cnt < OPT_STR_MAX)) {
+		strlcpy(opt_str[cnt], token, sizeof(opt_str[cnt]));
+		cnt += 1;
+	}
+
+	if ((cnt != OPT_STR_MAX) && (cnt != OPT_STR_MAX-1))
+		return -EFAULT;
+
+	if (cnt != OPT_STR_MAX) {
+		if (cnt == (OPT_STR_MAX - 1) && !strncmp(opt_str[OPT_STR_TYPE], "r", 1)) {
+			err = kstrtoint(strstrip(opt_str[OPT_STR_PID]), 10, &pid);
+			if (err)
+				return err;
+
+			if (pid > 0 && pid <= PID_MAX_DEFAULT)
+				global_im_flag_pid = pid;
+		}
+		return count;
+	}
+
+	err = kstrtoint(strstrip(opt_str[OPT_STR_PID]), 10, &pid);
+	if (err)
+		return err;
+
+	err = kstrtoint(strstrip(opt_str[OPT_STR_VAL]), 10, &im_flag);
+	if (err)
+		return err;
+
+	if (!strncmp(opt_str[OPT_STR_TYPE], "p", 1)) {
+		struct task_struct *task = NULL;
+
+		if (pid > 0 && pid <= PID_MAX_DEFAULT) {
+			rcu_read_lock();
+			task = find_task_by_vpid(pid);
+			if (task) {
+				get_task_struct(task);
+				im_flag_set_handle(task, im_flag);
+				put_task_struct(task);
+			} else {
+				ux_debug("Can not find task with pid=%d", pid);
+			}
+			rcu_read_unlock();
+		}
+	}
+
+	return count;
+}
+
+static ssize_t proc_im_flag_read(struct file *file, char __user *buf,
+		size_t count, loff_t *ppos)
+{
+	char buffer[256];
+	size_t len = 0;
+	struct task_struct *task = NULL;
+
+	rcu_read_lock();
+	task = find_task_by_vpid(global_im_flag_pid);
+	if (task) {
+		get_task_struct(task);
+		len = snprintf(buffer, sizeof(buffer), "comm=%s pid=%d tgid=%d ux_im_flag=%d\n",
+			task->comm, task->pid, task->tgid, task->ux_im_flag);
+		put_task_struct(task);
+	} else
+		len = snprintf(buffer, sizeof(buffer), "Can not find task\n");
+	rcu_read_unlock();
+
+	return simple_read_from_buffer(buf, count, ppos, buffer, len);
+}
+
+static const struct file_operations proc_im_flag_fops = {
+	.write		= proc_im_flag_write,
+	.read		= proc_im_flag_read,
+};
+#endif /* CONFIG_OPLUS_UX_IM_FLAG */
+
 #define OPLUS_SCHEDULER_PROC_DIR	"oplus_scheduler"
 #define OPLUS_SCHEDASSIST_PROC_DIR	"sched_assist"
 struct proc_dir_entry *d_oplus_scheduler = NULL;
@@ -2328,12 +2529,28 @@ static int __init oplus_sched_assist_init(void)
 	proc_node = proc_create("sched_impt_task", 0666, d_sched_assist, &proc_sched_impt_task_fops);
 	if(!proc_node) {
 		ux_err("failed to create proc node sched_impt_task\n");
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+		goto err_node_assist;
+#else
 		goto err_node_impt;
+#endif
 	}
+
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+	proc_node = proc_create("im_flag", 0666, d_sched_assist, &proc_im_flag_fops);
+	if (!proc_node) {
+		ux_err("failed to create proc node im_flag\n");
+		goto err_node_assist;
+	}
+#endif
 
 	return 0;
 
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+err_node_assist:
+#else
 err_node_impt:
+#endif
 	remove_proc_entry(OPLUS_SCHEDASSIST_PROC_DIR, NULL);
 
 err_dir_sa:

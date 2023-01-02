@@ -52,6 +52,10 @@ config OPLUS_FINGERPRINT_CHIPONE
        default n
        tristate "Fingerprint base on chipone chip"
 
+config OPLUS_FINGERPRINT_FOCALTECH
+       default n
+       tristate "Fingerprint base on focaltech chip"
+
 config OPLUS_FINGERPRINT_CDFPS
        default n
        tristate "Fingerprint base on cdfinger chip"

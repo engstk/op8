@@ -13,7 +13,6 @@
 #include <linux/notifier.h>
 #endif
 #include "../sec_common.h"
-#include "../../touchpanel_prevention.h"
 
 /*********PART2:Define Area**********************/
 #define GESTURE_DOUBLECLICK                     0x00
@@ -138,7 +137,7 @@
 #define SEC_CMD_P2PTEST                         0x82
 #define SEC_CMD_INTERRUPT_SWITCH                0x89
 
-#define SEC_CMD_REG_SMOOTH_LEVEL                0x96    /* control smooth filter,and range 0~4 */
+#define SEC_CMD_REG_SMOOTH_LEVEL                0x90    //control smooth filter,and range 0~4
 #define SEC_CMD_REG_SENSITIVE_LEVEL             0x91    //control stop filter,  and range 0~4
 #define SEC_CMD_REG_STOP_LOCK_POINT		0x93	/*control stop lock point, and range 0~100*/
 
@@ -152,7 +151,7 @@
 #define SEC_CMD_GRIP_DIRECTION                  0xAD
 #define SEC_CMD_GRIP_ENABLE                     0xBC
 
-#define SEC_CMD_SENSETIVE_CTRL                  0x91
+#define SEC_CMD_SENSETIVE_CTRL                  0x3F
 #define SEC_CMD_NOISE_CTRL                      0x33
 #define SEC_CMD_WET_SWITCH                      0x8B
 #define SEC_CMD_GAME_MODE                       0x45
@@ -166,8 +165,6 @@
 #define SEC_READ_RTDP_FRAMENUM                  0xC2    //Read RTDP frame num
 
 #define SEC_CMD_GRIP_CONSTANT                   0x42
-
-#define SEC_CMD_FILTER_CTRL                     0x95
 
 /*********PART3:Struct Area**********************/
 typedef struct {
@@ -314,7 +311,6 @@ struct chip_data_s6sy792 {
     int                             *fp_enable;
     int                             kernel_grip_para;
     bool                            auto_test_need_cal_support;
-#ifdef CONFIG_OPLUS_TP_APK
 
     bool lock_point_status;
     bool plug_status;
@@ -325,11 +321,9 @@ struct chip_data_s6sy792 {
     bool in_gesture;
     u32 debug_gesture_type;
     //bool water_sta;
-#endif //end of CONFIG_OPLUS_TP_APK
+	int gesture_state;
+	bool black_gesture_indep;
+	struct monitor_data_v2 *monitor_data_v2;
 };
 
-struct sec_support_grip_zone {
-    char                            name[GRIP_TAG_SIZE];
-    int                             (*handle_func) (struct grip_zone_area *grip_zone, bool enable);
-};
 #endif

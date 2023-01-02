@@ -1300,12 +1300,14 @@ struct oplus_chg_operations  oplus_chg_sy6974_ops = {
 
 static void register_charger_devinfo(void)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int ret = 0;
 	char *version = "sy6974";
 	char *manufacture = "TI";
 	ret = register_device_proc("charger", version, manufacture);
 	if (ret)
 		chg_err("register_charger_devinfo fail\n");
+#endif
 }
 
 extern void Charger_Detect_Init(void);

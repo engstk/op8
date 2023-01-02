@@ -1278,7 +1278,8 @@ exit:
 	mbhc->mbhc_cb->lock_sleep(mbhc, false);
 
 	#ifdef OPLUS_FEATURE_MM_FEEDBACK
-	if (plug_type != MBHC_PLUG_TYPE_HEADSET) {
+	if ((plug_type != MBHC_PLUG_TYPE_HEADSET) &&
+		(plug_type != MBHC_PLUG_TYPE_HEADPHONE)) {
 		scnprintf(buf, sizeof(buf) - 1, "func@@%s$$plug_type@@%d$$output_mv@@%d$$retry@@%d",
 				__func__, plug_type, output_mv, retry);
 		upload_mm_fb_kevent_to_atlas_limit(OPLUS_AUDIO_EVENTID_HEADSET_DET, buf, MM_FB_KEY_RATELIMIT_1MIN);

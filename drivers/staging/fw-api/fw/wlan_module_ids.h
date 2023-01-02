@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -118,6 +118,27 @@ typedef enum {
   WLAN_MODULE_CFIR,                     /* 0x54 */ /* Channel Capture */
   WLAN_MODULE_CODE_COVER,               /* 0x55 */ /* code coverage */
   WLAN_MODULE_SHO,                      /* 0x56 */ /* SAP HW offload */
+  WLAN_MODULE_MLO_MGR,                  /* 0x57 */ /* MLO manager */
+  WLAN_MODULE_PEER_INIT,                /* 0x58 */ /* peer init connection handling */
+  WLAN_MODULE_STA_MLO_PS,               /* 0x59 */ /* MLO PS manager */
+  WLAN_MODULE_MLO_SYNC_SEQ_NUM,         /* 0x5a */ /* sync seq num after rm MPDU */
+  WLAN_MODULE_PLCMGR,                   /* 0x5b */ /* Policy Manager */
+  /* OEM module IDs:
+   * Reserve a small series of module IDs for use in OEM WLAN FW that
+   * interacts with WLAN FW SDK.
+   */
+  WLAN_MODULE_OEM0,                     /* 0x5c */
+  WLAN_MODULE_OEM1,                     /* 0x5d */
+  WLAN_MODULE_OEM2,                     /* 0x5e */
+  WLAN_MODULE_OEM3,                     /* 0x5f */
+  WLAN_MODULE_OEM4,                     /* 0x60 */
+  WLAN_MODULE_OEM5,                     /* 0x61 */
+  WLAN_MODULE_OEM6,                     /* 0x62 */
+  WLAN_MODULE_OEM7,                     /* 0x63 */
+
+  WLAN_MODULE_T2LM,                     /* 0x64 */
+  WLAN_MODULE_HEALTH_MON,               /* 0x65 */
+  WLAN_MODULE_XGAP,                     /* 0x66 */
 
 
   WLAN_MODULE_ID_MAX,

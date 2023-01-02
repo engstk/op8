@@ -25,6 +25,15 @@ static struct sock *sock_handle = NULL;
 static atomic_t hans_deamon_port;
 
 /*
+ *reuse LOOPBACK and FROZEN_TRANS channel to notify framework whether kernel support cgroupv2 or not
+ */
+static void hans_kern_support_cgrpv2() {
+	/*notify framework that kernel support cgroupv2*/
+	hans_report(PKG, -1, -1, -1, -1, "PKG", HANS_USE_CGRPV2);
+	printk(KERN_ERR "%s: hans support cgroupv2\n", __func__);
+}
+
+/*
  * netlink report function to tell HANS native deamon unfreeze process info
  * if the parameters is empty, fill it with (pid/uid with -1)
  */
@@ -137,6 +146,7 @@ static void hans_handler(struct sk_buff *skb)
 				atomic_set(&hans_deamon_port, data->port);
 				hans_report(LOOP_BACK, -1, -1, -1, -1, "loop back", CPUCTL_VERSION);
 				printk(KERN_ERR "%s: --> LOOP_BACK, port = %d\n", __func__, data->port);
+				hans_kern_support_cgrpv2();
 				break;
         case PKG:
 				printk(KERN_ERR "%s: --> PKG, uid = %d, pkg_cmd = %d\n", __func__, data->target_uid, data->pkg_cmd);
@@ -144,8 +154,12 @@ static void hans_handler(struct sk_buff *skb)
 				break;
         case FROZEN_TRANS:
         case CPUCTL_TRANS:
-				printk(KERN_ERR "%s: --> FROZEN_TRANS, uid = %d\n", __func__, data->target_uid);
-				hans_check_frozen_transcation(data->target_uid, data->type);
+				if (CHECK_KERN_SUPPORT_CGRPV2 == data->target_uid) {
+				    hans_kern_support_cgrpv2();
+				} else {
+				    printk(KERN_ERR "%s: --> FROZEN_TRANS, uid = %d\n", __func__, data->target_uid);
+				    hans_check_frozen_transcation(data->target_uid, data->type);
+				}
 				break;
 
         default:

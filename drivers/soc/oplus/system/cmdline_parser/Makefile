@@ -7,3 +7,4 @@ obj-$(CONFIG_OPLUS_FEATURE_CHARGERPRESENT) 	+= oplus_charger_present.o
 obj-$(CONFIG_OPLUS_FEATURE_BUILDVARIANT) 	+= buildvariant.o
 obj-$(CONFIG_OPLUS_FEATURE_SIMCARDNUM) 	+= simcardnum.o
 obj-$(CONFIG_OPLUS_FEATURE_CDT)	+= cdt_integrity.o
+obj-$(CONFIG_OPLUS_FEATURE_SHUTDOWN_SPEED)	+= shutdown_speed.o

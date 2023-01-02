@@ -78,6 +78,7 @@ static DEFINE_STATIC_KEY_TRUE(supports_deactivate_key);
 
 static struct gic_kvm_info gic_v3_kvm_info;
 static DEFINE_PER_CPU(bool, has_rss);
+extern is_first_ipcc_msg;
 
 #define MPIDR_RS(mpidr)			(((mpidr) & 0xF0UL) >> 4)
 #define gic_data_rdist()		(this_cpu_ptr(gic_data.rdists.rdist))
@@ -108,11 +109,11 @@ static inline void __iomem *gic_dist_base(struct irq_data *d)
 	return NULL;
 }
 
-static void gic_do_wait_for_rwp(void __iomem *base)
+static void gic_do_wait_for_rwp(void __iomem *base, u32 bit)
 {
 	u32 count = 1000000;	/* 1s! */
 
-	while (readl_relaxed_no_log(base + GICD_CTLR) & GICD_CTLR_RWP) {
+	while (readl_relaxed_no_log(base + GICD_CTLR) & bit) {
 		count--;
 		if (!count) {
 			pr_err_ratelimited("RWP timeout, gone fishing\n");
@@ -126,13 +127,13 @@ static void gic_do_wait_for_rwp(void __iomem *base)
 /* Wait for completion of a distributor change */
 static void gic_dist_wait_for_rwp(void)
 {
-	gic_do_wait_for_rwp(gic_data.dist_base);
+	gic_do_wait_for_rwp(gic_data.dist_base, GICD_CTLR_RWP);
 }
 
 /* Wait for completion of a redistributor change */
 static void gic_redist_wait_for_rwp(void)
 {
-	gic_do_wait_for_rwp(gic_data_rdist_rd_base());
+	gic_do_wait_for_rwp(gic_data_rdist_rd_base(), GICR_CTLR_RWP);
 }
 
 #ifdef CONFIG_ARM64
@@ -413,23 +414,24 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 		do {
 			int platform_id = get_cached_platform_id();
 			if (platform_id == KONA) {
-				if (irq >= 211 && irq <= 242) { /*pcie2 is modem*/
+				if (irq >= 154 && irq <= 185) { /*pcie2 is modem*/
 					name = IRQ_NAME_MODEM_QMI;
 					//#ifdef OPLUS_FEATURE_NWPOWER
 					oplus_match_modem_wakeup();
 					//#endif /* OPLUS_FEATURE_NWPOWER */
-				} else if (irq >= 142 && irq <= 173) {/*pcie0 is wlan*/
+				} else if (irq >= 85 && irq <= 116) {/*pcie0 is wlan*/
 					name = IRQ_NAME_WLAN_IPCC_DATA;
 					//#ifdef OPLUS_FEATURE_NWPOWER
 					oplus_match_wlan_wakeup();
 					//#endif /* OPLUS_FEATURE_NWPOWER */
 				}
-			} else if (platform_id == LITO) {
+			} else if (platform_id == LITO || platform_id == LAGOON) {
 				if (!strcmp(name, IRQ_NAME_MODEM_MODEM)) {
 					name = IRQ_NAME_MODEM_QMI;
 				}
 				//#ifdef OPLUS_FEATURE_NWPOWER
 				if (strncmp(name, "ipcc_1", strlen("ipcc_1")) == 0) {
+                                        is_first_ipcc_msg = 1;
 					oplus_match_modem_wakeup();
 				}
 				//#endif /* OPLUS_FEATURE_NWPOWER */
@@ -1342,12 +1344,15 @@ static void __init gic_populate_ppi_partitions(struct device_node *gic_node)
 				continue;
 
 			cpu = of_cpu_node_to_id(cpu_node);
-			if (WARN_ON(cpu < 0))
+			if (WARN_ON(cpu < 0)) {
+				of_node_put(cpu_node);
 				continue;
+			}
 
 			pr_cont("%pOF[%d] ", cpu_node, cpu);
 
 			cpumask_set_cpu(cpu, &part->mask);
+			of_node_put(cpu_node);
 		}
 
 		pr_cont("}\n");

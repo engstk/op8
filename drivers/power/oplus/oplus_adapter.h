@@ -13,7 +13,9 @@
 #endif
 #include <linux/timer.h>
 #include <linux/slab.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
+#endif
 #include <linux/firmware.h>
 
 enum {

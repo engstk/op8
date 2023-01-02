@@ -57,6 +57,9 @@
 #define OTG_ENABLE              0x3
 #define OTG_DISABLE             0
 
+/* Register 00h */
+#define SC8517_REG_00                      0x00
+
 
 /* Register 01h */
 #define SC8517_REG_01                      0x01
@@ -86,6 +89,8 @@
 #define SC8517_NO_REG_RESET                 0
 #define SC8517_RESET_REG                    1
 
+/* Register 07h */
+#define SC8517_REG_07                       0x07
 
 /* Register 08h */
 #define SC8517_REG_08                      0x08
@@ -98,6 +103,15 @@
 #define SC8517_REG_0B                      0x0B
 #define VBUS_INRANGE_STATUS_MASK           (BIT(7)|BIT(6))
 #define VBUS_INRANGE_STATUS_SHIFT          6
+
+/* Register 0Dh */
+#define SC8517_REG_0D                      0x0D
+
+/* Register 0Eh */
+#define SC8517_REG_0E                      0x0E
+
+/* Register 0Fh */
+#define SC8517_REG_0F                      0x0F
 
 /* Register 10h */
 #define SC8517_REG_10                      0x10
@@ -117,6 +131,8 @@
 #define SC8517_REG_2A                       0x2A
 #define SC8517_PRE_WDATA_POL_H_MASK         0x03
 
+/* Register 2Bh */
+#define SC8517_REG_2B                       0x2B
 
 /* Register 25h */
 #define SC8517_REG_25                       0x25
@@ -146,9 +162,9 @@
 /* Register 2Ch */
 #define SC8517_REG_2C                      0x2C
 
+/* Register 2Dh */
+#define SC8517_REG_2D                      0x2D
 
-/* Register 3Ah */
-#define SC8517_REG_3A                      0x3A
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 int sc8547_subsys_init(void);
 void sc8547_subsys_exit(void);

@@ -1747,6 +1747,253 @@ TRACE_EVENT(sched_isolate,
 		__entry->time, __entry->isolate)
 );
 
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+TRACE_EVENT(sched_in_fbg,
+	TP_PROTO(struct task_struct *p, int grp),
+
+	TP_ARGS(p, grp),
+
+	TP_STRUCT__entry(
+		__array(char,	comm,	TASK_COMM_LEN)
+		__field(pid_t,	pid)
+		__field(int,	grp)
+	),
+
+	TP_fast_assign(
+			memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+			__entry->pid		= p->pid;
+			__entry->grp	= grp;
+	),
+
+	TP_printk("pid=%d comm=%s in_grp=%d",
+		__entry->pid, __entry->comm, __entry->grp)
+);
+TRACE_EVENT(sched_fbg_rt,
+
+	TP_PROTO(struct task_struct *p, int orig_cpu, int fbg_cpu, unsigned long lowest_mask),
+
+	TP_ARGS(p, orig_cpu, fbg_cpu, lowest_mask),
+
+	TP_STRUCT__entry(
+		__field(int,            pid)
+		__array(char,           comm, TASK_COMM_LEN)
+		__field(int,            orig_cpu)
+		__field(int,            fbg_cpu)
+		__field(unsigned long,            lowest_mask)
+	),
+
+	TP_fast_assign(
+		__entry->pid                    = p->pid;
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->orig_cpu               = orig_cpu;
+		__entry->fbg_cpu                = fbg_cpu;
+		__entry->lowest_mask            = lowest_mask;
+	),
+
+	TP_printk("pid=%d comm=%s orig_cpu=%d fbg_cpu=%d lowest_mask=%#lx",
+		 __entry->pid, __entry->comm, __entry->orig_cpu, __entry->fbg_cpu, __entry->lowest_mask
+	)
+);
+TRACE_EVENT(fbg_tick_task,
+	TP_PROTO(struct task_struct *p, int depth),
+
+	TP_ARGS(p, depth),
+
+	TP_STRUCT__entry(
+		__array(char,   comm,   TASK_COMM_LEN)
+		__field(pid_t,  pid)
+		__field(int,    depth)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid            = p->pid;
+		__entry->depth          = depth;
+	),
+
+	TP_printk("pid=%d comm=%s depth=%d",
+		__entry->pid, __entry->comm, __entry->depth)
+);
+
+TRACE_EVENT(add_group_delta,
+	TP_PROTO(u64 wall_clock, u64 mark_start, u64 window_start, u64 exec,
+		u64 scale, u64 task_exec_scale),
+
+	TP_ARGS(wall_clock, mark_start, window_start, exec, scale, task_exec_scale),
+
+	TP_STRUCT__entry(
+		__field(u64,    wall_clock)
+		__field(u64,    mark_start)
+		__field(u64,    window_start)
+		__field(u64,    exec)
+		 __field(u64,    scale)
+		__field(u64,    task_exec_scale)
+	),
+
+	TP_fast_assign(
+		__entry->wall_clock     = wall_clock;
+		__entry->mark_start     = mark_start;
+		__entry->window_start   = window_start;
+		__entry->exec   = exec;
+		__entry->scale  = scale;
+		__entry->task_exec_scale        = task_exec_scale;
+	),
+
+	TP_printk("wall_clock=%llu mark_start=%llu window_start=%llu curr_window_exec=%llu curr_window_scale=%llu task_exec_scale=%llu",
+		__entry->wall_clock, __entry->mark_start, __entry->window_start, __entry->exec, __entry->scale, __entry->task_exec_scale)
+);
+TRACE_EVENT(add_group_demand,
+	TP_PROTO(struct task_struct *p, int event, u64 scale, u64 task_exec_scale, int nr_running),
+
+	TP_ARGS(p, event, scale, task_exec_scale, nr_running),
+
+	TP_STRUCT__entry(
+		__array(char,   comm,   TASK_COMM_LEN)
+		__field(pid_t,  pid)
+		__field(int,    event)
+		__field(u64,    scale)
+		__field(u64,    task_exec_scale)
+		__field(int,    nr_running)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid            = p->pid;
+		__entry->event  = event;
+		__entry->scale  = scale;
+		__entry->task_exec_scale        = task_exec_scale;
+		__entry->nr_running     = nr_running;
+	),
+
+	TP_printk("comm=%s pid=%d event=%d curr_window_scale=%llu task_exec_scale=%llu nr_running=%d",
+		__entry->comm, __entry->pid, __entry->event, __entry->scale, __entry->task_exec_scale, __entry->nr_running)
+);
+
+TRACE_EVENT(frame_info_tick,
+	TP_PROTO(struct task_struct *p, u64 timeline, u64 exec, unsigned long curr_load,
+	unsigned long vload, bool use_vload, unsigned int qos, unsigned long util),
+
+	TP_ARGS(p, timeline, exec, curr_load, vload, use_vload, qos, util),
+
+	TP_STRUCT__entry(
+		__array(char,   comm,   TASK_COMM_LEN)
+		__field(pid_t,  pid)
+		__field(u64,    timeline)
+		__field(u64,    exec)
+		__field(unsigned long,  curr_load)
+		__field(unsigned long,  vload)
+		__field(int,    use_vload)
+		__field(unsigned int, qos)
+		__field(unsigned long, util)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid            = p->pid;
+		__entry->timeline       = timeline;
+		__entry->exec   = exec;
+		__entry->curr_load      = curr_load;
+		__entry->vload  = vload;
+		__entry->use_vload      = use_vload;
+		__entry->qos    = qos;
+		__entry->util   = util;
+	),
+
+	TP_printk("comm=%s pid=%d timeline=%llu exec=%llu curr_load=%lu vload=%lu use_vload=%d qos=%u util=%lu",
+		__entry->comm, __entry->pid, __entry->timeline, __entry->exec, __entry->curr_load, __entry->vload,
+		__entry->use_vload, __entry->qos, __entry->util)
+);
+
+TRACE_EVENT(task_exec_scale,
+	TP_PROTO(int cpu, u64 scale, u64 curr_freq, u64 capacity, u64 max_freq),
+
+	TP_ARGS(cpu, scale, curr_freq, capacity, max_freq),
+
+	TP_STRUCT__entry(
+		__field(int,	cpu)
+		__field(u64,	scale)
+		__field(u64,	curr_freq)
+		__field(u64,	capacity)
+		__field(u64,	max_freq)
+	),
+
+	TP_fast_assign(
+			__entry->cpu		= cpu;
+			__entry->scale		= scale;
+			__entry->curr_freq		= curr_freq;
+			__entry->capacity		= capacity;
+			__entry->max_freq		= max_freq;
+	),
+
+	TP_printk("cpu=%d scale=%llu curr_freq=%llu capacity=%llu max_freq=%llu",
+	      __entry->cpu, __entry->scale, __entry->curr_freq, __entry->capacity, __entry->max_freq)
+);
+
+TRACE_EVENT(select_fbg_cpu,
+
+	TP_PROTO(struct task_struct *p, bool full_boost, bool launch, bool target, int cpu),
+
+	TP_ARGS(p, full_boost, launch, target, cpu),
+
+	TP_STRUCT__entry(
+		__array(char,                   comm, TASK_COMM_LEN)
+		__field(pid_t,                  pid)
+		__field(int,            full_boost)
+		__field(int,            launch)
+		__field(int,            target)
+		__field(int,            cpu)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid            = p->pid;
+		__entry->full_boost            = full_boost;
+		__entry->launch            = launch;
+		__entry->target           = target;
+		__entry->cpu           = cpu;
+	),
+
+	TP_printk("pid=%d comm=%s full_boost=%d launch=%d target=%d cpu=%d",
+	__entry->pid, __entry->comm, __entry->full_boost, __entry->launch, __entry->target, __entry->cpu)
+);
+
+TRACE_EVENT(frame_status,
+	TP_PROTO(unsigned long frame_util),
+
+	TP_ARGS(frame_util),
+
+	TP_STRUCT__entry(
+		__field(unsigned long,            frame_util)
+	),
+
+	TP_fast_assign(
+		__entry->frame_util           = frame_util;
+	),
+
+	TP_printk("frame_util=%lu", __entry->frame_util)
+);
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
+
+#ifdef CONFIG_OPLUS_FEATURE_GAME_OPT
+TRACE_EVENT(game_opt_info,
+	TP_PROTO(char * str, unsigned long frame_util),
+
+	TP_ARGS(str, frame_util),
+
+	TP_STRUCT__entry(
+                __array(char, name, TASK_COMM_LEN)
+		__field(unsigned long,            frame_util)
+	),
+
+	TP_fast_assign(
+		__entry->frame_util           = frame_util;
+                memcpy(__entry->name, str, strlen(str));
+	),
+
+	TP_printk("name = %s, val =%lu",__entry->name, __entry->frame_util)
+);
+#endif
+
 #include "walt.h"
 #endif /* CONFIG_SMP */
 #endif /* _TRACE_SCHED_H */

@@ -65,6 +65,7 @@ int free_irq_flag = 0;
 static struct regulator *finger_regulator;
 
 static int onoff_cnt=1;
+static int clk_onoff_cnt=1;
 static int CHIPONE_LDO_DISABLE;
 
 /* -------------------------------------------------------------------- */
@@ -172,16 +173,79 @@ void fpsensor_power_onoff(int enable)
 
     if(enable && onoff_cnt)
    {
-      fpsensor_debug(ERR_LOG, "power on,onoff_cnt=%d\n",onoff_cnt);
-      pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_pwr_high);
+		if (CHIPONE_LDO_DISABLE == 1){
+			fpsensor_debug(ERR_LOG, "power on,onoff_cnt=%d\n",onoff_cnt);
+			pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_pwr_high);
+		}
+		if ((finger_regulator != NULL) && (CHIPONE_LDO_DISABLE == 0)){
+			fpsensor_debug(ERR_LOG, "finger_regulator power on\n");
+			regulator_enable(finger_regulator);
+		}
       onoff_cnt=0;
     }
     else if ((!enable)  && (!onoff_cnt))
    {
-       fpsensor_debug(ERR_LOG, "power off,onoff_cnt=%d\n",onoff_cnt);
-       pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_pwr_low);
+		if (CHIPONE_LDO_DISABLE == 1){
+			fpsensor_debug(ERR_LOG, "power off,onoff_cnt=%d\n",onoff_cnt);
+			pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_pwr_low);
+		}
+		if ((finger_regulator != NULL) && (CHIPONE_LDO_DISABLE == 0)){
+			fpsensor_debug(ERR_LOG, "finger_regulator power off\n");
+			regulator_force_disable(finger_regulator);
+		}
        onoff_cnt=1;
 
+    }
+}
+
+static void fpsensor_spi_mode_enable(u8 bonoff){
+
+    if (IS_ERR(g_fpsensor->pinctrl1)) {
+        fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find pinctrl1.\n");
+        return;
+    }
+    if (bonoff == 0) {
+        if(IS_ERR(g_fpsensor->fp_cs_low)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_cs_low .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_cs_low);
+        if(IS_ERR(g_fpsensor->fp_clk_low)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_clk_low .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_clk_low);
+        if(IS_ERR(g_fpsensor->fp_mo_low)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_mo_low .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_mo_low);
+        if(IS_ERR(g_fpsensor->fp_mi_low)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_mi_low .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_mi_low);
+    } else if(bonoff == 1){
+        if(IS_ERR(g_fpsensor->fp_cs_mode)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_cs_mode .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_cs_mode);
+        if(IS_ERR(g_fpsensor->fp_spi_clk)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_spi_clk .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_spi_clk);
+        if(IS_ERR(g_fpsensor->fp_spi_mo)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_spi_mo .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_spi_mo);
+        if(IS_ERR(g_fpsensor->fp_spi_mi)){
+           fpsensor_debug(ERR_LOG,"fpsensor_spi_mode_enable Cannot find fp_spi_mi .\n");
+           return;
+        }
+        pinctrl_select_state(g_fpsensor->pinctrl1, g_fpsensor->fp_spi_mi);
     }
 }
 
@@ -218,6 +282,63 @@ int fpsensor_spidev_dts_init(fpsensor_data_t *fpsensor)
             fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_rst_high!\n");
             return ret;
         }
+		
+		fpsensor->fp_cs_mode = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_cs_mode");
+        if (IS_ERR(fpsensor->fp_cs_mode)) {
+            ret = PTR_ERR(fpsensor->fp_cs_mode);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_cs_mode!\n");
+            //return ret;
+        }
+
+        fpsensor->fp_spi_clk = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_clk");
+        if (IS_ERR(fpsensor->fp_spi_clk)) {
+            ret = PTR_ERR(fpsensor->fp_spi_clk);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_spi_clk!\n");
+            //return ret;
+        }
+
+        fpsensor->fp_spi_mo = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_mosi");
+        if (IS_ERR(fpsensor->fp_spi_mo)) {
+            ret = PTR_ERR(fpsensor->fp_spi_mo);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_spi_mo!\n");
+            //return ret;
+        }
+
+		fpsensor->fp_spi_mi = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_miso");
+        if (IS_ERR(fpsensor->fp_spi_mi)) {
+            ret = PTR_ERR(fpsensor->fp_spi_mi);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_spi_mi!\n");
+            //return ret;
+        }
+
+        fpsensor->fp_clk_low = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_clk_low");
+        if (IS_ERR(fpsensor->fp_clk_low)) {
+            ret = PTR_ERR(fpsensor->fp_clk_low);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_clk_low!\n");
+            //return ret;
+        }
+
+        fpsensor->fp_mo_low = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_mosi_low");
+        if (IS_ERR(fpsensor->fp_mo_low)) {
+            ret = PTR_ERR(fpsensor->fp_mo_low);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_mo_low!\n");
+            //return ret;
+        }
+
+        fpsensor->fp_mi_low = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_miso_low");
+        if (IS_ERR(fpsensor->fp_mi_low)) {
+            ret = PTR_ERR(fpsensor->fp_mi_low);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_mi_low!\n");
+            //return ret;
+        }
+
+		fpsensor->fp_cs_low = pinctrl_lookup_state(fpsensor->pinctrl1, "fpsensor_finger_cs_low");
+        if (IS_ERR(fpsensor->fp_cs_low)) {
+            ret = PTR_ERR(fpsensor->fp_cs_low);
+            fpsensor_debug(ERR_LOG, "fpsensor Cannot find fp pinctrl fp_cs_low!\n");
+            //return ret;
+        }
+        fpsensor_spi_mode_enable(1);
 
     } else {
         fpsensor_debug(ERR_LOG,"fpsensor Cannot find node!\n");
@@ -243,13 +364,19 @@ static void fpsensor_hw_reset(int delay)
     FUNC_EXIT();
     return;
 }
+
 static void fpsensor_spi_clk_enable(u8 bonoff)
 {
 #if defined(USE_SPI_BUS)
-    if (bonoff == 0) {
+    if ((bonoff == 0) && (clk_onoff_cnt == 0)) {
+        //fpsensor_spi_mode_enable(0);
         mt_spi_disable_master_clk(g_fpsensor->spi);
-    } else {
+		fpsensor_spi_mode_enable(0);
+        clk_onoff_cnt = 1;
+    } else if((bonoff == 1) && (clk_onoff_cnt == 1)){
+        fpsensor_spi_mode_enable(1);
         mt_spi_enable_master_clk(g_fpsensor->spi);
+        clk_onoff_cnt = 0;
     }
 #elif defined(USE_PLATFORM_BUS)
     if (bonoff == 0) {
@@ -390,7 +517,7 @@ static long fpsensor_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 
     case FPSENSOR_IOC_RESET:
         fpsensor_debug(INFO_LOG, "%s: chip reset command\n", __func__);
-        fpsensor_hw_reset(1250);
+        fpsensor_hw_reset(4000);
         break;
 
     case FPSENSOR_IOC_ENABLE_IRQ:
@@ -421,13 +548,13 @@ static long fpsensor_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
         break;
     case FPSENSOR_IOC_ENABLE_POWER:
         fpsensor_debug(INFO_LOG, "%s: FPSENSOR_IOC_ENABLE_POWER ======\n", __func__);
-        if (CHIPONE_LDO_DISABLE == 1)
-            fpsensor_power_onoff(1);
+        //if (CHIPONE_LDO_DISABLE == 1)
+        fpsensor_power_onoff(1);
         break;
     case FPSENSOR_IOC_DISABLE_POWER:
         fpsensor_debug(INFO_LOG, "%s: FPSENSOR_IOC_DISABLE_POWER ======\n", __func__);
-        if (CHIPONE_LDO_DISABLE == 1)
-            fpsensor_power_onoff(0);
+        //if (CHIPONE_LDO_DISABLE == 1)
+        fpsensor_power_onoff(0);
         break;
     case FPSENSOR_IOC_REMOVE:
 	/*
@@ -730,7 +857,7 @@ static int fpsensor_probe(struct platform_device *spi)
         fpsensor_debug(ERR_LOG, "fpsensor setup char device failed, %d", status);
         goto release_drv_data;
     }
-    fpsensor_spi_clk_enable(1);
+    //fpsensor_spi_clk_enable(1);
     init_waitqueue_head(&fpsensor_dev->wq_irq_return);
     wake_lock_init(&g_fpsensor->ttw_wl, WAKE_LOCK_SUSPEND, "fpsensor_ttw_wl");
     fpsensor_dev->device_available = 1;
@@ -889,7 +1016,7 @@ static int __init fpsensor_init(void)
 
     return status;
 }
-module_init(fpsensor_init);
+late_initcall(fpsensor_init);
 
 static void __exit fpsensor_exit(void)
 {

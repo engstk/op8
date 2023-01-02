@@ -29,7 +29,7 @@
 	qcom,platform-te-gpio = <&tlmm 67 0>;
 };
 
-&dsi_oppo19811_samsung_1440_3168_dsc_cmd {
+&dsi_oplus19811_samsung_1440_3168_dsc_cmd {
 	pxlw,iris-chip-enable;
 	pxlw,soft-iris-enable;
 	qcom,iris-supply-entries = <&dsi_iris_pwr_supply>;

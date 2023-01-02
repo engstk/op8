@@ -9,8 +9,6 @@
 #include <linux/regulator/consumer.h>
 #include "synaptics_tcm_oncell.h"
 
-
-
 DECLARE_COMPLETION(response_complete);
 DECLARE_COMPLETION(report_complete);
 
@@ -29,6 +27,7 @@ static int syna_tcm_write_message(struct syna_tcm_data *tcm_info,
 static void syna_tcm_test_report(struct syna_tcm_data *tcm_info);
 static int syna_tcm_helper(struct syna_tcm_data *tcm_info);
 static int syna_tcm_enable_report(struct syna_tcm_data *tcm_info, enum report_type report_type, bool enable);
+static void syna_tcm_fw_update_in_bl(void);
 
 inline int syna_tcm_rmi_read(struct syna_tcm_data *tcm_info,
                              unsigned short addr, unsigned char *data, unsigned int length)
@@ -572,12 +571,6 @@ static int syna_set_normal_report_config(struct syna_tcm_data *tcm_info)
 
     touch_hcd->out.buf[idx++] = TOUCH_GESTURE_DOUBLE_TAP;
     touch_hcd->out.buf[idx++] = 8;
-
-	if (tcm_info->fingerprint_and_grip_param_equal_19805) {
-		touch_hcd->out.buf[idx++] = TOUCH_REPORT_GESTURE_INFO;
-		touch_hcd->out.buf[idx++] = 48;
-	}
-
     touch_hcd->out.buf[idx++] = TOUCH_FOREACH_ACTIVE_OBJECT;
     touch_hcd->out.buf[idx++] = TOUCH_OBJECT_N_INDEX;
     touch_hcd->out.buf[idx++] = 4;
@@ -799,15 +792,15 @@ static void syna_tcm_dispatch_report(struct syna_tcm_data *tcm_info)
 
         if (*tcm_info->in_suspend) {
 			if ((touch_data->lpwg_gesture == TOUCH_HOLD_UP) || (touch_data->lpwg_gesture == TOUCH_HOLD_DOWN)) {
-                syna_set_trigger_reason(tcm_info, IRQ_FINGERPRINT);
-                goto exit;
+				syna_set_trigger_reason(tcm_info, IRQ_FINGERPRINT);
+				goto exit;
 			}
             syna_set_trigger_reason(tcm_info, IRQ_GESTURE);
         } else {
             syna_set_trigger_reason(tcm_info, IRQ_TOUCH);
 			if ((touch_data->lpwg_gesture == TOUCH_HOLD_UP) || (touch_data->lpwg_gesture == TOUCH_HOLD_DOWN)) {
                 syna_set_trigger_reason(tcm_info, IRQ_FINGERPRINT);
-                goto exit;
+				goto exit;
             }
         }
     } else if (tcm_info->report.id == REPORT_IDENTIFY) {
@@ -898,6 +891,7 @@ static void syna_tcm_dispatch_message(struct syna_tcm_data *tcm_info)
     unsigned int payload_length;
 
     if (tcm_info->report_code == REPORT_IDENTIFY) {
+		tcm_info->identify_state = 1;
         payload_length = tcm_info->payload_length;
 
         LOCK_BUFFER(tcm_info->in);
@@ -916,6 +910,13 @@ static void syna_tcm_dispatch_message(struct syna_tcm_data *tcm_info)
         syna_tcm_resize_chunk_size(tcm_info);
         TPD_INFO("Received identify report (firmware mode = 0x%02x)\n", tcm_info->id_info.mode);
 
+		if (0x0b == tcm_info->id_info.mode) {
+			tcm_info->firmware_mode_count ++;
+			if (!tcm_info->upload_flag && tcm_info->firmware_mode_count >= FIRMWARE_MODE_BL_MAX) {
+				tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_REPORT, "firmware mode = 0x0b");
+				tcm_info->upload_flag = 1;
+			}
+		}
         if (atomic_read(&tcm_info->command_status) == CMD_BUSY) {
             switch (tcm_info->command) {
             case CMD_RESET:
@@ -1979,15 +1980,15 @@ static void syna_rate_white_list_ctrl(void *chip_data, int value)
 	if (*tcm_info->in_suspend || tcm_info->game_mode) {
 		return;
 	}
-	/* 0:ignore 1:120hz 2:90hz */
+	/*0:ignore 1:120hz 2:90hz*/
 	switch (value) {
-	case 0: /* 60Hz */
+	case 0: /* 60Hz*/
 		fps = 60;
 		break;
-	case 1: /* 120Hz */
+	case 1: /* 120Hz*/
 		fps = 120;
 		break;
-	case 2: /* 90hz */
+	case 2: /* 90hz*/
 		fps = 90;
 		break;
 	default:
@@ -2026,6 +2027,8 @@ static int syna_tcm_reset(void *chip_data)
     unsigned int resp_buf_size = 0;
     unsigned int resp_length = 0;
     struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+
+	syna_tcm_fw_update_in_bl();
 
     mutex_lock(&tcm_info->reset_mutex);
 
@@ -2162,6 +2165,65 @@ static int syna_get_touch_points(void *chip_data, struct point_info *points, int
     return obj_attention;
 }
 
+static int syna_get_touch_points_auto(void *chip_data,
+				      struct point_info *points,
+				      int max_num,
+				      struct resolution_info *resolution_info)
+{
+	unsigned int idx = 0, status = 0;
+	struct object_data *object_data = NULL;
+	struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+	struct touch_hcd *touch_hcd = tcm_info->touch_hcd;
+	static unsigned int obj_attention = 0x00;
+	int max_x_inchip = 0;
+	int max_y_inchip = 0;
+	int max_x = 0;
+	int max_y = 0;
+
+	if (points == NULL) {
+		return obj_attention;
+	}
+	object_data = touch_hcd->touch_data.object_data;
+
+	max_x_inchip = le2_to_uint(tcm_info->app_info.max_x) + 1;
+	max_y_inchip = le2_to_uint(tcm_info->app_info.max_y) + 1;
+	max_x = resolution_info->max_x;
+	max_y = resolution_info->max_y;
+
+
+	for (idx = 0; idx < touch_hcd->max_objects; idx++) {
+		status = object_data[idx].status;
+		if (status != LIFT) {
+			obj_attention |= (0x1 << idx);
+		} else {
+			if ((~obj_attention) & ((0x1) << idx)) {
+				continue;
+			} else {
+				obj_attention &= (~(0x1 << idx));
+			}
+		}
+
+		if (max_x_inchip == max_x) {
+			points[idx].x = object_data[idx].x_pos;
+		} else {
+			points[idx].x = (object_data[idx].x_pos * max_x) / max_x_inchip;
+		}
+		if (max_y_inchip == max_y) {
+			points[idx].y = object_data[idx].y_pos;
+		} else {
+			points[idx].y = (object_data[idx].y_pos * max_y) / max_y_inchip;
+		}
+		points[idx].touch_major = max(object_data[idx].x_width, object_data[idx].y_width);
+		points[idx].width_major = min(object_data[idx].x_width, object_data[idx].y_width);
+		points[idx].tx_press = object_data[idx].exWidth;
+		points[idx].rx_press = object_data[idx].eyWidth;
+		points[idx].tx_er = object_data[idx].xERatio;
+		points[idx].rx_er = object_data[idx].yERatio;
+		points[idx].status = 1;
+	}
+
+	return obj_attention;
+}
 
 static int syna_tcm_set_gesture_mode(struct syna_tcm_data *tcm_info, bool enable)
 {
@@ -2212,7 +2274,7 @@ static int syna_tcm_set_gesture_mode(struct syna_tcm_data *tcm_info, bool enable
             TPD_INFO("%s: Failed to set dynamic gesture config\n", __func__);
             return retval;
         }
-        retval = syna_tcm_set_dynamic_config(tcm_info, DC_GESTURE_MASK, config);
+		retval = syna_tcm_set_dynamic_config(tcm_info, DC_GESTURE_MASK, config);
         if (retval < 0) {
             TPD_INFO("%s: Failed to set dynamic gesture mask config\n", __func__);
             return retval;
@@ -2356,17 +2418,17 @@ static int syna_corner_limit_handle(struct syna_tcm_data *tcm_info)
             TPD_INFO("%s:failed to set DC_DARK_ZONE_ENABLE\n", __func__);
             return ret;
         }
-        if (tcm_info->fingerprint_and_grip_param_equal_19805) {
+		if (tcm_info->fingerprint_and_grip_param_equal_19805) {
 			ret = syna_tcm_set_dynamic_config(tcm_info, DC_GRIP_DARK_ZONE_X, 0x88);
 			if (ret < 0) {
-                TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
-                return ret;
+				TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
+				return ret;
 			}
-        } else {
+		} else {
 			ret = syna_tcm_set_dynamic_config(tcm_info, DC_GRIP_DARK_ZONE_X, 0xFF);
 			if (ret < 0) {
-                TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
-                return ret;
+				TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
+				return ret;
 			}
         }
         ret = syna_tcm_set_dynamic_config(tcm_info, DC_GRIP_DARK_ZONE_Y, 0x44);
@@ -2400,19 +2462,19 @@ static int syna_corner_limit_handle(struct syna_tcm_data *tcm_info)
             TPD_INFO("%s:failed to set DC_DARK_ZONE_ENABLE\n", __func__);
             return ret;
         }
-        if (tcm_info->fingerprint_and_grip_param_equal_19805) {
+		if (tcm_info->fingerprint_and_grip_param_equal_19805) {
 			ret = syna_tcm_set_dynamic_config(tcm_info, DC_GRIP_DARK_ZONE_X, 0x88);
 			if (ret < 0) {
-                TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
-                return ret;
+				TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
+				return ret;
 			}
-        } else {
+		} else {
 			ret = syna_tcm_set_dynamic_config(tcm_info, DC_GRIP_DARK_ZONE_X, 0xFF);
 			if (ret < 0) {
-                TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
-                return ret;
+				TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_X\n", __func__);
+				return ret;
 			}
-        }
+		}
         ret = syna_tcm_set_dynamic_config(tcm_info, DC_GRIP_DARK_ZONE_Y, 0x44);
         if (ret < 0) {
             TPD_INFO("%s:failed to set DC_GRIP_DARK_ZONE_Y\n", __func__);
@@ -2493,8 +2555,15 @@ static int syna_mode_switch(void *chip_data, work_mode mode, bool flag)
     case MODE_NORMAL:
         ret = syna_tcm_normal_mode(tcm_info);
         if (ret < 0) {
+			tcm_info->error_state_count++;
             TPD_INFO("normal mode switch failed\n");
+			if (tcm_info->error_state_count >= ERROR_STATE_MAX) {
+				syna_tcm_reset(tcm_info); /*ic state err, need to reset the IC*/
+				tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_REPORT, "ic state err rest");
+			}
         }
+		tcm_info->error_state_count = 0;
+
         break;
     case MODE_GESTURE:
         ret = syna_tcm_set_gesture_mode(tcm_info, flag);
@@ -2512,19 +2581,25 @@ static int syna_mode_switch(void *chip_data, work_mode mode, bool flag)
         ret = syna_tcm_set_dynamic_config(tcm_info, DC_CHARGER_CONNECTED, flag ? 1 : 0);
         if (ret < 0) {
             TPD_INFO("%s:failed to set charger mode\n", __func__);
+			tcm_info->error_state_count++;
         }
+		tcm_info->error_state_count = 0;
         break;
     case MODE_EDGE:
         ret = syna_enable_edge_limit(tcm_info);
         if (ret < 0) {
             TPD_INFO("%s: failed to enable edg limit.\n", __func__);
+			tcm_info->error_state_count++;
         }
+		tcm_info->error_state_count = 0;
         break;
     case MODE_GAME:
         ret = syna_tcm_set_game_mode(tcm_info, flag);
         if (ret < 0) {
             TPD_INFO("%s:failed to set game mode\n", __func__);
+			tcm_info->error_state_count++;
         }
+		tcm_info->error_state_count = 0;
         break;
     default:
         break;
@@ -2601,13 +2676,13 @@ static fw_check_state syna_fw_check(void *chip_data, struct resolution_info *res
     }
 
     if (panel_data->manufacture_info.version) {
-        snprintf(panel_data->manufacture_info.version, MAX_DEVICE_VERSION_LENGTH, "0x%s", tcm_info->app_info.customer_config_id);
+        sprintf(panel_data->manufacture_info.version, "0x%s", tcm_info->app_info.customer_config_id);
     }
 
     retval = syna_tcm_get_dynamic_config(tcm_info, DC_NOISE_LENGTH, &config);
     if (retval < 0) {
         TPD_INFO("Failed to get default noise length\n");
-        return FW_ABNORMAL;
+		return FW_ABNORMAL;
     }
 
     tcm_info->default_noise_length = config;
@@ -2694,36 +2769,36 @@ static void syna_tcm_enable_fingerprint(void *chip_data, uint32_t enable)
     TPD_INFO("%s: enable(%d)\n", __func__, enable);
 
     if (enable) {
-        if (tcm_info->fingerprint_and_grip_param_equal_19805) {
-		retval = syna_tcm_set_dynamic_config(tcm_info, DC_TOUCH_HOLD, 0x07);
+		if (tcm_info->fingerprint_and_grip_param_equal_19805) {
+			retval = syna_tcm_set_dynamic_config(tcm_info, DC_TOUCH_HOLD, 0x07);
 			if (retval < 0) {
-                TPD_INFO("Failed to set dynamic touch and hold config\n");
-                return;
+				TPD_INFO("Failed to set dynamic touch and hold config\n");
+				return;
 			}
-        } else {
+		} else {
 			retval = syna_tcm_set_dynamic_config(tcm_info, DC_TOUCH_HOLD, *tcm_info->in_suspend ? 0x01 : 0x02);
 			if (retval < 0) {
-                TPD_INFO("Failed to set dynamic touch and hold config\n");
-                return;
+				TPD_INFO("Failed to set dynamic touch and hold config\n");
+				return;
 			}
 			retval = syna_tcm_enable_report(tcm_info, REPORT_TOUCH_HOLD, *tcm_info->in_suspend ? false : true);
 			if (retval < 0) {
-                TPD_INFO("Failed to set enable touch and hold report\n");
-                return;
+				TPD_INFO("Failed to set enable touch and hold report\n");
+				return;
 			}
-        }
+		}
     } else {
         retval = syna_tcm_set_dynamic_config(tcm_info, DC_TOUCH_HOLD, 0x00);
         if (retval < 0) {
             TPD_INFO("Failed to set dynamic touch and hold config\n");
             return;
         }
-        if (!tcm_info->fingerprint_and_grip_param_equal_19805) {
+		if (!tcm_info->fingerprint_and_grip_param_equal_19805) {
 			retval = syna_tcm_enable_report(tcm_info, REPORT_TOUCH_HOLD, false);
 			if (retval < 0) {
-                TPD_INFO("Failed to set disable touch and hold report\n");
-                return;
-			}
+			TPD_INFO("Failed to set disable touch and hold report\n");
+			return;
+		}
         }
     }
 
@@ -2736,10 +2811,6 @@ static void syna_tcm_fingerprint_info(void *chip_data, struct fp_underscreen_inf
     struct touch_hcd *touch_hcd = tcm_info->touch_hcd;
     struct touch_data *touch_data = &touch_hcd->touch_data;
     u8 *fp_buf = tcm_info->report.buffer.buf;
-
-	if (tcm_info->fingerprint_and_grip_param_equal_19805) {
-		fp_buf = touch_data->extra_gesture_info;
-	}
 
     if (!fp_tpinfo) {
         return;
@@ -2760,6 +2831,151 @@ static void syna_tcm_fingerprint_info(void *chip_data, struct fp_underscreen_inf
     }
 
     return;
+}
+
+static void syna_tcm_fingerprint_info_auto(void *chip_data,
+					   struct fp_underscreen_info *fp_tpinfo,
+					   struct resolution_info *resolution_info)
+{
+	struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+	struct touch_hcd *touch_hcd = tcm_info->touch_hcd;
+	struct touch_data *touch_data = &touch_hcd->touch_data;
+	u8 *fp_buf = tcm_info->report.buffer.buf;
+
+	int max_x_inchip = 0;
+	int max_y_inchip = 0;
+	int max_x = 0;
+	int max_y = 0;
+
+	if (!fp_tpinfo) {
+		return;
+	}
+
+	if (tcm_info->report.buffer.data_length < 8
+	    && touch_data->lpwg_gesture == TOUCH_HOLD_DOWN) {
+		TPD_INFO("%s: invalid fingerprint buf length\n", __func__);
+		return;
+	}
+
+	if (touch_data->lpwg_gesture != TOUCH_HOLD_DOWN
+	    && touch_data->lpwg_gesture != TOUCH_HOLD_UP) {
+		return;
+	}
+
+	max_x_inchip = le2_to_uint(tcm_info->app_info.max_x) + 1;
+	max_y_inchip = le2_to_uint(tcm_info->app_info.max_y) + 1;
+	max_x = resolution_info->LCD_WIDTH;
+	max_y = resolution_info->LCD_HEIGHT;
+
+	if (touch_data->lpwg_gesture == TOUCH_HOLD_DOWN) {
+		fp_tpinfo->touch_state = FINGERPRINT_DOWN_DETECT;
+		fp_tpinfo->x = fp_buf[0] | fp_buf[1] << 8;
+		fp_tpinfo->y = fp_buf[2] | fp_buf[3] << 8;
+		fp_tpinfo->area_rate = fp_buf[4] | fp_buf[5] << 8;
+	} else if (touch_data->lpwg_gesture == TOUCH_HOLD_UP) {
+		fp_tpinfo->touch_state = FINGERPRINT_UP_DETECT;
+		fp_tpinfo->x = fp_buf[0] | fp_buf[1] << 8;
+		fp_tpinfo->y = fp_buf[2] | fp_buf[3] << 8;
+		fp_tpinfo->area_rate = fp_buf[4] | fp_buf[5] << 8;
+	}
+
+	if (max_x_inchip != max_x) {
+		fp_tpinfo->x = (fp_tpinfo->x * max_x) / max_x_inchip;
+	}
+
+	if (max_y_inchip != max_y) {
+		fp_tpinfo->y = (fp_tpinfo->y * max_y) / max_y_inchip;
+	}
+
+	return;
+}
+
+static void syna_tcm_get_health_info(void *chip_data, struct monitor_data *mon_data)
+{
+    struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+    struct health_info *health_info = (struct health_info *)tcm_info->report.buffer.buf;
+    int data_length = tcm_info->report.buffer.data_length;
+    struct health_info *health_local = &tcm_info->health_info;
+    int i = 0;
+
+    if (data_length < 20) {
+        TPD_INFO("%s: invalid health debug buf length\n", __func__);
+        return;
+    }
+
+    if (health_info->grip_count != 0 && health_local->grip_count != health_info->grip_count) {
+        mon_data->grip_report++;
+    }
+    if (health_info->baseline_err != 0 && health_local->baseline_err != health_info->baseline_err) {
+        switch(health_info->baseline_err) {
+        case BASE_NEGATIVE_FINGER:
+            mon_data->reserve1++;
+            break;
+        case BASE_MUTUAL_SELF_CAP:
+            mon_data->reserve2++;
+            break;
+        case BASE_ENERGY_RATIO:
+            mon_data->reserve3++;
+            break;
+        case BASE_RXABS_BASELINE:
+            mon_data->reserve4++;
+            break;
+        case BASE_TXABS_BASELINE:
+            mon_data->reserve5++;
+            break;
+        default:
+            break;
+        }
+    }
+    if (health_info->noise_state >= 2 && health_local->noise_state != health_info->noise_state) {
+        mon_data->noise_count++;
+    }
+    if (health_info->shield_mode != 0 && health_local->shield_mode != health_info->shield_mode) {
+        switch(health_info->shield_mode) {
+        case SHIELD_PALM:
+            mon_data->shield_palm++;
+            break;
+        case SHIELD_GRIP:
+            mon_data->shield_edge++;
+            break;
+        case SHIELD_METAL:
+            mon_data->shield_metal++;
+            break;
+        case SHIELD_MOISTURE:
+            mon_data->shield_water++;
+            break;
+        case SHIELD_ESD:
+            mon_data->shield_esd++;
+            break;
+        default:
+            break;
+        }
+    }
+    if (health_info->reset_reason != 0) {
+        switch(health_info->reset_reason) {
+        case RST_HARD:
+            mon_data->hard_rst++;
+            break;
+        case RST_INST:
+            mon_data->inst_rst++;
+            break;
+        case RST_PARITY:
+            mon_data->parity_rst++;
+            break;
+        case RST_WD:
+            mon_data->wd_rst++;
+            break;
+        case RST_OTHER:
+            mon_data->other_rst++;
+            break;
+        }
+    }
+    memcpy(health_local, health_info, sizeof(struct health_info));
+    if (tp_debug != 0) {
+        for (i = 0; i < data_length; i++) {
+            TPD_INFO("[0x%x], ", tcm_info->report.buffer.buf[i]);
+        }
+    }
 }
 
 static int syna_tcm_erase_flash(struct syna_tcm_data *tcm_info, unsigned int page_start, unsigned int page_count)
@@ -2878,12 +3094,46 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
     struct reflash_hcd reflash_hcd;
 
     memset(&image_info, 0, sizeof(struct image_info));
-    ret = synaptics_parse_header_v2(&image_info, fw->data);
-    if (ret < 0) {
-        TPD_INFO("Failed to parse fw image\n");
-        return FW_UPDATE_FATAL;
-    }
 
+	if (tcm_info->fwupdate_bootloader) {
+		if (fw) {
+			if (tcm_info->g_fw_buf && fw->size < FW_BUF_SIZE) {
+				tcm_info->g_fw_len = fw->size;
+				memcpy(tcm_info->g_fw_buf, fw->data, fw->size);
+				tcm_info->g_fw_sta = true;
+			} else {
+				TPD_INFO("fw->size:%d is less than %d\n", fw->size, FW_BUF_SIZE);
+				return FW_UPDATE_FATAL;
+			}
+		}
+		if (tcm_info->g_fw_sta) {
+			ret = synaptics_parse_header_v2(&image_info, tcm_info->g_fw_buf);
+			if (ret < 0) {
+				tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "synaptics_parse_header_v2 fail");
+				TPD_INFO("Failed to parse fw image\n");
+				return FW_UPDATE_FATAL;
+			}
+		} else {
+			if (!fw) {
+				TPD_INFO("fw is null\n");
+				return FW_UPDATE_FATAL;
+			} else {
+				ret = synaptics_parse_header_v2(&image_info, fw->data);
+				if (ret < 0) {
+					tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "synaptics_parse_header_v2 fail");
+					TPD_INFO("Failed to parse fw image\n");
+					return FW_UPDATE_FATAL;
+				}
+			}
+		}
+	} else {
+		ret = synaptics_parse_header_v2(&image_info, fw->data);
+		if (ret < 0) {
+			tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "synaptics_parse_header_v2 fail");
+			TPD_INFO("Failed to parse fw image\n");
+			return FW_UPDATE_FATAL;
+		}
+	}
     header = (struct app_config_header *)image_info.app_config.data;
 
     image_fw_id = le4_to_uint(header->build_id);
@@ -2909,6 +3159,7 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
     if (tcm_info->id_info.mode == MODE_APPLICATION) {
         ret = syna_tcm_switch_mode(tcm_info, FW_MODE_BOOTLOADER);
         if (ret < 0) {
+			tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "syna_tcm_switch_mode fail");
             TPD_INFO("Failed to switch to bootloader mode\n");
             return FW_UPDATE_ERROR;
         }
@@ -2929,11 +3180,13 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
              reflash_hcd.max_write_payload_size);
 
     if (reflash_hcd.write_block_size > (tcm_info->wr_chunk_size - 5)) {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "write block size is exceed");
         TPD_INFO("write block size is exceed\n");
         return FW_UPDATE_ERROR;
     }
 
     if (image_info.app_firmware.size == 0) {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "no application firmware in image");
         TPD_INFO("no application firmware in image\n\n");
         return FW_UPDATE_ERROR;
     }
@@ -2943,6 +3196,7 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
     page_count = ceil_div(image_info.app_firmware.size, reflash_hcd.page_size);
     ret = syna_tcm_erase_flash(tcm_info, page_start, page_count);
     if (ret < 0) {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "Failed to erase firmware");
         TPD_INFO("Failed to erase firmware\n");
         return FW_UPDATE_ERROR;
     }
@@ -2954,6 +3208,7 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
 
     ret = syna_tcm_write_flash(tcm_info, &reflash_hcd, flash_addr, data, size);
     if (ret < 0) {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "Failed to write flash");
         TPD_INFO("Failed to write flash \n");
         return FW_UPDATE_ERROR;
     }
@@ -2975,12 +3230,14 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
 
     ret = syna_tcm_erase_flash(tcm_info, page_start, page_count);
     if (ret < 0) {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "Failed to erase config");
         TPD_INFO("Failed to erase config\n");
         return FW_UPDATE_ERROR;
     }
 
     ret = syna_tcm_write_flash(tcm_info, &reflash_hcd, flash_addr, data, size);
     if (ret < 0) {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "Failed to write config");
         TPD_INFO("Failed to write config \n");
         return FW_UPDATE_ERROR;
     }
@@ -2991,6 +3248,37 @@ static fw_update_state syna_tcm_fw_update(void *chip_data, const struct firmware
     return FW_UPDATE_SUCCESS;
 }
 
+static void syna_tcm_fw_update_in_bl(void)
+{
+	int ret = -1;
+	struct syna_tcm_data *tcm_info = NULL;
+
+	tcm_info = g_tcm_info;
+
+	if (!tcm_info) {
+		TPD_INFO("%s: tcm_info is null\n", __func__);
+		return;
+	}
+
+	if (!tcm_info->fwupdate_bootloader) {
+		TPD_INFO("%s not support.\n", __func__);
+		return;
+	}
+
+	if (*tcm_info->loading_fw) {
+		TPD_INFO("%s not support when TP loading fw.\n", __func__);
+		return;
+	}
+	if (tcm_info->probe_done && tcm_info->firmware_mode_count % FWUPDATE_BL_MAX == 0 && tcm_info->firmware_mode_count) {
+		tcm_info->firmware_mode_count = 0;
+		ret = syna_tcm_fw_update(tcm_info, NULL, 0);
+		if (ret > 0) {
+			TPD_INFO("g_fw_buf update failed!\n");
+		}
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_FW_UPDATE, "syna_tcm_fw_update_new");
+	}
+	return;
+}
 
 static int syna_get_gesture_info(void *chip_data, struct gesture_info *gesture)
 {
@@ -3099,6 +3387,60 @@ static int syna_get_gesture_info(void *chip_data, struct gesture_info *gesture)
     return 0;
 }
 
+static int syna_get_gesture_info_auto(void *chip_data,
+				      struct gesture_info *gesture,
+				      struct resolution_info *resolution_info)
+{
+	struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+	int max_x_inchip = 0;
+	int max_y_inchip = 0;
+	int max_x = 0;
+	int max_y = 0;
+
+	max_x_inchip = le2_to_uint(tcm_info->app_info.max_x) + 1;
+	max_y_inchip = le2_to_uint(tcm_info->app_info.max_y) + 1;
+	max_x = resolution_info->max_x;
+	max_y = resolution_info->max_y;
+
+
+	syna_get_gesture_info(chip_data, gesture);
+
+	if (max_x_inchip == max_x && max_y_inchip == max_y) {
+		return 0;
+	}
+
+	if (gesture->gesture_type == UnkownGesture) {
+		return 0;
+	}
+
+	if (max_x_inchip != max_x) {
+		gesture->Point_start.x = (gesture->Point_start.x * max_x) / max_x_inchip;
+		gesture->Point_end.x    = (gesture->Point_end.x * max_x) / max_x_inchip;
+		gesture->Point_1st.x    = (gesture->Point_1st.x * max_x) / max_x_inchip;
+		gesture->Point_2nd.x    = (gesture->Point_2nd.x * max_x) / max_x_inchip;
+		gesture->Point_3rd.x    = (gesture->Point_3rd.x * max_x) / max_x_inchip;
+		gesture->Point_4th.x    = (gesture->Point_4th.x * max_x) / max_x_inchip;
+	}
+
+	if (max_y_inchip != max_y) {
+		gesture->Point_start.y = (gesture->Point_start.y * max_y) / max_y_inchip;
+		gesture->Point_end.y    = (gesture->Point_end.y * max_y) / max_y_inchip;
+		gesture->Point_1st.y    = (gesture->Point_1st.y * max_y) / max_y_inchip;
+		gesture->Point_2nd.y    = (gesture->Point_2nd.y * max_y) / max_y_inchip;
+		gesture->Point_3rd.y    = (gesture->Point_3rd.y * max_y) / max_y_inchip;
+		gesture->Point_4th.y    = (gesture->Point_4th.y * max_y) / max_y_inchip;
+	}
+
+	TPD_INFO("changed points: (%d, %d)(%d, %d)(%d, %d)(%d, %d)(%d, %d)(%d, %d)\n",
+		 gesture->Point_start.x, gesture->Point_start.y, \
+		 gesture->Point_end.x, gesture->Point_end.y, \
+		 gesture->Point_1st.x, gesture->Point_1st.y, \
+		 gesture->Point_2nd.x, gesture->Point_2nd.y, \
+		 gesture->Point_3rd.x, gesture->Point_3rd.y, \
+		 gesture->Point_4th.x, gesture->Point_4th.y);
+
+	return 0;
+}
 
 static void store_to_file(int fd, char *format, ...)
 {
@@ -3244,7 +3586,7 @@ static int syna_trx_short_test(struct seq_file *s, struct syna_tcm_data *tcm_inf
 
     total_bits = syna_testdata->TX_NUM + syna_testdata->RX_NUM;
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("trx short test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "trx short test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3303,7 +3645,7 @@ static int syna_trx_open_test(struct seq_file *s, struct syna_tcm_data *tcm_info
 
     total_bits = syna_testdata->TX_NUM + syna_testdata->RX_NUM;
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("trx open test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "trx open test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3362,7 +3704,7 @@ static int syna_trx_gndshort_test(struct seq_file *s, struct syna_tcm_data *tcm_
 
     total_bits = syna_testdata->TX_NUM + syna_testdata->RX_NUM;
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("trx gndshort test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "trx gndshort test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3420,7 +3762,7 @@ static int syna_full_rawcap_test(struct seq_file *s, struct syna_tcm_data *tcm_i
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("full rawcap test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "full rawcap test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3484,7 +3826,7 @@ static int syna_delta_noise_test(struct seq_file *s, struct syna_tcm_data *tcm_i
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("delta noise test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "delta noise test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3548,7 +3890,7 @@ static int syna_hybrid_rawcap_test(struct seq_file *s, struct syna_tcm_data *tcm
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("hybrid_rawcap test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "hybrid_rawcap test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3599,6 +3941,69 @@ static int syna_hybrid_rawcap_test(struct seq_file *s, struct syna_tcm_data *tcm
     return error_count;
 }
 
+static int syna_hybrid_rawcap_test_ad(struct seq_file *s, struct syna_tcm_data *tcm_info,
+                                   struct syna_testdata *syna_testdata, int item_offset, int error_count)
+{
+	int32_t data32 = 0;
+	int i = 0, ret = 0, index = 0, byte_cnt = 2;
+	struct syna_test_item_header *item_header = NULL;
+	int32_t *p_hybridcap_p = NULL, *p_hybridcap_n = NULL;
+	struct syna_tcm_test *test_hcd = tcm_info->test_hcd;
+	unsigned char *buf = NULL;
+
+	item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
+	if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
+		TPD_INFO("hybrid_rawcap_whth_ad test magic number(%4x) is wrong.\n", item_header->item_magic);
+		if (!error_count)
+			seq_printf(s, "hybrid_rawcap_whth_ad test magic number(%4x) is wrong.\n", item_header->item_magic);
+		error_count++;
+		return error_count;
+	}
+	if (item_header->item_limit_type == LIMIT_TYPE_EACH_NODE_DATA) {
+		p_hybridcap_p = (int32_t *)(syna_testdata->fw->data + item_header->top_limit_offset);
+		p_hybridcap_n = (int32_t *)(syna_testdata->fw->data + item_header->top_limit_offset + 4 * (syna_testdata->TX_NUM + syna_testdata->RX_NUM));
+	} else {
+		TPD_INFO("hybrid_rawcap_whth_ad test limit type(%2x) is wrong.\n", item_header->item_limit_type);
+		if (!error_count)
+			seq_printf(s, "hybrid_rawcap_whth_ad test limit type(%2x) is wrong.\n", item_header->item_limit_type);
+		error_count++;
+		return error_count;
+	}
+
+	TPD_INFO("%s start.\n", __func__);
+	/*0x47 = 71 TYPE_HYBRIDRAW_CAP_WITH_AD + 24*/
+	ret = testing_run_prod_test_item(tcm_info, TYPE_HYBRIDRAW_CAP_WITH_AD + 24);
+	if (ret < 0) {
+		TPD_INFO("run hybrid rawcap whth_ad test failed.\n");
+		if (!error_count)
+			seq_printf(s, "run hybrid rawcap whth_ad test failed.\n");
+		error_count++;
+		return error_count;
+	}
+
+	LOCK_BUFFER(test_hcd->test_resp);
+	buf = test_hcd->test_resp.buf;
+	TPD_INFO("%s read data size:%d\n", __func__, test_hcd->test_resp.data_length);
+	store_to_file(syna_testdata->fd, "hybrid_rawcap_whth_ad:\n");
+	for (i = 0; i < test_hcd->test_resp.data_length;) {
+		index = i / byte_cnt;
+		data32 = (buf[i] | (buf[i + 1] << 8));
+		store_to_file(syna_testdata->fd, "%08d, ", data32);
+		if ((data32 < p_hybridcap_n[index]) || (data32 > p_hybridcap_p[index])) {
+			TPD_INFO("hybrid rawcap whth_ad test failed at node[%d]=%d [%d %d].\n", index, data32, p_hybridcap_n[index], p_hybridcap_p[index]);
+			if (!error_count)
+				seq_printf(s, "hybrid rawcap whth_ad test failed at node[%d]=%d [%d %d].\n", index, data32, p_hybridcap_n[index], p_hybridcap_p[index]);
+			error_count++;
+		}
+
+		i += byte_cnt;
+	}
+	UNLOCK_BUFFER(test_hcd->test_resp);
+	store_to_file(syna_testdata->fd, "\n");
+
+	return error_count;
+}
+
 static int syna_rawcap_test(struct seq_file *s, struct syna_tcm_data *tcm_info,
                             struct syna_testdata *syna_testdata, int item_offset, int error_count)
 {
@@ -3610,7 +4015,7 @@ static int syna_rawcap_test(struct seq_file *s, struct syna_tcm_data *tcm_info,
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("raw cap test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "raw cap test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3674,7 +4079,7 @@ static int syna_trex_shortcustom_test(struct seq_file *s, struct syna_tcm_data *
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("trex short custom test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "trex short custom test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3736,7 +4141,7 @@ static int syna_hybrid_diffcbc_test(struct seq_file *s, struct syna_tcm_data *tc
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("hybrid diffcbc test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "hybrid diffcbc test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3798,7 +4203,7 @@ static int syna_hybrid_absnoise_test(struct seq_file *s, struct syna_tcm_data *t
     unsigned char *buf = NULL;
 
     item_header = (struct syna_test_item_header *)(syna_testdata->fw->data + item_offset);
-    if (item_header->item_magic != Limit_ItemMagic) {
+    if (item_header->item_magic != Limit_ItemMagic && item_header->item_magic != Limit_ItemMagic_V2) {
         TPD_INFO("hybrid abs noise test magic number(%4x) is wrong.\n", item_header->item_magic);
         if (!error_count)
             seq_printf(s, "hybrid abs noise test magic number(%4x) is wrong.\n", item_header->item_magic);
@@ -3853,6 +4258,8 @@ static void syna_auto_test(struct seq_file *s, void *chip_data, struct syna_test
 {
     int i = 0, error_count = 0, item_offset = 0, item_cnt = 0;
     struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+	struct hw_resource *hw_res = tcm_info->hw_res;
+	int k, rst_val;
 
     //calculate the total test item
     for (i = 0; i < 8 * sizeof(syna_testdata->test_item); i++) {
@@ -3937,6 +4344,18 @@ static void syna_auto_test(struct seq_file *s, void *chip_data, struct syna_test
         }
     }
 
+    //check if it support hybrid rawcap test with ad
+	if (syna_testdata->test_item & (uint64_t) ((uint64_t) 1 << TYPE_HYBRIDRAW_CAP_WITH_AD)) {
+		TPD_INFO("search for item(%d) limit offset .\n", TYPE_HYBRIDRAW_CAP_WITH_AD);
+		item_offset = search_for_item(syna_testdata->fw, item_cnt, TYPE_HYBRIDRAW_CAP_WITH_AD);
+		if (!item_offset) {
+			error_count++;
+			TPD_INFO("search for item(%d) limit offset failed.\n", TYPE_HYBRIDRAW_CAP_WITH_AD);
+			seq_printf(s, "search for item(%d) limit offset failed.\n", TYPE_HYBRIDRAW_CAP_WITH_AD);
+		} else {
+			error_count = syna_hybrid_rawcap_test_ad(s, tcm_info, syna_testdata, item_offset, error_count);
+		}
+	}
     //check if it support rawcap test
     if (syna_testdata->test_item & (1 << TYPE_RAW_CAP)) {
         item_offset = search_for_item(syna_testdata->fw, item_cnt, TYPE_RAW_CAP);
@@ -3973,6 +4392,7 @@ static void syna_auto_test(struct seq_file *s, void *chip_data, struct syna_test
         }
     }
 
+	tcm_info->identify_state = 0;
     syna_tcm_reset(tcm_info);
 
     //check if it support hybrid noise test
@@ -3986,9 +4406,37 @@ static void syna_auto_test(struct seq_file *s, void *chip_data, struct syna_test
             error_count = syna_hybrid_absnoise_test(s, tcm_info, syna_testdata, item_offset, error_count);
         }
     }
+	/*check RST state*/
+	if (gpio_is_valid(hw_res->reset_gpio)) {
+		gpio_direction_input(hw_res->reset_gpio);
+		for (k = 0; k < 10; k++) {
+			msleep(2);
+			rst_val = gpio_get_value(hw_res->reset_gpio);
+			TPD_INFO("read rst gpio count = %d, rst_val = %d\n", k, rst_val);
+			if (0 == rst_val) {
+				TPD_INFO("check rst gpio state failed.\n");
+				seq_printf(s, "check rst gpio state failed.\n");
+				error_count++;
+				break;
+			}
+		}
+
+		gpio_direction_output(hw_res->reset_gpio, 1);
+	} else {
+		TPD_INFO("rst gpio is not valid!\n");
+	}
+
+	if (0 == tcm_info->identify_state) {
+		TPD_INFO("receive REPORT_IDENTIFY failed!\n");
+		seq_printf(s, "receive REPORT_IDENTIFY failed.\n");
+		error_count++;
+	}
 
     seq_printf(s, "imageid = 0x%x customID 0x%s\n", syna_testdata->TP_FW, tcm_info->app_info.customer_config_id);
     seq_printf(s, "%d error(s). %s\n", error_count, error_count ? "" : "All test passed.");
+
+	tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_TEST_AUTO, &error_count);
+
     TPD_INFO(" TP auto test %d error(s). %s\n", error_count, error_count ? "" : "All test passed.");
 }
 
@@ -4201,7 +4649,7 @@ static void syna_main_register(struct seq_file *s, void *chip_data)
         return;
     }
     TPD_INFO("error priority (1:finger,0:error) : %d\n", config);
-    seq_printf(s, "error priority (1:finger,0:error) : %d\n", config);
+    seq_printf(s, "error priority (1:finger,0:error) : %d, 0x%x\n", config, config);
 
     retval = syna_tcm_get_dynamic_config(tcm_info, DC_NOISE_LENGTH, &config);
     if (retval < 0) {
@@ -4218,8 +4666,8 @@ static void syna_main_register(struct seq_file *s, void *chip_data)
         seq_printf(s, "Failed to get dynamic config\n");
         return;
     }
-    TPD_INFO("report frequence (0x01:120HZ,0x02:180HZ) : %d\n", config);
-    seq_printf(s, "report frequence (0x01:120HZ,0x02:180HZ) : %d\n", config);
+    TPD_INFO("report frequence (0x01:120HZ,0x02:180HZ,0x03:240HZ) : %d\n", config);
+    seq_printf(s, "report frequence (0x01:120HZ,0x02:180HZ,0x03:240HZ) : %d\n", config);
 
     retval = syna_tcm_get_dynamic_config(tcm_info, DC_CHARGER_CONNECTED, &config);
     if (retval < 0) {
@@ -4328,6 +4776,24 @@ static void syna_main_register(struct seq_file *s, void *chip_data)
     }
     TPD_INFO("abs dark zone V : %d\n", config);
     seq_printf(s, "abs dark zone V : %d\n", config);
+
+    retval = syna_tcm_get_dynamic_config(tcm_info, DC_LOW_TEMP_ENABLE, &config);
+    if (retval < 0) {
+        TPD_INFO("Failed to get dynamic config\n");
+        seq_printf(s, "Failed to get dynamic config\n");
+        return;
+    }
+    TPD_INFO("low temperatue mode: %d\n", config);
+    seq_printf(s, "low temperatue mode : %d\n", config);
+
+    retval = syna_tcm_get_dynamic_config(tcm_info, DC_LOW_TEMP_ENABLE, &config);
+    if (retval < 0) {
+        TPD_INFO("Failed to get dynamic config\n");
+        seq_printf(s, "Failed to get dynamic config\n");
+        return;
+    }
+    TPD_INFO("low temperatue mode: %d\n", config);
+    seq_printf(s, "low temperatue mode : %d\n", config);
 
     TPD_INFO("Buid ID:%d, Custom ID:0x%s\n", le4_to_uint(tcm_info->id_info.build_id), tcm_info->app_info.customer_config_id);
     seq_printf(s, "Buid ID:%d, Custom ID:0x%s\n", le4_to_uint(tcm_info->id_info.build_id), tcm_info->app_info.customer_config_id);
@@ -4449,6 +4915,7 @@ void syna_reserve_read(struct seq_file *s, void *chip_data)
 static struct debug_info_proc_operations syna_debug_proc_ops = {
     .delta_read    = syna_delta_read,
     .baseline_read = syna_baseline_read,
+    .baseline_blackscreen_read = syna_baseline_read,
     .main_register_read = syna_main_register,
     .limit_read    = synaptics_limit_read,
     .reserve_read  = syna_reserve_read,
@@ -4501,8 +4968,34 @@ static void syna_freq_hop_trigger(void *chip_data)
         if (retval < 0) {
             TPD_INFO("Failed to hop frequency\n");
         }
-        freq_point = 4;
+        freq_point = 1;
         break;
+
+	case 1:
+		TPD_INFO("%s : Hop to frequency : %d\n", __func__, freq_point);
+		retval = syna_tcm_set_dynamic_config(tcm_info, DC_FREQUENCE_HOPPING, freq_point);
+		if (retval < 0) {
+			TPD_INFO("Failed to hop frequency\n");
+		}
+		freq_point = 2;
+		break;
+
+	case 2:
+		TPD_INFO("%s : Hop to frequency : %d\n", __func__, freq_point);
+		retval = syna_tcm_set_dynamic_config(tcm_info, DC_FREQUENCE_HOPPING, freq_point);
+		if (retval < 0) {
+			TPD_INFO("Failed to hop frequency\n");
+		}
+		freq_point = 3;
+		break;
+	case 3:
+		TPD_INFO("%s : Hop to frequency : %d\n", __func__, freq_point);
+		retval = syna_tcm_set_dynamic_config(tcm_info, DC_FREQUENCE_HOPPING, freq_point);
+		if (retval < 0) {
+			TPD_INFO("Failed to hop frequency\n");
+		}
+		freq_point = 4;
+		break;
 
     case 4:
         TPD_INFO("%s : Hop to frequency : %d\n", __func__, freq_point);
@@ -4536,8 +5029,10 @@ static int syna_tcm_smooth_lv_set(void *chip_data, int level)
     retval = syna_tcm_get_dynamic_config(tcm_info, DC_ERROR_PRIORITY, &regval);
     if (retval < 0) {
         TPD_INFO("Failed to get smooth config\n");
+		tcm_info->error_state_count++;
         return 0;
     }
+	tcm_info->error_state_count = 0;
 
     retval = syna_tcm_set_dynamic_config(tcm_info, DC_ERROR_PRIORITY, (level<<4)|(regval&0x01));
     if (retval < 0) {
@@ -4553,7 +5048,6 @@ static int syna_tcm_smooth_lv_set(void *chip_data, int level)
     TPD_INFO("OK synaptics smooth lv to %d, now reg_val:0x%x", level, regval);
     return 0;
 }
-
 static int syna_tcm_sensitive_lv_set(void *chip_data, int level)
 {
     struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
@@ -4563,8 +5057,10 @@ static int syna_tcm_sensitive_lv_set(void *chip_data, int level)
     retval = syna_tcm_set_dynamic_config(tcm_info, DC_NOISE_LENGTH, level);
     if (retval < 0) {
         TPD_INFO("Failed to set sensitive config\n");
+		tcm_info->error_state_count++;
         return 0;
     }
+	tcm_info->error_state_count = 0;
 
     retval = syna_tcm_get_dynamic_config(tcm_info, DC_NOISE_LENGTH, &regval);
     if (retval < 0) {
@@ -4576,6 +5072,39 @@ static int syna_tcm_sensitive_lv_set(void *chip_data, int level)
     return 0;
 }
 
+static int syna_tcm_set_high_frame_rate(void *chip_data, int level, int time)
+{
+    struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+    unsigned short regval = 0;
+    int retval = 0;
+
+    retval = syna_tcm_get_dynamic_config(tcm_info, DC_ERROR_PRIORITY, &regval);
+    if (retval < 0) {
+        TPD_INFO("Failed to get high frame config\n");
+        return 0;
+    }
+
+    if (level > 0) {
+        retval = syna_tcm_set_dynamic_config(tcm_info, DC_ERROR_PRIORITY, regval|0x0c02);
+        if (retval < 0) {
+            TPD_INFO("Failed to enable high frame config\n");
+            goto OUT;
+        }
+    } else {
+        retval = syna_tcm_set_dynamic_config(tcm_info, DC_ERROR_PRIORITY, regval&0xfffd);
+        if (retval < 0) {
+            TPD_INFO("Failed to disable high frame config\n");
+            goto OUT;
+        }
+    }
+
+    TPD_INFO("synaptics %s high frame success lv to %d, time to %d",
+        level > 0 ? "enable" : "disable", level, time);
+
+OUT:
+    return 0;
+}
+
 static void syna_s3908_set_gesture_state(void *chip_data, int state)
 {
 	struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
@@ -4584,6 +5113,71 @@ static void syna_s3908_set_gesture_state(void *chip_data, int state)
 	tcm_info->gesture_state = state;
 }
 
+static int syna_tcm_send_temperature(void *chip_data, int temp, bool status)
+{
+	struct syna_tcm_data *tcm_info = (struct syna_tcm_data *)chip_data;
+	unsigned short regval = 0;
+	int retval = 0;
+	unsigned short temp_mode = 0;
+
+	/*enable low tempreratue*/
+	if (temp <= tcm_info->syna_tempepratue[0]) {
+		temp_mode = 1;
+		tcm_info->syna_low_temp_enable ++;
+		tcm_info->syna_low_temp_disable = 0;
+	/*disable low tempreratue*/
+	} else if (temp > tcm_info->syna_tempepratue[1]) {
+		temp_mode = 0;
+		tcm_info->syna_low_temp_enable = 0;
+		tcm_info->syna_low_temp_disable ++;
+	} else {
+		if (tcm_info->syna_low_temp_enable > 0) {
+			temp_mode = 1;
+			tcm_info->syna_low_temp_enable ++;
+			tcm_info->syna_low_temp_disable = 0;
+		} else {
+			temp_mode = 0;
+			tcm_info->syna_low_temp_enable = 0;
+			tcm_info->syna_low_temp_disable ++;
+		}
+	}
+
+	if (tcm_info->syna_low_temp_enable > 1 || tcm_info->syna_low_temp_disable > 1) {
+		TPD_DEBUG("enable or disable low temp mode is more than one time\n");
+		return 0;
+	}
+	retval = syna_tcm_get_dynamic_config(tcm_info, DC_LOW_TEMP_ENABLE, &regval);
+	if (retval < 0) {
+		TPD_INFO("Failed to get temperature config\n");
+		return 0;
+	}
+
+	if (1 == temp_mode)  {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_REPORT, "syna_low_temp_enable");
+	} else {
+		tp_healthinfo_report(tcm_info->monitor_data_v2, HEALTH_REPORT, "syna_low_temp_disable");
+	}
+
+	if (1 == temp_mode)  {
+		temp_mode = regval | 0x02;
+	} else {
+		temp_mode = regval & 0xfd;
+	}
+	retval = syna_tcm_set_dynamic_config(tcm_info, DC_LOW_TEMP_ENABLE, temp_mode);
+	if (retval < 0) {
+		TPD_INFO("Failed to set temperature config\n");
+		return 0;
+	}
+
+ 	retval = syna_tcm_get_dynamic_config(tcm_info, DC_LOW_TEMP_ENABLE, &regval);
+	if (retval < 0) {
+		TPD_INFO("Failed to get temperature config\n");
+		return 0;
+	}
+	TPD_INFO("OK synaptics temperature to %d, now reg_val:%d", temp_mode, regval);
+
+	return retval;
+}
 
 static struct oplus_touchpanel_operations syna_tcm_ops = {
     .ftm_process               = syna_ftm_process,
@@ -4602,15 +5196,21 @@ static struct oplus_touchpanel_operations syna_tcm_ops = {
     .reinit_device             = syna_tcm_reinit_device,
     .enable_fingerprint        = syna_tcm_enable_fingerprint,
     .screenon_fingerprint_info = syna_tcm_fingerprint_info,
+    .health_report             = syna_tcm_get_health_info,
     .set_touch_direction       = syna_set_touch_direction,
     .get_touch_direction       = syna_get_touch_direction,
     .freq_hop_trigger          = syna_freq_hop_trigger,
     .enable_gesture_mask       = syna_tcm_enable_gesture_mask,
     .smooth_lv_set             = syna_tcm_smooth_lv_set,
     .sensitive_lv_set          = syna_tcm_sensitive_lv_set,
-    .tp_refresh_switch         = syna_report_refresh_switch,
-    .rate_white_list_ctrl      = syna_rate_white_list_ctrl,
-    .set_gesture_state         = syna_s3908_set_gesture_state,
+    .tp_refresh_switch		= syna_report_refresh_switch,
+    .rate_white_list_ctrl		= syna_rate_white_list_ctrl,
+	.set_gesture_state         = syna_s3908_set_gesture_state,
+    .get_touch_points_auto     = syna_get_touch_points_auto,
+    .get_gesture_info_auto     = syna_get_gesture_info_auto,
+    .screenon_fingerprint_info_auto = syna_tcm_fingerprint_info_auto,
+	.send_temperature			= syna_tcm_send_temperature,
+	.set_high_frame_rate		= syna_tcm_set_high_frame_rate,
 };
 
 static void init_chip_dts(struct device *dev, void *chip_data)
@@ -4629,7 +5229,7 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 	if (!chip_np) {
 		tcm_info->display_refresh_rate = 60;
 		tcm_info->game_rate = 1;
-		/* default :1:120hz 2:180hz is for 19101 19191 20131 */
+		/*default :1:120hz 2:180hz is for 19101 19191 20131*/
 		tcm_info->fps_report_rate_num = 6;
 		tcm_info->fps_report_rate_array[0] = 60;
 		tcm_info->fps_report_rate_array[1] = 1;
@@ -4638,6 +5238,11 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 		tcm_info->fps_report_rate_array[4] = 120;
 		tcm_info->fps_report_rate_array[5] = 2;
 		tcm_info->fingerprint_and_grip_param_equal_19805 = 0;
+		tcm_info->syna_tempepratue[0] = 5;
+		tcm_info->syna_tempepratue[1] = 15;
+		tcm_info->syna_low_temp_enable = 0;
+		tcm_info->syna_low_temp_disable = 1;
+		tcm_info->fwupdate_bootloader = 0;
 		return;
 	}
 
@@ -4657,8 +5262,7 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 	rc = of_property_count_u32_elems(chip_np, "fps_report_rate");
 	tcm_info->fps_report_rate_num = rc;
 
-	if (tcm_info->fps_report_rate_num > 0 && tcm_info->fps_report_rate_num <= FPS_REPORT_NUM
-		&& !(tcm_info->fps_report_rate_num % 2)) {
+	if (tcm_info->fps_report_rate_num > 0 && tcm_info->fps_report_rate_num <= FPS_REPORT_NUM && !(tcm_info->fps_report_rate_num % 2)) {
 		rc = of_property_read_u32_array(chip_np, "fps_report_rate", temp_array, tcm_info->fps_report_rate_num);
 		if (rc) {
 			TPD_INFO("fps_report_rate not specified %d\n", rc);
@@ -4669,8 +5273,8 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 			}
 		}
 	} else {
-	    /* default :1:120hz 2:180hz is for 19101 19191 20131 */
-	    tcm_info->fps_report_rate_num = 6;
+		/*default :1:120hz 2:180hz is for 19101 19191 20131*/
+		tcm_info->fps_report_rate_num = 6;
 		tcm_info->fps_report_rate_array[0] = 60;
 		tcm_info->fps_report_rate_array[1] = 1;
 		tcm_info->fps_report_rate_array[2] = 90;
@@ -4681,16 +5285,28 @@ static void init_chip_dts(struct device *dev, void *chip_data)
 	}
 
 	rc = of_property_read_u32(chip_np, "fingerprint_and_grip_param_equal_19805", &tcm_info->fingerprint_and_grip_param_equal_19805);
-        if (rc < 0) {
-                tcm_info->fingerprint_and_grip_param_equal_19805 = 0;
-                TPD_INFO("default rate %d\n", tcm_info->fingerprint_and_grip_param_equal_19805);
-        }
+	if (rc < 0) {
+			tcm_info->fingerprint_and_grip_param_equal_19805 = 0;
+			TPD_INFO("default rate %d\n", tcm_info->fingerprint_and_grip_param_equal_19805);
+	}
+	tcm_info->syna_tempepratue[0] = 5;
+	tcm_info->syna_tempepratue[1] = 15;
+	tcm_info->syna_low_temp_enable = 0;
+	tcm_info->syna_low_temp_disable = 1;
+
+	rc = of_property_read_u32(chip_np, "fwupdate_bootloader", &tcm_info->fwupdate_bootloader);
+	if (rc < 0) {
+		tcm_info->fwupdate_bootloader = 0;
+		TPD_INFO("fwupdate_bootloader %d\n", tcm_info->fwupdate_bootloader);
+	}
+
 }
 
 
 static int syna_tcm_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
     int retval = 0;
+	u64 time_counter = 0;
     struct syna_tcm_data *tcm_info = NULL;
     struct touchpanel_data *ts = NULL;
     struct device_hcd *device_hcd = NULL;
@@ -4716,6 +5332,8 @@ static int syna_tcm_probe(struct i2c_client *client, const struct i2c_device_id 
         goto ts_alloc_failed;
     }
 
+	reset_healthinfo_time_counter(&time_counter);
+
     //3. init member of ts
     ts->dev = &client->dev;
     ts->client = client;
@@ -4726,10 +5344,6 @@ static int syna_tcm_probe(struct i2c_client *client, const struct i2c_device_id 
     i2c_set_clientdata(client, ts);
     ts->ts_ops = &syna_tcm_ops;
     ts->debug_info_ops = &syna_debug_proc_ops;
-	tcm_info->calibration_support = of_property_read_bool(ts->dev->of_node, "calibration_support");
-	TPD_INFO("calibration_support %d\n", tcm_info->calibration_support);
-
-	ts->calibration_support = tcm_info->calibration_support;
 
     //4. init member of tcm_info
     tcm_info->client = client;
@@ -4808,6 +5422,7 @@ static int syna_tcm_probe(struct i2c_client *client, const struct i2c_device_id 
     ts->mode_switch_type = SINGLE;
     init_chip_dts(ts->dev, tcm_info);
 	tcm_info->black_gesture_indep = ts->black_gesture_indep_support;
+    tcm_info->monitor_data_v2 = &ts->monitor_data_v2;
 
     //10. create synaptics common file
     synaptics_create_proc(ts, tcm_info->syna_ops);
@@ -4821,8 +5436,24 @@ static int syna_tcm_probe(struct i2c_client *client, const struct i2c_device_id 
         device_hcd->reset = syna_tcm_reset;
         device_hcd->report_touch = syna_device_report_touch;
     }
+	tcm_info->fw_update_app_support = &ts->fw_update_app_support;
+	tcm_info->loading_fw  = &ts->loading_fw;
+
+	if (tcm_info->fwupdate_bootloader) {
+		tcm_info->g_fw_buf = vmalloc(FW_BUF_SIZE);
+		if (tcm_info->g_fw_buf == NULL) {
+			TPD_INFO("fw buf vmalloc error\n");
+			goto err_register_driver;
+		}
+		tcm_info->g_fw_sta = false;
+		tcm_info->probe_done = 1;
+	}
 
     g_tcm_info = tcm_info;
+
+	if (ts->health_monitor_v2_support) {
+		tp_healthinfo_report(&ts->monitor_data_v2, HEALTH_PROBE, &time_counter);
+	}
 
     return 0;
 
@@ -4874,6 +5505,10 @@ static int syna_tcm_remove(struct i2c_client *client)
     RELEASE_BUFFER(tcm_info->resp);
     RELEASE_BUFFER(tcm_info->out);
     RELEASE_BUFFER(tcm_info->in);
+
+	if (tcm_info->fwupdate_bootloader && tcm_info->g_fw_buf) {
+		vfree(tcm_info->g_fw_buf);
+	}
 
     kfree(tcm_info);
     kfree(ts);

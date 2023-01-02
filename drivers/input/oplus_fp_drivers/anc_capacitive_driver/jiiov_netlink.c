@@ -58,7 +58,7 @@ static int netlink_send_message(const char *p_buffer, uint16_t length)
     return ret;
 }
 
-int netlink_send_message_to_user(const char *p_buffer, size_t length)
+int anc_cap_netlink_send_message_to_user(const char *p_buffer, size_t length)
 {
     int ret = -1;
 
@@ -84,7 +84,7 @@ static void netlink_receive_message(struct sk_buff *p_sk_buffer)
         if(p_user_message)
         {
             printk("received message:%s, length:%lu\n", p_user_message, strlen(p_user_message));
-            netlink_send_message_to_user(p_user_message, strlen(p_user_message));
+            anc_cap_netlink_send_message_to_user(p_user_message, strlen(p_user_message));
         }
     }
 }
@@ -93,7 +93,7 @@ static struct netlink_kernel_cfg g_netlink_kernel_config = {
     .input  = netlink_receive_message, /* set recv callback */
 };
 
-int anc_netlink_init(void)
+int anc_cap_netlink_init(void)
 {
     /* create netlink socket */
     gp_netlink_sock = (struct sock *)netlink_kernel_create(&init_net, NETLINK_ANC, &g_netlink_kernel_config);
@@ -102,17 +102,17 @@ int anc_netlink_init(void)
         printk("netlink_kernel_create error !\n");
         return -1;
     }
-    printk("anc_netlink_init\n");
+    printk("anc_cap_netlink_init\n");
 
     return 0;
 }
 
-void anc_netlink_exit(void)
+void anc_cap_netlink_exit(void)
 {
     if (NULL != gp_netlink_sock)
     {
         netlink_kernel_release(gp_netlink_sock); /* release ..*/
         gp_netlink_sock = NULL;
     }
-    printk("anc_netlink_exit!\n");
+    printk("anc_cap_netlink_exit!\n");
 }

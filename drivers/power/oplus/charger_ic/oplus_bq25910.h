@@ -13,7 +13,12 @@
 #include <linux/power_supply.h>
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 #ifndef CONFIG_OPLUS_CHARGER_MTK6779R
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include <mt-plat/charger_type.h>
+#else
+#include <mt-plat/v1/charger_type.h>
+#endif
 #endif
 #else /* CONFIG_OPLUS_CHARGER_MTK */
 

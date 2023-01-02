@@ -198,6 +198,7 @@ enum vadc_scale_fn_type {
 	SCALE_HW_CALIB_PM2250_S3_DIE_TEMP,
 	SCALE_HW_CALIB_THERM_100K_PU_PM7,
 	SCALE_HW_CALIB_PMIC_THERM_PM7,
+	SCALE_BATT_THERM_QRD_215,
 	SCALE_HW_CALIB_MAX,
 };
 
@@ -207,6 +208,9 @@ struct adc_data {
 	const struct adc_channels *adc_chans;
 	unsigned int	*decimation;
 	unsigned int	*hw_settle;
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	int  battemp_for_adc;
+#endif
 };
 
 int qcom_vadc_scale(enum vadc_scale_fn_type scaletype,

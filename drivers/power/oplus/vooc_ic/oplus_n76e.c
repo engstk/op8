@@ -7,6 +7,7 @@
 
 #include <linux/uaccess.h>
 #include <linux/proc_fs.h>
+#include <linux/version.h>
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 #include <linux/interrupt.h>
 #include <linux/i2c.h>
@@ -20,14 +21,18 @@
 #include <linux/platform_device.h>
 #include <asm/atomic.h>
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 #include <linux/xlog.h>
+#endif
 //#include <upmu_common.h>
 //#include <mt-plat/mtk_gpio.h>
 #include <linux/dma-mapping.h>
 
 //#include <mt-plat/battery_meter.h>
 #include <linux/module.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
+#endif
 
 #else
 #include <linux/i2c.h>
@@ -46,7 +51,9 @@
 #include <linux/regulator/driver.h>
 #include <linux/regulator/of_regulator.h>
 #include <linux/regulator/machine.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
+#endif
 #endif
 #include "oplus_vooc_fw.h"
 
@@ -527,6 +534,7 @@ struct oplus_vooc_operations oplus_n76e_ops = {
 
 static void register_vooc_devinfo(void)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int ret = 0;
 	char *version;
 	char *manufacture;
@@ -538,6 +546,7 @@ static void register_vooc_devinfo(void)
 	if (ret) {
 		chg_err(" fail\n");
 	}
+#endif
 }
 
 static void n76e_shutdown(struct i2c_client *client)

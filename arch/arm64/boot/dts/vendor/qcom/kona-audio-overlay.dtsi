@@ -38,6 +38,7 @@
 					"lpass_audio_hw_vote";
 			clocks = <&lpass_core_hw_vote 0>,
 					<&lpass_audio_hw_vote 0>;
+			qcom,swr-master-version = <0x01050001>;
 			qcom,swr_master_id = <3>;
 			qcom,mipi-sdw-block-packing-mode = <1>;
 			swrm-io-base = <0x3230000 0x0>;
@@ -82,6 +83,7 @@
 					"lpass_audio_hw_vote";
 			clocks = <&lpass_core_hw_vote 0>,
 					<&lpass_audio_hw_vote 0>;
+			qcom,swr-master-version = <0x01050001>;
 			qcom,swr_master_id = <2>;
 			qcom,mipi-sdw-block-packing-mode = <1>;
 			swrm-io-base = <0x3210000 0x0>;
@@ -120,6 +122,7 @@
 					"lpass_audio_hw_vote";
 			clocks = <&lpass_core_hw_vote 0>,
 					<&lpass_audio_hw_vote 0>;
+			qcom,swr-master-version = <0x01050001>;
 			qcom,swr_master_id = <1>;
 			qcom,mipi-sdw-block-packing-mode = <0>;
 			swrm-io-base = <0x3250000 0x0>;
@@ -200,9 +203,7 @@
 		qcom,cdc-vdd-mic-bias-current = <30000>;
 
 		qcom,cdc-micbias1-mv = <1800>;
-		/* #ifdef OPLUS_ARCH_EXTENDS */
-		qcom,cdc-micbias2-mv = <2700>;
-		/* #endif OPLUS_ARCH_EXTENDS */
+		qcom,cdc-micbias2-mv = <1800>;
 		qcom,cdc-micbias3-mv = <1800>;
 		qcom,cdc-micbias4-mv = <1800>;
 
@@ -216,60 +217,32 @@
 
 &kona_snd {
 	qcom,model = "kona-mtp-snd-card";
-	/* #ifndef OPLUS_ARCH_EXTENDS */
-	/*
 	qcom,msm-mi2s-master = <1>, <1>, <1>, <1>, <1>, <1>;
-	*/
-	qcom,msm-mi2s-master = <0>, <1>, <1>, <1>, <1>, <1>;
-	qcom,msm-mi2s-ext-mclk = <1>, <0>, <0>, <0>, <0>, <0>;
-	/* #endif OPLUS_ARCH_EXTENDS */
 	qcom,wcn-bt = <1>;
 	qcom,ext-disp-audio-rx = <1>;
 	qcom,audio-routing =
-		/* #ifdef OPLUS_ARCH_EXTENDS */
-		//"AMIC1", "MIC BIAS1",
-		//"MIC BIAS1", "Analog Mic1",
+		"AMIC1", "MIC BIAS1",
+		"MIC BIAS1", "Analog Mic1",
 		"AMIC2", "MIC BIAS2",
 		"MIC BIAS2", "Analog Mic2",
-		//"AMIC3", "MIC BIAS3",
-		//"MIC BIAS3", "Analog Mic3",
-		//"AMIC4", "MIC BIAS3",
-		//"MIC BIAS3", "Analog Mic4",
-		//"AMIC5", "MIC BIAS4",
-		//"MIC BIAS4", "Analog Mic5",
-		//"TX DMIC0", "MIC BIAS3",
-		"TX DMIC0", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic0",
+		"AMIC3", "MIC BIAS3",
+		"MIC BIAS3", "Analog Mic3",
+		"AMIC4", "MIC BIAS3",
+		"MIC BIAS3", "Analog Mic4",
+		"AMIC5", "MIC BIAS4",
+		"MIC BIAS4", "Analog Mic5",
+		"TX DMIC0", "MIC BIAS3",
+		"MIC BIAS3", "Digital Mic0",
 		"TX DMIC1", "MIC BIAS3",
 		"MIC BIAS3", "Digital Mic1",
-		//"TX DMIC2", "MIC BIAS1",
-		"TX DMIC2", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic2",
-		//"TX DMIC3", "MIC BIAS1",
-		"TX DMIC3", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic3",
-		/* #endif OPLUS_ARCH_EXTENDS */
+		"TX DMIC2", "MIC BIAS1",
+		"MIC BIAS1", "Digital Mic2",
+		"TX DMIC3", "MIC BIAS1",
+		"MIC BIAS1", "Digital Mic3",
 		"TX DMIC4", "MIC BIAS4",
 		"MIC BIAS4", "Digital Mic4",
 		"TX DMIC5", "MIC BIAS4",
 		"MIC BIAS4", "Digital Mic5",
-		//#ifdef OPLUS_ARCH_EXTENDS
-		//main mic, bias1
-		"DMIC1", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic0",
-		"DMIC2", "MIC BIAS1",
-		"MIC BIAS1", "Digital Mic1",
-		//sec mic, bias3
-		"DMIC3", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic2",
-		"DMIC4", "MIC BIAS3",
-		"MIC BIAS3", "Digital Mic3",
-		//anc mic, bias4
-		"DMIC5", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic4",
-		"DMIC6", "MIC BIAS4",
-		"MIC BIAS4", "Digital Mic5",
-		//#endif /* OPLUS_ARCH_EXTENDS */
 		"IN1_HPHL", "HPHL_OUT",
 		"IN2_HPHR", "HPHR_OUT",
 		"IN3_AUX", "AUX_OUT",
@@ -338,25 +311,10 @@
 	qcom,cdc-dmic01-gpios = <&cdc_dmic01_gpios>;
 	qcom,cdc-dmic23-gpios = <&cdc_dmic23_gpios>;
 	qcom,cdc-dmic45-gpios = <&cdc_dmic45_gpios>;
-
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	qcom,tert-mi2s-gpios = <&cdc_tert_mi2s_gpios>;
-	/* #endif OPLUS_ARCH_EXTENDS */
 	asoc-codec  = <&stub_codec>, <&bolero>, <&ext_disp_audio_codec>;
 	asoc-codec-names = "msm-stub-codec.1", "bolero_codec",
 			   "msm-ext-disp-audio-codec-rx";
-
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	qcom,msm-mbhc-hs-mic-max-threshold-mv = <2600>;
-	qcom,msm-mbhc-hs-mic-min-threshold-mv = <75>;
-	oplus,mbhc-check-cross-conn = <0>;
-        qcom,msm-mbhc-usbc-audio-supported = <1>;
-	/* #endif OPLUS_ARCH_EXTENDS */
-
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	qcom,wsa-max-devs = <0>;
-	oplus,speaker-pa = "maxim";
-	/* #endif OPLUS_ARCH_EXTENDS */
+	qcom,wsa-max-devs = <2>;
 	qcom,wsa-devs = <&wsa881x_0211>, <&wsa881x_0212>,
 			<&wsa881x_0213>, <&wsa881x_0214>;
 	qcom,wsa-aux-dev-prefix = "SpkrLeft", "SpkrRight",
@@ -424,29 +382,20 @@
 };
 
 &soc {
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	cdc_tert_mi2s_gpios: msm_cdc_pinctrl_tert{
-		compatible = "qcom,msm-cdc-pinctrl";
-		pinctrl-names = "aud_active", "aud_sleep";
-		pinctrl-0 = <&tert_mi2s_sck_active &tert_mi2s_ws_active &tert_mi2s_sd0_active &tert_mi2s_sd1_active>;
-		pinctrl-1 = <&tert_mi2s_sck_sleep &tert_mi2s_ws_sleep &tert_mi2s_sd0_sleep &tert_mi2s_sd1_sleep>;
-	};
-	/* #endif OPLUS_ARCH_EXTENDS */
-
 	wsa_spkr_en1: wsa_spkr_en1_pinctrl {
 		compatible = "qcom,msm-cdc-pinctrl";
 		pinctrl-names = "aud_active", "aud_sleep";
 		pinctrl-0 = <&spkr_1_sd_n_active>;
 		pinctrl-1 = <&spkr_1_sd_n_sleep>;
 	};
-	/* #ifdef OPLUS_ARCH_EXTENDS */
+
 	wsa_spkr_en2: wsa_spkr_en2_pinctrl {
 		compatible = "qcom,msm-cdc-pinctrl";
-		//pinctrl-names = "aud_active", "aud_sleep";
-		//pinctrl-0 = <&spkr_2_sd_n_active>;
-		//pinctrl-1 = <&spkr_2_sd_n_sleep>;
+		pinctrl-names = "aud_active", "aud_sleep";
+		pinctrl-0 = <&spkr_2_sd_n_active>;
+		pinctrl-1 = <&spkr_2_sd_n_sleep>;
 	};
-	/* #endif OPLUS_ARCH_EXTENDS */
+
 	wcd938x_rst_gpio: msm_cdc_pinctrl@32 {
 		compatible = "qcom,msm-cdc-pinctrl";
 		pinctrl-names = "aud_active", "aud_sleep";

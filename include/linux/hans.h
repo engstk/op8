@@ -26,6 +26,8 @@
 #define INTERFACETOKEN_BUFF_SIZE (140)
 #define PARCEL_OFFSET (16) // sync with the writeInterfaceToken
 #define CPUCTL_VERSION (2)
+#define CHECK_KERN_SUPPORT_CGRPV2 (-8000)
+#define HANS_USE_CGRPV2 (-99)
 
 /* hans_message for comunication with HANS native deamon
  * type: async binder/sync binder/signal/pkg/loopback
@@ -77,9 +79,13 @@ enum pkg_cmd {
 };
 
 //Check if the thread group is frozen
+static inline bool is_jobctl_frozen(struct task_struct *task)
+{
+        return ((task->jobctl & JOBCTL_TRAP_FREEZE) != 0);
+}
 static inline bool is_frozen_tg(struct task_struct* task)
 {
-	return (freezing(task->group_leader) || frozen(task->group_leader));
+	return ((cgroup_task_frozen(task) && is_jobctl_frozen(task)) || frozen(task->group_leader) || freezing(task->group_leader));
 }
 
 int hans_report(enum message_type type, int caller_pid, int caller_uid, int target_pid, int target_uid, const char *rpc_name, int code);

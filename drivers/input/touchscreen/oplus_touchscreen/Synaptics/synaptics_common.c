@@ -292,7 +292,7 @@ void synaptics_print_limit_v3(struct seq_file *s, struct touchpanel_data *ts, co
 
     for (m = 0; m < item_cnt; m++) {
         item_head = (struct syna_test_item_header *)(fw->data + p_item_offset[m]);
-        if (item_head->item_magic != Limit_ItemMagic) {
+        if (item_head->item_magic != Limit_ItemMagic && item_head->item_magic != Limit_ItemMagic_V2) {
             seq_printf(s, "item: %d limit data has some problem\n", item_head->item_bit);
             continue;
         }
@@ -328,7 +328,10 @@ void synaptics_print_limit_v3(struct seq_file *s, struct touchpanel_data *ts, co
                     }
                     seq_printf(s, "\n");
                 }
-            } else if((item_head->item_bit == TYPE_HYBRIDRAW_CAP) || (item_head->item_bit == TYPE_HYBRIDABS_DIFF_CBC) || (item_head->item_bit == TYPE_HYBRIDABS_NOSIE)){
+            } else if((item_head->item_bit == TYPE_HYBRIDRAW_CAP) 
+            	|| (item_head->item_bit == TYPE_HYBRIDRAW_CAP_WITH_AD)
+				|| (item_head->item_bit == TYPE_HYBRIDABS_DIFF_CBC)
+				|| (item_head->item_bit == TYPE_HYBRIDABS_NOSIE)) {
                 p_data32 = (int32_t *)(fw->data + item_head->top_limit_offset);
                 seq_printf(s, "top data: \n");
                 for (i = 0; i < ts->hw_res.TX_NUM + ts->hw_res.RX_NUM; i++) {
@@ -389,7 +392,7 @@ void synaptics_limit_read(struct seq_file *s, struct touchpanel_data *ts)
     p_firstitem_offset = (uint32_t *)(fw->data + sizeof(struct test_header_new));
     if (ph->magic1 == Limit_MagicNum1 && ph->magic2 == Limit_MagicNum2 && (fw->size >= *p_firstitem_offset+sizeof(uint32_t))) {
         p_firstitem = (uint32_t *)(fw->data + *p_firstitem_offset);
-        if (*p_firstitem == Limit_ItemMagic) {
+        if (*p_firstitem == Limit_ItemMagic || *p_firstitem == Limit_ItemMagic_V2) {
             synaptics_print_limit_v3(s, ts, fw);
             release_firmware(fw);
             return;
@@ -456,14 +459,16 @@ static int tp_auto_test_read_func(struct seq_file *s, void *v)
     //step2: create a file to store test data in /sdcard/Tp_Test
     getnstimeofday(&now_time);
     rtc_time_to_tm(now_time.tv_sec, &rtc_now_time);
-    sprintf(data_buf, "/sdcard/tp_testlimit_%02d%02d%02d-%02d%02d%02d-utc.csv",
+	sprintf(data_buf, "/sdcard/TpTestReport/tp_testlimit_%02d%02d%02d-%02d%02d%02d-utc.csv",
             (rtc_now_time.tm_year + 1900) % 100, rtc_now_time.tm_mon + 1, rtc_now_time.tm_mday,
             rtc_now_time.tm_hour, rtc_now_time.tm_min, rtc_now_time.tm_sec);
     old_fs = get_fs();
     set_fs(KERNEL_DS);
 #ifdef CONFIG_ARCH_HAS_SYSCALL_WRAPPER
+	ksys_mkdir("/sdcard/TpTestReport", 0666);
     fd = ksys_open(data_buf, O_WRONLY | O_CREAT | O_TRUNC, 0);
 #else
+	sys_mkdir("/sdcard/TpTestReport", 0666);
     fd = sys_open(data_buf, O_WRONLY | O_CREAT | O_TRUNC, 0);
 #endif /*CONFIG_ARCH_HAS_SYSCALL_WRAPPER*/
     if (fd < 0) {

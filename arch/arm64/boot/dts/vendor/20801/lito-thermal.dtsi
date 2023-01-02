@@ -100,19 +100,19 @@
        shell_front {
                polling-delay-passive = <0>;
                polling-delay = <0>;
-               compatible = "oplus,shell-temp";
+               compatible = "oneplus,shell-temp";
        };
 
        shell_frame {
                polling-delay-passive = <0>;
                polling-delay = <0>;
-               compatible = "oplus,shell-temp";
+               compatible = "oneplus,shell-temp";
        };
 
        shell_back {
                polling-delay-passive = <0>;
                polling-delay = <0>;
-               compatible = "oplus,shell-temp";
+               compatible = "oneplus,shell-temp";
        };
 };
 

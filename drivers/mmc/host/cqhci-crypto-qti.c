@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2020, Linux Foundation. All rights reserved.
+ * Copyright (c) 2020-2021, Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -39,6 +39,7 @@ static struct cqhci_host_crypto_variant_ops cqhci_crypto_qti_variant_ops = {
 	.debug = cqhci_crypto_qti_debug,
 	.reset = cqhci_crypto_qti_reset,
 	.prepare_crypto_desc = cqhci_crypto_qti_prep_desc,
+	.recovery_finish = cqhci_crypto_qti_recovery_finish,
 };
 
 static atomic_t keycache;
@@ -105,9 +106,24 @@ static int cqhci_crypto_qti_keyslot_program(struct keyslot_manager *ksm,
 	int err = 0;
 	u8 data_unit_mask;
 	int crypto_alg_id;
+	struct sdhci_host *sdhci = mmc_priv(host->mmc);
+	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(sdhci);
+	struct sdhci_msm_host *msm_host = pltfm_host->priv;
 
 	crypto_alg_id = cqhci_crypto_cap_find(host, key->crypto_mode,
 					       key->data_unit_size);
+
+	if (!IS_ERR(msm_host->pclk) && !IS_ERR(msm_host->ice_clk)) {
+		err = clk_prepare_enable(msm_host->pclk);
+		if (err)
+			return err;
+		err = clk_prepare_enable(msm_host->ice_clk);
+		if (err)
+			return err;
+	} else {
+		pr_err("%s: Invalid clock value\n", __func__);
+		return -EINVAL;
+	}
 
 	pm_runtime_get_sync(&host->mmc->card->dev);
 
@@ -131,6 +147,8 @@ static int cqhci_crypto_qti_keyslot_program(struct keyslot_manager *ksm,
 	if (err)
 		pr_err("%s: failed with error %d\n", __func__, err);
 
+	clk_disable_unprepare(msm_host->pclk);
+	clk_disable_unprepare(msm_host->ice_clk);
 	pm_runtime_put_sync(&host->mmc->card->dev);
 	return err;
 }
@@ -142,6 +160,21 @@ static int cqhci_crypto_qti_keyslot_evict(struct keyslot_manager *ksm,
 	int err = 0;
 	int val = 0;
 	struct cqhci_host *host = keyslot_manager_private(ksm);
+	struct sdhci_host *sdhci = mmc_priv(host->mmc);
+	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(sdhci);
+	struct sdhci_msm_host *msm_host = pltfm_host->priv;
+
+	if (!IS_ERR(msm_host->pclk) && !IS_ERR(msm_host->ice_clk)) {
+		err = clk_prepare_enable(msm_host->pclk);
+		if (err)
+			return err;
+		err = clk_prepare_enable(msm_host->ice_clk);
+		if (err)
+			return err;
+	} else {
+		pr_err("%s: Invalid clock value\n", __func__);
+		return -EINVAL;
+	}
 	pm_runtime_get_sync(&host->mmc->card->dev);
 
 	if (!cqhci_is_crypto_enabled(host) ||
@@ -154,6 +187,8 @@ static int cqhci_crypto_qti_keyslot_evict(struct keyslot_manager *ksm,
 	if (err)
 		pr_err("%s: failed with error %d\n", __func__, err);
 
+	clk_disable_unprepare(msm_host->pclk);
+	clk_disable_unprepare(msm_host->ice_clk);
 	pm_runtime_put_sync(&host->mmc->card->dev);
 	val = atomic_read(&keycache) & ~(1 << slot);
 	atomic_set(&keycache, val);
@@ -290,7 +325,8 @@ int cqhci_crypto_qti_init_crypto(struct cqhci_host *host,
 	if (!cqhci_ice_memres) {
 		pr_debug("%s ICE not supported\n", __func__);
 		host->icemmio = NULL;
-		return PTR_ERR(cqhci_ice_memres);
+		host->caps &= ~CQHCI_CAP_CRYPTO_SUPPORT;
+		return err;
 	}
 
 	host->icemmio = devm_ioremap(&msm_host->pdev->dev,
@@ -370,6 +406,9 @@ int cqhci_crypto_qti_prep_desc(struct cqhci_host *host, struct mmc_request *mrq,
 	if (!(atomic_read(&keycache) & (1 << bc->bc_keyslot))) {
 		if (bc->is_ext4)
 			cmdq_use_default_du_size = true;
+		else
+			cmdq_use_default_du_size = false;
+
 		ret = cqhci_crypto_qti_keyslot_program(host->ksm, bc->bc_key,
 						       bc->bc_keyslot);
 		if (ret) {
@@ -406,4 +445,10 @@ void cqhci_crypto_qti_set_vops(struct cqhci_host *host)
 int cqhci_crypto_qti_resume(struct cqhci_host *host)
 {
 	return crypto_qti_resume(host->crypto_vops->priv);
+}
+
+int cqhci_crypto_qti_recovery_finish(struct cqhci_host *host)
+{
+	keyslot_manager_reprogram_all_keys(host->ksm);
+	return 0;
 }

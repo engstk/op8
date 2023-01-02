@@ -664,7 +664,7 @@ acm_bind(struct usb_configuration *c, struct usb_function *f)
 	/* allocate notification */
 	acm->notify_req = gs_alloc_req(ep,
 			sizeof(struct usb_cdc_notification) + 2,
-			GFP_KERNEL);
+			cdev->gadget->extra_buf_alloc, GFP_KERNEL);
 	if (!acm->notify_req)
 		goto fail;
 
@@ -684,7 +684,7 @@ acm_bind(struct usb_configuration *c, struct usb_function *f)
 	acm_ss_out_desc.bEndpointAddress = acm_fs_out_desc.bEndpointAddress;
 
 	status = usb_assign_descriptors(f, acm_fs_function, acm_hs_function,
-			acm_ss_function, NULL);
+			acm_ss_function, acm_ss_function);
 	if (status)
 		goto fail;
 

@@ -1799,7 +1799,9 @@ static void set_usbswitch_to_rxtx(struct oplus_chg_chip *chip)
 	//}
 
 	gpio_direction_output(chip->normalchg_gpio.chargerid_switch_gpio, 1);
+	mutex_lock(&chip->normalchg_gpio.pinctrl_mutex);
 	ret = pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.charger_gpio_as_output2);
+	mutex_unlock(&chip->normalchg_gpio.pinctrl_mutex);
 	if (ret < 0) {
 		chg_err("failed to set pinctrl int\n");
 	}
@@ -1817,7 +1819,9 @@ static void set_usbswitch_to_dpdm(struct oplus_chg_chip *chip)
 	}
 
 	gpio_direction_output(chip->normalchg_gpio.chargerid_switch_gpio, 0);
+	mutex_lock(&chip->normalchg_gpio.pinctrl_mutex);
 	ret = pinctrl_select_state(chip->normalchg_gpio.pinctrl, chip->normalchg_gpio.charger_gpio_as_output1);
+	mutex_unlock(&chip->normalchg_gpio.pinctrl_mutex);
 	if (ret < 0) {
 		chg_err("failed to set pinctrl int\n");
 		return;
@@ -1949,8 +1953,10 @@ static int oplus_usb_switch_gpio_gpio_init(void)
 		return -EINVAL;
 	}
 
+	mutex_lock(&chip->normalchg_gpio.pinctrl_mutex);
 	pinctrl_select_state(chip->normalchg_gpio.pinctrl,
 			chip->normalchg_gpio.charger_gpio_as_output1);
+	mutex_unlock(&chip->normalchg_gpio.pinctrl_mutex);
 
 	return 0;
 }
@@ -2899,14 +2905,6 @@ void oplus_chg_set_camera_on(bool val)
 EXPORT_SYMBOL(oplus_chg_set_camera_on);
 #endif
 /**********************************************************************/
-//lizijie add for temp compile
-#ifdef OPLUS_FEATURE_CHG_BASIC
-/*lizhijie temp add*/
-enum boot_reason_t get_boot_reason(void)
-{
-	return BR_UNKNOWN;
-}
-#endif
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
 int msm_drm_register_client(struct notifier_block *nb)
@@ -2918,11 +2916,6 @@ int msm_drm_unregister_client(struct notifier_block *nb)
 	return 0;
 }
 #endif /*OPLUS_FEATURE_CHG_BASIC*/
-
-bool is_meta_mode(void)
-{
-	return false;
-}
 
 void mt_usb_connect(void)
 {

@@ -113,7 +113,7 @@ static ssize_t cable_read_proc(struct file *file, char __user *buf, size_t count
 
     rf_data->the_rf_format->rf_cable_sts = rf_data->rf_cable_sts;
 
-    len += sprintf(&page[len], "%d,%d,%d,%d\n",
+	len += sprintf(&page[len], "%hhu,%hhu,%hhu,%hhu\n",
                    rf_data->the_rf_format->rf_cable_gpio_sts[0],
                    rf_data->the_rf_format->rf_cable_gpio_sts[1],
                    rf_data->the_rf_format->rf_cable_gpio_sts[2],
@@ -154,7 +154,7 @@ static ssize_t pds_read_proc(struct file *file, char __user *buf, size_t count, 
         rf_data->the_rf_format->rf_pds_sts = rf_data->rf_pds_sts;
     }
 
-    len += sprintf(&page[len], "%d,%d,%d,%d\n",
+	len += sprintf(&page[len], "%hhu,%hhu,%hhu,%hhu\n",
                    rf_data->the_rf_format->rf_pds_gpio_sts[0],
                    rf_data->the_rf_format->rf_pds_gpio_sts[1],
                    rf_data->the_rf_format->rf_pds_gpio_sts[2],

@@ -496,12 +496,12 @@ static int usb_func_wakeup_int(struct usb_function *func)
 	int ret;
 	struct usb_gadget *gadget;
 
-	pr_debug("%s - %s function wakeup\n",
-		__func__, func->name ? func->name : "");
-
 	if (!func || !func->config || !func->config->cdev ||
 		!func->config->cdev->gadget)
 		return -EINVAL;
+
+	pr_debug("%s - %s function wakeup\n",
+		__func__, func->name ? func->name : "");
 
 	gadget = func->config->cdev->gadget;
 	if ((gadget->speed != USB_SPEED_SUPER) || !func->func_wakeup_allowed) {
@@ -518,10 +518,19 @@ static int usb_func_wakeup_int(struct usb_function *func)
 	return ret;
 }
 
+/**
+ * usb_func_wakeup - wakes up a composite device function.
+ * @func: composite device function to wake up.
+ *
+ * Returns 0 on success or a negative error value.
+ */
 int usb_func_wakeup(struct usb_function *func)
 {
 	int ret;
 	unsigned long flags;
+
+	if (!func || !func->config || !func->config->cdev)
+		return -EINVAL;
 
 	pr_debug("%s function wakeup\n",
 		func->name ? func->name : "");
@@ -542,8 +551,20 @@ int usb_func_wakeup(struct usb_function *func)
 	spin_unlock_irqrestore(&func->config->cdev->lock, flags);
 	return ret;
 }
-EXPORT_SYMBOL(usb_func_wakeup);
+EXPORT_SYMBOL_GPL(usb_func_wakeup);
 
+/**
+ * usb_func_ep_queue - queues (submits) an I/O request to a function endpoint.
+ * This function is similar to the usb_ep_queue function, but in addition it
+ * also checks whether the function is in Super Speed USB Function Suspend
+ * state, and if so a Function Wake notification is sent to the host
+ * (USB 3.0 spec, section 9.2.5.2).
+ * @func: the function which issues the USB I/O request.
+ * @ep:the endpoint associated with the request
+ * @req:the request being submitted
+ * @gfp_flags: GFP_* flags to use in case the lower level driver couldn't
+ * pre-allocate all necessary memory with the request.
+ */
 int usb_func_ep_queue(struct usb_function *func, struct usb_ep *ep,
 			       struct usb_request *req, gfp_t gfp_flags)
 {
@@ -564,10 +585,10 @@ int usb_func_ep_queue(struct usb_function *func, struct usb_ep *ep,
 		ret = usb_gadget_func_wakeup(gadget, func->intf_id);
 		if (ret == -EAGAIN) {
 			pr_debug("bus suspended func wakeup for %s delayed until bus resume.\n",
-				func->name ? func->name : "");
+				 func->name ? func->name : "");
 		} else if (ret < 0 && ret != -ENOTSUPP) {
 			pr_err("Failed to wake function %s from suspend state. ret=%d.\n",
-				func->name ? func->name : "", ret);
+			       func->name ? func->name : "", ret);
 		}
 		goto done;
 	}
@@ -584,14 +605,14 @@ int usb_func_ep_queue(struct usb_function *func, struct usb_ep *ep,
 done:
 	return ret;
 }
-EXPORT_SYMBOL(usb_func_ep_queue);
+EXPORT_SYMBOL_GPL(usb_func_ep_queue);
 
 static u8 encode_bMaxPower(enum usb_device_speed speed,
 		struct usb_configuration *c)
 {
 	unsigned val;
 
-	if (c->MaxPower)
+	if (c->MaxPower || (c->bmAttributes & USB_CONFIG_ATT_SELFPOWER))
 		val = c->MaxPower;
 	else
 		val = CONFIG_USB_GADGET_VBUS_DRAW;
@@ -1010,7 +1031,11 @@ static int set_config(struct usb_composite_dev *cdev,
 	}
 
 	/* when we return, be sure our power usage is valid */
-	power = c->MaxPower ? c->MaxPower : CONFIG_USB_GADGET_VBUS_DRAW;
+	if (c->MaxPower || (c->bmAttributes & USB_CONFIG_ATT_SELFPOWER))
+		power = c->MaxPower;
+	else
+		power = CONFIG_USB_GADGET_VBUS_DRAW;
+
 	if (gadget->speed < USB_SPEED_SUPER)
 		power = min(power, 500U);
 	else
@@ -1196,7 +1221,7 @@ static void collect_langs(struct usb_gadget_strings **sp, __le16 *buf)
 	while (*sp) {
 		s = *sp;
 		language = cpu_to_le16(s->language);
-		for (tmp = buf; *tmp && tmp < &buf[126]; tmp++) {
+		for (tmp = buf; *tmp && tmp < &buf[USB_MAX_STRING_LEN]; tmp++) {
 			if (*tmp == language)
 				goto repeat;
 		}
@@ -1271,7 +1296,7 @@ static int get_string(struct usb_composite_dev *cdev,
 			collect_langs(sp, s->wData);
 		}
 
-		for (len = 0; len <= 126 && s->wData[len]; len++)
+		for (len = 0; len <= USB_MAX_STRING_LEN && s->wData[len]; len++)
 			continue;
 		if (!len)
 			return -EINVAL;
@@ -1844,8 +1869,10 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 				value = min(w_length, (u16) value);
 			break;
 		case USB_DT_STRING:
+			spin_lock(&cdev->lock);
 			value = get_string(cdev, req->buf,
 					w_index, w_value & 0xff);
+			spin_unlock(&cdev->lock);
 			if (value >= 0)
 				value = min(w_length, (u16) value);
 			break;
@@ -2349,6 +2376,11 @@ int composite_dev_prepare(struct usb_composite_driver *composite,
 	 * drivers will zero ep->driver_data.
 	 */
 	usb_ep_autoconfig_reset(gadget);
+	/*
+	 * Reset deactivations as it is not possible to synchronize
+	 * between bind/unbind and open/close by user space application.
+	 */
+	cdev->deactivations = 0;
 	return 0;
 fail_dev:
 	kfree(cdev->req->buf);

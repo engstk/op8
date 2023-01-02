@@ -1,0 +1,4 @@
+config TOUCHPANEL_FOCAL_FT3518
+	bool "TP Focal_FT3518 IC enable or not for OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel using Focal FT3518

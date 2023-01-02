@@ -109,6 +109,7 @@ typedef union {
  * @rx.dev.priv_cb_m.packet_buf_pool:  packet buff bool
  * @rx.dev.priv_cb_m.l3_hdr_pad: L3 header padding offset
  * @rx.dev.priv_cb_m.exc_frm: exception frame
+ * @rx.dev.priv_cb_m.reo_dest_ind: reo destination indication
  * @rx.dev.priv_cb_m.ipa_smmu_map: do IPA smmu map
  * @rx.dev.priv_cb_m.tcp_seq_num: TCP sequence number
  * @rx.dev.priv_cb_m.tcp_ack_num: TCP ACK number
@@ -229,8 +230,9 @@ struct qdf_nbuf_cb {
 						 l3_hdr_pad:8,
 						 /* exception frame flag */
 						 exc_frm:1,
+						 reo_dest_ind:5,
 						 ipa_smmu_map:1,
-						 reserved1:14;
+						 reserved1:9;
 					uint32_t tcp_seq_num;
 					uint32_t tcp_ack_num;
 					union {

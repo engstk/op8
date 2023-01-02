@@ -1,32 +1,116 @@
 
 &tlmm {
 		/* #ifdef OPLUS_ARCH_EXTENDS */
-		mi2s_0_pins: mi2s_0_pins {
-			mi2s_0_active: mi2s_0_active {
-				mux {
-					pins = "gpio88", "gpio89", "gpio90", "gpio91";
-					function = "mi2s_0";
+		mi2s_2_sck_active: mi2s_2_sck_active {
+			mux {
+					pins = "gpio72";
+					function = "mi2s_2";
 				};
 
 				config {
-					pins = "gpio88", "gpio89", "gpio90", "gpio91";
-					drive-strength = <6>;
+					pins = "gpio72";
+					drive-strength = <8>;	/* 8 mA */
 					bias-disable;
+					output-high;
 				};
-			};
+		};
 
-			mi2s_0_sleep: mi2s_0_sleep {
-				mux {
-					pins = "gpio88", "gpio89", "gpio90", "gpio91";
-					function = "gpio";
+		mi2s_2_sck_sleep: mi2s_2_sck_sleep {
+			mux {
+					pins = "gpio72";
+					function = "mi2s_2";
 				};
 
 				config {
-					pins = "gpio88", "gpio89", "gpio90", "gpio91";
-					drive-strength = <2>;
-					bias-pull-down;
+					pins = "gpio72";
+					drive-strength = <2>;	/* 2 mA */
+					bias-disable;
+					output-high;
 				};
-			};
+		};
+
+		mi2s_2_ws_active: mi2s_2_ws_active {
+			mux {
+					pins = "gpio74";
+					function = "mi2s_2";
+				};
+
+				config {
+					pins = "gpio74";
+					drive-strength = <8>;	/* 8 mA */
+					bias-disable;
+					output-high;
+				};
+		};
+
+		mi2s_2_ws_sleep: mi2s_2_ws_sleep {
+			mux {
+					pins = "gpio74";
+					function = "mi2s_2";
+				};
+
+				config {
+					pins = "gpio74";
+					drive-strength = <2>;	/* 8 mA */
+					bias-disable;
+					output-high;
+				};
+		};
+
+		mi2s_2_data0_active: mi2s_2_data0_active {
+			mux {
+					pins = "gpio73";
+					function = "mi2s_2";
+				};
+
+				config {
+					pins = "gpio73";
+					drive-strength = <8>;	/* 8 mA */
+					bias-disable;
+					output-high;
+				};
+		};
+
+		mi2s_2_data0_sleep: mi2s_2_data0_sleep {
+			mux {
+					pins = "gpio73";
+					function = "mi2s_2";
+				};
+
+				config {
+					pins = "gpio73";
+					drive-strength = <2>;	/* 8 mA */
+					bias-disable;
+					output-high;
+				};
+		};
+
+		mi2s_2_data1_active: mi2s_2_data1_active {
+			mux {
+					pins = "gpio60";
+					function = "mi2s_2";
+				};
+
+				config {
+					pins = "gpio60";
+					drive-strength = <8>;	/* 8 mA */
+					bias-disable;
+					output-high;
+				};
+		};
+
+		mi2s_2_data1_sleep: mi2s_2_data1_sleep {
+			mux {
+					pins = "gpio60";
+					function = "mi2s_2";
+				};
+
+				config {
+					pins = "gpio60";
+					drive-strength = <2>;	/* 8 mA */
+					bias-disable;
+					output-high;
+				};
 		};
 		//#endif /* OPLUS_ARCH_EXTENDS */
 };
@@ -38,6 +122,8 @@
 };
 
 &lagoon_snd {
+	qcom,va-bolero-codec = <1>;
+	qcom,rxtx-bolero-codec = <1>;
 	qcom,audio-routing =
 		"AMIC1", "MIC BIAS1",
 		"MIC BIAS1", "Analog Mic1",
@@ -135,7 +221,7 @@
 		"VA SWR_MIC6", "DMIC7_OUTPUT",
 		"VA SWR_MIC7", "DMIC8_OUTPUT";
 
-        qcom,pri-mi2s-gpios = <&cdc_mi2s_0_gpios>;
+        qcom,tert-mi2s-gpios = <&cdc_tert_mi2s_gpios>;
 
         qcom,wsa-max-devs = <0>;
         qcom,codec-max-aux-devs = <1>;
@@ -172,17 +258,20 @@
                 compatible = "oplus,asoc-audio";
                 //for nxp speaker
                 oplus,speaker-vendor = "nxp";
-                oplus,speaker-i2s-id = <0>;
+                oplus,speaker-i2s-id = <2>;
                 oplus,speaker-codec-name = "tfa98xx.2-0034";
                 oplus,speaker-codec-dai-name = "tfa98xx-aif-2-34";
         };
 
-        cdc_mi2s_0_gpios: msm_cdc_pinctrl {
-            compatible = "qcom,msm-cdc-pinctrl";
-            pinctrl-names = "aud_active", "aud_sleep";
-            pinctrl-0 = <&mi2s_0_active>;
-            pinctrl-1 = <&mi2s_0_sleep>;
-        };
+		cdc_tert_mi2s_gpios: msm_cdc_pinctrl_tert {
+		compatible = "qcom,msm-cdc-pinctrl";
+		status = "ok";
+		pinctrl-names = "aud_active", "aud_sleep";
+		pinctrl-0 = <&mi2s_2_sck_active &mi2s_2_ws_active
+			 &mi2s_2_data0_active &mi2s_2_data1_active>;
+		pinctrl-1 = <&mi2s_2_sck_sleep &mi2s_2_ws_sleep
+			 &mi2s_2_data0_sleep &mi2s_2_data1_sleep>;
+		};
 
         wsa_spkr_en1_pinctrl {
                 status = "disabled";
@@ -194,14 +283,18 @@
 
 &qupv3_se10_i2c {
 	status = "okay";
+#address-cells = <1>;
+#size-cells = <0>;
 	tfa98xx@34 {
+		status = "okay";
 		compatible = "nxp,tfa98xx";
 		reg = <0x34>;
-		tfa9874_vdd-supply = <&pm6350_l11>;
+		reset-gpio =<&tlmm 91 0>;
+		tfa_channel = <0>;
 		tfa_min_range = <4800>;
 		tfa_max_range = <7800>;
-		reset-gpio = <&tlmm 11 0x00>;
-		status = "okay";
+/*tfa_use_i2s: <0> pri; <1> sec; <2> tert; ...*/
+		tfa_use_i2s = <2>;
 	};
 };
 

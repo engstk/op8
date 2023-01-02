@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2009-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2009-2021, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "%s: " fmt, __func__
@@ -21,6 +21,7 @@
 #include <soc/qcom/socinfo.h>
 #include <linux/soc/qcom/smem.h>
 #include <soc/qcom/boot_stats.h>
+#include <asm/unaligned.h>
 
 #include <soc/oplus/system/oplus_project.h>
 
@@ -336,6 +337,10 @@ static struct msm_soc_info cpu_of_id[] = {
 	/* kona ID */
 	[356] = {MSM_CPU_KONA, "KONA"},
 	[455] = {MSM_CPU_KONA, "KONA"},
+	[496] = {MSM_CPU_KONA, "KONA"},
+
+	/* kona-7230-iot ID */
+	[548] = {MSM_CPU_KONA_IOT, "KONA-7230-IOT"},
 
 	/* Lito ID */
 #ifdef OPLUS_ARCH_EXTENDS
@@ -350,6 +355,19 @@ static struct msm_soc_info cpu_of_id[] = {
 	/* Bengal ID */
 	[417] = {MSM_CPU_BENGAL, "BENGAL"},
 	[444] = {MSM_CPU_BENGAL, "BENGAL"},
+
+	/* Khaje ID */
+	[518] = {MSM_CPU_KHAJE, "KHAJE"},
+	[586] = {MSM_CPU_KHAJE, "KHAJE"},
+
+	/* Khajep ID */
+	[561] = {MSM_CPU_KHAJEP, "KHAJEP"},
+
+	/* Khajeq ID */
+	[562] = {MSM_CPU_KHAJEQ, "KHAJEQ"},
+
+	/* Khajeg ID */
+	[585] = {MSM_CPU_KHAJEG, "KAHJEG"},
 
 	/* Lagoon ID */
 	[434] = {MSM_CPU_LAGOON, "LAGOON"},
@@ -372,6 +390,31 @@ static struct msm_soc_info cpu_of_id[] = {
 
 	/* BENGALP-IOT ID */
 	[470] = {MSM_CPU_BENGALP_IOT, "BENGALP-IOT"},
+
+	/* MSM8937 ID */
+	[294] = {MSM_CPU_8937, "MSM8937"},
+	[295] = {MSM_CPU_8937, "APQ8937"},
+
+	/* MSM8917 IDs */
+	[303] = {MSM_CPU_8917, "MSM8917"},
+	[307] = {MSM_CPU_8917, "APQ8017"},
+	[308] = {MSM_CPU_8917, "MSM8217"},
+	[309] = {MSM_CPU_8917, "MSM8617"},
+
+	/* SDM429 and SDM439 ID */
+	[353] = {MSM_CPU_SDM439, "SDM439"},
+	[354] = {MSM_CPU_SDM429, "SDM429"},
+
+
+	/* QM215 ID */
+	[386] = {MSM_CPU_QM215, "QM215"},
+
+	/* 8953 ID */
+	[293] = {MSM_CPU_8953, "MSM8953"},
+	[304] = {MSM_CPU_8953, "APQ8053"},
+
+	/* SDM450 ID */
+	[338] = {MSM_CPU_SDM450, "SDM450"},
 
 	/* Uninitialized IDs are not known to run Linux.
 	 * MSM_CPU_UNKNOWN is set to 0 to ensure these IDs are
@@ -435,7 +478,7 @@ char *socinfo_get_id_string(void)
 	if (!is_confidential() && (get_project() == 132700 || get_project() == 132701)){
 		return cpu_of_id_2065c.soc_id_string;
 	}
-	if ((get_project() == 21615)||(get_project() == 21619)||(get_project() == 0x2161A)||(get_project() == 0x2169A)||(get_project() == 0x2169B)) {
+	if ((get_project() == 21615)||(get_project() == 21619)||(get_project() == 0x2161A)||(get_project() == 0x2169A)||(get_project() == 0x2169B)||(get_project() == 21623)||(get_project() == 21732)||(get_project() == 21733) || (get_project() == 22671) ) {
 		return cpu_of_id_21615.soc_id_string;
 	}
 	if ((get_project() == 19811) || (get_project() == 19821) || (get_project() == 19805) || (get_project() == 19855) || (get_project() == 20809)) {
@@ -484,7 +527,7 @@ static char *msm_read_hardware_id(void)
 		ret = strlcat(msm_soc_str, cpu_of_id_2065c.soc_id_string,
 				sizeof(msm_soc_str));
 	}
-	else if ((get_project() == 21615)||(get_project() == 21619)||(get_project() == 0x2161A)||(get_project() == 0x2169A)||(get_project() == 0x2169B)) {
+	else if ((get_project() == 21615)||(get_project() == 21619)||(get_project() == 0x2161A)||(get_project() == 0x2169A)||(get_project() == 0x2169B)||(get_project() == 21623)||(get_project() == 21732)||(get_project() == 21733)||(get_project() == 22671)) {
 		ret = strlcat(msm_soc_str, cpu_of_id_21615.soc_id_string,
 				sizeof(msm_soc_str));
 	}
@@ -921,6 +964,42 @@ msm_get_ncluster_array_offset(struct device *dev,
 		socinfo_get_ncluster_array_offset());
 }
 
+uint32_t
+socinfo_get_cluster_info(enum defective_cluster_type cluster)
+{
+	uint32_t def_cluster, num_cluster, offset;
+	void *cluster_val;
+	void *info = socinfo;
+
+	if (cluster >= NUM_CLUSTERS_MAX) {
+		pr_err("Bad cluster\n");
+		return -EINVAL;
+	}
+
+	num_cluster = socinfo_get_num_clusters();
+	offset = socinfo_get_ncluster_array_offset();
+
+	if (!num_cluster || !offset)
+		return -EINVAL;
+
+	info += offset;
+	cluster_val = info + (sizeof(uint32_t) * cluster);
+	def_cluster = get_unaligned_le32(cluster_val);
+
+	return def_cluster;
+}
+EXPORT_SYMBOL(socinfo_get_cluster_info);
+
+static ssize_t
+msm_get_defective_cores(struct device *dev,
+		struct device_attribute *attr,
+		char *buf)
+{
+	uint32_t def_cluster = socinfo_get_cluster_info(CLUSTER_CPUSS);
+
+	return scnprintf(buf, PAGE_SIZE, "%x\n", def_cluster);
+}
+
 static ssize_t
 msm_get_num_defective_parts(struct device *dev,
 			struct device_attribute *attr,
@@ -937,6 +1016,60 @@ msm_get_ndefective_parts_array_offset(struct device *dev,
 {
 	return snprintf(buf, PAGE_SIZE, "0x%x\n",
 		socinfo_get_ndefective_parts_array_offset());
+}
+
+static uint32_t
+socinfo_get_defective_parts(void)
+{
+	uint32_t num_parts = socinfo_get_num_defective_parts();
+	uint32_t offset = socinfo_get_ndefective_parts_array_offset();
+	uint32_t def_parts = 0;
+	void *info = socinfo;
+	uint32_t part_entry;
+	int i;
+
+	if (!num_parts || !offset)
+		return -EINVAL;
+
+	info += offset;
+	for (i = 0; i < num_parts; i++) {
+		part_entry = get_unaligned_le32(info);
+		if (part_entry)
+			def_parts |= BIT(i);
+		info += sizeof(uint32_t);
+	}
+
+	return def_parts;
+}
+
+bool
+socinfo_get_part_info(enum defective_part_type part)
+{
+	uint32_t partinfo;
+
+	if (part >= NUM_PARTS_MAX) {
+		pr_err("Bad part number\n");
+		return false;
+	}
+
+	partinfo = socinfo_get_defective_parts();
+	if (partinfo < 0) {
+		pr_err("Failed to get part information\n");
+		return false;
+	}
+
+	return (partinfo & BIT(part));
+}
+EXPORT_SYMBOL(socinfo_get_part_info);
+
+static ssize_t
+msm_get_defective_parts(struct device *dev,
+		struct device_attribute *attr,
+		char *buf)
+{
+	uint32_t def_parts = socinfo_get_defective_parts();
+
+	return scnprintf(buf, PAGE_SIZE, "%x\n", def_parts);
 }
 
 static ssize_t
@@ -1243,6 +1376,10 @@ static struct device_attribute msm_soc_attr_ncluster_array_offset =
 	__ATTR(ncluster_array_offset, 0444,
 			msm_get_ncluster_array_offset, NULL);
 
+static struct device_attribute msm_soc_attr_defective_cores =
+	__ATTR(defective_cores, 0444,
+			msm_get_defective_cores, NULL);
+
 static struct device_attribute msm_soc_attr_num_defective_parts =
 	__ATTR(num_defective_parts, 0444,
 			msm_get_num_defective_parts, NULL);
@@ -1250,6 +1387,10 @@ static struct device_attribute msm_soc_attr_num_defective_parts =
 static struct device_attribute msm_soc_attr_ndefective_parts_array_offset =
 	__ATTR(ndefective_parts_array_offset, 0444,
 			msm_get_ndefective_parts_array_offset, NULL);
+
+static struct device_attribute msm_soc_attr_defective_parts =
+	__ATTR(defective_parts, 0444,
+			msm_get_defective_parts, NULL);
 
 static struct device_attribute msm_soc_attr_nmodem_supported =
 	__ATTR(nmodem_supported, 0444,
@@ -1328,6 +1469,22 @@ static void * __init setup_dummy_socinfo(void)
 		dummy_socinfo.id = 417;
 		strlcpy(dummy_socinfo.build_id, "bengal - ",
 		sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_khaje()) {
+		dummy_socinfo.id = 518;
+		strlcpy(dummy_socinfo.build_id, "khaje - ",
+		sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_khajep()) {
+		dummy_socinfo.id = 561;
+		strlcpy(dummy_socinfo.build_id, "khajep - ",
+		sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_khajeq()) {
+		dummy_socinfo.id = 562;
+		strlcpy(dummy_socinfo.build_id, "khajeq - ",
+		sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_khajeg()) {
+		dummy_socinfo.id = 585;
+		strlcpy(dummy_socinfo.build_id, "khajeg - ",
+		sizeof(dummy_socinfo.build_id));
 	} else if (early_machine_is_bengalp()) {
 		dummy_socinfo.id = 445;
 		strlcpy(dummy_socinfo.build_id, "bengalp - ",
@@ -1376,6 +1533,38 @@ static void * __init setup_dummy_socinfo(void)
 		dummy_socinfo.id = 470;
 		strlcpy(dummy_socinfo.build_id, "bengalp-iot - ",
 		sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_msm8937()) {
+		dummy_socinfo.id = 294;
+		strlcpy(dummy_socinfo.build_id, "msm8937 - ",
+		sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_msm8917()) {
+		dummy_socinfo.id = 303;
+		strlcpy(dummy_socinfo.build_id, "msm8917 - ",
+			sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_sdm439()) {
+		dummy_socinfo.id = 353;
+		strlcpy(dummy_socinfo.build_id, "sdm439 - ",
+				sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_sdm429()) {
+		dummy_socinfo.id = 354;
+		strlcpy(dummy_socinfo.build_id, "sdm429 - ",
+				sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_qm215()) {
+		dummy_socinfo.id = 386;
+		strlcpy(dummy_socinfo.build_id, "qm215 - ",
+				sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_msm8953()) {
+		dummy_socinfo.id = 293;
+		strlcpy(dummy_socinfo.build_id, "msm8953 - ",
+			sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_sdm450()) {
+		dummy_socinfo.id = 338;
+		strlcpy(dummy_socinfo.build_id, "sdm450 - ",
+			sizeof(dummy_socinfo.build_id));
+	} else if (early_machine_is_kona_7230_iot()) {
+		dummy_socinfo.id = 548;
+		strlcpy(dummy_socinfo.build_id, "kona-7230-iot - ",
+		sizeof(dummy_socinfo.build_id));
 	} else
 		strlcat(dummy_socinfo.build_id, "Dummy socinfo",
 			sizeof(dummy_socinfo.build_id));
@@ -1402,9 +1591,13 @@ static void __init populate_soc_sysfs_files(struct device *msm_soc_device)
 		device_create_file(msm_soc_device,
 					&msm_soc_attr_ncluster_array_offset);
 		device_create_file(msm_soc_device,
+					&msm_soc_attr_defective_cores);
+		device_create_file(msm_soc_device,
 					&msm_soc_attr_num_defective_parts);
 		device_create_file(msm_soc_device,
 				&msm_soc_attr_ndefective_parts_array_offset);
+		device_create_file(msm_soc_device,
+					&msm_soc_attr_defective_parts);
 	case SOCINFO_VERSION(0, 13):
 		 device_create_file(msm_soc_device,
 					&msm_soc_attr_nproduct_id);
@@ -1752,7 +1945,8 @@ int __init socinfo_init(void)
 			|| (get_project() == 19335) || (get_project() == 20801)
 			|| (get_project() == 20804))
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id;
-		else if((get_project() == 20057) || (get_project() == 20058))
+		else if((get_project() == 20057) || (get_project() == 20058
+			|| get_project() == 20813) || get_project() == 20814)
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id_20057_20058;
 		else if((get_project() == 20669) || (get_project() == 20750) || (get_project() == 20751))
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id_20669_20750_20751;
@@ -1762,11 +1956,12 @@ int __init socinfo_init(void)
 		cpu_of_id[socinfo->v0_1.id].soc_id_string = fake_cpu_id;
 #endif
 	} else {
-		if((get_project() == 20057) || (get_project() == 20058))
+		if((get_project() == 20057) || (get_project() == 20058
+			|| get_project() == 20813) || get_project() == 20814)
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id_20057_20058;
 		else if((get_project() == 20669) || (get_project() == 20750) || (get_project() == 20751))
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id_20669_20750_20751;
-		else if((get_project() == 20061) || (get_project() == 20161) || (get_project() == 20163) || (get_project() == 20351))
+		else if((get_project() == 20061) || (get_project() == 20161) || (get_project() == 20163) || (get_project() == 20351) || (get_project() == 21027))
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id_20161_models;
 		else
 			cpu_of_id[socinfo->v0_1.id].soc_id_string = real_cpu_id;

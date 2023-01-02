@@ -12,7 +12,7 @@ enum { ADC_IBUS,
        ADC_MAX_NUM,
 };
 
-struct bq2597x {
+struct bq2597x_wl {
 	struct device *dev;
 	struct i2c_client *client;
 
@@ -90,7 +90,7 @@ struct bq2597x {
 
 	int charge_state;
 
-	struct bq2597x_cfg *cfg;
+	struct bq2597x_wl_cfg *cfg;
 
 	int skip_writes;
 	int skip_reads;
@@ -107,10 +107,10 @@ struct bq2597x {
 	struct power_supply *fc2_psy;
 };
 
-extern int bq2597x_enable_charge_pump(bool enable);
-extern int bq2597x_check_charge_enabled(struct bq2597x *bq, bool *enabled);
-extern void bq2597x_dump_reg(struct bq2597x *bq);
-extern void exchgpump_information_register(struct bq2597x *bq);
-bool bq2597x_charge_status_is_ok(struct bq2597x *bq);
-int bq2597x_ftm_test(struct bq2597x *bq);
+extern int bq2597x_wl_enable_charge_pump(bool enable);
+extern int bq2597x_wl_check_charge_enabled(struct bq2597x_wl *bq, bool *enabled);
+extern void bq2597x_wl_dump_reg(struct bq2597x_wl *bq);
+extern void exchgpump_information_register(struct bq2597x_wl *bq);
+bool bq2597x_wl_charge_status_is_ok(struct bq2597x_wl *bq);
+int bq2597x_wl_ftm_test(struct bq2597x_wl *bq);
 #endif

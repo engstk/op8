@@ -96,7 +96,7 @@ static inline __u32 inotify_arg_to_mask(u32 arg)
 	mask = (FS_IN_IGNORED | FS_EVENT_ON_CHILD | FS_UNMOUNT);
 
 	/* mask off the flags used to open the fd */
-	mask |= (arg & (IN_ALL_EVENTS | IN_ONESHOT | IN_EXCL_UNLINK));
+	mask |= (arg & INOTIFY_USER_MASK);
 
 	return mask;
 }
@@ -583,8 +583,10 @@ static int inotify_new_watch(struct fsnotify_group *group,
 
 	/* increment the number of watches the user has */
 	if (!inc_inotify_watches(group->inotify_data.ucounts)) {
+#ifdef VENDOR_EDIT
 		if (printk_ratelimit())
 			printk(KERN_ERR "inotify_new_watch:return false,uid=%ul\n", current_uid());
+#endif
 		inotify_remove_from_idr(group, tmp_i_mark);
 		ret = -ENOSPC;
 		goto out_err;

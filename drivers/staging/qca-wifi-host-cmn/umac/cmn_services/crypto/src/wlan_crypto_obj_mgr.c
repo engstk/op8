@@ -246,26 +246,11 @@ static QDF_STATUS wlan_crypto_peer_obj_destroy_handler(
 						struct wlan_objmgr_peer *peer,
 						void *arg){
 	struct wlan_crypto_comp_priv *crypto_priv;
-	struct wlan_objmgr_vdev *vdev;
 
 	if (!peer) {
 		crypto_err("Peer NULL");
 		return QDF_STATUS_E_INVAL;
 	}
-
-	if (wlan_peer_get_peer_type(peer) == WLAN_PEER_AP) {
-		vdev = wlan_peer_get_vdev(peer);
-		if (vdev && vdev->vdev_mlme.vdev_opmode == QDF_STA_MODE) {
-			crypto_priv = (struct wlan_crypto_comp_priv *)
-				wlan_get_vdev_crypto_obj(vdev);
-			if (crypto_priv) {
-				crypto_debug("It's BSS peer for STA mode, free key for vdev %d",
-					     wlan_vdev_get_id(vdev));
-				wlan_crypto_free_key(crypto_priv);
-			}
-		}
-	}
-
 	crypto_priv = (struct wlan_crypto_comp_priv *)
 				wlan_get_peer_crypto_obj(peer);
 	if (!crypto_priv) {

@@ -1,0 +1,1 @@
+obj-$(CONFIG_OPLUS_FEATURE_STATS_CALC) += oplus_stats_calc.o

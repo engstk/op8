@@ -617,7 +617,7 @@ static int _sde_encoder_phys_cmd_handle_ppdone_timeout(
 				phys_enc->hw_ctl->idx - CTL_0,
 				pending_kickoff_cnt);
 #ifdef OPLUS_BUG_STABILITY
-		mm_fb_display_kevent("ppdone timeout failed", MM_FB_KEY_RATELIMIT_NONE, "pp:%d kickoff timeout", phys_enc->hw_pp->idx - PINGPONG_0);
+		mm_fb_display_kevent("DisplayDriverID@@409$$", MM_FB_KEY_RATELIMIT_NONE, "ppdone timeout failed pp:%d kickoff timeout", phys_enc->hw_pp->idx - PINGPONG_0);
 #endif /* OPLUS_BUG_STABILITY */
 		SDE_EVT32(DRMID(phys_enc->parent), SDE_EVTLOG_FATAL);
 		mutex_lock(phys_enc->vblank_ctl_lock);

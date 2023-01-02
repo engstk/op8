@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (C) 2020-2022 Oplus. All rights reserved.
+ */
+
 #include <linux/power_supply.h>
 #include <linux/mutex.h>
 #include <linux/power_supply.h>
@@ -11,20 +16,24 @@
 #include <linux/fs.h>
 #include <linux/module.h>
 
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 #include <soc/oplus/system/kernel_fb.h>
 #endif
 
 #include "oplus_vooc.h"
 #include "oplus_charger.h"
+#include "voocphy/oplus_voocphy.h"
 #ifdef OPLUS_CUSTOM_OP_DEF
 #include "oplus_wlchg_policy.h"
 #else
 #include "oplus_wireless.h"
 #endif // OPLUS_CUSTOME_OP_DEF
 #include "oplus_gauge.h"
+#include "voocphy/oplus_voocphy.h"
 
 #include "oplus_debug_info.h"
+#include "oplus_pps.h"
 
 extern int charger_abnormal_log;
 
@@ -32,7 +41,7 @@ static int chg_check_point_debug = 0;
 
 module_param(chg_check_point_debug, int, 0644);
 MODULE_PARM_DESC(chg_check_point_debug, "debug charger check point");
-
+#define OPLUS_ERROR_LENGTH   600
 #define OPEN_LOG_BIT BIT(0)
 
 static int fake_soc = -1;
@@ -42,7 +51,7 @@ static int break_flag = -1;
 static int mcu_update_flag = -1;
 static int gauge_seal_flag = -1;
 
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 #define OPLUS_CHG_DEBUG_LOG_TAG      "OplusCharger"
 #define OPLUS_CHG_DEBUG_EVENT_ID     "charge_monitor"
 #endif
@@ -144,11 +153,18 @@ enum {
 #define OPLUS_CHG_BATT_AGING_CHECK_TIME  (7 * 24 * 60 * 60)
 
 
-#define OPLUS_CHG_DEBUG_MSG_LEN 1024*4
+#define OPLUS_CHG_DEBUG_MSG_LEN 1024*5
 char oplus_chg_debug_msg[OPLUS_CHG_DEBUG_MSG_LEN] = "";
 static int send_info_flag = 0;
 #define SEND_INFO_FLAG_WORK 1
 #define SEND_INFO_FLAG_IRQ 2
+#define BCC_LENGTH_DELETE 2
+#define FG_ERROR_MAX_COUNT 100
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
+ssize_t __attribute__((weak)) vfs_write(struct file *file, const char __user *buf, size_t count, loff_t *pos);
+ssize_t __attribute__((weak)) vfs_read(struct file *file, char __user *buf, size_t count, loff_t *pos);
+struct file __attribute__((weak)) *filp_open(const char *filename, int flags, umode_t mode);
+#endif
 
 static int oplus_chg_debug_notify_type_is_set(int type);
 static int oplus_chg_get_vooc_adapter_type_index(struct oplus_chg_chip *chip);
@@ -202,7 +218,10 @@ static struct oplus_chg_debug_notify_policy oplus_chg_debug_notify_policy[] = {
 	[OPLUS_NOTIFY_GAUGE_UNSEAL_FAIL]                    = {OPLUS_CHG_NOTIFY_REPEAT,         1,    1,      -1,"GaugeUnSealFail"},
 	[OPLUS_NOTIFY_CHG_UNSUSPEND]						= {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1,"UnSuspendPlatPmic"},/*add for unsuspend platPmic*/
 	[OPLUS_NOTIFY_VOOCPHY_ERR]             				= {OPLUS_CHG_NOTIFY_REPEAT,          1,    1,      -1,"VoocPhyErr"},/*add for voocPhy chg*/
+	[OPLUS_NOTIFY_SC8517_ERROR] 					= {OPLUS_CHG_NOTIFY_REPEAT, 		1,	  1,	  -1,	"SC8517Error"},
+	[OPLUS_NOTIFY_SC8571_ERROR]						= {OPLUS_CHG_NOTIFY_REPEAT, 		1,	  1,	  -1,	"SC8571Error"},
 	[OPLUS_NOTIFY_MCU_UPDATE_FAIL]					= {OPLUS_CHG_NOTIFY_REPEAT, 		1,	  1,	  -1,"McuUpdateFail"},
+	[OPLUS_NOTIFY_SC85x7_ERROR]			    = {OPLUS_CHG_NOTIFY_REPEAT, 		1,	  1,	  -1,"SC85x7Error"},
 
 	[OPLUS_NOTIFY_BATT_AGING_CAP]                    = {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1,"BattAgeStat"},
 
@@ -217,9 +236,13 @@ static struct oplus_chg_debug_notify_policy oplus_chg_debug_notify_policy[] = {
 	[OPLUS_NOTIFY_WIRELESS_START_CHG]					= {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1,"WirelessStartChg"},
 	[OPLUS_NOTIFY_WIRELESS_WIRELESS_CHG_BREAK]			= {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1,"WirelessChgBreak"},
 	[OPLUS_NOTIFY_WIRELESS_WIRELESS_CHG_END]			= {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1,"WirelessEndChg"},/*add for wireless chg end*/
-
+	[OPLUS_NOTIFY_WIRELESS_START_TX]					= {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1},
+	[OPLUS_NOTIFY_WIRELESS_STOP_TX]						= {OPLUS_CHG_NOTIFY_REPEAT,        1,    1,      -1},
+	[OPLUS_NOTIFY_BCC_ANODE_POTENTIAL_OVER_TIME]		= {OPLUS_CHG_NOTIFY_REPEAT,		1,		1,		-1,		"BccAnodePotentialOverTime"},
+	[OPLUS_NOTIFY_BCC_CURR_ADJUST_ERR]					= {OPLUS_CHG_NOTIFY_REPEAT,		1,		1,		-1,		"BccCurrAdjustErr"},
 	[OPLUS_NOTIFY_PARALLEL_LIMITIC_ERROR]			= {OPLUS_CHG_NOTIFY_ONCE,          1,    1,      -1,"Parallel_LimitIcError"},
 	[OPLUS_NOTIFY_PARALLEL_FULL_NON_100_ERROR]			= {OPLUS_CHG_NOTIFY_ONCE,          1,    1,      -1,"Parallel_FullNot100"},
+	[OPLUS_NOTIFY_FG_CAN_NOT_UPDATE]					= {OPLUS_CHG_NOTIFY_REPEAT, 		1,	  1,	  -1,"FgCanNotUpdate"},
 };
 
 struct oplus_chg_debug_type_policy {
@@ -234,7 +257,10 @@ static struct oplus_chg_debug_type_policy oplus_chg_debug_type_policy[] = {
 	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_CHG_BREAK]		= {-1,"charge_break"},
 	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_GAUGE_ERROR]	= {-1,"ic_error"},
 	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_WIRELESS]		= {-1,"Wireless"},/*add for wireless chg*/
-	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_RECHG]			= {-1,"ReChgCnt"},/*add for ReChgCnt*/
+	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_RECHG]		= {-1,"ReChgCnt"},/*add for ReChgCnt*/
+	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC85x7] 		= {-1,"sc85x7_error"},/*add for sc85x7*/
+	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC8517]		= {-1,	"sc8517_error"},/*add for ReChgCnt*/
+	[OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC8571]		= {-1,	"sc8571_error"},/*add for ReChgCnt*/
 };
 
 static struct vooc_adapter_name vooc_adapter_name[] = {
@@ -351,7 +377,7 @@ static int oplus_chg_reset_chg_notify_type(void);
 static int oplus_chg_chg_batt_capacity_jump_check(struct oplus_chg_chip *chip);
 static int oplus_chg_mcu_update_check(struct oplus_chg_chip *chip);
 
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 static int oplus_chg_pack_debug_info(struct oplus_chg_chip *chip)
 {
 	char log_tag[] = OPLUS_CHG_DEBUG_LOG_TAG;
@@ -414,15 +440,24 @@ static void oplus_chg_send_info_dwork(struct work_struct *work)
 			oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_SLOW_BATT_WARM_TEMP,
 				OPLUS_NOTIFY_CHG_SLOW_LED_ON_LONG_TIME);
 		}
-		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_SLOW_BATT_NON_AUTH, OPLUS_NOTIFY_GAUGE_UNSEAL_FAIL);/*ic error*/
+		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_SLOW_BATT_NON_AUTH, OPLUS_NOTIFY_SC8571_ERROR);/*ic error*/
+		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_SLOW_BATT_NON_AUTH,
+						 OPLUS_NOTIFY_SC85x7_ERROR);/*ic error*/
 		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_CHG_BATT_RECHG, OPLUS_NOTIFY_CHG_BATT_RECHG);/*add for rechg counts*/
+		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_WIRELESS_BOOTUP, OPLUS_NOTIFY_WIRELESS_STOP_TX);/*add for wireless chg*/
 		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_WIRELESS_BOOTUP, OPLUS_NOTIFY_WIRELESS_WIRELESS_CHG_END);/*add for wireless chg*/
+		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_BCC_ANODE_POTENTIAL_OVER_TIME, OPLUS_NOTIFY_BCC_ANODE_POTENTIAL_OVER_TIME);
+		oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_BCC_CURR_ADJUST_ERR, OPLUS_NOTIFY_BCC_CURR_ADJUST_ERR);
 		if (oplus_switching_support_parallel_chg() == 1) {
 			oplus_chg_debug_mask_notify_flag(OPLUS_NOTIFY_PARALLEL_LIMITIC_ERROR, OPLUS_NOTIFY_PARALLEL_FULL_NON_100_ERROR);/*add for parallel chg*/
 		}
 		oplus_chg_reset_chg_notify_type();
 		memset(oplus_chg_debug_info.flag_reason,0,sizeof(oplus_chg_debug_info.flag_reason));
 		memset(oplus_chg_debug_info.type_reason,0,sizeof(oplus_chg_debug_info.type_reason));
+		memset(oplus_chg_debug_info.bcc_buf, 0, sizeof(oplus_chg_debug_info.bcc_buf));
+		memset(oplus_chg_debug_info.sc85x7_error_reason, 0,
+		       sizeof(oplus_chg_debug_info.sc85x7_error_reason));
+		memset(oplus_chg_debug_info.sc8571_error_reason, 0, sizeof(oplus_chg_debug_info.sc8571_error_reason));
 		oplus_chg_debug_info.vooc_mcu_error = 0;
 		if(send_info_flag == SEND_INFO_FLAG_IRQ) {
 			send_info_flag = 0;
@@ -430,6 +465,10 @@ static void oplus_chg_send_info_dwork(struct work_struct *work)
 		break_flag = -1;
 		mcu_update_flag = -1;
 		gauge_seal_flag = -1;
+		if(oplus_chg_get_voocphy_support()) {
+			oplus_voocphy_clear_dbg_info();
+		}
+		oplus_pps_clear_dbg_info();
 	}
 
 	chg_err("retry_cnt: %d\n", oplus_chg_debug_info.retry_cnt);
@@ -440,6 +479,7 @@ static void oplus_chg_send_info_dwork(struct work_struct *work)
 
 static int oplus_chg_read_filedata(struct timespec *ts)
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 	struct file *filp = NULL;
 	mm_segment_t old_fs;
 	ssize_t size;
@@ -465,12 +505,13 @@ static int oplus_chg_read_filedata(struct timespec *ts)
 	}
 
 	sscanf(buf, "%ld", &ts->tv_sec);
-
+#endif
 	return 0;
 }
 
 static int oplus_chg_write_filedata(struct timespec *ts)
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 	struct file *filp = NULL;
 	mm_segment_t old_fs;
 	ssize_t size;
@@ -494,7 +535,7 @@ static int oplus_chg_write_filedata(struct timespec *ts)
 		chg_err("read file size is zero.\n");
 		return -1;
 	}
-
+#endif
 	return 0;
 }
 
@@ -539,14 +580,9 @@ static int oplus_chg_get_real_charger_type(struct oplus_chg_chip *chip) {
 	if(chip->chg_ops->get_charger_subtype()) {
 		if (chip->chg_ops->get_charger_subtype() == CHARGER_SUBTYPE_PD) {
 			return POWER_SUPPLY_TYPE_USB_PD;
-		} 
-#if defined(CONFIG_OPLUS_HVDCP_SUPPORT) || \
-    defined(CONFIG_OPLUS_CHARGER_MTK6785) || \
-    !defined(CONFIG_OPLUS_CHARGER_MTK)
-        else if (chip->chg_ops->get_charger_subtype() == CHARGER_SUBTYPE_QC) {
+		} else if (chip->chg_ops->get_charger_subtype() == CHARGER_SUBTYPE_QC) {
 			return POWER_SUPPLY_TYPE_USB_HVDCP;
 		}
-#endif
 	}
 	if (chip->real_charger_type == 0) {
 		return chip->charger_type;
@@ -557,8 +593,11 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 {
 	int ret = 0;
 	struct oplus_vooc_chip *vooc_chip = NULL;
+	struct oplus_voocphy_manager *voocphy_chip = NULL;
+	struct oplus_pps_chip *pps_chip = NULL;
 	struct timespec ts;
 	struct rtc_time tm;
+	int i;
 
 	if(chip == NULL) {
 		return;
@@ -567,7 +606,7 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 	if (oplus_chg_debug_info.notify_type ||
 		oplus_chg_debug_notify_flag_is_set(OPLUS_NOTIFY_CHARGER_INFO))
 	{
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 		if (delayed_work_pending(&oplus_chg_debug_info.send_info_dwork))
 			cancel_delayed_work_sync(&oplus_chg_debug_info.send_info_dwork);
 		mutex_lock(&oplus_chg_debug_info.dcs_info_lock);
@@ -577,7 +616,7 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 		getnstimeofday(&ts);
 		rtc_time_to_tm(ts.tv_sec, &tm);
 
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 		ret += sizeof(struct kernel_packet_info);
 
 		ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
@@ -728,6 +767,11 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 					oplus_switching_get_hw_enable(), oplus_switching_get_charge_enable(), oplus_switching_get_fastcharge_current(), oplus_switching_get_discharge_current());
 		}
 
+		if (oplus_chg_debug_info.fg_error_flag != 0 && oplus_chg_debug_info.fg_info) {
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"FG_CAN_NOT_UPDATE[%d] %s", oplus_chg_debug_info.fg_error_count, oplus_chg_debug_info.fg_info);
+		}
+
 		oplus_vooc_get_vooc_chip_handle(&vooc_chip);
 		if (vooc_chip) {
 			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
@@ -743,13 +787,127 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 				oplus_chg_debug_info.wirelesspen_info.ble_timeout_cnt, oplus_chg_debug_info.wirelesspen_info.verify_failed_cnt);
 		}/*add for wireless pen*/
 
+		oplus_voocphy_get_chip(&voocphy_chip);
+		if (voocphy_chip) {
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"VOOCPHY[%d, %d, %d, %d],"
+					"[%d, %d, %d, %d],"
+					"[%d, %d, %d, %d],"
+					"[%d, %d, %d, %d],"
+					"[%d, %d, %d, %d], ",
+					voocphy_chip->ap_disconn_issue, voocphy_chip->disconn_pre_ibat,
+					voocphy_chip->disconn_pre_ibus, voocphy_chip->disconn_pre_vbat,
+					voocphy_chip->disconn_pre_vbat_calc, voocphy_chip->disconn_pre_vbus,
+					voocphy_chip->r_state, voocphy_chip->vbus_adjust_cnt,
+					voocphy_chip->voocphy_cp_irq_flag, voocphy_chip->voocphy_enable,
+					voocphy_chip->slave_voocphy_enable, voocphy_chip->voocphy_iic_err,
+					voocphy_chip->slave_voocphy_iic_err, voocphy_chip->voocphy_vooc_irq_flag,
+					voocphy_chip->irq_rcvok_num, voocphy_chip->ap_handle_timeout_num,
+					voocphy_chip->rcv_date_err_num, voocphy_chip->rcv_done_200ms_timeout_num,
+					voocphy_chip->max_div_cp_ichg, voocphy_chip->vbat_deviation_check);
+
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"VOOCPHY_REG[");
+			for(i = 0; i < DUMP_REG_CNT; i++)
+			{
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+						"%2X, ", voocphy_chip->reg_dump[i]);
+			}
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"]");
+
+			if (voocphy_chip->voocphy_dual_cp_support) {
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					", SLAVE_VOOCPHY_REG[");
+				for(i = 0; i < DUMP_REG_CNT; i++)
+				{
+					ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+							"%2X, ", voocphy_chip->slave_reg_dump[i]);
+				}
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+						"]");
+			}
+			if (chip->gauge_iic_err_time_record != 0) {
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+						", gauge_iic_err_%d[%d]", chip->gauge_iic_err,
+						chip->gauge_iic_err_time_record);
+				if (chip->gauge_iic_err == false) {
+					chip->gauge_iic_err_time_record = 0;
+				}
+			}
+			if (oplus_chg_debug_info.sc85x7_error_reason[0] > 0) {
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					", SC85x7[%s, ", oplus_chg_debug_info.sc85x7_error_reason);
+				rtc_time_to_tm(oplus_chg_debug_info.charge_start_ts.tv_sec, &tm);
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"time[%d-%d-%d %d:%d:%d], ", tm.tm_year + 1900, tm.tm_mon + 1,
+					tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"%d, %d, %d, %d, %d]",
+					voocphy_chip->master_cp_ichg, voocphy_chip->slave_cp_ichg,
+					voocphy_chip->master_error_ibus, voocphy_chip->slave_error_ibus,
+					voocphy_chip->error_current_expect);
+			}
+		}
+
 		else {
 			//ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
 				//	"VOOCPHY[ %d / %d / %d / %d / %d / %d],",
 					//chip->voocphy.fastchg_start, chip->voocphy.fastchg_ing, chip->voocphy.fastchg_dummy_start,
 					//chip->voocphy.fastchg_to_normal, chip->voocphy.fastchg_to_warm, chip->voocphy.chg_ctl_param_info);
 		}
+		pps_chip = oplus_pps_get_pps_chip();
+		if (pps_chip && pps_chip->pps_support_type) {
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"PPS_MSG[%d, %d, %d, %d, %d, %d][%d, %d, %d, %d, %d, %d, %d][%d, %d, %d, %d, %d, %d][%d, %d, %d, %d, %d, %d, %d, %d]\
+					[%d, %d, %d, %d, %d, %d][%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d][%d, %d, %d, %d, %d, %d, %d, %d][%d, %d, %d, %d, %d, %d, %d]",
+					pps_chip->pps_support_type, pps_chip->pps_adapter_type, pps_chip->pps_power, pps_chip->pps_status,
+					pps_chip->pps_stop_status, pps_chip->pps_chging,
 
+					pps_chip->pps_fastchg_started, pps_chip->pps_dummy_started, pps_chip->batt_curve_index, pps_chip->need_change_curve,
+					pps_chip->pps_low_curr_full_temp_status, pps_chip->pps_temp_cur_range, pps_chip->pps_fastchg_batt_temp_status,
+
+					pps_chip->current_batt_curve, pps_chip->current_batt_temp, pps_chip->current_cool_down,
+					pps_chip->cp_ibus_down, pps_chip->cp_r_down, pps_chip->cp_tdie_down,
+
+					pps_chip->ap_batt_volt, pps_chip->ap_batt_current, pps_chip->ap_batt_soc, pps_chip->ap_batt_temperature,
+					pps_chip->charger_output_volt, pps_chip->charger_output_current, pps_chip->current_adapter_max, pps_chip->vbat0,
+
+					pps_chip->target_charger_volt, pps_chip->target_charger_current, pps_chip->ask_charger_volt,
+					pps_chip->ask_charger_current, pps_chip->charger_output_volt, pps_chip->charger_output_current,
+
+					pps_chip->ap_input_volt, pps_chip->ap_input_current, pps_chip->cp_master_ibus, pps_chip->cp_master_vac,
+					pps_chip->cp_master_vout, pps_chip->cp_slave_vout, pps_chip->cp_slave_vac, pps_chip->cp_slave_ibus,
+					pps_chip->slave_input_volt, pps_chip->cp_master_tdie, pps_chip->cp_slave_tdie,
+
+					pps_chip->cp_slave_enable, pps_chip->cp_master_abnormal, pps_chip->cp_slave_abnormal, pps_chip->pps_iic_err,
+					pps_chip->pps_iic_err_num, pps_chip->master_enable_err_num, pps_chip->slave_enable_err_num, pps_chip->pps_imax, pps_chip->pps_vmax,
+
+					pps_chip->r_avg.r0, pps_chip->r_avg.r1, pps_chip->r_avg.r2, pps_chip->r_avg.r3, pps_chip->r_avg.r4, pps_chip->r_avg.r5, pps_chip->r_avg.r6);
+/*
+			if (report_flag & (1 << 6)) {
+				strcpy(reason,"BTBError ");
+			}
+*/
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"PPS_REG[18~1C/42][");
+			for (i = 0; i < 6; i++) {
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+						"%2X, ", pps_chip->reg_dump[i]);
+			}
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"]");
+
+			if (oplus_chg_debug_info.sc8571_error_reason[0] > 0) {
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					", SC8571[%s, ", oplus_chg_debug_info.sc8571_error_reason);
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"]");
+				rtc_time_to_tm(oplus_chg_debug_info.charge_start_ts.tv_sec, &tm);
+				ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
+					"time[%d-%d-%d %d:%d:%d], ", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+			}
+		}
 		if (chg_check_point_debug&OPEN_LOG_BIT) {
 			int i;
 			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
@@ -764,24 +922,35 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 		}
 
 		/*add for wireless chg*/
-		if((oplus_chg_debug_info.notify_type & 0x20)) {
+		if (oplus_chg_debug_info.notify_type & 0x20) {
 			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
 				" boot_version=0x%x,dock_version=%d,fastchg_ing=%d,vout=%d,"
-				"iout=%d,rx_temperature=%d,wpc_error=%d,break_count=%d,wpc_chg_err=%d "
-				, oplus_chg_debug_info.wireless_info.boot_version
-				, oplus_chg_debug_info.wireless_info.dock_version
-				, oplus_chg_debug_info.wireless_info.fastchg_ing
-				, oplus_chg_debug_info.wireless_info.vout
-				, oplus_chg_debug_info.wireless_info.iout
-				, oplus_chg_debug_info.wireless_info.rx_temperature
-				, oplus_chg_debug_info.wireless_info.wpc_dischg_status
-				, oplus_chg_debug_info.wireless_info.break_count
-				, oplus_chg_debug_info.wireless_info.wpc_chg_err);
+				"iout=%d,rx_temperature=%d,wpc_dischg_status=%d,break_count=%d,wpc_chg_err=%d,"
+				"highest_temp=%d,max_iout=%d,min_cool_down=%d,min_skewing_current=%d,"
+				"wls_auth_fail=%d ",
+				oplus_chg_debug_info.wireless_info.boot_version,
+				oplus_chg_debug_info.wireless_info.dock_version,
+				oplus_chg_debug_info.wireless_info.fastchg_ing,
+				oplus_chg_debug_info.wireless_info.vout,
+				oplus_chg_debug_info.wireless_info.iout,
+				oplus_chg_debug_info.wireless_info.rx_temperature,
+				oplus_chg_debug_info.wireless_info.wpc_dischg_status,
+				oplus_chg_debug_info.wireless_info.break_count,
+				oplus_chg_debug_info.wireless_info.wpc_chg_err,
+				oplus_chg_debug_info.wireless_info.highest_temp,
+				oplus_chg_debug_info.wireless_info.max_iout,
+				oplus_chg_debug_info.wireless_info.min_cool_down,
+				oplus_chg_debug_info.wireless_info.min_skewing_current,
+				oplus_chg_debug_info.wireless_info.wls_auth_fail);
 		}
 		ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret,
 					"$$Ver_Os@@%s", "2.0_12.0");
 
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+		if (oplus_chg_debug_info.notify_type & (1 << OPLUS_CHG_DEBUG_NOTIFY_TYPE_BCC_ERR)) {
+			ret += snprintf(&oplus_chg_debug_msg[ret], OPLUS_CHG_DEBUG_MSG_LEN - ret, "%s", oplus_chg_debug_info.bcc_buf);
+		}
+
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 		mutex_unlock(&oplus_chg_debug_info.dcs_info_lock);
 
 		chg_err("[feedback] %s\n", &oplus_chg_debug_msg[sizeof(struct kernel_packet_info)]);
@@ -791,10 +960,12 @@ static void oplus_chg_print_debug_info(struct oplus_chg_chip *chip)
 			ret = oplus_chg_pack_debug_info(chip);
 			if (!ret) {
 				oplus_chg_debug_info.retry_cnt = SEND_INFO_MAX_CNT;
-				queue_delayed_work(oplus_chg_debug_info.oplus_chg_debug_wq, &oplus_chg_debug_info.send_info_dwork, 0);
 			}
 		}
 #else
+		printk(KERN_ERR "%s\n", oplus_chg_debug_msg);
+		if (ret > OPLUS_ERROR_LENGTH)
+			printk(KERN_ERR "debug msg:%s\n", &oplus_chg_debug_msg[ret-OPLUS_ERROR_LENGTH]);
 		if (chg_check_point_debug&OPEN_LOG_BIT) {
 			chg_err("[debug test]%s\n", oplus_chg_debug_msg);
 		}
@@ -1261,10 +1432,38 @@ static int oplus_chg_break_check(struct oplus_chg_chip *chip)
 
 	oplus_chg_print_debug_info(chip);
 	send_info_flag = SEND_INFO_FLAG_IRQ;
+	if((oplus_chg_get_voocphy_support() == AP_SINGLE_CP_VOOCPHY ||
+	   oplus_chg_get_voocphy_support() == AP_DUAL_CP_VOOCPHY) &&
+	   chip->detect_detach_unexpeactly != 0) {
+		oplus_voocphy_clear_dbg_info();
+	}
 
 	chip->detect_detach_unexpeactly = 0;
 
 	return 0;
+}
+
+/* This function used for mtk platform FG keep 100% issue */
+void oplus_chg_fg_can_not_update(char *fg_erro_info)
+{
+	if (!g_debug_oplus_chip || !fg_erro_info ||
+	    oplus_chg_debug_info.fg_error_count >= FG_ERROR_MAX_COUNT)
+		return;
+
+	oplus_chg_debug_info.fg_info = fg_erro_info;
+	if (!oplus_chg_debug_notify_type_is_set(OPLUS_CHG_DEBUG_NOTIFY_TYPE_GAUGE_ERROR)) {
+		oplus_chg_set_notify_type(OPLUS_CHG_DEBUG_NOTIFY_TYPE_GAUGE_ERROR);
+		if (!oplus_chg_debug_notify_type_is_set(OPLUS_NOTIFY_FG_CAN_NOT_UPDATE)) {
+			oplus_chg_set_notify_type(OPLUS_NOTIFY_FG_CAN_NOT_UPDATE);
+			oplus_chg_debug_info.fg_error_count++;
+			oplus_chg_debug_info.fg_error_flag = true;
+			strcpy(oplus_chg_debug_info.flag_reason,
+			       oplus_chg_debug_notify_policy[OPLUS_NOTIFY_FG_CAN_NOT_UPDATE].reason);
+			oplus_chg_print_debug_info(g_debug_oplus_chip);
+			send_info_flag = SEND_INFO_FLAG_IRQ;
+		}
+	}
+	oplus_chg_debug_info.fg_error_flag = false;
 }
 
 static int oplus_chg_fastchg_consume_power_check(struct oplus_chg_chip *chip)
@@ -1591,7 +1790,6 @@ int oplus_chg_get_cc_report(void) {
 static int oplus_chg_chg_slow_check(struct oplus_chg_chip *chip)
 {
 	struct timespec ts = {0, 0};
-	static struct timespec charge_start_ts = {0, 0};
 	static bool stop_chg_flag =  false;
 
 	if (chip->charger_exist && (chip->prop_status != POWER_SUPPLY_STATUS_FULL)) {
@@ -1641,10 +1839,10 @@ static int oplus_chg_chg_slow_check(struct oplus_chg_chip *chip)
 	if (chip->charger_exist) {
 		if (!oplus_chg_debug_info.total_time) {
 			oplus_chg_debug_info.total_time = 5;
-			getnstimeofday(&charge_start_ts);
+			getnstimeofday(&oplus_chg_debug_info.charge_start_ts);
 		}else {
 			getnstimeofday(&ts);
-			oplus_chg_debug_info.total_time = 5 + ts.tv_sec - charge_start_ts.tv_sec;
+			oplus_chg_debug_info.total_time = 5 + ts.tv_sec - oplus_chg_debug_info.charge_start_ts.tv_sec;
 		}
 	}else {
 		if((oplus_chg_debug_notify_flag_is_set(OPLUS_NOTIFY_CHG_SLOW_BATT_WARM_TEMP) == 1 ||
@@ -2121,8 +2319,49 @@ void oplus_chg_vooc_mcu_error( int error ) {
 	return ;
 }
 
+static int sc85x7_error_count = 0;
+void oplus_chg_sc8547_error( int report_flag, int *buf, int len) {
+	char reason[64];
+	if (report_flag == 0) {
+		sc85x7_error_count = 0;
+		return;
+	}
+	if(sc85x7_error_count > 10)
+		return;
+	sc85x7_error_count++;
+	strcpy(reason,"SC85x7:");
+	if (report_flag == (1 << 0)) {
+		strcpy(reason,"MasterI2cError ");
+	}
+	if (report_flag & (1 << 1)) {
+		strcpy(reason,"SlaveI2cError ");
+	}
+	if (report_flag & (1 << 2)) {
+		strcpy(reason,"MasterBigCurrent ");
+	}
+	if (report_flag & (1 << 3)) {
+		strcpy(reason,"SlaveBigCurrent ");
+	}
+	if (report_flag & (1 << 4)) {
+		strcpy(reason,"Ovp/OcpHappen ");
+	}
+
+	if (!oplus_chg_debug_notify_type_is_set(OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC85x7)) {
+		oplus_chg_set_notify_type(OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC85x7);
+		if (!oplus_chg_debug_notify_flag_is_set(OPLUS_NOTIFY_SC85x7_ERROR)) {
+			oplus_chg_set_chg_flag(OPLUS_NOTIFY_SC85x7_ERROR);
+			strcpy(oplus_chg_debug_info.flag_reason,
+				oplus_chg_debug_notify_policy[OPLUS_NOTIFY_SC85x7_ERROR].reason);
+			strcpy(oplus_chg_debug_info.sc85x7_error_reason,reason);
+			oplus_chg_print_debug_info(g_debug_oplus_chip);
+			send_info_flag = SEND_INFO_FLAG_IRQ;
+		}
+	}
+	return;
+}
+
 /*add for wireless chg*/
-static void oplus_chg_wireless_udpate_param()
+void oplus_chg_wireless_udpate_param(void)
 {
 	struct oplus_wpc_chip *wpc_chip = NULL;
 	oplus_get_wpc_chip_handle(&wpc_chip);
@@ -2138,6 +2377,11 @@ static void oplus_chg_wireless_udpate_param()
 		oplus_chg_debug_info.wireless_info.work_silent_mode = wpc_chip->wpc_chg_data->work_silent_mode;
 		oplus_chg_debug_info.wireless_info.break_count = wpc_chip->wpc_chg_data->break_count;
 		oplus_chg_debug_info.wireless_info.wpc_chg_err = wpc_chip->wpc_chg_data->wpc_chg_err;
+		oplus_chg_debug_info.wireless_info.highest_temp = wpc_chip->wpc_chg_data->highest_temp;
+		oplus_chg_debug_info.wireless_info.max_iout = wpc_chip->wpc_chg_data->max_iout;
+		oplus_chg_debug_info.wireless_info.min_cool_down = wpc_chip->wpc_chg_data->min_cool_down;
+		oplus_chg_debug_info.wireless_info.min_skewing_current = wpc_chip->wpc_chg_data->min_skewing_current;
+		oplus_chg_debug_info.wireless_info.wls_auth_fail = wpc_chip->wpc_chg_data->wls_auth_fail;
 #endif
 		oplus_chg_debug_info.wireless_info.adapter_type = wpc_chip->wpc_chg_data->adapter_type;
 		oplus_chg_debug_info.wireless_info.fastchg_ing = wpc_chip->wpc_chg_data->fastchg_ing;
@@ -2150,13 +2394,12 @@ static void oplus_chg_wireless_udpate_param()
 void oplus_chg_wireless_error(int error,  struct wireless_chg_debug_info *wireless_param)
 {
 	struct oplus_chg_chip *chip = g_debug_oplus_chip;
-	if(chip == NULL)
+	if (!chip)
 		return;
-	if(error < OPLUS_NOTIFY_WIRELESS_BOOTUP ||
-		error > OPLUS_NOTIFY_WIRELESS_WIRELESS_CHG_END)
+	if (error < OPLUS_NOTIFY_WIRELESS_BOOTUP || error > OPLUS_NOTIFY_WIRELESS_STOP_TX)
 		return;
 
-	if (wireless_param == NULL) {
+	if (!wireless_param) {
 		oplus_chg_wireless_udpate_param();
 	} else {
 		memset(&oplus_chg_debug_info.wireless_info, 0x0, sizeof(struct wireless_chg_debug_info));
@@ -2193,6 +2436,120 @@ int oplus_chg_voocphy_err(void)
 			oplus_chg_print_debug_info(g_debug_oplus_chip);
 		}
 	}
+	return 0;
+}
+
+static int sc8571_error_count = 0;
+void oplus_chg_sc8571_error(int report_flag, int *buf, int ret)
+{
+	char reason[32];
+	char ret_char[8];
+	if (report_flag == 0) {
+		sc8571_error_count = 0;
+		return;
+	}
+	if(sc8571_error_count > 10)
+		return;
+	sc8571_error_count++;
+
+	if (report_flag == (1 << PPS_REPORT_ERROR_MASTER_I2C)) {
+		strcpy(reason, "MasterI2cError ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_SLAVE_I2C)) {
+		strcpy(reason, "SlaveI2cError ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_IBUS_LIMIT)) {
+		strcpy(reason, "IbusCurrLimit ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_CP_ENABLE)) {
+		strcpy(reason, "CPEnableError ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_OVP_OCP)) {
+		strcpy(reason, "Ovp/OcpHappen ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_R_COOLDOWN)) {
+		strcpy(reason, "ResisCoolDown ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_BTB_OVER)) {
+		strcpy(reason, "BTBError ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_POWER_V1)) {
+		strcpy(reason, "ChgPowerV1 ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_POWER_V0)) {
+		strcpy(reason, "ChgPowerV0 ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_DR_FAIL)) {
+		strcpy(reason, "DR_FAIL ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_AUTH_FAIL)) {
+		strcpy(reason, "AUTH_FAIL ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_UVDM_POWER)) {
+		strcpy(reason, "UVDM_POWER ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_EXTEND_MAXI)) {
+		strcpy(reason, "EXTEND_MAXI ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_USBTEMP_OVER)) {
+		strcpy(reason, "USBTEMP_OVER ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_VBAT_DIFF)) {
+		strcpy(reason, "VBAT_DIFF ");
+	}
+	if (report_flag & (1 << PPS_REPORT_ERROR_TDIE_OVER)) {
+		strcpy(reason, "TDIE_OVER ");
+	}
+
+	if (ret != 0) {
+		snprintf(ret_char, sizeof(ret_char), "@%d", ret);
+		strcat(reason, ret_char);
+	}
+	if (!oplus_chg_debug_notify_type_is_set(OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC8571)) {
+		oplus_chg_set_notify_type(OPLUS_CHG_DEBUG_NOTIFY_TYPE_SC8571);
+		if (!oplus_chg_debug_notify_flag_is_set(OPLUS_NOTIFY_SC8571_ERROR)) {
+			oplus_chg_set_chg_flag(OPLUS_NOTIFY_SC8571_ERROR);
+			strcpy(oplus_chg_debug_info.flag_reason,
+				oplus_chg_debug_notify_policy[OPLUS_NOTIFY_SC8571_ERROR].reason);
+			strcpy(oplus_chg_debug_info.sc8571_error_reason, reason);
+			oplus_chg_print_debug_info(g_debug_oplus_chip);
+			send_info_flag = SEND_INFO_FLAG_IRQ;
+		}
+	}
+	return;
+}
+
+int oplus_chg_bcc_err(const char* buf)
+{
+	if (strlen(buf)) {
+		if (!strncmp(buf, "1", 1)) {
+			if (!oplus_chg_debug_notify_flag_is_set(OPLUS_NOTIFY_BCC_CURR_ADJUST_ERR)) {
+				oplus_chg_set_notify_type(OPLUS_CHG_DEBUG_NOTIFY_TYPE_BCC_ERR);
+				oplus_chg_set_chg_flag(OPLUS_NOTIFY_BCC_CURR_ADJUST_ERR);
+				if (strlen(buf + BCC_LENGTH_DELETE) < BCC_LINE_LENGTH_MAX)
+					strncpy(oplus_chg_debug_info.bcc_buf,
+						buf + BCC_LENGTH_DELETE, strlen(buf + BCC_LENGTH_DELETE));
+				else
+					strncpy(oplus_chg_debug_info.bcc_buf,
+						buf + BCC_LENGTH_DELETE, BCC_LINE_LENGTH_MAX);
+			}
+		} else if (!strncmp(buf, "2", 1)) {
+			if (!oplus_chg_debug_notify_flag_is_set(OPLUS_NOTIFY_BCC_ANODE_POTENTIAL_OVER_TIME)) {
+				oplus_chg_set_notify_type(OPLUS_CHG_DEBUG_NOTIFY_TYPE_BCC_ERR);
+				oplus_chg_set_chg_flag(OPLUS_NOTIFY_BCC_ANODE_POTENTIAL_OVER_TIME);
+				if (strlen(buf + BCC_LENGTH_DELETE) < BCC_LINE_LENGTH_MAX)
+					strncpy(oplus_chg_debug_info.bcc_buf,
+						buf + BCC_LENGTH_DELETE, strlen(buf + BCC_LENGTH_DELETE));
+				else
+					strncpy(oplus_chg_debug_info.bcc_buf,
+						buf + BCC_LENGTH_DELETE, BCC_LINE_LENGTH_MAX);
+			}
+		} else {
+			chg_err("buf data is error\n");
+		}
+		chg_err("%s\n", oplus_chg_debug_info.bcc_buf);
+	}
+
 	return 0;
 }
 
@@ -2403,7 +2760,7 @@ static ssize_t charge_monitor_test_write(struct file *filp,
 	}else if(!strncmp(tmp_buf, "gauge_seal:", strlen("gauge_seal:"))) {
 		sscanf(tmp_buf, "gauge_seal:%d", &gauge_seal_flag);
 		if(gauge_seal_flag == OPLUS_GAUGE_SEAL_FAIL
-			|| gauge_seal_flag == gauge_seal_flag == OPLUS_GAUGE_UNSEAL_FAIL){
+			|| gauge_seal_flag == OPLUS_GAUGE_UNSEAL_FAIL){
 			oplus_chg_gauge_seal_unseal_fail(gauge_seal_flag);
 		}
 	}
@@ -2434,11 +2791,18 @@ static ssize_t charge_monitor_test_read(struct file *filp,
 	return (len < count ? len : count);
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 10, 0))
 static const struct file_operations charge_monitor_test_fops = {
 	.write = charge_monitor_test_write,
 	.read = charge_monitor_test_read,
 };
-
+#else
+static const struct proc_ops charge_monitor_test_fops = {
+	.proc_write = charge_monitor_test_write,
+	.proc_read = charge_monitor_test_read,
+	.proc_lseek = seq_lseek,
+};
+#endif
 
 static int charge_monitor_test_init(void)
 {
@@ -2512,12 +2876,14 @@ int oplus_chg_debug_info_init(struct oplus_chg_chip *chip)
 	oplus_chg_debug_info.chg_start_ui_soc = -1;
 	oplus_chg_debug_info.sleep_tm_sec = -1;
 	oplus_chg_debug_info.fastchg_input_current = -1;
+	oplus_chg_debug_info.charge_start_ts.tv_sec = 0;
+	oplus_chg_debug_info.charge_start_ts.tv_nsec = 0;
 
 	oplus_chg_debug_info.usb_psy = power_supply_get_by_name("usb");
 	oplus_chg_debug_info.batt_psy = power_supply_get_by_name("battery");
 
 	oplus_chg_debug_info.oplus_chg_debug_wq = create_workqueue("oplus_chg_debug_wq");
-#ifdef CONFIG_OPLUS_FEATURE_FEEDBACK
+#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
 	oplus_chg_debug_info.dcs_info = (struct kernel_packet_info *)&oplus_chg_debug_msg[0];
 	INIT_DELAYED_WORK(&oplus_chg_debug_info.send_info_dwork, oplus_chg_send_info_dwork);
 	mutex_init(&oplus_chg_debug_info.dcs_info_lock);

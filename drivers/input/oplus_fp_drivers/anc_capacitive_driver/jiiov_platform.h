@@ -22,7 +22,32 @@
 //#define ANC_USE_SPI
 #define ANC_USE_IRQ
 //#define ANC_USE_POWER_GPIO
+#define ANC_SUPPORT_NAVIGATION_EVENT
 
+#ifdef CONFIG_REGULATOR_OPLUS_WL2868C_FP_LDO
+#define ANC_USE_EXT_PMIC
+#endif
+
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+typedef enum {
+    ANC_KEY_NONE = 0,
+    ANC_KEY_HOME,
+    ANC_KEY_MENU,
+    ANC_KEY_BACK,
+    ANC_KEY_UP,
+    ANC_KEY_LEFT,
+    ANC_KEY_RIGHT,
+    ANC_KEY_DOWN,
+    ANC_KEY_POWER,
+    ANC_KEY_WAKEUP,
+    ANC_KEY_CAMERA,
+} ANC_KEY_TYPE;
+
+typedef struct {
+    ANC_KEY_TYPE key;
+    int value; /* 0 = key up, 1 = key down */
+} ANC_KEY_EVENT;
+#endif
 
 /* Magic code for IOCTL-subsystem */
 #define ANC_IOC_MAGIC            'a'
@@ -57,6 +82,10 @@
 #define ANC_IOC_WAKE_UNLOCK _IO(ANC_IOC_MAGIC, 11)
 #define ANC_IOC_CANCLE_EPOLL_WAIT _IO(ANC_IOC_MAGIC, 12)
 
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+/* Android system-wide key event, for navigation purpose */
+#define ANC_IOC_REPORT_KEY_EVENT _IOW(ANC_IOC_MAGIC, 21, ANC_KEY_EVENT)
+#endif
 #define ANC_UI_DISAPPREAR        0
 #define ANC_UI_READY             1
 
@@ -73,9 +102,9 @@ typedef enum {
     ANC_NETLINK_EVENT_MAX
 }ANC_NETLINK_EVENT_TYPE;
 
-int netlink_send_message_to_user(const char *p_buffer, size_t length);
-int anc_netlink_init(void);
-void anc_netlink_exit(void);
+int anc_cap_netlink_send_message_to_user(const char *p_buffer, size_t length);
+int anc_cap_netlink_init(void);
+void anc_cap_netlink_exit(void);
 
 
 #endif /* __JIIOV_PLATFORM_H__ */

@@ -365,6 +365,13 @@ static int sde_hw_pp_setup_dither_v1(struct sde_hw_pingpong *pp,
 		dither_depth_map[8] = 2;
 		SDE_DEBUG("oplus_project's dither_depth_map\n");
 	}
+	if (!strcmp(display->panel->name, "samsung ams662zs01 dsc cmd 21623")) {
+		dither_depth_map[5] = 2;
+		dither_depth_map[6] = 2;
+		dither_depth_map[7] = 2;
+		dither_depth_map[8] = 2;
+		oplus_dither_enable = 1;
+	}
 #endif
 	data = dither_depth_map[dither->c0_bitdepth] & REG_MASK(2);
 	data |= (dither_depth_map[dither->c1_bitdepth] & REG_MASK(2)) << 2;

@@ -218,16 +218,22 @@ int is_support_panel_dc_exit_backlight_select(struct dsi_panel *panel, int frame
 			return -EINVAL;
 	}
 
-	if (!strcmp(panel->oplus_priv.vendor_name, "AMB655XL08")) {
-		dsi_panel_set_backlight(panel, panel->bl_config.bl_level);
+	if (lcd_closebl_flag == 1) {
+		pr_err("silence mode need set backlight to zero");
+		mipi_dsi_dcs_set_display_brightness(&panel->mipi_device, 0);
 		usleep_range(frame_time_us * 2, frame_time_us * 2 + 100);
-	} else if ((!strcmp(panel->oplus_priv.vendor_name, "SOFE03F"))
-		|| (!strcmp(panel->oplus_priv.vendor_name, "samsung_AMS678UW01"))) {
-		mipi_dsi_dcs_set_display_brightness(&panel->mipi_device, panel->bl_config.bl_level);
-		usleep_range(frame_time_us * 2, frame_time_us * 2 + 100);
-	} else if (!strcmp(panel->oplus_priv.vendor_name, "AMS662ZS01")) {
-		mipi_dsi_dcs_set_display_brightness(&panel->mipi_device, panel->bl_config.bl_level);
-		usleep_range(frame_time_us, frame_time_us + 100);
+	} else {
+		if (!strcmp(panel->oplus_priv.vendor_name, "AMB655XL08")) {
+			dsi_panel_set_backlight(panel, panel->bl_config.bl_level);
+			usleep_range(frame_time_us * 2, frame_time_us * 2 + 100);
+		} else if ((!strcmp(panel->oplus_priv.vendor_name, "SOFE03F"))
+			|| (!strcmp(panel->oplus_priv.vendor_name, "samsung_AMS678UW01"))) {
+			mipi_dsi_dcs_set_display_brightness(&panel->mipi_device, panel->bl_config.bl_level);
+			usleep_range(frame_time_us * 2, frame_time_us * 2 + 100);
+		} else if (!strcmp(panel->oplus_priv.vendor_name, "AMS662ZS01")) {
+			mipi_dsi_dcs_set_display_brightness(&panel->mipi_device, panel->bl_config.bl_level);
+			usleep_range(frame_time_us, frame_time_us + 100);
+		}
 	}
 	return 0;
 }
@@ -279,7 +285,8 @@ bool is_support_panel_hbm_enter_send_hbm_off_cmd(struct dsi_display *dsi_display
 	if ((!strcmp(name_ptr, "S6E3HC3") && (dsi_display->panel->panel_id2 >= 5))
 		|| (!strcmp(name_ptr, "AMB655XL08"))
 		|| (!strcmp(name_ptr, "AMS662ZS01"))
-                || (!strcmp(name_ptr, "AMS644VK04"))
+		|| (!strcmp(name_ptr, "AMS644VK04"))
+		|| (!strcmp(name_ptr, "s6e3fc3"))
 		|| (!strcmp(name_ptr, "AMB655X") && (dsi_display->panel->oplus_priv.is_oplus_project))
 		|| (!strcmp(name_ptr, "AMB655UV01") && (dsi_display->panel->oplus_priv.is_oplus_project))
 		|| (!strcmp(name_ptr, "ANA6706") && (dsi_display->panel->oplus_priv.is_oplus_project))) {
@@ -337,7 +344,8 @@ bool oplus_panel_support_global_hbm_switch(struct dsi_panel *panel, u32 bl_lvl)
 	if (!panel)
 		return false;
 
-	if ((!strcmp(panel->name, "samsung ams662zs01 dvt dsc cmd mode panel"))) {
+	if ((!strcmp(panel->name, "samsung ams662zs01 dvt dsc cmd mode panel"))
+		|| (!strcmp(panel->name, "samsung ams662zs01 dsc cmd 21623"))) {
 		if ((bl_lvl > panel->bl_config.bl_normal_max_level) && (enable_global_hbm_flags == 0)) {
 			enable_global_hbm_flags = 1;
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_HBM_ENTER_SWITCH);
@@ -2269,7 +2277,7 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 	}
 #endif
 
-	if (power_mode == SDE_MODE_DPMS_OFF)
+	if (power_mode == SDE_MODE_DPMS_OFF && !display->panel->oplus_priv.esd_err_flag_enabled)
 		atomic_set(&display->panel->esd_pending, 1);
 
 	switch (power_mode) {
@@ -2371,6 +2379,12 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_ON_PVT);
 					} else {
 						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_ON);
+
+						if ((display->panel->oplus_priv.is_oplus_project) &&
+							(!strcmp(display->panel->oplus_priv.vendor_name, "AMB655X")) &&
+							(get_oplus_display_scene() == OPLUS_DISPLAY_AOD_HBM_SCENE)) {
+							dsi_panel_tx_cmd_set(display->panel, DSI_CMD_HBM_ON);
+						}
 					}
 					if (!strcmp(display->panel->oplus_priv.vendor_name, "AMB655XL08")) {
 						display->panel->is_hbm_enabled = true;
@@ -2401,6 +2415,10 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 						     DSI_CORE_CLK, DSI_CLK_OFF);
 				mutex_unlock(&display->panel->panel_lock);
 				oplus_panel_update_backlight_unlock(display->panel);
+				oplus_dsi_update_seed_mode();
+			}
+		} else if (display->panel->oplus_priv.is_oplus_project) {
+			if (!sde_crtc_get_fingerprint_mode(connector->state->crtc->state)) {
 				oplus_dsi_update_seed_mode();
 			}
 		} else {
@@ -2524,7 +2542,7 @@ static ssize_t oplus_display_set_panel_pwr(struct device *dev,
 	pr_err("debug for %s, buf = [%s], id = %d value = %d, count = %d\n",
 		__func__, buf, panel_vol_id, panel_vol_value,count);
 
-	if (panel_vol_id < 0 || panel_vol_id > PANEL_VOLTAGE_ID_MAX)
+	if (panel_vol_id < 0 || panel_vol_id >= PANEL_VOLTAGE_ID_MAX)
 		return -EINVAL;
 
 	if (panel_vol_value < panel_vol_bak[panel_vol_id].voltage_min ||
@@ -3635,6 +3653,8 @@ static DEVICE_ATTR(backlight_smooth, S_IRUGO|S_IWUSR, oplus_backlight_smooth_get
 /*#ifdef OPLUS_BUG_STABILITY*/
 static DEVICE_ATTR(dsi_cmd_log_switch, S_IRUGO | S_IWUSR, oplus_display_get_dsi_cmd_log_switch, oplus_display_set_dsi_cmd_log_switch);
 /*#endif*/
+/* fp type config */
+static DEVICE_ATTR(fp_type, S_IRUGO|S_IWUSR, oplus_ofp_get_fp_type_attr, oplus_ofp_set_fp_type_attr);
 /*
  * Create a group of attributes so that we can create and destroy them all
  * at once.
@@ -3688,6 +3708,8 @@ static struct attribute *oplus_display_attrs[] = {
 /*#ifdef OPLUS_BUG_STABILITY*/
 	&dev_attr_dsi_cmd_log_switch.attr,
 /*#endif*/
+	/* fp type config */
+	&dev_attr_fp_type.attr,
 	&dev_attr_fp_state.attr,
 	NULL,	/* need to NULL terminate the list of attributes */
 };

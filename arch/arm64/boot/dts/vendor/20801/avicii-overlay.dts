@@ -13,7 +13,7 @@
 	compatible = "qcom,lito-mtp", "qcom,lito", "qcom,mtp";
 	qcom,board-id = <8 0>;
 	oplus,dtsi_no = <20801>;
-	oplus,pcb_range = <0  55>;
+	oplus,pcb_range = <0  56>;
 };
 
 &ufsphy_mem {

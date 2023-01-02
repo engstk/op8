@@ -525,6 +525,16 @@ QDF_STATUS wlan_mlme_set_assoc_sta_limit(struct wlan_objmgr_psoc *psoc,
 					 int value);
 
 /**
+ * wlan_mlme_get_assoc_sta_limit() - Get the assoc sta limit
+ * @psoc: pointer to psoc object
+ * @value: Pointer to value that needs to be filled by MLME
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS wlan_mlme_get_assoc_sta_limit(struct wlan_objmgr_psoc *psoc,
+					 int *value);
+
+/**
  * wlan_mlme_set_rmc_action_period_freq() - Set the rmc action period frequency
  * @psoc: pointer to psoc object
  * @value: Value that needs to be set from the caller
@@ -1902,6 +1912,30 @@ QDF_STATUS wlan_mlme_get_vht_tx_mcs_2x2(struct wlan_objmgr_psoc *psoc,
  */
 QDF_STATUS
 wlan_mlme_get_vht20_mcs9(struct wlan_objmgr_psoc *psoc, bool *value);
+
+/**
+ * wlan_mlme_get_srd_master_mode_for_vdev  - Get SRD master mode for vdev
+ * @psoc:          pointer to psoc object
+ * @vdev_opmode:   vdev operating mode
+ * @value:  pointer to the value which will be filled for the caller
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+wlan_mlme_get_srd_master_mode_for_vdev(struct wlan_objmgr_psoc *psoc,
+				       enum QDF_OPMODE vdev_opmode,
+				       bool *value);
+
+/**
+ * wlan_mlme_get_indoor_support_for_nan  - Get indoor channel support for NAN
+ * @psoc: pointer to psoc object
+ * @value: pointer to the value which will be filled for the caller
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+wlan_mlme_get_indoor_support_for_nan(struct wlan_objmgr_psoc *psoc,
+				     bool *value);
 
 /**
  * wlan_mlme_get_vht_enable2x2() - Enables/disables VHT Tx/Rx MCS values for 2x2

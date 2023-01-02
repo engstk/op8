@@ -43,6 +43,9 @@
 #define AX_ACCESS_PHY				0x02
 #define AX_ACCESS_EEPROM			0x04
 #define AX_ACCESS_EFUS				0x05
+#define AX_RELOAD_EEPROM_EFUSE		0x06
+#define AX_WRITE_EFUSE_EN		0x09
+#define AX_WRITE_EFUSE_DIS		0x0A
 #define AX_PAUSE_WATERLVL_HIGH			0x54
 #define AX_PAUSE_WATERLVL_LOW			0x55
 
@@ -196,6 +199,29 @@ static const struct {
 	{7, 0xcc, 0x4c, 0x18, 8},
 };
 
+/****************Start******************/
+struct AX_IOCTL_COMMAND {
+	unsigned short	ioctl_cmd;
+	unsigned char	sig[16];
+	unsigned char	type;
+	unsigned short *buf;
+	unsigned short size;
+	unsigned char delay;
+};
+
+/* NAMING CONSTANT DECLARATIONS */
+#define AX8817XX_SIGNATURE	"AX88179_178A"
+#define AX8817XX_DRV_NAME	"AX88179_178A"
+
+/* ioctl Command Definition */
+#define AX_PRIVATE		SIOCDEVPRIVATE
+
+/* private Command Definition */
+#define AX_SIGNATURE			0
+#define AX_READ_EEPROM			1
+#define AX_WRITE_EEPROM			2
+/****************end******************/
+
 static int __ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 			      u16 size, void *data, int in_pm)
 {
@@ -307,12 +333,12 @@ static int ax88179_read_cmd(struct usbnet *dev, u8 cmd, u16 value, u16 index,
 	int ret;
 
 	if (2 == size) {
-		u16 buf;
+		u16 buf = 0;
 		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf, 0);
 		le16_to_cpus(&buf);
 		*((u16 *)data) = buf;
 	} else if (4 == size) {
-		u32 buf;
+		u32 buf = 0;
 		ret = __ax88179_read_cmd(dev, cmd, value, index, size, &buf, 0);
 		le32_to_cpus(&buf);
 		*((u32 *)data) = buf;
@@ -820,10 +846,252 @@ static int ax88179_set_eee(struct net_device *net, struct ethtool_eee *edata)
 	return ret;
 }
 
+/****************Start******************/
+int ioctl_signature(struct usbnet *dev, struct AX_IOCTL_COMMAND *info)
+{
+	strlcpy(info->sig, AX8817XX_SIGNATURE, strlen(AX8817XX_SIGNATURE));
+	return 0;
+}
+
+int ioctl_read_eeprom(struct usbnet *dev, struct AX_IOCTL_COMMAND *info)
+{
+	u8 i;
+	u16 tmp;
+	u8 value;
+	unsigned short *buf;
+	int ret = -1;
+
+	// check userspace buf
+	if (info->buf) {
+		buf = kmalloc_array(info->size, sizeof(unsigned short),
+				    GFP_KERNEL);
+		if (!buf)
+			return -ENOMEM;
+	} else {
+		netdev_info(dev->net, "The EEPROM buffer cannot be NULL.");
+		return -EINVAL;
+	}
+
+	if (info->type == 0) {
+		for (i = 0; i < info->size; i++) {
+			ret = ax88179_write_cmd(dev, AX_ACCESS_MAC,
+						AX_SROM_ADDR, 1, 1, &i);
+			if (ret < 0) {
+				kfree(buf);
+				return -EINVAL;
+			}
+
+			value = EEP_RD;
+			ret = ax88179_write_cmd(dev, AX_ACCESS_MAC,
+						AX_SROM_CMD, 1, 1, &value);
+			if (ret < 0) {
+				kfree(buf);
+				return -EINVAL;
+			}
+
+			do {
+				ax88179_read_cmd(dev, AX_ACCESS_MAC,
+						 AX_SROM_CMD, 1, 1, &value);
+			} while (value & EEP_BUSY);
+
+			ret = ax88179_read_cmd(dev, AX_ACCESS_MAC,
+					       AX_SROM_DATA_LOW, 2, 2, &tmp);
+			if (ret < 0) {
+				kfree(buf);
+				return -EINVAL;
+			}
+
+			*(buf + i) = be16_to_cpu(tmp);
+
+			if (i == (info->size - 1))
+				break;
+		}
+	} else { //eFuse
+		for (i = 0; i < info->size; i++) {
+			ret = ax88179_read_cmd(dev, AX_ACCESS_EFUS, i, 1, 2,
+					       &tmp);
+			if (ret < 0) {
+				kfree(buf);
+				return -EINVAL;
+			}
+			*(buf + i) = be16_to_cpu(tmp);
+
+			if (i == (info->size - 1))
+				break;
+		}
+	}
+
+	if (copy_to_user(info->buf, buf, sizeof(unsigned short) * info->size)) {
+		kfree(buf);
+		return -EFAULT;
+	}
+
+	kfree(buf);
+	return 0;
+}
+
+int ioctl_write_eeprom(struct usbnet *dev, struct AX_IOCTL_COMMAND *info)
+{
+	int i;
+	int ret = -1;
+	u16 data, csum = 0;
+	unsigned short *buf;
+
+	// check userspace buf
+	if (info->buf) {
+		buf = kmalloc_array(info->size, sizeof(unsigned short),
+				    GFP_KERNEL);
+		if (!buf)
+			return -ENOMEM;
+
+		if (copy_from_user(buf, info->buf, sizeof(unsigned short)
+				* info->size)) {
+			kfree(buf);
+			return -EFAULT;
+		}
+	} else {
+		netdev_err(dev->net, "The EEPROM buffer cannot be NULL. \r\n");
+		return -EINVAL;
+	}
+
+	if (info->type == 0) { //EEPROM
+		if ((*(buf) >> 8) & 0x01) {
+			netdev_err(dev->net, "Cannot set to muliticast MAC.");
+			netdev_err(dev->net, "bit0 of ID0 cannot be set to 1");
+			kfree(buf);
+			return -EINVAL;
+		}
+
+		// checksum
+		csum = (*(buf + 3) & 0xff) + ((*(buf + 3) >> 8) & 0xff) +
+			(*(buf + 4) & 0xff) + ((*(buf + 4) >> 8) & 0xff);
+		csum = 0xff - ((csum >> 8) + (csum & 0xff));
+		data = ((*(buf + 5)) & 0xff) | (csum << 8);
+		*(buf + 5) = data;
+
+		for (i = 0; i < info->size; i++) {
+			data = cpu_to_be16(*(buf + i));
+			ret = ax88179_write_cmd(dev, AX_ACCESS_EEPROM, i, 1, 2,
+						&data);
+			if (ret < 0) {
+				kfree(buf);
+				return -EINVAL;
+			}
+
+			msleep(info->delay);
+		}
+	} else if (info->type == 1) { //eFuse
+		if ((*(buf) >> 8) & 0x01) {
+			netdev_err(dev->net, "Cannot set to muliticast MAC.");
+			netdev_err(dev->net, "bit0 of ID0 cannot be set to 1");
+			kfree(buf);
+			return -EINVAL;
+		}
+
+		// checksum
+		for (i = 0; i < info->size; i++)
+			csum += (*(buf + i) & 0xff) + ((*(buf + i) >> 8)
+				 & 0xff);
+
+		csum -= ((*(buf + 0x19) >> 8) & 0xff);
+		while (csum > 255)
+			csum = (csum & 0x00FF) + ((csum >> 8) & 0x00FF);
+		csum = 0xFF - csum;
+
+		data = ((*(buf + 0x19)) & 0xff) | (csum << 8);
+		*(buf + 0x19) = data;
+
+		ret = ax88179_write_cmd(dev, AX_WRITE_EFUSE_EN, 0, 0, 0, NULL);
+		if (ret < 0) {
+			kfree(buf);
+			return -EINVAL;
+		}
+
+		msleep(info->delay);
+
+		for (i = 0; i < info->size; i++) {
+			data = cpu_to_be16(*(buf + i));
+			ret = ax88179_write_cmd(dev, AX_ACCESS_EFUS, i, 1, 2,
+						&data);
+			if (ret < 0) {
+				kfree(buf);
+				return -EINVAL;
+			}
+
+			msleep(info->delay);
+		}
+
+		ret = ax88179_write_cmd(dev, AX_WRITE_EFUSE_DIS, 0, 0, 0,
+					NULL);
+		if (ret < 0) {
+			kfree(buf);
+			return -EINVAL;
+		}
+
+		msleep(info->delay);
+	} else if (info->type == 2) { //check efuse existed or not
+		//printk(KERN_INFO "CHECK efuse empty or not?");
+		ret = ax88179_read_cmd(dev, AX_ACCESS_EFUS, 0, 1, 2, &data);
+		if (ret < 0) {
+			kfree(buf);
+			return -EINVAL;
+		}
+
+		if (data == 0xFFFF)
+			info->type = 0;
+		else
+			info->type = 1;
+	} else {
+		kfree(buf);
+		return -EINVAL;
+	}
+
+	kfree(buf);
+	return 0;
+}
+
+typedef int (*IOCTRL_TABLE)(struct usbnet *dev, struct AX_IOCTL_COMMAND *info);
+
+IOCTRL_TABLE ioctl_tbl[] = {
+	ioctl_signature,        //AX_SIGNATURE
+	ioctl_read_eeprom,
+	ioctl_write_eeprom,
+};
+
+/****************end******************/
+
 static int ax88179_ioctl(struct net_device *net, struct ifreq *rq, int cmd)
 {
 	struct usbnet *dev = netdev_priv(net);
-	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
+	struct AX_IOCTL_COMMAND info;
+	struct AX_IOCTL_COMMAND *uptr = (struct AX_IOCTL_COMMAND *)rq->ifr_data;
+	int private_cmd;
+	int ret = -1;
+
+	switch (cmd) {
+	case AX_PRIVATE:
+		ret = copy_from_user(&info, uptr, sizeof(struct
+					AX_IOCTL_COMMAND));
+		if (ret < 0)
+			return -EFAULT;
+
+		private_cmd = info.ioctl_cmd;
+		if ((*ioctl_tbl[private_cmd])(dev, &info) < 0) {
+			netdev_err(net, "ioctl_tbl, return -EFAULT");
+			return -EFAULT;
+		}
+
+		ret = copy_to_user(uptr, &info, sizeof(struct
+				   AX_IOCTL_COMMAND));
+		if (ret < 0)
+			return -EFAULT;
+
+		break;
+
+	default:
+		return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
+	}
+	return 0;
 }
 
 static const struct ethtool_ops ax88179_ethtool_ops = {
@@ -1373,59 +1641,120 @@ static int ax88179_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	u16 hdr_off;
 	u32 *pkt_hdr;
 
-	/* This check is no longer done by usbnet */
-	if (skb->len < dev->net->hard_header_len)
-		return 0;
+	/* At the end of the SKB, there's a header telling us how many packets
+	 * are bundled into this buffer and where we can find an array of
+	 * per-packet metadata (which contains elements encoded into u16).
+	 */
 
+	/* SKB contents for current firmware:
+	 *   <packet 1> <padding>
+	 *   ...
+	 *   <packet N> <padding>
+	 *   <per-packet metadata entry 1> <dummy header>
+	 *   ...
+	 *   <per-packet metadata entry N> <dummy header>
+	 *   <padding2> <rx_hdr>
+	 *
+	 * where:
+	 *   <packet N> contains pkt_len bytes:
+	 *		2 bytes of IP alignment pseudo header
+	 *		packet received
+	 *   <per-packet metadata entry N> contains 4 bytes:
+	 *		pkt_len and fields AX_RXHDR_*
+	 *   <padding>	0-7 bytes to terminate at
+	 *		8 bytes boundary (64-bit).
+	 *   <padding2> 4 bytes to make rx_hdr terminate at
+	 *		8 bytes boundary (64-bit)
+	 *   <dummy-header> contains 4 bytes:
+	 *		pkt_len=0 and AX_RXHDR_DROP_ERR
+	 *   <rx-hdr>	contains 4 bytes:
+	 *		pkt_cnt and hdr_off (offset of
+	 *		  <per-packet metadata entry 1>)
+	 *
+	 * pkt_cnt is number of entrys in the per-packet metadata.
+	 * In current firmware there is 2 entrys per packet.
+	 * The first points to the packet and the
+	 *  second is a dummy header.
+	 * This was done probably to align fields in 64-bit and
+	 *  maintain compatibility with old firmware.
+	 * This code assumes that <dummy header> and <padding2> are
+	 *  optional.
+	 */
+
+	if (skb->len < 4)
+		return 0;
 	skb_trim(skb, skb->len - 4);
 	memcpy(&rx_hdr, skb_tail_pointer(skb), 4);
 	le32_to_cpus(&rx_hdr);
-
 	pkt_cnt = (u16)rx_hdr;
 	hdr_off = (u16)(rx_hdr >> 16);
+
+	if (pkt_cnt == 0)
+		return 0;
+
+	/* Make sure that the bounds of the metadata array are inside the SKB
+	 * (and in front of the counter at the end).
+	 */
+	if (pkt_cnt * 4 + hdr_off > skb->len)
+		return 0;
 	pkt_hdr = (u32 *)(skb->data + hdr_off);
 
-	while (pkt_cnt--) {
+	/* Packets must not overlap the metadata array */
+	skb_trim(skb, hdr_off);
+
+	for (; pkt_cnt > 0; pkt_cnt--, pkt_hdr++) {
+		u16 pkt_len_plus_padd;
 		u16 pkt_len;
 
 		le32_to_cpus(pkt_hdr);
 		pkt_len = (*pkt_hdr >> 16) & 0x1fff;
+		pkt_len_plus_padd = (pkt_len + 7) & 0xfff8;
+
+		/* Skip dummy header used for alignment
+		 */
+		if (pkt_len == 0)
+			continue;
+
+		if (pkt_len_plus_padd > skb->len)
+			return 0;
 
 		/* Check CRC or runt packet */
-		if ((*pkt_hdr & AX_RXHDR_CRC_ERR) ||
-		    (*pkt_hdr & AX_RXHDR_DROP_ERR)) {
-			skb_pull(skb, (pkt_len + 7) & 0xFFF8);
-			pkt_hdr++;
+		if ((*pkt_hdr & (AX_RXHDR_CRC_ERR | AX_RXHDR_DROP_ERR)) ||
+		    pkt_len < 2 + ETH_HLEN) {
+			dev->net->stats.rx_errors++;
+			skb_pull(skb, pkt_len_plus_padd);
 			continue;
 		}
 
-		if (pkt_cnt == 0) {
-			skb->len = pkt_len;
+		/* last packet */
+		if (pkt_len_plus_padd == skb->len) {
+			skb_trim(skb, pkt_len);
+
 			/* Skip IP alignment pseudo header */
 			skb_pull(skb, 2);
-			skb_set_tail_pointer(skb, skb->len);
-			skb->truesize = pkt_len + sizeof(struct sk_buff);
+
+			skb->truesize = SKB_TRUESIZE(pkt_len_plus_padd);
 			ax88179_rx_checksum(skb, pkt_hdr);
 			return 1;
 		}
 
 		ax_skb = skb_clone(skb, GFP_ATOMIC);
-		if (ax_skb) {
-			ax_skb->len = pkt_len;
-			/* Skip IP alignment pseudo header */
-			skb_pull(ax_skb, 2);
-			skb_set_tail_pointer(ax_skb, ax_skb->len);
-			ax_skb->truesize = pkt_len + sizeof(struct sk_buff);
-			ax88179_rx_checksum(ax_skb, pkt_hdr);
-			usbnet_skb_return(dev, ax_skb);
-		} else {
+		if (!ax_skb)
 			return 0;
-		}
+		skb_trim(ax_skb, pkt_len);
 
-		skb_pull(skb, (pkt_len + 7) & 0xFFF8);
-		pkt_hdr++;
+		/* Skip IP alignment pseudo header */
+		skb_pull(ax_skb, 2);
+
+		skb->truesize = pkt_len_plus_padd +
+				SKB_DATA_ALIGN(sizeof(struct sk_buff));
+		ax88179_rx_checksum(ax_skb, pkt_hdr);
+		usbnet_skb_return(dev, ax_skb);
+
+		skb_pull(skb, pkt_len_plus_padd);
 	}
-	return 1;
+
+	return 0;
 }
 
 static struct sk_buff *

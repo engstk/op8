@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
 
 #include "msm_vidc_debug.h"
@@ -476,9 +476,11 @@ int msm_vidc_get_num_ref_frames(struct msm_vidc_inst *inst)
 	struct v4l2_ctrl *ltr_ctrl;
 	struct v4l2_ctrl *layer_ctrl;
 	u32 codec;
+
 	codec = get_v4l2_codec(inst);
 	if (codec == V4L2_PIX_FMT_VP8)
 		num_ref = num_ref << 1;
+
 	bframe_ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDEO_B_FRAMES);
 	num_bframes = bframe_ctrl->val;
 	if (num_bframes > 0)
@@ -493,9 +495,6 @@ int msm_vidc_get_num_ref_frames(struct msm_vidc_inst *inst)
 	layer_ctrl = get_ctrl(inst,
 		V4L2_CID_MPEG_VIDC_VIDEO_HEVC_MAX_HIER_CODING_LAYER);
 	num_hp_layers = layer_ctrl->val;
-#ifndef OPLUS_BUG_STABILITY
-	codec = get_v4l2_codec(inst);
-#endif /*OPLUS_BUG_STABILITY */
 	if (num_hp_layers > 1) {
 		/* LTR and B - frame not supported with hybrid HP */
 		if (inst->hybrid_hp)
@@ -949,7 +948,7 @@ u32 msm_vidc_calculate_dec_input_frame_size(struct msm_vidc_inst *inst)
 			div_factor = 2;
 	}
 
-	if (is_secure_session(inst) && num_mbs >= NUM_MBS_720P)
+	if (is_secure_session(inst))
 		div_factor = div_factor << 1;
 
 	/* For targets that doesn't support 4k, consider max mb's for that
@@ -1044,7 +1043,7 @@ u32 msm_vidc_calculate_enc_output_frame_size(struct msm_vidc_inst *inst)
 		goto calc_done;
 
 	if (mbs_per_frame <= NUM_MBS_480P)
-		goto calc_done; /* Default frame_size = YUVsize * 2 */
+		(void)frame_size; /* Default frame_size = YUVsize * 2 */
 	else if (mbs_per_frame <= NUM_MBS_4k)
 		frame_size = frame_size >> 2;
 	else
@@ -1898,27 +1897,27 @@ static inline u32 hfi_iris2_enc_dpb_buffer_size(u32 width, u32 height,
 }
 
 static inline u32 calculate_enc_scratch2_size(struct msm_vidc_inst *inst,
-       u32 width, u32 height, u32 num_ref, bool ten_bit, bool downscale,
-       u32 rotation_val, u32 flip)
+	u32 width, u32 height, u32 num_ref, bool ten_bit, bool downscale,
+	u32 rotation_val, u32 flip)
 {
-   u32 size;
+	u32 size;
 
-   size = hfi_iris2_enc_dpb_buffer_size(width, height, ten_bit);
-   size = size * (num_ref + 1) + 4096;
-   if (downscale && (rotation_val || flip)) {
-   /* VPSS output is always 128 x 32 aligned for 8-bit
-    * and 192 x 16 aligned for 10-bit
-    */
-           if (rotation_val == 90 || rotation_val == 270)
-                   size += hfi_iris2_enc_dpb_buffer_size(height, width,
-                                   ten_bit);
-           else
-                   size += hfi_iris2_enc_dpb_buffer_size(width, height,
-                                   ten_bit);
-           size += 4096;
-    }
-    return size;
- }
+	size = hfi_iris2_enc_dpb_buffer_size(width, height, ten_bit);
+	size = size * (num_ref + 1) + 4096;
+	if (downscale && (rotation_val || flip)) {
+	/* VPSS output is always 128 x 32 aligned for 8-bit
+	 * and 192 x 16 aligned for 10-bit
+	 */
+		if (rotation_val == 90 || rotation_val == 270)
+			size += hfi_iris2_enc_dpb_buffer_size(height, width,
+					ten_bit);
+		else
+			size += hfi_iris2_enc_dpb_buffer_size(width, height,
+					ten_bit);
+		size += 4096;
+	}
+	return size;
+}
 
 static inline u32 calculate_enc_persist_size(void)
 {

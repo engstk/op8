@@ -1271,12 +1271,14 @@ struct oplus_chg_operations  bq24190_chg_ops = {
 
 static void register_charger_devinfo(void)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int ret = 0;
 	char *version = "bq24190";
 	char *manufacture = "TI";
 	ret = register_device_proc("charger", version, manufacture);
 	if (ret)
 		chg_err("register_charger_devinfo fail\n");
+#endif
 }
 extern void Charger_Detect_Init(void);
 extern void Charger_Detect_Release(void);

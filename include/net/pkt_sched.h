@@ -11,6 +11,7 @@
 #include <uapi/linux/pkt_sched.h>
 
 #define DEFAULT_TX_QUEUE_LEN	1000
+#define STAB_SIZE_LOG_MAX	30
 
 struct qdisc_walker {
 	int	stop;
@@ -102,6 +103,7 @@ int qdisc_set_default(const char *id);
 void qdisc_hash_add(struct Qdisc *q, bool invisible);
 void qdisc_hash_del(struct Qdisc *q);
 struct Qdisc *qdisc_lookup(struct net_device *dev, u32 handle);
+struct Qdisc *qdisc_lookup_rcu(struct net_device *dev, u32 handle);
 struct qdisc_rate_table *qdisc_get_rtab(struct tc_ratespec *r,
 					struct nlattr *tab,
 					struct netlink_ext_ack *extack);
@@ -117,7 +119,13 @@ void __qdisc_run(struct Qdisc *q);
 static inline void qdisc_run(struct Qdisc *q)
 {
 	if (qdisc_run_begin(q)) {
-		__qdisc_run(q);
+		/* NOLOCK qdisc must check 'state' under the qdisc seqlock
+		 * to avoid racing with dev_qdisc_reset()
+		 */
+		if (!(q->flags & TCQ_F_NOLOCK) ||
+		    likely(!test_bit(__QDISC_STATE_DEACTIVATED, &q->state)))
+			__qdisc_run(q);
+
 		qdisc_run_end(q);
 	}
 }

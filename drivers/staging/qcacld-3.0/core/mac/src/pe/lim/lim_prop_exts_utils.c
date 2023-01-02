@@ -328,9 +328,9 @@ void lim_update_ch_width_for_p2p_client(struct mac_context *mac,
 	struct ch_params ch_params = {0};
 
 	/*
-	 * Some IOT AP's/P2P-GO's (e.g. make: Intel and model: Intel(R)
-	 * Wireless-AC 9560160MHz as P2P GO), send beacon with 20mhz and assoc
-	 * resp with 80mhz and after assoc resp, next beacon also has 80mhz.
+	 * Some IOT AP's/P2P-GO's (e.g. make: Wireless-AC 9560160MHz as P2P GO),
+	 * send beacon with 20mhz and assoc resp with 80mhz and
+	 * after assoc resp, next beacon also has 80mhz.
 	 * Connection is expected to happen in better possible
 	 * bandwidth(80MHz in this case).
 	 * Start the vdev with max supported ch_width in order to support this.
@@ -375,7 +375,6 @@ void lim_extract_ap_capability(struct mac_context *mac_ctx, uint8_t *p_ie,
 	tDot11fIEVHTCaps *vht_caps;
 	uint8_t channel = 0;
 	struct mlme_vht_capabilities_info *mlme_vht_cap;
-	bool ch_wd_initialized = false;
 
 	beacon_struct = qdf_mem_malloc(sizeof(tSirProbeRespBeacon));
 	if (!beacon_struct)
@@ -470,14 +469,8 @@ void lim_extract_ap_capability(struct mac_context *mac_ctx, uint8_t *p_ie,
 					WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ;
 		}
 
-		if (session->opmode == QDF_P2P_CLIENT_MODE &&
-		    !wlan_reg_is_24ghz_ch_freq(beacon_struct->chan_freq)) {
-			vht_ch_wd = wma_get_vht_ch_width();
-			pe_debug("vht_ch_wd: %u", vht_ch_wd);
-		} else {
-			fw_vht_ch_wd = wma_get_vht_ch_width();
-			vht_ch_wd = QDF_MIN(fw_vht_ch_wd, ap_bcon_ch_width);
-		}
+		fw_vht_ch_wd = wma_get_vht_ch_width();
+		vht_ch_wd = QDF_MIN(fw_vht_ch_wd, ap_bcon_ch_width);
 
 		if ((vht_ch_wd > WNI_CFG_VHT_CHANNEL_WIDTH_80MHZ) &&
 		    (ap_bcon_ch_width ==
@@ -552,15 +545,6 @@ void lim_extract_ap_capability(struct mac_context *mac_ctx, uint8_t *p_ie,
 				lim_get_80Mhz_center_channel(channel);
 		}
 		session->ch_width = vht_ch_wd + 1;
-		ch_wd_initialized = true;
-	}
-
-	if (!ch_wd_initialized &&
-	    (session->opmode == QDF_P2P_CLIENT_MODE &&
-	     !wlan_reg_is_24ghz_ch_freq(beacon_struct->chan_freq))) {
-		lim_get_cb_mode_for_p2p_client(mac_ctx, session,
-					       beacon_struct->chan_freq);
-		pe_debug("session->ch_width: %u", session->ch_width);
 	}
 
 	if (session->vhtCapability &&

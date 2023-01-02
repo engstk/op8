@@ -38,6 +38,6 @@ proc-$(CONFIG_PROC_PAGE_MONITOR)	+= page.o
 obj-y	+= healthinfo/
 #endif /* OPLUS_FEATURE_HEALTHINFO */
 #ifdef OPLUS_FEATURE_TASK_CPUSTATS
-#stat cpu usage on each tick.
-proc-y	+= task_cpustats.o
+obj-y	+= task_cpustats/
 #endif /* OPLUS_FEATURE_TASK_CPUSTATS */
+obj-$(CONFIG_OPLUS_FEATURE_CPU_JANKINFO)	+= cpu_jankinfo/

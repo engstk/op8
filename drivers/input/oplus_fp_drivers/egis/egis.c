@@ -160,8 +160,6 @@ static void spi_clk_enable(u8 bonoff)
 
 #endif
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 14, 0)
-
 /*
  *	FUNCTION NAME.
  *		interrupt_timer_routine
@@ -176,42 +174,30 @@ static void spi_clk_enable(u8 bonoff)
  *		Function Return
  */
 
-void interrupt_timer_routine(unsigned long _data)
+void egis_irq_enable(bool enable)
 {
-	struct interrupt_desc *bdata = (struct interrupt_desc *)_data;
-
-	DEBUG_PRINT("FPS interrupt count = %d", bdata->int_count);
-	if (bdata->int_count >= bdata->detect_threshold) {
-		bdata->finger_on = 1;
-		DEBUG_PRINT("FPS triggered !!!!!!!\n");
-	} else {
-		DEBUG_PRINT("FPS not triggered !!!!!!!\n");
-	}
-
-	bdata->int_count = 0;
-	__pm_wakeup_event(&wakeup_source_fp, msecs_to_jiffies(3000));
-	wake_up_interruptible(&interrupt_waitq);
+    unsigned long nIrqFlag;
+    struct irq_desc *desc;
+    desc = irq_to_desc(gpio_irq);
+    spin_lock_irqsave(&g_data->irq_lock, nIrqFlag);
+    if (1 == enable && 0 == g_data->irq_enable_flag) {
+        enable_irq(gpio_irq);
+        g_data->irq_enable_flag = 1;
+    } else if (0 == enable && 1 == g_data->irq_enable_flag) {
+        disable_irq_nosync(gpio_irq);
+        //__disable_irq(desc, gpio_irq, 0);
+        g_data->irq_enable_flag = 0;
+    }
+    DEBUG_PRINT("g_data->irq_enable_flag = %d,desc->depth = %d\n", g_data->irq_enable_flag, desc->depth);
+    spin_unlock_irqrestore(&g_data->irq_lock, nIrqFlag);
 }
-
-
-static irqreturn_t fp_eint_func(int irq, void *dev_id)
-{
-	if (!fps_ints.int_count)
-		mod_timer(&fps_ints.timer,jiffies + msecs_to_jiffies(fps_ints.detect_period));
-	fps_ints.int_count++;
-//	DEBUG_PRINT("-----------   zq fp fp_eint_func  , fps_ints.int_count=%d",fps_ints.int_count);
-	return IRQ_HANDLED;
-}
-#endif
 
 static irqreturn_t fp_eint_func_ll(int irq , void *dev_id)
 {
 	DEBUG_PRINT("[egis]fp_eint_func_ll\n");
 	fps_ints.finger_on = 1;
-	//fps_ints.int_count = 0;
-	disable_irq_nosync(gpio_irq);
-	fps_ints.drdy_irq_flag = DRDY_IRQ_DISABLE;
-	__pm_wakeup_event(&wakeup_source_fp, msecs_to_jiffies(3000));
+        g_data->irq_enable_flag = 1;
+        egis_irq_enable(0);
 	wake_up_interruptible(&interrupt_waitq);
 	return IRQ_RETVAL(IRQ_HANDLED);
 }
@@ -260,13 +246,13 @@ DEBUG_PRINT("FP --  %s request_irq_done = %d gpio_irq = %d  pin = %d  \n",__func
 //		gpio_irq = gpio_to_irq(egistec->irqPin);
         node = of_find_matching_node(node, egistec_match_table);
 //        printk("ttt-fp_irq number %d\n", node? 1:2);
- 
+
         if (node){
                 gpio_irq = irq_of_parse_and_map(node, 0);
                 printk("fp_irq number %d\n", gpio_irq);
 		}else
 		printk("node = of_find_matching_node fail error  \n");
-	
+
 		if (gpio_irq < 0) {
 			DEBUG_PRINT("%s gpio_to_irq failed\n", __func__);
 			status = gpio_irq;
@@ -276,20 +262,20 @@ DEBUG_PRINT("FP --  %s request_irq_done = %d gpio_irq = %d  pin = %d  \n",__func
 
 		DEBUG_PRINT("[Interrupt_Init] flag current: %d disable: %d enable: %d\n",
 		fps_ints.drdy_irq_flag, DRDY_IRQ_DISABLE, DRDY_IRQ_ENABLE);
-			
+
 		if (int_mode == EDGE_TRIGGER_RISING){
 		DEBUG_PRINT("%s EDGE_TRIGGER_RISING\n", __func__);
         err = request_irq(gpio_irq, fp_eint_func_ll, IRQ_TYPE_EDGE_RISING, "fp_detect-eint", egistec);
         if (err) {
 				pr_err("request_irq failed==========%s,%d\n", __func__,__LINE__);
-				}				
+                    }
 		}
 		else if (int_mode == EDGE_TRIGGER_FALLING){
 			DEBUG_PRINT("%s EDGE_TRIGGER_FALLING\n", __func__);
             err = request_irq(gpio_irq, fp_eint_func_ll, IRQ_TYPE_EDGE_FALLING, "fp_detect-eint", egistec);
             if (err) {
 				pr_err("request_irq failed==========%s,%d\n", __func__,__LINE__);
-				}	
+                    }
 		}
 		else if (int_mode == LEVEL_TRIGGER_LOW) {
 			DEBUG_PRINT("%s LEVEL_TRIGGER_LOW\n", __func__);
@@ -307,23 +293,17 @@ DEBUG_PRINT("FP --  %s request_irq_done = %d gpio_irq = %d  pin = %d  \n",__func
 		}
 		DEBUG_PRINT("[Interrupt_Init]:gpio_to_irq return: %d\n", gpio_irq);
 		DEBUG_PRINT("[Interrupt_Init]:request_irq return: %d\n", err);
-	
+
 		fps_ints.drdy_irq_flag = DRDY_IRQ_ENABLE;
 		enable_irq_wake(gpio_irq);
 
 desc1 = irq_to_desc(gpio_irq);
 		DEBUG_PRINT("huzhonghua:****depth state =  %d\n", desc1->depth);
 		request_irq_done = 1;
+                g_data->irq_enable_flag = 1;
 	}
-		
-		
-	if (fps_ints.drdy_irq_flag == DRDY_IRQ_DISABLE){
-		fps_ints.drdy_irq_flag = DRDY_IRQ_ENABLE;
-		enable_irq_wake(gpio_irq);
-		enable_irq(gpio_irq);
-        desc = irq_to_desc(gpio_irq);
-        DEBUG_PRINT("huzhonghua:****depth  = %d\n", desc->depth);
-	}
+
+        egis_irq_enable(1);
 done:
 	return 0;
 }
@@ -343,14 +323,9 @@ int Interrupt_Free(struct egistec_data *egistec)
 {
 	DEBUG_PRINT("%s\n", __func__);
 	fps_ints.finger_on = 0;
-	
-	if (fps_ints.drdy_irq_flag == DRDY_IRQ_ENABLE) {
-		DEBUG_PRINT("%s (DISABLE IRQ)\n", __func__);
-		disable_irq_nosync(gpio_irq);
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 14, 0)
-		del_timer_sync(&fps_ints.timer);
-#endif
-		fps_ints.drdy_irq_flag = DRDY_IRQ_DISABLE;
+
+        if (1 == g_data->irq_enable_flag) {
+            egis_irq_enable(0);
 	}
 	return 0;
 }
@@ -1053,6 +1028,8 @@ static int egistec_probe(struct platform_device *pdev)
 	spin_lock_init(&egistec->spi_lock);
 	mutex_init(&egistec->buf_lock);
 	mutex_init(&device_list_lock);
+        spin_lock_init(&g_data->irq_lock);
+        g_data->irq_enable_flag = 0;
 
 	INIT_LIST_HEAD(&egistec->device_entry);
 #if 1	
@@ -1111,7 +1088,6 @@ static int egistec_probe(struct platform_device *pdev)
 	fps_ints.drdy_irq_flag = DRDY_IRQ_DISABLE;
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 14, 0)
 	/* the timer is for ET310 */
-	setup_timer(&fps_ints.timer, interrupt_timer_routine,(unsigned long)&fps_ints);
 	add_timer(&fps_ints.timer);
 #endif
 

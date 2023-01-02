@@ -432,6 +432,7 @@
 				qcom,ratiometric;
 				qcom,hw-settle-time = <200>;
 			};
+			// #endif
 			board_id {
 				reg = <ADC_GPIO1>;
 				label = "board_id_vdata";

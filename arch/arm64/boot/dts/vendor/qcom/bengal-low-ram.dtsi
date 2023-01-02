@@ -1,4 +1,5 @@
 #include "bengal.dtsi"
+#include "bengal-pmi632.dtsi"
 / {
 };
 
@@ -22,8 +23,6 @@
 /delete-node/ &qseecom_ta_mem;
 
 /delete-node/ &secure_display_memory;
-
-/delete-node/ &disp_rdump_memory;
 
 &reserved_memory {
 	hyp_mem: hyp_region@45700000 {

@@ -43,6 +43,7 @@ int oplus_dimlayer_hbm_vblank_count = 0;
 atomic_t oplus_dimlayer_hbm_vblank_ref = ATOMIC_INIT(0);
 bool oplus_enhance_mipi_strength = false;
 extern struct oplus_apollo_backlight_list *p_apollo_backlight;
+extern unsigned int is_project(int project);
 
 static struct oplus_brightness_alpha brightness_alpha_lut[] = {
 	{0, 0xff},
@@ -445,6 +446,9 @@ int dsi_panel_parse_oplus_config(struct dsi_panel *panel)
 		pr_err("Failed to found panel name, using dumming name\n");
 		panel->oplus_priv.manufacture_name = DSI_PANEL_OPLUS_DUMMY_MANUFACTURE_NAME;
 	}
+	panel->oplus_priv.esd_err_flag_enabled = utils->read_bool(utils->data,
+				"oplus,esd-err-flag-check-enabled");
+	DSI_INFO("oplus,esd-err-flag-check-enabled: %s", panel->oplus_priv.esd_err_flag_enabled ? "true" : "false");
 
 	panel->oplus_priv.aod_on_fod_off = utils->read_bool(utils->data,
 				"oplus,aod_on_fod_off");
@@ -503,6 +507,9 @@ int dsi_panel_parse_oplus_config(struct dsi_panel *panel)
 				"oplus,apollo_backlight_enable");
 	DSI_INFO("apollo_backlight_enable: %s", apollo_backlight_enable ? "true" : "false");
 
+	panel->oplus_priv.is_raw_backlight = utils->read_bool(utils->data, "oplus,raw-backlight");
+	pr_info("[%s]is_raw_backlight: %s", __func__, panel->oplus_priv.is_raw_backlight? "Yes" : "Not");
+
 #ifdef OPLUS_FEATURE_ADFR
 	if (oplus_adfr_is_support()) {
 		if (oplus_adfr_get_vsync_mode() == OPLUS_EXTERNAL_TE_TP_VSYNC) {
@@ -551,6 +558,25 @@ int dsi_panel_parse_oplus_config(struct dsi_panel *panel)
 	/*#ifdef OPLUS_BUG_STABILITY*/
 	panel->oplus_priv.oplus_fp_hbm_config_flag = utils->read_bool(utils->data, "oplus,fp-hbm-config-flag");
 	/*#ifdef OPLUS_BUG_STABILITY*/
+
+/*******************************************
+		fp_type usage:
+		bit(0):lcd capacitive fingerprint(aod/fod are not supported)
+		bit(1):oled capacitive fingerprint(only support aod)
+		bit(2):optical fingerprint old solution(dim layer and pressed icon are controlled by kernel)
+		bit(3):optical fingerprint new solution(dim layer and pressed icon are not controlled by kernel)
+		bit(4):local hbm
+		bit(5):pressed icon brightness adaptive
+		bit(6):ultrasonic fingerprint
+		bit(7):ultra low power aod
+********************************************/
+	if (is_project(20085)) {  /* oled capacitive fingerprint project */
+		panel->oplus_priv.fp_type = BIT(1);
+	} else {
+		panel->oplus_priv.fp_type = BIT(2);
+	}
+	pr_err("fp_type=0x%x", panel->oplus_priv.fp_type);
+
 	return 0;
 }
 
@@ -986,8 +1012,10 @@ int oplus_display_panel_notify_fp_press(void *data)
 	}
 #endif /* OPLUS_FEATURE_AOD_RAMLESS */
 
-	err = drm_atomic_commit(state);
-	drm_atomic_state_put(state);
+	if (onscreenfp_status) {
+		err = drm_atomic_commit(state);
+		drm_atomic_state_put(state);
+	}
 
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 	if (display->panel->oplus_priv.is_aod_ramless && mode_changed) {
@@ -1011,3 +1039,63 @@ error:
 	return 0;
 }
 
+int oplus_ofp_set_fp_type(void *buf)
+{
+	unsigned int *fp_type = buf;
+	struct dsi_display *display = get_main_display();
+
+	if (!display || !display->panel || !fp_type) {
+		pr_err("[%s]: Invalid params\n", __func__);
+		return -EINVAL;
+	}
+	display->panel->oplus_priv.fp_type = *fp_type;
+	return 0;
+}
+
+int oplus_ofp_get_fp_type(void *buf)
+{
+	unsigned int *fp_type = buf;
+	struct dsi_display *display = get_main_display();
+
+	if (!display || !display->panel || !fp_type) {
+		pr_err("[%s]: Invalid params\n", __func__);
+		return -EINVAL;
+	}
+
+	*fp_type = display->panel->oplus_priv.fp_type;
+	DSI_INFO("fp_type:%d\n", *fp_type);
+
+	return 0;
+}
+
+ssize_t oplus_ofp_set_fp_type_attr(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf, size_t count)
+{
+	unsigned int fp_type = 0;
+	struct dsi_display *display = get_main_display();
+
+
+	if (!display || !display->panel || !buf) {
+		pr_err("[%s]: Invalid params\n", __func__);
+		return 0;
+	}
+
+	sscanf(buf, "%du", &fp_type);
+	display->panel->oplus_priv.fp_type = fp_type;
+
+	return count;
+}
+
+ssize_t oplus_ofp_get_fp_type_attr(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct dsi_display *display = get_main_display();
+
+	if (!display || !display->panel || !buf) {
+		pr_err("[%s]: Invalid params\n", __func__);
+		return 0;
+	}
+	DSI_INFO("fp_type:%d\n", display->panel->oplus_priv.fp_type);
+	return sprintf(buf, "%d\n", display->panel->oplus_priv.fp_type);
+}

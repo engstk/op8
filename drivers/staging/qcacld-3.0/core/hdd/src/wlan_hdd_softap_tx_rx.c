@@ -204,39 +204,6 @@ static inline struct sk_buff *hdd_skb_orphan(struct hdd_adapter *adapter,
 
 	return skb;
 }
-
-#else
-/**
- * hdd_skb_orphan() - skb_unshare a cloned packed else skb_orphan
- * @adapter: pointer to HDD adapter
- * @skb: pointer to skb data packet
- *
- * Return: pointer to skb structure
- */
-static inline struct sk_buff *hdd_skb_orphan(struct hdd_adapter *adapter,
-		struct sk_buff *skb) {
-
-	struct sk_buff *nskb;
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 19, 0))
-	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
-#endif
-
-	hdd_skb_fill_gso_size(adapter->dev, skb);
-
-	nskb = skb_unshare(skb, GFP_ATOMIC);
-#if (LINUX_VERSION_CODE > KERNEL_VERSION(3, 19, 0))
-	if (unlikely(hdd_ctx->config->tx_orphan_enable) && (nskb == skb)) {
-		/*
-		 * For UDP packets we want to orphan the packet to allow the app
-		 * to send more packets. The flow would ultimately be controlled
-		 * by the limited number of tx descriptors for the vdev.
-		 */
-		++adapter->hdd_stats.tx_rx_stats.tx_orphaned;
-		skb_orphan(skb);
-	}
-#endif
-	return nskb;
-}
 #endif /* QCA_LL_LEGACY_TX_FLOW_CONTROL */
 
 #define IEEE8021X_AUTH_TYPE_EAP 0
@@ -549,6 +516,11 @@ static void __hdd_softap_hard_start_xmit(struct sk_buff *skb,
 		QDF_TRACE(QDF_MODULE_ID_HDD_SAP_DATA, QDF_TRACE_LEVEL_INFO_HIGH,
 			  "%s: Recovery/(Un)load in Progress. Ignore!!!",
 			  __func__);
+		goto drop_pkt;
+	}
+
+	if (hdd_ctx->hdd_wlan_suspended) {
+		hdd_err_rl("Device is system suspended, drop pkt");
 		goto drop_pkt;
 	}
 
@@ -1162,15 +1134,10 @@ QDF_STATUS hdd_softap_rx_packet_cbk(void *adapter_context, qdf_nbuf_t rx_buf)
 
 		qdf_status = hdd_rx_deliver_to_stack(adapter, skb);
 
-		if (QDF_IS_STATUS_SUCCESS(qdf_status)) {
+		if (QDF_IS_STATUS_SUCCESS(qdf_status))
 			++adapter->hdd_stats.tx_rx_stats.rx_delivered[cpu_index];
-		} else {
+		else
 			++adapter->hdd_stats.tx_rx_stats.rx_refused[cpu_index];
-			DPTRACE(qdf_dp_log_proto_pkt_info(NULL, NULL, 0, 0,
-						      QDF_RX,
-						      QDF_TRACE_DEFAULT_MSDU_ID,
-						      QDF_TX_RX_STATUS_DROP));
-		}
 	}
 
 	return QDF_STATUS_SUCCESS;
@@ -1407,7 +1374,7 @@ QDF_STATUS hdd_softap_stop_bss(struct hdd_adapter *adapter)
 
 	if (adapter->device_mode == QDF_SAP_MODE &&
 	    !hdd_ctx->config->disable_channel)
-		wlan_hdd_restore_channels(hdd_ctx, true);
+		wlan_hdd_restore_channels(hdd_ctx);
 
 	/*  Mark the indoor channel (passive) to enable  */
 	if (indoor_chnl_marking && adapter->device_mode == QDF_SAP_MODE) {

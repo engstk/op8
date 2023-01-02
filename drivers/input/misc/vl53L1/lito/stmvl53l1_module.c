@@ -2432,7 +2432,11 @@ static int sleep_for_data(struct stmvl53l1_data *data, pid_t pid,
 	int rc;
 
 	mutex_unlock(&data->work_mutex);
+	#ifndef VENDOR_EDIT
+	if(data->preset_mode == VL53L1_PRESETMODE_LITE_RANGING){
+	#else
 	if (1) {
+	#endif
 		rc = wait_event_killable(data->waiter_for_data,
 		sleep_for_data_condition(data, pid, head));
 	}else{
@@ -3464,6 +3468,8 @@ static void stmvl53l1_on_newdata_event(struct stmvl53l1_data *data)
 		/* In case of VL53L1_RANGESTATUS_NONE we prefer to return
 		 * the previous ranging values along that error status
 		 */
+		#ifdef VENDOR_EDIT
+		#endif
 		/* got histogram debug data in case user want it later on */
 		if (!rc)
 			rc = VL53L1_GetAdditionalData(&data->stdev,

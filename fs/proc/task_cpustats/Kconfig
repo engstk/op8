@@ -1,0 +1,23 @@
+config OPLUS_CTP
+	tristate "task_cpustats"
+	default n
+	help
+	  record cpu status
+
+config OPLUS_SCHED
+	tristate "task_sched_info"
+	default n
+	help
+	  record task sched info
+
+config UTILS_MONITOR
+        tristate "task_load"
+        default n
+        help
+          record task load
+
+config OPLUS_GPU_FREQ_TRACE_POINT
+	tristate "msm_kgsl"
+	default n
+	help
+	  change kgsl gpu frequency trace point

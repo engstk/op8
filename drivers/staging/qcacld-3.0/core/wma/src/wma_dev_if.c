@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -90,6 +91,7 @@
 #include "../../core/src/vdev_mgr_ops.h"
 #include "wlan_utility.h"
 #include <wlan_cp_stats_mc_ucfg_api.h>
+#include "wmi_unified_vdev_api.h"
 
 QDF_STATUS wma_find_vdev_id_by_addr(tp_wma_handle wma, uint8_t *addr,
 				    uint8_t *vdev_id)
@@ -1091,7 +1093,7 @@ void wma_update_rate_flags_after_vdev_restart(tp_wma_handle wma,
 					      struct wma_txrx_node *iface)
 {
 	struct vdev_mlme_obj *vdev_mlme;
-	enum tx_rate_info *rate_flags;
+	enum tx_rate_info rate_flags = 0;
 	enum wlan_phymode bss_phymode;
 	struct wlan_channel *des_chan;
 
@@ -1102,35 +1104,22 @@ void wma_update_rate_flags_after_vdev_restart(tp_wma_handle wma,
 	if (!vdev_mlme)
 		return;
 
-	rate_flags = &vdev_mlme->mgmt.rate_info.rate_flags;
-
 	des_chan = wlan_vdev_mlme_get_des_chan(iface->vdev);
 	bss_phymode = des_chan->ch_phymode;
 
 	if (IS_WLAN_PHYMODE_HE(bss_phymode)) {
-		if (des_chan->ch_width == CH_WIDTH_160MHZ ||
-		    des_chan->ch_width == CH_WIDTH_80P80MHZ)
-			*rate_flags |= TX_RATE_HE160;
-		else if (des_chan->ch_width == CH_WIDTH_80MHZ)
-			*rate_flags |= TX_RATE_HE80;
-		else if (des_chan->ch_width)
-			*rate_flags |= TX_RATE_HE40;
-		else
-			*rate_flags |= TX_RATE_HE20;
+		rate_flags = wma_get_he_rate_flags(des_chan->ch_width);
 	} else if (IS_WLAN_PHYMODE_VHT(bss_phymode)) {
-		*rate_flags |= wma_get_vht_rate_flags(des_chan->ch_width);
+		rate_flags = wma_get_vht_rate_flags(des_chan->ch_width);
 	} else if (IS_WLAN_PHYMODE_HT(bss_phymode)) {
-		if (des_chan->ch_width)
-			*rate_flags |= TX_RATE_HT40;
-		else
-			*rate_flags |= TX_RATE_HT20;
+		rate_flags = wma_get_ht_rate_flags(des_chan->ch_width);
 	} else {
-		*rate_flags = TX_RATE_LEGACY;
+		rate_flags = TX_RATE_LEGACY;
 	}
 
 	wma_debug("bss phymode %d rate_flags %x, ch_width %d",
-		  bss_phymode, *rate_flags, des_chan->ch_width);
-	ucfg_mc_cp_stats_set_rate_flags(iface->vdev, *rate_flags);
+		  bss_phymode, rate_flags, des_chan->ch_width);
+	ucfg_mc_cp_stats_set_rate_flags(iface->vdev, rate_flags);
 }
 
 QDF_STATUS wma_handle_channel_switch_resp(tp_wma_handle wma,
@@ -1172,6 +1161,36 @@ QDF_STATUS wma_handle_channel_switch_resp(tp_wma_handle wma,
 	return QDF_STATUS_SUCCESS;
 }
 
+/*
+ * wma_get_ratemask_type() - convert user input ratemask type to FW type
+ * @type: User input ratemask type maintained in HDD
+ * @fwtype: Value return arg for fw ratemask type value
+ *
+ * Return: FW configurable ratemask type
+ */
+static QDF_STATUS wma_get_ratemask_type(enum wlan_mlme_ratemask_type type,
+					uint8_t *fwtype)
+{
+	switch (type) {
+	case WLAN_MLME_RATEMASK_TYPE_CCK:
+		*fwtype = WMI_RATEMASK_TYPE_CCK;
+		break;
+	case WLAN_MLME_RATEMASK_TYPE_HT:
+		*fwtype = WMI_RATEMASK_TYPE_HT;
+		break;
+	case WLAN_MLME_RATEMASK_TYPE_VHT:
+		*fwtype = WMI_RATEMASK_TYPE_VHT;
+		break;
+	case WLAN_MLME_RATEMASK_TYPE_HE:
+		*fwtype = WMI_RATEMASK_TYPE_HE;
+		break;
+	default:
+		return QDF_STATUS_E_INVAL;
+	}
+
+	return QDF_STATUS_SUCCESS;
+}
+
 QDF_STATUS wma_vdev_start_resp_handler(struct vdev_mlme_obj *vdev_mlme,
 				       struct vdev_start_response *rsp)
 {
@@ -1185,6 +1204,9 @@ QDF_STATUS wma_vdev_start_resp_handler(struct vdev_mlme_obj *vdev_mlme,
 	QDF_STATUS status;
 	enum vdev_assoc_type assoc_type = VDEV_ASSOC;
 	struct vdev_mlme_obj *mlme_obj;
+	struct wlan_mlme_psoc_ext_obj *mlme_psoc_obj;
+	const struct wlan_mlme_ratemask *ratemask_cfg;
+	struct config_ratemask_params rparams = {0};
 
 	wma = cds_get_context(QDF_MODULE_ID_WMA);
 	if (!wma) {
@@ -1196,6 +1218,9 @@ QDF_STATUS wma_vdev_start_resp_handler(struct vdev_mlme_obj *vdev_mlme,
 		WMA_LOGE("%s: psoc is NULL", __func__);
 		return QDF_STATUS_E_FAILURE;
 	}
+
+	mlme_psoc_obj = mlme_get_psoc_ext_obj(psoc);
+	ratemask_cfg = &mlme_psoc_obj->cfg.ratemask_cfg;
 
 #ifdef FEATURE_AP_MCC_CH_AVOIDANCE
 	if (!mac_ctx) {
@@ -1304,6 +1329,38 @@ QDF_STATUS wma_vdev_start_resp_handler(struct vdev_mlme_obj *vdev_mlme,
 	}
 	if (iface->type == WMI_VDEV_TYPE_AP && wma_is_vdev_up(rsp->vdev_id))
 		wma_set_sap_keepalive(wma, rsp->vdev_id);
+
+	/* Send ratemask to firmware */
+	if ((ratemask_cfg->type > WLAN_MLME_RATEMASK_TYPE_NO_MASK) &&
+	    (ratemask_cfg->type < WLAN_MLME_RATEMASK_TYPE_MAX)) {
+		struct wmi_unified *wmi_handle = wma->wmi_handle;
+
+		if (!wmi_handle) {
+			wma_err(FL("wmi_handle is null"));
+			return QDF_STATUS_E_INVAL;
+		}
+
+		rparams.vdev_id = rsp->vdev_id;
+		status = wma_get_ratemask_type(ratemask_cfg->type,
+					       &rparams.type);
+
+		if (QDF_IS_STATUS_ERROR(status)) {
+			wma_err(FL("unable to map ratemask"));
+			/* don't fail, default rates will still work */
+			return QDF_STATUS_SUCCESS;
+		}
+
+		rparams.lower32 = ratemask_cfg->lower32;
+		rparams.higher32 = ratemask_cfg->higher32;
+		rparams.lower32_2 = ratemask_cfg->lower32_2;
+		rparams.higher32_2 = ratemask_cfg->higher32_2;
+
+		status = wmi_unified_vdev_config_ratemask_cmd_send(wmi_handle,
+								   &rparams);
+		/* Only log failure. Do not abort */
+		if (QDF_IS_STATUS_ERROR(status))
+			wma_err(FL("failed to send ratemask"));
+	}
 
 	return QDF_STATUS_SUCCESS;
 }

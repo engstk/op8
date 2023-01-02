@@ -379,9 +379,9 @@ static void dsi_ctrl_dma_cmd_wait_for_done(struct work_struct *work)
 				dsi_ctrl_disable_status_interrupt(dsi_ctrl,
 						DSI_SINT_CMD_MODE_DMA_DONE);
 
-				mm_fb_display_kevent("dma_tx irq trigger fixup", MM_FB_KEY_RATELIMIT_NONE, "irq status=%x", status);
+				mm_fb_display_kevent("DisplayDriverID@@405$$", MM_FB_KEY_RATELIMIT_NONE, "dma_tx irq trigger fixup irq status=%x", status);
 			}
-			mm_fb_display_kevent("dma_tx irq trigger err", MM_FB_KEY_RATELIMIT_1H, "irq status=%x", status);
+			mm_fb_display_kevent("DisplayDriverID@@413$$", MM_FB_KEY_RATELIMIT_1H, "dma_tx irq trigger err irq status=%x", status);
 #endif
 		} else {
 			DSI_CTRL_ERR(dsi_ctrl,

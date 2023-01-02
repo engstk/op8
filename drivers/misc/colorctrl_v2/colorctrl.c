@@ -384,11 +384,6 @@ static int close_all_gpio_operation(struct color_ctrl_device *cd) {
 	struct color_ctrl_hw_resource *hw_res = cd->hw_res;
 	int ret = 0;
 
-	if (!cd) {
-		COLOR_INFO("!cd");
-		return -1;
-	}
-
 	colorctrl_msleep(1);
 	gpio_direction_output(hw_res->sleep_en_gpio, GPIO_LOW);
 	colorctrl_msleep(1);
@@ -404,11 +399,6 @@ static int close_all_gpio_operation(struct color_ctrl_device *cd) {
 static int set_gpio_status(struct color_ctrl_device *cd) {
 	struct color_ctrl_hw_resource *hw_res = cd->hw_res;
 	int ret = 0;
-
-	if (!cd) {
-		COLOR_INFO("!cd");
-		return -1;
-	}
 
 	switch (cd->operation) {
 	case DO_COLORING_EVT:
@@ -443,13 +433,14 @@ static int set_gpio_status(struct color_ctrl_device *cd) {
 
 static int do_operation(struct color_ctrl_device *cd, int charge_volt, int charge_time) {
 	int ret = 0;
-	COLOR_INFO("charge_volt is %dmV, charge time is %dms, status: %d, operation: %d",
-	           charge_volt, charge_time, cd->color_status, cd->operation);
 
 	if (!cd) {
 		COLOR_INFO("!cd");
 		return -1;
 	}
+
+	COLOR_INFO("charge_volt is %dmV, charge time is %dms, status: %d, operation: %d",
+				charge_volt, charge_time, cd->color_status, cd->operation);
 
 	switch (cd->operation) {
 	case DO_COLORING_EVT:
@@ -589,7 +580,7 @@ static int effective_check(struct color_ctrl_device *cd)
 
 	if (!cd) {
 		COLOR_INFO("!cd");
-		goto OUT;
+		return -1;
 	}
 
 	for(i = 0; i < 2; i++) {
@@ -692,12 +683,16 @@ static int ec_recharge_operation(struct color_ctrl_device *cd, bool is_ftm)
 {
 	struct color_ctrl_control_para *para = NULL;
 	int ret = 0;
-	COLOR_DEBUG("ec_recharge_operation, status:%d operation:%d", cd->color_status, cd->operation);
-
-	if (!cd ||  !cd->color_control_para||!cd->transparent_control_para) {
+	if (!cd) {
+		COLOR_INFO("!cd");
+		return 0;
+	}
+	if (!cd->color_control_para||!cd->transparent_control_para) {
 		COLOR_INFO("no dev or resources find, return.");
 		goto OUT;
 	}
+
+	COLOR_DEBUG("ec_recharge_operation, status:%d operation:%d", cd->color_status, cd->operation);
 
 	switch (cd->color_status) {
 	case COLOR:
@@ -750,19 +745,23 @@ OUT:
 		cd->color_status > 2 ? (cd->color_status > 3 ? "short circuit" : "open circuit") : (cd->color_status > 1 ? "fade" : "red"));
 	close_all_gpio_operation(cd);
 	return 0;
-
 }
 
 static int ec_charge_operation(struct color_ctrl_device *cd, bool is_ftm)
 {
-	struct color_ctrl_control_para *para = NULL;
+	struct color_ctrl_control_para *para;
 	int ret = 0;
-	COLOR_DEBUG("ec_charge_operation, status:%d operation:%d", cd->color_status, cd->operation);
 
-	if (!cd || !cd->color_control_para||!cd->transparent_control_para) {
+	if (!cd) {
+		COLOR_INFO("!cd");
+		return -1;
+	}
+	if (!cd->color_control_para||!cd->transparent_control_para) {
 		COLOR_INFO("no dev or resources find, return.");
 		goto OUT;
 	}
+
+	COLOR_DEBUG("ec_charge_operation, status:%d operation:%d", cd->color_status, cd->operation);
 
 	switch (cd->operation) {
 	case DO_COLORING_EVT:
@@ -873,9 +872,15 @@ static ssize_t proc_colorctrl_write(struct file *file, const char __user *buffer
 	int temp = 0;
 	struct color_ctrl_device *cd = PDE_DATA(file_inode(file));
 
+	if (!cd) {
+		COLOR_INFO("!cd");
+		return -1;
+	}
+
 	mutex_lock(&cd->rw_lock);
-	if (!cd || count >= 8) {
-		COLOR_INFO("! cd");
+
+	if (count >= 8) {
+		COLOR_INFO("count over size");
 		goto OUT;
 	}
 
@@ -988,7 +993,7 @@ static ssize_t proc_colorctrl_read(struct file *file, char __user *user_buf, siz
 
 	mutex_lock(&cd->rw_lock);
 
-	snprintf(page, PAGESIZE - 1, "%d\n", cd->color_status);
+	snprintf(page, PAGESIZE - 1, "%d\n", (int)cd->color_status);
 	ret = simple_read_from_buffer(user_buf, count, ppos, page, strlen(page));
 	mutex_unlock(&cd->rw_lock);
 	COLOR_INFO("read value: %d.", cd->color_status);
@@ -1089,7 +1094,7 @@ static ssize_t proc_temperature_control_read(struct file *file, char __user *use
 		snprintf(page, PAGESIZE - 1, "failed to get fitting temperature\n");
 	} else {
 		COLOR_INFO("current fitting temperature is : %d\n", temp);
-		snprintf(page, PAGESIZE - 1, "%d", temp);
+		snprintf(page, PAGESIZE - 1, "%lld", temp);
 	}
 
 	mutex_unlock(&cd->rw_lock);
@@ -1360,7 +1365,7 @@ static ssize_t proc_colorctrl_main_parameter_write(struct file *file, const char
 		COLOR_INFO("%s:count > %d\n", PAGESIZE);
 		return count;
 	}
-
+	buf[strlen(buf)] = '\0';
 	color_para = cd->color_control_para;
 	transparent_para = cd->transparent_control_para;
 	value_cnt = colorctrl_str_parse(buf, name, NAME_TAG_SIZE, split_value, MAX_PARAMETER);
@@ -1405,7 +1410,7 @@ static ssize_t proc_colorctrl_main_parameter_write(struct file *file, const char
 		colorctrl_reset_hrtimer(cd, cd->coloring_recharge_waitime);
 		COLOR_INFO("coloring_recharge_waitime success,need to retimer -> %d, val is %d",
 										cd->coloring_recharge_waitime, val);
-	}else if (strstr(name, "wait_check_time") && (value_cnt == 2)) {
+	} else if (strstr(name, "wait_check_time") && (value_cnt == 2)) {
 		cd->wait_check_time[0] = split_value[0];
 		cd->wait_check_time[1] = split_value[1];
 		COLOR_INFO("wait_check_time success");
@@ -1503,12 +1508,12 @@ static ssize_t proc_ageing_para_read(struct file *file, char __user *user_buf, s
 	loff_t  pos;
 	char *str;
 
-	mutex_lock(&cd->rw_lock);
-
 	if (!cd) {
 		COLOR_INFO("! cd\n");
-		goto OUT;
+		return -1;
 	}
+
+	mutex_lock(&cd->rw_lock);
 
 	str = kzalloc(MAX_AGING_VOL_DATA, GFP_KERNEL);
 	if (IS_ERR(str) || str == NULL) {
@@ -1567,9 +1572,14 @@ static ssize_t proc_ageing_para_write(struct file *file, const char __user *buff
 	int aging_vol = 0;
 	char *str = NULL;
 
+	if (!cd) {
+		COLOR_INFO("! cd\n");
+		return -1;
+	}
+
 	mutex_lock(&cd->rw_lock);
 
-	if (!cd || count > sizeof(buf)) {
+	if (count > sizeof(buf)) {
 		COLOR_INFO("! cd or count over size");
 		goto OUT;
 	}
@@ -1609,7 +1619,7 @@ static ssize_t proc_ageing_para_write(struct file *file, const char __user *buff
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
 	pos = fp->f_pos;
-	vfs_write(fp, str, sizeof(str), &pos);
+	vfs_write(fp, str, strlen(str), &pos);
 	fp->f_pos = pos;
 	set_fs(old_fs);
 
@@ -1650,10 +1660,15 @@ static ssize_t proc_ec_debug_level_write(struct file *file, const char __user *b
 	char buf[PAGESIZE] = {0};
 	int tmp = 0;
 
+	if (!cd) {
+		COLOR_INFO("!cd");
+		return -1;
+	}
+
 	mutex_lock(&cd->rw_lock);
 
-	if (!cd || count >= sizeof(buf)) {
-		COLOR_INFO("! cd or count over size");
+	if (count >= sizeof(buf)) {
+		COLOR_INFO("count over size");
 		goto OUT;
 	}
 

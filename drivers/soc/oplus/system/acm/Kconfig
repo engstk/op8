@@ -10,6 +10,11 @@ config OPLUS_FEATURE_ACM
 	  the whitelist may not able to delete media files, instead, the files
 	  to be deleted were moved to the recycle directory by Gallery.
 
+config OPLUS_FEATURE_ACM3
+	bool "Enable Access Control Module 3"
+	depends on OPLUS_FEATURE_ACM
+	default n
+
 config OPLUS_FEATURE_ACM_LOGGING
 	bool "Enable ACM logging features"
 	depends on OPLUS_FEATURE_ACM

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -54,6 +55,13 @@
 #ifdef OPLUS_FEATURE_ADFR
 #include "oplus_adfr.h"
 #endif
+
+#ifdef OPLUS_BUG_STABILITY
+volatile bool panel_initialized_flag = true;
+volatile int old_refresh_rate = 120;
+extern int dsi_panel_fps120_cmd_set(struct dsi_panel *panel);
+#endif /*OPLUS_BUG_STABILITY*/
+
 
 #define SDE_DEBUG_ENC(e, fmt, ...) SDE_DEBUG("enc%d " fmt,\
 		(e) ? (e)->base.base.id : -1, ##__VA_ARGS__)
@@ -1198,10 +1206,10 @@ static int sde_encoder_virt_atomic_check(
 	drm_mode_set_crtcinfo(adj_mode, 0);
 
 	has_modeset = sde_crtc_atomic_check_has_modeset(conn_state->state,
-					conn_state->crtc);
+				conn_state->crtc);
 	qsync_dirty = msm_property_is_dirty(&sde_conn->property_info,
-					&sde_conn_state->property_state,
-					CONNECTOR_PROP_QSYNC_MODE);
+				&sde_conn_state->property_state,
+				CONNECTOR_PROP_QSYNC_MODE);
 
 	if (has_modeset && qsync_dirty &&
 		(msm_is_mode_seamless_poms(adj_mode) ||
@@ -4531,6 +4539,46 @@ bool sde_encoder_check_curr_mode(struct drm_encoder *drm_enc, u32 mode)
 	return (disp_info->curr_panel_mode == mode);
 }
 
+void sde_encoder_trigger_rsc_state_change(struct drm_encoder *drm_enc)
+{
+	struct sde_encoder_virt *sde_enc = NULL;
+	int ret = 0;
+
+	sde_enc = to_sde_encoder_virt(drm_enc);
+
+	if (!sde_enc)
+		return;
+
+	mutex_lock(&sde_enc->rc_lock);
+	/*
+	 * In dual display case when secondary comes out of
+	 * idle make sure RSC solver mode is disabled before
+	 * setting CTL_PREPARE.
+	 */
+	if (!sde_enc->cur_master ||
+		!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE) ||
+		sde_enc->disp_info.display_type == SDE_CONNECTOR_PRIMARY ||
+		sde_enc->rc_state != SDE_ENC_RC_STATE_IDLE)
+		goto end;
+
+	/* enable all the clks and resources */
+	ret = _sde_encoder_resource_control_helper(drm_enc, true);
+	if (ret) {
+		SDE_ERROR_ENC(sde_enc, "rc in state %d\n", sde_enc->rc_state);
+		SDE_EVT32(DRMID(drm_enc), sde_enc->rc_state, SDE_EVTLOG_ERROR);
+		goto end;
+	}
+
+	_sde_encoder_update_rsc_client(drm_enc, true);
+
+	SDE_EVT32(DRMID(drm_enc), sde_enc->rc_state, SDE_ENC_RC_STATE_ON);
+	sde_enc->rc_state = SDE_ENC_RC_STATE_ON;
+
+end:
+	mutex_unlock(&sde_enc->rc_lock);
+}
+
+
 void sde_encoder_trigger_kickoff_pending(struct drm_encoder *drm_enc)
 {
 	struct sde_encoder_virt *sde_enc;
@@ -5337,6 +5385,12 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool is_error)
 	ktime_t wakeup_time;
 	unsigned int i;
 
+	#ifdef OPLUS_BUG_STABILITY
+	struct sde_connector *sde_conn;
+	struct dsi_display *display;
+	int rc;
+	#endif /*OPLUS_BUG_STABILITY*/
+
 	if (!drm_enc) {
 		SDE_ERROR("invalid encoder\n");
 		return;
@@ -5353,6 +5407,34 @@ void sde_encoder_kickoff(struct drm_encoder *drm_enc, bool is_error)
 	/* create a 'no pipes' commit to release buffers on errors */
 	if (is_error)
 		_sde_encoder_reset_ctl_hw(drm_enc);
+
+#ifdef OPLUS_BUG_STABILITY
+	if(sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_DSI) {
+		sde_conn = to_sde_connector(sde_enc->cur_master->connector);
+		if (!sde_conn) {
+			SDE_ERROR("fps sde_encoder_kickoff sde_conn is null\n");
+			return;
+		}
+		display = sde_conn->display;
+		if (!display) {
+			SDE_ERROR("fps sde_encoder_kickoff display is null\n");
+			return;
+		}
+	}
+
+	if((sde_enc->disp_info.intf_type == DRM_MODE_CONNECTOR_DSI)
+			&& (display->panel->nt36523w_ktz8866) && panel_initialized_flag) {
+		if(sde_enc->mode_info.frame_rate == 120 && old_refresh_rate != sde_enc->mode_info.frame_rate) {
+			rc = dsi_panel_fps120_cmd_set(display->panel);
+			if(rc) {
+				SDE_ERROR("fps120 failed to set cmd\n");
+			} else {
+				pr_info("fps120 success to set cmd, fps old_fps=%d\n", old_refresh_rate);
+				old_refresh_rate = sde_enc->mode_info.frame_rate;
+			}
+		}
+	}
+#endif /*OPLUS_BUG_STABILITY*/
 
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
 	iris_sde_encoder_kickoff(sde_enc->num_phys_encs,

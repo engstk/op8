@@ -172,6 +172,13 @@ enum {
 	RESTART_AICL,
 };
 
+enum cc_modes_type {
+	MODE_DEFAULT = 0,
+	MODE_UFP,
+	MODE_DFP,
+	MODE_DRP
+};
+
 enum smb_irq_index {
 	/* CHGR */
 	CHGR_ERROR_IRQ = 0,
@@ -405,6 +412,8 @@ struct smb_iio {
 	struct iio_channel	*parallel_isense_chan;
 	struct iio_channel	*batbtb_temp_chan;
 	struct iio_channel	*usbbtb_temp_chan;
+	struct iio_channel	*subboard_temp_chan;
+	int			pre_batt_temp;
 #endif
 };
 
@@ -677,6 +686,7 @@ struct smb_charger {
 #ifdef OPLUS_FEATURE_CHG_BASIC
 	int			pre_current_ma;
 	bool			is_dpdm_on_usb;
+	bool 			pd_not_rise_vbus_only_5v;
 	struct delayed_work	divider_set_work;
 	struct work_struct	dpdm_set_work;
 	struct work_struct	chargerid_switch_work;
@@ -700,6 +710,9 @@ struct smb_charger {
 	struct pinctrl_state	*shipmode_id_active;
 	bool			pd_sdp;
 	struct tcpc_device	*tcpc;
+
+	bool sy6974b_shipmode_enable;
+	bool external_cclogic;
 	bool			first_hardreset;
 	bool			keep_vbus_5v;
 	struct nvmem_cell	*soc_backup_nvmem;

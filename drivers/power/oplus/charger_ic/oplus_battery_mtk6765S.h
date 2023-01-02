@@ -187,6 +187,33 @@ static const struct file_operations mtk_chg_##name##_fops = {		\
 #define CHG_BAT_LT_STATUS	(1 << 5)
 #define CHG_TYPEC_WD_STATUS	(1 << 6)
 
+#ifdef OPLUS_FEATURE_CHG_BASIC
+typedef enum {
+	NTC_BATTERY,
+	NTC_BATTERY_CON,
+	NTC_CHARGER_IC,
+	NTC_SUB_BOARD,
+}NTC_TYPE;
+
+struct temp_param {
+	__s32 bts_temp;
+	__s32 temperature_r;
+};
+
+struct ntc_temp{
+	NTC_TYPE e_ntc_type;
+	int i_tap_over_critical_low;
+	int i_rap_pull_up_r;
+	int i_rap_pull_up_voltage;
+	int i_tap_min;
+	int i_tap_max;
+	unsigned int i_25c_volt;
+	unsigned int ui_dwvolt;
+	struct temp_param *pst_temp_table;
+	int i_table_size;
+};
+#endif
+
 struct mtk_charger;
 /* charger_algorithm notify charger_dev */
 enum {
@@ -243,6 +270,7 @@ struct battery_thermal_protection_data {
 #define SY6970 4
 #define SGM4151X 5
 #define BQ2560X 6
+#define SGM41512 8
 
 typedef enum {
         AP_TEMP_BELOW_T0 = 0,
@@ -251,7 +279,6 @@ typedef enum {
         AP_TEMP_T2_TO_T3,
         AP_TEMP_ABOVE_T3
 }OPLUS_CHG_AP_TEMP_STAT;
-
 
 enum charger_type {
 	CHARGER_UNKNOWN = 0,

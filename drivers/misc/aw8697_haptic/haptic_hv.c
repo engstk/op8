@@ -43,6 +43,9 @@
 
 #include "haptic_hv.h"
 #include "haptic_hv_reg.h"
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+#include "haptic_feedback.h"
+#endif
 
 #define HAPTIC_HV_DRIVER_VERSION	"v0.0.0.9"
 static uint8_t AW86927_HAPTIC_HIGH_LEVEL_REG_VAL = 0x5E;//max boost 9.408V
@@ -533,29 +536,26 @@ static char aw_rtp_name_165Hz[][AW_RTP_NAME_MAX] = {
 	{"aw8697_honor_unstoppable_RTP_67_165Hz.bin"},
 	{"aw8697_honor_thousands_kill_RTP_68_165Hz.bin"},
 	{"aw8697_honor_lengendary_RTP_69_165Hz.bin"},
-
-
-	{"aw8697_reserved_70.bin"},
-	{"aw8697_reserved_71.bin"},
-	{"aw8697_reserved_72.bin"},
-	{"aw8697_reserved_73.bin"},
-	{"aw8697_reserved_74.bin"},
-	{"aw8697_reserved_75.bin"},
-	{"aw8697_reserved_76.bin"},
-	{"aw8697_reserved_77.bin"},
-	{"aw8697_reserved_78.bin"},
-	{"aw8697_reserved_79.bin"},
-
-	{"aw8697_reserved_80.bin"},
-	{"aw8697_reserved_81.bin"},
-	{"aw8697_reserved_82.bin"},
-	{"aw8697_reserved_83.bin"},
-	{"aw8697_reserved_84.bin"},
-	{"aw8697_reserved_85.bin"},
-	{"aw8697_reserved_86.bin"},
-	{"aw8697_reserved_87.bin"},
-	{"aw8697_reserved_88.bin"},
-	{"aw8697_reserved_89.bin"},
+	{"aw8697_Airy_morning_RTP_70_165Hz.bin"},
+	{"aw8697_Temple_morning_RTP_71_165Hz.bin"},
+	{"aw8697_Water_cicidas_72_RTP_165Hz.bin"},
+	{"aw8697_Electro_club_RTP_73_165Hz.bin"},
+	{"aw8697_Vacation_RTP_74_165Hz.bin"},
+	{"aw8697_Jazz_funk_RTP_75_165Hz.bin"},
+	{"aw8697_House_club_RTP_76_165Hz.bin"},
+	{"aw8697_temple_tone_RTP_77_165Hz.bin"},
+	{"aw8697_Jazz_dreamy_RTP_78_165Hz.bin"},
+	{"aw8697_Jazz_modern_RTP_79_165Hz.bin"},
+	{"aw8697_Tone_round_RTP_80_165Hz.bin"},
+	{"aw8697_Digi_rise_RTP_81_165Hz.bin"},
+	{"aw8697_Wood_phone_RTP_82_165Hz.bin"},
+	{"aw8697_Hey_RTP_83_165Hz.bin"},
+	{"aw8697_Zanza_RTP_84_165Hz.bin"},
+	{"aw8697_Info_RTP_85_165Hz.bin"},
+	{"aw8697_Tip_top_RTP_86_165Hz.bin"},
+	{"aw8697_Opop_short_RTP_87_165Hz.bin"},
+	{"aw8697_bowl_bells_RTP_88_165Hz.bin"},
+	{"aw8697_jumpy_RTP_89_165Hz.bin"},
 
 	{"aw8697_reserved_90.bin"},
 	{"aw8697_reserved_91.bin"},
@@ -626,6 +626,28 @@ static char aw_rtp_name_165Hz[][AW_RTP_NAME_MAX] = {
 /* used for 7 end*/
 	{"aw8697_rtp_lighthouse.bin"},
 	{"aw8697_rtp_silk.bin"},
+	{"aw8697_reserved_152.bin"},
+	{"aw8697_reserved_153.bin"},
+	{"aw8697_reserved_154.bin"},
+	{"aw8697_reserved_155.bin"},
+	{"aw8697_reserved_156.bin"},
+	{"aw8697_reserved_157.bin"},
+	{"aw8697_reserved_158.bin"},
+	{"aw8697_reserved_159.bin"},
+	{"aw8697_reserved_160.bin"},
+
+    /*  Added oplus ringtone start */
+	{"aw8697_oplus_its_oplus_RTP_161_165Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_165Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_165Hz.bin"},
+	{"aw8697_reserved_164.bin"},
+	{"aw8697_reserved_165.bin"},
+	{"aw8697_reserved_166.bin"},
+	{"aw8697_reserved_167.bin"},
+	{"aw8697_reserved_168.bin"},
+	{"aw8697_reserved_169.bin"},
+	{"aw8697_oplus_gt_RTP_170_165Hz.bin"},
+    /*  Added oplus ringtone end */
 };
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -707,40 +729,37 @@ static char aw_rtp_name[][AW_RTP_NAME_MAX] = {
 	{"aw8697_honor_unstoppable_RTP_67.bin"},
 	{"aw8697_honor_thousands_kill_RTP_68.bin"},
 	{"aw8697_honor_lengendary_RTP_69.bin"},
-
-
-	{"aw8697_reserved_70.bin"},
-	{"aw8697_reserved_71.bin"},
-	{"aw8697_reserved_72.bin"},
-	{"aw8697_reserved_73.bin"},
-	{"aw8697_reserved_74.bin"},
-	{"aw8697_reserved_75.bin"},
-	{"aw8697_reserved_76.bin"},
-	{"aw8697_reserved_77.bin"},
-	{"aw8697_reserved_78.bin"},
-	{"aw8697_reserved_79.bin"},
-
-	{"aw8697_reserved_80.bin"},
-	{"aw8697_reserved_81.bin"},
-	{"aw8697_reserved_82.bin"},
-	{"aw8697_reserved_83.bin"},
-	{"aw8697_reserved_84.bin"},
-	{"aw8697_reserved_85.bin"},
-	{"aw8697_reserved_86.bin"},
-	{"aw8697_reserved_87.bin"},
-	{"aw8697_reserved_88.bin"},
-	{"aw8697_reserved_89.bin"},
+	{"aw8697_Airy_morning_RTP_70.bin"},
+	{"aw8697_Temple_morning_RTP_71.bin"},
+	{"aw8697_Water_cicidas_72_RTP.bin"},
+	{"aw8697_Electro_club_RTP_73.bin"},
+	{"aw8697_Vacation_RTP_74.bin"},
+	{"aw8697_Jazz_funk_RTP_75.bin"},
+	{"aw8697_House_club_RTP_76.bin"},
+	{"aw8697_temple_tone_RTP_77.bin"},
+	{"aw8697_Jazz_dreamy_RTP_78.bin"},
+	{"aw8697_Jazz_modern_RTP_79.bin"},
+	{"aw8697_Tone_round_RTP_80.bin"},
+	{"aw8697_Digi_rise_RTP_81.bin"},
+	{"aw8697_Wood_phone_RTP_82.bin"},
+	{"aw8697_Hey_RTP_83.bin"},
+	{"aw8697_Zanza_RTP_84.bin"},
+	{"aw8697_Info_RTP_85.bin"},
+	{"aw8697_Tip_top_RTP_86.bin"},
+	{"aw8697_Opop_short_RTP_87.bin"},
+	{"aw8697_bowl_bells_RTP_88.bin"},
+	{"aw8697_jumpy_RTP_89.bin"},
 
 	{"aw8697_reserved_90.bin"},
 	{"aw8697_reserved_91.bin"},
 	{"aw8697_reserved_92.bin"},
 	{"aw8697_reserved_93.bin"},
-	{"aw8697_reserved_94.bin"},
-	{"aw8697_reserved_95.bin"},
-	{"aw8697_reserved_96.bin"},
-	{"aw8697_reserved_97.bin"},
-	{"aw8697_reserved_98.bin"},
-	{"aw8697_reserved_99.bin"},
+	{"ALCloudscape_170HZ.bin"},
+	{"ALGoodenergy_170HZ.bin"},
+	{"NTblink_170HZ.bin"},
+	{"NTwhoop_170HZ.bin"},
+	{"Newfeeling_170HZ.bin"},
+	{"nature_170HZ.bin"},
 
 	{"aw8697_soldier_first_kill_RTP_100.bin"},
 	{"aw8697_soldier_second_kill_RTP_101.bin"},
@@ -811,16 +830,16 @@ static char aw_rtp_name[][AW_RTP_NAME_MAX] = {
 	{"aw8697_reserved_159.bin"},
 	{"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_235Hz.bin"},
-	{"aw8697_realme_tune_RTP_162_235Hz.bin"},
-	{"aw8697_realme_jingle_RTP_163_235Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_170Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_170Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_170Hz.bin"},
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
 	{"aw8697_reserved_167.bin"},
 	{"aw8697_reserved_168.bin"},
 	{"aw8697_reserved_169.bin"},
-	{"aw8697_reserved_170.bin"},
+	{"aw8697_oplus_gt_RTP_170_170Hz.bin"},
 	{"aw8697_Threefingers_Long_RTP_171.bin"},
 	{"aw8697_Threefingers_Up_RTP_172.bin"},
 	{"aw8697_Threefingers_Screenshot_RTP_173.bin"},
@@ -931,40 +950,36 @@ static char aw_rtp_name_175Hz[][AW_RTP_NAME_MAX] = {
 	{"aw8697_honor_unstoppable_RTP_67_175Hz.bin"},
 	{"aw8697_honor_thousands_kill_RTP_68_175Hz.bin"},
 	{"aw8697_honor_lengendary_RTP_69_175Hz.bin"},
-
-
-	{"aw8697_reserved_70.bin"},
-	{"aw8697_reserved_71.bin"},
-	{"aw8697_reserved_72.bin"},
-	{"aw8697_reserved_73.bin"},
-	{"aw8697_reserved_74.bin"},
-	{"aw8697_reserved_75.bin"},
-	{"aw8697_reserved_76.bin"},
-	{"aw8697_reserved_77.bin"},
-	{"aw8697_reserved_78.bin"},
-	{"aw8697_reserved_79.bin"},
-
-	{"aw8697_reserved_80.bin"},
-	{"aw8697_reserved_81.bin"},
-	{"aw8697_reserved_82.bin"},
-	{"aw8697_reserved_83.bin"},
-	{"aw8697_reserved_84.bin"},
-	{"aw8697_reserved_85.bin"},
-	{"aw8697_reserved_86.bin"},
-	{"aw8697_reserved_87.bin"},
-	{"aw8697_reserved_88.bin"},
-	{"aw8697_reserved_89.bin"},
-
+	{"aw8697_Airy_morning_RTP_70_175Hz.bin"},
+	{"aw8697_Temple_morning_RTP_71_175Hz.bin"},
+	{"aw8697_Water_cicidas_72_RTP_175Hz.bin"},
+	{"aw8697_Electro_club_RTP_73_175Hz.bin"},
+	{"aw8697_Vacation_RTP_74_175Hz.bin"},
+	{"aw8697_Jazz_funk_RTP_75_175Hz.bin"},
+	{"aw8697_House_club_RTP_76_175Hz.bin"},
+	{"aw8697_temple_tone_RTP_77_175Hz.bin"},
+	{"aw8697_Jazz_dreamy_RTP_78_175Hz.bin"},
+	{"aw8697_Jazz_modern_RTP_79_175Hz.bin"},
+	{"aw8697_Tone_round_RTP_80_175Hz.bin"},
+	{"aw8697_Digi_rise_RTP_81_175Hz.bin"},
+	{"aw8697_Wood_phone_RTP_82_175Hz.bin"},
+	{"aw8697_Hey_RTP_83_175Hz.bin"},
+	{"aw8697_Zanza_RTP_84_175Hz.bin"},
+	{"aw8697_Info_RTP_85_175Hz.bin"},
+	{"aw8697_Tip_top_RTP_86_175Hz.bin"},
+	{"aw8697_Opop_short_RTP_87_175Hz.bin"},
+	{"aw8697_bowl_bells_RTP_88_175Hz.bin"},
+	{"aw8697_jumpy_RTP_89_175Hz.bin"},
 	{"aw8697_reserved_90.bin"},
 	{"aw8697_reserved_91.bin"},
 	{"aw8697_reserved_92.bin"},
 	{"aw8697_reserved_93.bin"},
-	{"aw8697_reserved_94.bin"},
-	{"aw8697_reserved_95.bin"},
-	{"aw8697_reserved_96.bin"},
-	{"aw8697_reserved_97.bin"},
-	{"aw8697_reserved_98.bin"},
-	{"aw8697_reserved_99.bin"},
+	{"ALCloudscape_170HZ.bin"},
+	{"ALGoodenergy_170HZ.bin"},
+	{"NTblink_170HZ.bin"},
+	{"NTwhoop_170HZ.bin"},
+	{"Newfeeling_170HZ.bin"},
+	{"nature_170HZ.bin"},
 
 	{"aw8697_soldier_first_kill_RTP_100_175Hz.bin"},
 	{"aw8697_soldier_second_kill_RTP_101_175Hz.bin"},
@@ -1023,6 +1038,28 @@ static char aw_rtp_name_175Hz[][AW_RTP_NAME_MAX] = {
 /* used for 7 end*/
 	{"aw8697_rtp_lighthouse.bin"},
 	{"aw8697_rtp_silk.bin"},
+	{"aw8697_reserved_152.bin"},
+	{"aw8697_reserved_153.bin"},
+	{"aw8697_reserved_154.bin"},
+	{"aw8697_reserved_155.bin"},
+	{"aw8697_reserved_156.bin"},
+	{"aw8697_reserved_157.bin"},
+	{"aw8697_reserved_158.bin"},
+	{"aw8697_reserved_159.bin"},
+	{"aw8697_reserved_160.bin"},
+
+    /*  Added oplus ringtone start */
+	{"aw8697_oplus_its_oplus_RTP_161_175Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_175Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_175Hz.bin"},
+	{"aw8697_reserved_164.bin"},
+	{"aw8697_reserved_165.bin"},
+	{"aw8697_reserved_166.bin"},
+	{"aw8697_reserved_167.bin"},
+	{"aw8697_reserved_168.bin"},
+	{"aw8697_reserved_169.bin"},
+	{"aw8697_oplus_gt_RTP_170_175Hz.bin"},
+    /*  Added oplus ringtone end */
 };
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -1222,9 +1259,9 @@ static char aw_rtp_name_19065_226Hz[][AW_RTP_NAME_MAX] = {
 	{"aw8697_reserved_159.bin"},
 	{"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_235Hz.bin"},
-	{"aw8697_realme_tune_RTP_162_235Hz.bin"},
-	{"aw8697_realme_jingle_RTP_163_235Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_235Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
@@ -1415,9 +1452,9 @@ static char aw_rtp_name_19065_230Hz[][AW_RTP_NAME_MAX] = {
 	{"aw8697_reserved_159.bin"},
 	{"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_235Hz.bin"},
-	{"aw8697_realme_tune_RTP_162_235Hz.bin"},
-	{"aw8697_realme_jingle_RTP_163_235Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_235Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
@@ -1609,9 +1646,9 @@ static char aw_rtp_name_19065_234Hz[][AW_RTP_NAME_MAX] = {
 	{"aw8697_reserved_159.bin"},
 	{"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_235Hz.bin"},
-	{"aw8697_realme_tune_RTP_162_235Hz.bin"},
-	{"aw8697_realme_jingle_RTP_163_235Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_235Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_235Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_235Hz.bin"},
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
@@ -1803,6 +1840,9 @@ static int container_init(int size)
 		aw_rtp = vmalloc(size);
 		if (!aw_rtp) {
 			aw_dev_err("%s: error allocating memory\n", __func__);
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+			(void)oplus_haptic_track_mem_alloc_err(HAPTIC_MEM_ALLOC_TRACK, size, __func__);
+#endif
 			return -ENOMEM;
 		}
 		aw_container_size = size;
@@ -1840,6 +1880,9 @@ int i2c_r_bytes(struct aw_haptic *aw_haptic, uint8_t reg_addr, uint8_t *buf,
 	ret = i2c_transfer(aw_haptic->i2c->adapter, msg, ARRAY_SIZE(msg));
 	if (ret < 0) {
 		aw_dev_err("%s: transfer failed.", __func__);
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+		(void)oplus_haptic_track_dev_err(HAPTIC_I2C_READ_TRACK_ERR, reg_addr, ret);
+#endif
 		return ret;
 	} else if (ret != 2) {
 		aw_dev_err("%s: transfer failed(size error).", __func__);
@@ -1856,12 +1899,19 @@ int i2c_w_bytes(struct aw_haptic *aw_haptic, uint8_t reg_addr, uint8_t *buf,
 	int ret = -1;
 
 	data = kmalloc(len + 1, GFP_KERNEL);
+	if (data == NULL)
+		return -EINVAL;
+
 	data[0] = reg_addr;
 	memcpy(&data[1], buf, len);
 	ret = i2c_master_send(aw_haptic->i2c, data, len + 1);
-	if (ret < 0)
+	if (ret < 0) {
 		aw_dev_err("%s: i2c master send 0x%02x error\n",
 			   __func__, reg_addr);
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+		(void)oplus_haptic_track_dev_err(HAPTIC_I2C_WRITE_TRACK_ERR, reg_addr, ret);
+#endif
+	}
 	kfree(data);
 	return ret;
 }
@@ -2222,6 +2272,9 @@ static void ram_load(const struct firmware *cont, void *context)
 		release_firmware(cont);
 		aw_dev_err("%s: Error allocating memory\n",
 			   __func__);
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+		(void)oplus_haptic_track_mem_alloc_err(HAPTIC_MEM_ALLOC_TRACK, cont->size + sizeof(int), __func__);
+#endif
 		return;
 	}
 	awinic_fw->len = cont->size;
@@ -2406,6 +2459,9 @@ static int f0_cali(struct aw_haptic *aw_haptic)
 	if (aw_haptic->func->get_f0(aw_haptic)) {
 		aw_dev_err("%s: get f0 error, user defafult f0\n",
 			   __func__);
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+		(void)oplus_haptic_track_fre_cail(HAPTIC_F0_CALI_TRACK, aw_haptic->f0, 0, "aw_haptic->func->get_f0 is null");
+#endif
 	} else {
 		/* max and min limit */
 		f0_limit = aw_haptic->f0;
@@ -2418,6 +2474,9 @@ static int f0_cali(struct aw_haptic *aw_haptic)
 			aw_dev_err("%s: f0 calibration out of range = %d!\n",
 				   __func__, aw_haptic->f0);
 			f0_limit = aw_haptic->info.f0_pre;
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+			(void)oplus_haptic_track_fre_cail(HAPTIC_F0_CALI_TRACK, aw_haptic->f0, -ERANGE, "f0 out of range");
+#endif
 			return -ERANGE;
 		}
 		aw_dev_info("%s: f0_limit = %d\n", __func__,
@@ -2537,6 +2596,9 @@ static int rtp_osc_cali(struct aw_haptic *aw_haptic)
 	if (ret < 0) {
 		aw_dev_err("%s: failed to read %s\n", __func__,
 			   aw_rtp_name[0]);
+#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
+		(void)oplus_haptic_track_fre_cail(HAPTIC_OSC_CALI_TRACK, aw_haptic->f0, ret, "rtp_osc_cali request_firmware fail");
+#endif
 		return ret;
 	}
 	/*aw_haptic add stop,for irq interrupt during calibrate */
@@ -4019,7 +4081,7 @@ static ssize_t rtp_store(struct device *dev, struct device_attribute *attr,
 	if (((val >=  RINGTONES_START_INDEX && val <= RINGTONES_END_INDEX)
 		|| (val >=  NEW_RING_START && val <= NEW_RING_END)
 		|| (val >=  OS12_NEW_RING_START && val <= OS12_NEW_RING_END)
-		|| (val >=  REALME_RING_START && val <= REALME_RING_END)
+		|| (val >=  OPLUS_RING_START && val <= OPLUS_RING_END)
 		|| val == RINGTONES_SIMPLE_INDEX
 		|| val == RINGTONES_PURE_INDEX
 		|| val == AUDIO_READY_STATUS)) {
@@ -4678,6 +4740,11 @@ static ssize_t awrw_store(struct device *dev, struct device_attribute *attr,
 		if (aw_haptic->i2c_info.reg_data != NULL)
 			kfree(aw_haptic->i2c_info.reg_data);
 		aw_haptic->i2c_info.reg_data = kmalloc(reg_num, GFP_KERNEL);
+		if (aw_haptic->i2c_info.reg_data == NULL) {
+			aw_dev_err("%s: kmalloc error\n",
+				   __func__);
+			return -ERANGE;
+		}
 		if (flag == AW_SEQ_WRITE) {
 			if ((reg_num * 5) != (strlen(buf) - 3 * 5)) {
 				aw_dev_err("%s: param error\n",
@@ -5784,7 +5851,7 @@ static long aw_file_unlocked_ioctl(struct file *file, unsigned int cmd,
 			ret = -EINVAL;
 			break;
 		}
-		aw_haptic->func->set_bst_vol(aw_haptic, 0x4F);//boost 8.414V
+		aw_haptic->func->set_bst_vol(aw_haptic, AW86927_HAPTIC_HIGH_LEVEL_REG_VAL);
 		aw_haptic->func->upload_lra(aw_haptic, AW_OSC_CALI_LRA);
 		aw_haptic->func->play_mode(aw_haptic, AW_RTP_MODE);
 		aw_haptic->func->play_go(aw_haptic, true);
@@ -5810,7 +5877,7 @@ static long aw_file_unlocked_ioctl(struct file *file, unsigned int cmd,
 		aw_haptic->func->play_stop(aw_haptic);
 		aw_haptic->done_flag = false;
 		aw_haptic->haptic_rtp_mode = true;
-		aw_haptic->func->set_bst_vol(aw_haptic, 0x4F);//boost 8.414V
+		aw_haptic->func->set_bst_vol(aw_haptic, AW86927_HAPTIC_HIGH_LEVEL_REG_VAL);//target boost 8.414V
 		/* no need to do, will do in rtp work routine */
 		//aw_haptic->func->upload_lra(aw_haptic, AW_OSC_CALI_LRA);
 		schedule_work(&aw_haptic->haptic_rtp_work);
@@ -5941,22 +6008,30 @@ static ssize_t proc_vibration_style_write(struct file *filp, const char __user *
 				      size_t count, loff_t *lo)
 {
 	struct aw_haptic *aw_haptic = (struct aw_haptic *)filp->private_data;
-	char buffer[5] = { 0 };
+	char *buffer = NULL;
 	int rc = 0;
 	int val;
 
-	if (count > 5)
-		return -EFAULT;
+	buffer = (char *)kzalloc(count, GFP_KERNEL);
+	if(buffer == NULL) {
+		aw_dev_err("%s: alloc memory fail\n", __func__);
+		return count;
+	}
 
 	if (copy_from_user(buffer, buf, count)) {
+		if(buffer != NULL) {
+			kfree(buffer);
+		}
 		aw_dev_err("%s: error.\n", __func__);
-		return -EFAULT;
+		return count;
 	}
 
 	aw_dev_err("buffer=%s", buffer);
 	rc = kstrtoint(buffer, 0, &val);
-	if (rc < 0)
+	if (rc < 0) {
+		kfree(buffer);
 		return count;
+	}
 	aw_dev_err("val = %d", val);
 
 	if (val == 0) {
@@ -5968,6 +6043,7 @@ static ssize_t proc_vibration_style_write(struct file *filp, const char __user *
 	} else {
 		aw_haptic->vibration_style = AW_HAPTIC_VIBRATION_CRISP_STYLE;
 	}
+	kfree(buffer);
 	return count;
 }
 

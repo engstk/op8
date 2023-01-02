@@ -76,8 +76,8 @@ typedef struct {
     wait_queue_head_t wq_irq_return;
     int cancel;
     struct pinctrl *pinctrl1;
-    struct pinctrl_state  *eint_as_int, *fp_rst_low, *fp_rst_high, *fp_cs_low, *fp_mo_low,
-            *fp_mi_low,  *fp_ck_low, *fp_pwr_high, *fp_pwr_low,*fp_irq;
+    struct pinctrl_state  *eint_as_int, *fp_rst_low, *fp_rst_high, *fp_cs_mode, *fp_cs_as_gpio, *fp_spi_mo,
+            *fp_spi_mi,  *fp_spi_clk, *fp_mo_low, *fp_mi_low, *fp_cs_low, *fp_clk_low, *fp_pwr_high, *fp_pwr_low,*fp_irq;
 
     struct notifier_block notifier;
     u8 fb_status;

@@ -3172,6 +3172,27 @@ int oplus_chg_get_charger_subtype(void)
 	return CHARGER_SUBTYPE_DEFAULT;
 }
 
+#define QC_CHARGER_VOLTAGE_HIGH 7500
+#define QC_SOC_HIGH 90
+#define QC_TEMP_HIGH 420
+bool oplus_chg_check_qchv_condition(void)
+{
+	struct oplus_chg_chip *chip = g_oplus_chip;
+
+	if(!chip) {
+		pr_err("oplus_chip is null\n");
+		return false;
+	}
+
+	chip->charger_volt = chip->chg_ops->get_charger_volt();
+	if (chip->dual_charger_support && chip->charger_volt < QC_CHARGER_VOLTAGE_HIGH
+		&& chip->soc < QC_SOC_HIGH && chip->temperature <= QC_TEMP_HIGH && !chip->cool_down_force_5v) {
+		return true;
+	}
+
+	return false;
+}
+
 int oplus_chg_set_qc_config(void)
 {
 	int ret = -1;
@@ -3377,6 +3398,7 @@ struct oplus_chg_operations  mtk6360_chg_ops = {
 	.get_charger_subtype = oplus_chg_get_charger_subtype,
 	.set_qc_config = oplus_chg_set_qc_config,
 	.enable_qc_detect = oplus_chg_enable_hvdcp_detect,
+	.check_qchv_condition = oplus_chg_check_qchv_condition,
 };
 //====================================================================//
 void oplus_gauge_set_event(int event)

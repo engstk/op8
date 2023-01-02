@@ -15,22 +15,39 @@
 #include <linux/timer.h>
 #include <linux/wait.h>
 #include <linux/alarmtimer.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include <mt-plat/charger_type.h>
 #include <mt-plat/mtk_charger.h>
 #include <mt-plat/mtk_battery.h>
+#include <mt-plat/charger_class.h>
+#else
+#include <mt-plat/v1/charger_type.h>
+#include <mt-plat/v1/mtk_charger.h>
+#include <mt-plat/v1/mtk_battery.h>
+#include <mt-plat/v1/charger_class.h>
+#endif
 #include <uapi/linux/sched/types.h>
 #include <linux/uaccess.h>
 
-#include <mt-plat/charger_class.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include "../../../../kernel-4.14/drivers/misc/mediatek/typec/tcpc/inc/tcpm.h"
 #include "../../../../kernel-4.14/drivers/misc/mediatek/typec/tcpc/inc/mtk_direct_charge_vdm.h"
 struct charger_manager;
 #include "../../../../kernel-4.14/drivers/power/supply/mediatek/charger/mtk_pe_intf.h"
 #include "../../../../kernel-4.14/drivers/power/supply/mediatek/charger/mtk_pe20_intf.h"
 #include "../../../../kernel-4.14/drivers/power/supply/mediatek/charger/mtk_pdc_intf.h"
-
 #include "../../../../kernel-4.14/drivers/power/supply/mediatek/charger/mtk_charger_init.h"
 #include "../../../../kernel-4.14/drivers/power/supply/mediatek/charger/mtk_charger_intf.h"
+#else
+#include "../../../../kernel-4.19/drivers/misc/mediatek/typec/tcpc/inc/tcpm.h"
+#include "../../../../kernel-4.19/drivers/misc/mediatek/typec/tcpc/inc/mtk_direct_charge_vdm.h"
+struct charger_manager;
+#include "../../../../kernel-4.19/drivers/power/supply/mediatek/charger/mtk_pe_intf.h"
+#include "../../../../kernel-4.19/drivers/power/supply/mediatek/charger/mtk_pe20_intf.h"
+#include "../../../../kernel-4.19/drivers/power/supply/mediatek/charger/mtk_pdc_intf.h"
+#include "../../../../kernel-4.19/drivers/power/supply/mediatek/charger/mtk_charger_init.h"
+#include "../../../../kernel-4.19/drivers/power/supply/mediatek/charger/mtk_charger_intf.h"
+#endif
 
 typedef enum {
 	STEP_CHG_STATUS_STEP1 = 0,	/*16C~44C*/

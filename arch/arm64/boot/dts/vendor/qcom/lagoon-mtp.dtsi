@@ -111,9 +111,7 @@
 
 	cd-gpios = <&tlmm 94 GPIO_ACTIVE_LOW>;
 
-//	status = "ok";
-//#else
-	status = "disabled";
+	status = "ok";
 };
 
 &pm6150a_amoled {
@@ -303,11 +301,7 @@
 	pinctrl-names = "default";
 	qcom,enable-toggle-stat;
 	pinctrl-0 = <&smb_stat_default>;
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	status = "disabled";
-	/* else */
-	//status = "ok";
-	/* #endif OPLUS_ARCH_EXTENDS */
+	status = "ok";
 };
 
 &smb1396_div2_cp_master {

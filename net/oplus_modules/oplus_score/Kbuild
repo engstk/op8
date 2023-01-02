@@ -1,0 +1,1 @@
+obj-$(CONFIG_OPLUS_FEATURE_DATA_EVAL) += oplus_score.o

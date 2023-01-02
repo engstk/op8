@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1334,11 +1334,13 @@ QDF_STATUS (*send_nf_dbr_dbm_info_get_cmd)(wmi_unified_t wmi_handle,
 QDF_STATUS (*send_packet_power_info_get_cmd)(wmi_unified_t wmi_handle,
 		      struct packet_power_info_params *param);
 
+#ifdef WLAN_FEATURE_GPIO_CFG
 QDF_STATUS (*send_gpio_config_cmd)(wmi_unified_t wmi_handle,
 		      struct gpio_config_params *param);
 
 QDF_STATUS (*send_gpio_output_cmd)(wmi_unified_t wmi_handle,
 		      struct gpio_output_params *param);
+#endif
 
 QDF_STATUS (*send_rtt_meas_req_test_cmd)(wmi_unified_t wmi_handle,
 		      struct rtt_meas_req_test_params *param);
@@ -2009,6 +2011,9 @@ QDF_STATUS
 			   void *evt_buf,
 			   struct wmi_neighbor_report_data *dst,
 			   uint8_t idx, uint8_t rpt_idx);
+QDF_STATUS
+(*extract_roam_msg_info)(wmi_unified_t wmi_handle, void *evt_buf,
+			struct wmi_roam_msg_info *dst, uint8_t idx);
 
 void (*wmi_pdev_id_conversion_enable)(wmi_unified_t wmi_handle,
 				      uint32_t *pdev_map,
@@ -2220,6 +2225,11 @@ QDF_STATUS (*extract_time_sync_ftm_offset_event)(
 #endif /* FEATURE_WLAN_TIME_SYNC_FTM */
 QDF_STATUS (*send_roam_scan_ch_list_req_cmd)(wmi_unified_t wmi_hdl,
 					     uint32_t vdev_id);
+
+QDF_STATUS
+(*extract_install_key_comp_event)(wmi_unified_t wmi_handle,
+				  void *evt_buf, uint32_t len,
+				  struct wmi_install_key_comp_event *param);
 };
 
 /* Forward declartion for psoc*/
@@ -2644,6 +2654,21 @@ static inline void wmi_bcn_attach_tlv(wmi_unified_t wmi_handle)
 void wmi_fwol_attach_tlv(wmi_unified_t wmi_handle);
 #else
 static inline void wmi_fwol_attach_tlv(wmi_unified_t wmi_handle)
+{
+}
+#endif
+
+/**
+ * wmi_gpio_attach_tlv() - attach gpio tlv handlers
+ * @wmi_handle: wmi handle
+ *
+ * Return: void
+ */
+#ifdef WLAN_FEATURE_GPIO_CFG
+void wmi_gpio_attach_tlv(wmi_unified_t wmi_handle);
+#else
+static inline void
+wmi_gpio_attach_tlv(struct wmi_unified *wmi_handle)
 {
 }
 #endif

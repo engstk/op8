@@ -541,30 +541,5 @@ void lim_handle_sap_beacon(struct wlan_objmgr_pdev *pdev,
  */
 enum ani_akm_type lim_translate_rsn_oui_to_akm_type(uint8_t auth_suite[4]);
 
-/**
- * lim_prepare_ch_width_params() - Fill ch_width params from cbmode
- * @mac: Pointer to Global MAC structure
- * @session: PE session
- * @cb_mode: channel bond state
- *
- * Return: None
- */
-void lim_prepare_ch_width_params(struct mac_context *mac,
-				 struct pe_session *session,
-				 ePhyChanBondState cb_mode);
-
-/**
- * lim_get_cb_mode_for_p2p_client() - Get cb_mode for P2P_CLI
- * @mac: Pointer to Global MAC structure
- * @session: PE session
- * @ch_freq: P2P connection frequency
- *
- * Return: ch_params
- */
-struct ch_params
-lim_get_cb_mode_for_p2p_client(struct mac_context *mac,
-			       struct pe_session *session,
-			       uint32_t ch_freq);
-
 /************************************************************/
 #endif /* __LIM_API_H */

@@ -14,4 +14,6 @@ config OPLUS_SECURE_QCOM
 config OPLUS_SECURE_MTK
        default n
        tristate "Secure base on MTK"
-
+config QCOM_QSEELOG_ENCRYPT
+       default n
+       tristate "Qsee log encrypt"

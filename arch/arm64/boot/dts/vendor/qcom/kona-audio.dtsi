@@ -174,53 +174,8 @@
 
 &qupv3_se15_i2c {
 	status = "ok";
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	fsa4480: fsa4480@42 {
+	fsa4480: fsa4480@43 {
 		compatible = "qcom,fsa4480-i2c";
-		reg = <0x42>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&fsa_hs_det>;
-		fsa4480,hs-det-gpio = <&tlmm 11 0x00>;
-	};
-	/* #endif OPLUS_ARCH_EXTENDS */
-	/* #ifdef OPLUS_ARCH_EXTENDS */
-	max989xx@39 {
-		compatible = "maxim,max98927L";
-		reg = <0x39>;
-		mono_stereo_mode = <3>;
-		interleave_mode = <1>;
-		range_mohms = <4800 7800>;
-		maxim,98927-reset-gpio = <&tlmm 91 0x00>;
-		max989xx_vdd-supply = <&pm8150_s4>;
-		status = "okay";
-	};
-	max989xx@3a {
-		compatible = "maxim,max98927R";
-		reg = <0x3a>;
-		mono_stereo_mode = <3>;
-		interleave_mode = <1>;
-		range_mohms = <5500 8500>;
-		maxim,98927-reset-gpio = <&tlmm 99 0x00>;
-		max989xx_vdd-supply = <&pm8150_s4>;
-		status = "okay";
-	};
-	/* #endif OPLUS_ARCH_EXTENDS */
-};
-
-/* #ifdef OPLUS_ARCH_EXTENDS */
-&tlmm {
-	fsa_hs_det: fsa_hs_det  {
-		mux {
-			pins = "gpio11";
-			function = "gpio";
-		};
-
-		config {
-			pins = "gpio11";
-			drive-strength = <2>;
-			bias-disable;
-			output-high;
-		};
+		reg = <0x43>;
 	};
 };
-/* #endif OPLUS_ARCH_EXTENDS */

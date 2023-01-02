@@ -572,7 +572,12 @@ static struct dev_config mi2s_tx_cfg[] = {
 
 static struct tdm_dev_config pri_tdm_dev_config[MAX_PATH][TDM_PORT_MAX] = {
 	{ /* PRI TDM */
+		#ifndef OPLUS_ARCH_EXTENDS
+		/*Add for 4 solts tdm_0 audio bringup*/
 		{ {0,   4, 0xFFFF} }, /* RX_0 */
+		#else
+		{ {0,   4, 8, 12, 0xFFFF} }, /* RX_0 */
+		#endif /*OPLUS_ARCH_EXTENDS*/
 		{ {8,  12, 0xFFFF} }, /* RX_1 */
 		{ {16, 20, 0xFFFF} }, /* RX_2 */
 		{ {24, 28, 0xFFFF} }, /* RX_3 */
@@ -6764,8 +6769,11 @@ static struct snd_soc_dai_link msm_common_misc_fe_dai_links[] = {
 		.ops = &msm_cdc_dma_be_ops,
 	},
 	#ifdef OPLUS_FEATURE_AUDIO_FTM
+	/*Add for Hostless to the end*/
 	MI2S_TX_HOSTLESS_DAILINK("Primary MI2S TX_Hostless", "Primary MI2S_TX Hostless Capture", "PRI_MI2S_TX_HOSTLESS"),
 	TX_CDC_DMA_HOSTLESS_DAILINK("TX4_CDC_DMA Hostless", "TX4_CDC_DMA Hostless", "TX4_CDC_DMA_HOSTLESS"),
+	/*Add for pri tdm_0*/
+	PRI_TDM_TX_HOSTLESS_DAILINK("Primary TDM0 Hostless", "Primary TDM0 Hostless Capture", "PRI_TDM_TX_0_HOSTLESS"),
 	#endif /* OPLUS_FEATURE_AUDIO_FTM */
 };
 
@@ -8164,6 +8172,15 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		rc = of_property_read_u32(dev->of_node, "qcom,tdm-audio-intf",
 				&val);
 		if (!rc && val) {
+			#ifdef OPLUS_ARCH_EXTENDS
+			/* Add for oplus extend aduio which use tdm */
+			extend_i2s_be_dailinks_func = symbol_request(extend_codec_i2s_be_dailinks);
+			if (extend_i2s_be_dailinks_func) {
+				extend_i2s_be_dailinks_func(msm_tdm_be_dai_links, ARRAY_SIZE(msm_tdm_be_dai_links));
+			}
+			dev_err(dev, "%s: msm_tdm_be_dai_links enter val = %d\n",__func__,val);
+			#endif /* OPLUS_ARCH_EXTENDS */
+
 			memcpy(msm_kona_dai_links + total_links,
 				msm_tdm_be_dai_links,
 				sizeof(msm_tdm_be_dai_links));

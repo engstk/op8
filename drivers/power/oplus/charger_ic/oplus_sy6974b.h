@@ -1,7 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
-/*
- * Copyright (C) 2018-2020 Oplus. All rights reserved.
- */
 
 #ifndef __SY6974B_HEADER__
 #define __SY6974B_HEADER__
@@ -151,9 +147,18 @@
 /* Address:07h */
 #define REG07_SY6974B_ADDRESS					0x07
 
+#define SY6974_BATFET_OFF 						1
+#define SY6974_BATFET_ON 						0
+#define SY6974_BATFET_RST_ENABLE				1
+#define SY6974_BATFET_RST_DISABLE				0
 #define REG07_SY6974B_IINDET_EN_MASK				BIT(7)
 #define REG07_SY6974B_IINDET_EN_DET_COMPLETE			0x00
 #define REG07_SY6974B_IINDET_EN_FORCE_DET			BIT(7)
+#define REG07_SY6974B_BATFET_DIS_MASK	BIT(5)
+#define REG07_SY6974B_BATFET_DIS_SHIFT	5
+#define REG07_SY6974B_BATFET_RST_EN_MASK		BIT(2)
+#define REG07_SY6974B_BATFET_RST_EN_SHIFT			2
+
 
 /* Address:08h */
 #define REG08_SY6974B_ADDRESS					0x08
@@ -251,6 +256,7 @@ extern int smbchg_get_chargerid_volt(void);
 extern bool oplus_chg_is_usb_present(void);
 extern int smbchg_get_boot_reason(void);
 extern int oplus_chg_get_shutdown_soc(void);
+extern int oplus_get_subboard_temp(void);
 extern int oplus_chg_backup_soc(int backup_soc);
 extern int oplus_chg_get_charger_subtype(void);
 extern int oplus_chg_set_pd_config(void);
@@ -260,6 +266,8 @@ extern int oplus_chg_enable_qc_detect(void);
 extern void oplus_get_usbtemp_volt(struct oplus_chg_chip *chip);
 extern void oplus_set_typec_sinkonly(void);
 extern void oplus_set_typec_cc_open(void);
+extern void sgm7220_set_typec_sinkonly(void);
+extern void sgm7220_set_typec_cc_open(void);
 extern bool oplus_usbtemp_condition(void);
 extern int opchg_get_charger_type(void);
 extern void oplus_set_pd_active(int active);

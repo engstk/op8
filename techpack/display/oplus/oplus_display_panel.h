@@ -51,11 +51,13 @@ static struct device *panel_dev;
 static int panel_ref = 0;
 static struct cdev panel_cdev;
 
-#define APOLLO_BACKLIGHT_LENS 4096*9 //units: bytes 9pages
+#define APOLLO_BACKLIGHT_LENS 4096*19
 
 enum APOLLO_BL_ID : int {
 	APOLLO_BL_4096 = 4096,
 	APOLLO_BL_8192 = 8192,
+	APOLLO_BL_14336 = 14336,
+	APOLLO_BL_18432 = 18432,
 };
 
 struct oplus_apollo_backlight_list {
@@ -139,7 +141,6 @@ struct softiris_color
 #define PANEL_IOCTL_SET_LCM_CABC              PANEL_IOW(0x2C, unsigned int)
 #define PANEL_IOCTL_GET_LCM_CABC              PANEL_IOWR(0x2D, unsigned int)
 #define PANEL_IOCTL_SET_AOD_AREA              PANEL_IOW(0x2E, struct panel_aod_area_para)
-#define PANEL_IOCTL_GET_OPLUS_MAXBRIGHTNESS   PANEL_IOWR(0x2F, unsigned int)
 
 #define PANEL_IOCTL_SET_APOLLO_BACKLIGHT      PANEL_IOW(0x51, struct apollo_backlight_map_value)
 #define PANEL_IOCTL_GET_SOFTIRIS_COLOR        PANEL_IOWR(0x53, struct softiris_color)
@@ -151,6 +152,8 @@ struct softiris_color
 #endif
 #define PANEL_IOCTL_SET_CABC_STATUS              PANEL_IOW(0x59, unsigned int)
 #define PANEL_IOCTL_GET_CABC_STATUS              PANEL_IOWR(0x5A, unsigned int)
+#define PANEL_IOCTL_SET_FP_TYPE               PANEL_IOW(0x64, unsigned int)
+#define PANEL_IOCTL_GET_FP_TYPE               PANEL_IOWR(0x65, unsigned int)
 /*oplus ioctl case end*/
 
 #endif /*_OPLUS_DISPLAY_PANEL_H_*/

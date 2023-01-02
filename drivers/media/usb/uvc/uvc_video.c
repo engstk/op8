@@ -26,6 +26,8 @@
 
 #include "uvcvideo.h"
 
+#define CONFIG_DMA_NONCOHERENT 1
+
 /* ------------------------------------------------------------------------
  * UVC Controls
  */
@@ -117,6 +119,11 @@ int uvc_query_ctrl(struct uvc_device *dev, u8 query, u8 unit,
 	case 5: /* Invalid unit */
 	case 6: /* Invalid control */
 	case 7: /* Invalid Request */
+		/*
+		 * The firmware has not properly implemented
+		 * the control or there has been a HW error.
+		 */
+		return -EIO;
 	case 8: /* Invalid value within range */
 		return -EINVAL;
 	default: /* reserved or unknown */
@@ -129,9 +136,36 @@ int uvc_query_ctrl(struct uvc_device *dev, u8 query, u8 unit,
 static void uvc_fixup_video_ctrl(struct uvc_streaming *stream,
 	struct uvc_streaming_control *ctrl)
 {
+	static const struct usb_device_id elgato_cam_link_4k = {
+		USB_DEVICE(0x0fd9, 0x0066)
+	};
 	struct uvc_format *format = NULL;
 	struct uvc_frame *frame = NULL;
 	unsigned int i;
+
+	/*
+	 * The response of the Elgato Cam Link 4K is incorrect: The second byte
+	 * contains bFormatIndex (instead of being the second byte of bmHint).
+	 * The first byte is always zero. The third byte is always 1.
+	 *
+	 * The UVC 1.5 class specification defines the first five bits in the
+	 * bmHint bitfield. The remaining bits are reserved and should be zero.
+	 * Therefore a valid bmHint will be less than 32.
+	 *
+	 * Latest Elgato Cam Link 4K firmware as of 2021-03-23 needs this fix.
+	 * MCU: 20.02.19, FPGA: 67
+	 */
+	if (usb_match_one_id(stream->dev->intf, &elgato_cam_link_4k) &&
+	    ctrl->bmHint > 255) {
+		u8 corrected_format_index = ctrl->bmHint >> 8;
+
+		/* uvc_dbg(stream->dev, VIDEO,
+			"Correct USB video probe response from {bmHint: 0x%04x, bFormatIndex: %u} to {bmHint: 0x%04x, bFormatIndex: %u}\n",
+			ctrl->bmHint, ctrl->bFormatIndex,
+			1, corrected_format_index); */
+		ctrl->bmHint = 1;
+		ctrl->bFormatIndex = corrected_format_index;
+	}
 
 	for (i = 0; i < stream->nformats; ++i) {
 		if (stream->format[i].index == ctrl->bFormatIndex) {
@@ -1513,7 +1547,7 @@ static void uvc_free_urb_buffers(struct uvc_streaming *stream)
 {
 	unsigned int i;
 
-	for (i = 0; i < UVC_URBS; ++i) {
+	for (i = 0; i < stream->max_urb; ++i) {
 		if (stream->urb_buffer[i]) {
 #ifndef CONFIG_DMA_NONCOHERENT
 			usb_free_coherent(stream->dev->udev, stream->urb_size,
@@ -1553,12 +1587,22 @@ static int uvc_alloc_urb_buffers(struct uvc_streaming *stream,
 	 * payloads across multiple URBs.
 	 */
 	npackets = DIV_ROUND_UP(size, psize);
-	if (npackets > UVC_MAX_PACKETS)
-		npackets = UVC_MAX_PACKETS;
+	if (npackets > stream->max_urb_packets)
+		npackets = stream->max_urb_packets;
+
+
+	/* Allocate memory for storing URB pointers */
+	stream->urb = kcalloc(stream->max_urb,
+			sizeof(struct urb *), gfp_flags | __GFP_NOWARN);
+	stream->urb_buffer = kcalloc(stream->max_urb,
+			sizeof(char *), gfp_flags | __GFP_NOWARN);
+	stream->urb_dma = kcalloc(stream->max_urb,
+			sizeof(dma_addr_t), gfp_flags | __GFP_NOWARN);
+
 
 	/* Retry allocations until one succeed. */
 	for (; npackets > 1; npackets /= 2) {
-		for (i = 0; i < UVC_URBS; ++i) {
+		for (i = 0; i < stream->max_urb; ++i) {
 			stream->urb_size = psize * npackets;
 #ifndef CONFIG_DMA_NONCOHERENT
 			stream->urb_buffer[i] = usb_alloc_coherent(
@@ -1574,10 +1618,10 @@ static int uvc_alloc_urb_buffers(struct uvc_streaming *stream,
 			}
 		}
 
-		if (i == UVC_URBS) {
-			uvc_trace(UVC_TRACE_VIDEO, "Allocated %u URB buffers "
-				"of %ux%u bytes each.\n", UVC_URBS, npackets,
-				psize);
+		if (i == stream->max_urb) {
+			uvc_trace(UVC_TRACE_VIDEO,
+				"Allocated %u URB buffers of %ux%u bytes each.\n",
+				stream->max_urb, npackets, psize);
 			return npackets;
 		}
 	}
@@ -1597,7 +1641,7 @@ static void uvc_uninit_video(struct uvc_streaming *stream, int free_buffers)
 
 	uvc_video_stats_stop(stream);
 
-	for (i = 0; i < UVC_URBS; ++i) {
+	for (i = 0; i < stream->max_urb; ++i) {
 		urb = stream->urb[i];
 		if (urb == NULL)
 			continue;
@@ -1609,6 +1653,8 @@ static void uvc_uninit_video(struct uvc_streaming *stream, int free_buffers)
 
 	if (free_buffers)
 		uvc_free_urb_buffers(stream);
+
+	stream->refcnt--;
 }
 
 /*
@@ -1658,7 +1704,7 @@ static int uvc_init_video_isoc(struct uvc_streaming *stream,
 
 	size = npackets * psize;
 
-	for (i = 0; i < UVC_URBS; ++i) {
+	for (i = 0; i < stream->max_urb; ++i) {
 		urb = usb_alloc_urb(npackets, gfp_flags);
 		if (urb == NULL) {
 			uvc_uninit_video(stream, 1);
@@ -1724,7 +1770,7 @@ static int uvc_init_video_bulk(struct uvc_streaming *stream,
 	if (stream->type == V4L2_BUF_TYPE_VIDEO_OUTPUT)
 		size = 0;
 
-	for (i = 0; i < UVC_URBS; ++i) {
+	for (i = 0; i < stream->max_urb; ++i) {
 		urb = usb_alloc_urb(0, gfp_flags);
 		if (urb == NULL) {
 			uvc_uninit_video(stream, 1);
@@ -1822,6 +1868,10 @@ static int uvc_init_video(struct uvc_streaming *stream, gfp_t gfp_flags)
 		if (ep == NULL)
 			return -EIO;
 
+		/* Reject broken descriptors. */
+		if (usb_endpoint_maxp(&ep->desc) == 0)
+			return -EIO;
+
 		ret = uvc_init_video_bulk(stream, ep, gfp_flags);
 	}
 
@@ -1829,7 +1879,8 @@ static int uvc_init_video(struct uvc_streaming *stream, gfp_t gfp_flags)
 		return ret;
 
 	/* Submit the URBs. */
-	for (i = 0; i < UVC_URBS; ++i) {
+	stream->refcnt++;
+	for (i = 0; i < stream->max_urb; ++i) {
 		ret = usb_submit_urb(stream->urb[i], gfp_flags);
 		if (ret < 0) {
 			uvc_printk(KERN_ERR, "Failed to submit URB %u "
@@ -1989,6 +2040,9 @@ int uvc_video_init(struct uvc_streaming *stream)
 	stream->def_format = format;
 	stream->cur_format = format;
 	stream->cur_frame = frame;
+
+	stream->max_urb = UVC_URBS;
+	stream->max_urb_packets = UVC_MAX_PACKETS;
 
 	/* Select the video decoding function */
 	if (stream->type == V4L2_BUF_TYPE_VIDEO_CAPTURE) {

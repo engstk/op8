@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -956,10 +956,6 @@ void wma_set_sta_keep_alive(tp_wma_handle wma, uint8_t vdev_id,
 				   uint8_t *hostv4addr, uint8_t *destv4addr,
 				   uint8_t *destmac);
 
-int wma_vdev_install_key_complete_event_handler(void *handle,
-						uint8_t *event,
-						uint32_t len);
-
 /**
  * wma_objmgr_set_peer_mlme_phymode() - set phymode to peer object
  * @wma:      wma handle
@@ -1147,6 +1143,22 @@ void wma_set_bss_rate_flags(tp_wma_handle wma, uint8_t vdev_id,
  * Return: Rate flags corresponding to ch_width
  */
 enum tx_rate_info wma_get_vht_rate_flags(enum phy_ch_width ch_width);
+
+/**
+ * wma_get_ht_rate_flags() - Return the HT rate flags corresponding to the BW
+ * @ch_width: BW for which rate flags is required
+ *
+ * Return: Rate flags corresponding to ch_width
+ */
+enum tx_rate_info wma_get_ht_rate_flags(enum phy_ch_width ch_width);
+
+/**
+ * wma_get_he_rate_flags() - Return the HE rate flags corresponding to the BW
+ * @ch_width: BW for which rate flags is required
+ *
+ * Return: Rate flags corresponding to ch_width
+ */
+enum tx_rate_info wma_get_he_rate_flags(enum phy_ch_width ch_width);
 
 int32_t wmi_unified_send_txbf(tp_wma_handle wma, tpAddStaParams params);
 

@@ -1,6 +1,7 @@
 
 #ifdef OPLUS_FEATURE_TP_BASIC
 
+
 #config TOUCHPANEL_OPLUS
 #	default y
 #	bool "TP Synaptics "

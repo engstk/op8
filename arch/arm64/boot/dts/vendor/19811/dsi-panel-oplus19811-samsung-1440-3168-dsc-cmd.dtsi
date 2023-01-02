@@ -1,5 +1,5 @@
 &mdss_mdp {
-	dsi_oppo19811_samsung_1440_3168_dsc_cmd: qcom,mdss_dsi_oppo19811_samsung_1440_3168_dsc_cmd {
+	dsi_oplus19811_samsung_1440_3168_dsc_cmd: qcom,mdss_dsi_oppo19811_samsung_1440_3168_dsc_cmd {
 		qcom,mdss-dsi-panel-name = "samsung AMS678UW01 qhd panel";
 		oplus,mdss-dsi-vendor-name = "ANA6706";
 		oplus,mdss-dsi-manufacture = "samsung1024";
@@ -1085,7 +1085,6 @@
 			};
 			timing@2 {
 				qcom,mdss-dsi-timing-default;
-				qcom,mdss-dsi-splash-dms-switch-to-this-timing;
 				qcom,mdss-dsi-panel-framerate = <120>;
 				qcom,mdss-dsi-panel-clockrate = <1452000000>;
 				qcom,mdss-dsi-panel-width = <1440>;
@@ -2100,14 +2099,14 @@
 	};
 };
 
-&dsi_oppo19811_samsung_1440_3168_dsc_cmd {
+&dsi_oplus19811_samsung_1440_3168_dsc_cmd {
 	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_dcs";
 	qcom,mdss-dsi-bl-min-level = <1>;
 	qcom,mdss-dsi-bl-normal-max-level = <2047>;
-	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-dsi-bl-max-level = <2047>;
 	qcom,mdss-brightness-normal-max-level = <2047>;
-	qcom,mdss-brightness-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <2047>;
 	qcom,mdss-brightness-default-level = <400>;
 	qcom,platform-te-gpio = <&tlmm 66 0>;
 	qcom,platform-reset-gpio = <&tlmm 75 0>;
@@ -2160,12 +2159,10 @@
 			qcom,display-topology = <1 1 1>,<2 2 1>;
 			qcom,default-topology-index = <1>;
 		};
-		/delete-node/ timing@0;
-		/delete-node/ timing@1;
 	};
 };
 
-&dsi_oppo19811_samsung_1440_3168_dsc_cmd {
+&dsi_oplus19811_samsung_1440_3168_dsc_cmd {
 	qcom,panel_voltage_vddi_name = "vddio";
 	qcom,panel_voltage_vddi = <0 1650000 1800000 1950000>;
 	qcom,panel_voltage_vddr_name = "vddio";

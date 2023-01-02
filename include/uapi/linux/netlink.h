@@ -3,7 +3,7 @@
 #define _UAPI__LINUX_NETLINK_H
 #define OPLUS_FEATURE_WIFI_LUCKYMONEY
 
-#include <linux/kernel.h>
+#include <linux/const.h>
 #include <linux/socket.h> /* for __kernel_sa_family_t */
 #include <linux/types.h>
 
@@ -43,6 +43,7 @@
 
 //Add for apps network monitors
 #define NETLINK_OPLUS_APPS_MONITOR  35      /* Apps monitor NETLINK SOCK */
+//#endif /* VENDOR_EDIT */
 
 //#ifdef OPLUS_FEATURE_NWPOWER
 #define NETLINK_OPLUS_NWPOWERSTATE	36	/*OPLUS NW PowerState*/

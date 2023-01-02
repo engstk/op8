@@ -1,0 +1,11 @@
+#ifdef OPLUS_FEATURE_TP_BASIC
+
+
+config TOUCHPANEL_ILITEK_ILITEK9881H
+#	default y
+	bool "TP ilitek ilitek9881h IC enable or not for  OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel using ilitek ilitek9881h
+
+#endif
+

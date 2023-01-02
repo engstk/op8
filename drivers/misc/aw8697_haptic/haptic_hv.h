@@ -192,8 +192,8 @@ struct mmap_buf_format {
 #define NEW_RING_END				(160)
 #define OS12_NEW_RING_START			(70)
 #define OS12_NEW_RING_END			(89)
-#define REALME_RING_START			(161)
-#define REALME_RING_END				(170)
+#define OPLUS_RING_START			(161)
+#define OPLUS_RING_END				(170)
 
 
 #define AW_WAVEFORM_INDEX_CS_PRESS		(16)

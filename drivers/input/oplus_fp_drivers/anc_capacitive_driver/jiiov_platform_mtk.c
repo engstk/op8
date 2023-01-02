@@ -17,6 +17,7 @@
 #include <linux/atomic.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
+#include <linux/input.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -55,6 +56,9 @@
 
 #define ANC_COMPATIBLE_SW_FP    "jiiov,fingerprint"
 #define ANC_DEVICE_NAME         "jiiov_fp"
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+#define ANC_INPUT_NAME "jiiov-keys"
+#endif
 
 #define ANC_DEVICE_MAJOR        0    /* default to dynamic major */
 static int anc_major_num = ANC_DEVICE_MAJOR;
@@ -114,6 +118,10 @@ struct anc_data {
     struct class *dev_class;
     dev_t dev_num;
     struct cdev cdev;
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    struct input_dev *input;
+    ANC_KEY_EVENT key_event;
+#endif
 
     struct pinctrl *fingerprint_pinctrl;
     struct pinctrl_state *pinctrl_state[ARRAY_SIZE(pctl_names)];
@@ -281,13 +289,13 @@ static int anc_fb_state_chg_callback(struct notifier_block *nb, unsigned long va
                 anc_data->fb_black = 1;
                 netlink_msg = ANC_NETLINK_EVENT_SCR_OFF;
                 pr_info("[anc] NET SCREEN OFF!\n");
-                netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+                anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
                 break;
             case FB_BLANK_UNBLANK:
                 anc_data->fb_black = 0;
                 netlink_msg = ANC_NETLINK_EVENT_SCR_ON;
                 pr_info("[anc] NET SCREEN ON!\n");
-                netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+                anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
                 break;
             default:
                 pr_err("[anc] Unknown screen state!\n");
@@ -330,7 +338,7 @@ static ssize_t forward_netlink_event_set(struct device *p_dev, struct device_att
         return -EINVAL;
     }
 
-    return netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+    return anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
 }
 static DEVICE_ATTR(netlink_event, S_IWUSR, NULL, forward_netlink_event_set);
 #endif
@@ -589,7 +597,7 @@ static const struct attribute_group attribute_group = {
 static void anc_do_irq_work(struct work_struct *ws) {
 #ifdef ANC_USE_NETLINK
     char netlink_msg = (char)ANC_NETLINK_EVENT_IRQ;
-    netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+    anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
 #else
     (void *)ws;
     wake_up_interruptible(&epoll_waitqueue);
@@ -755,6 +763,56 @@ static void anc_irq_deinit(struct anc_data *data) {
 }
 #endif
 
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+static int anc_report_key_event(struct anc_data *data) {
+    int rc = 0;
+    unsigned int key_code = KEY_UNKNOWN;
+
+    pr_info("%s: key = %d, value = %d\n", __func__, data->key_event.key, data->key_event.value);
+
+    switch (data->key_event.key) {
+        case ANC_KEY_HOME:
+            key_code = KEY_HOME;
+            break;
+        case ANC_KEY_MENU:
+            key_code = KEY_MENU;
+            break;
+        case ANC_KEY_BACK:
+            key_code = KEY_BACK;
+            break;
+        case ANC_KEY_UP:
+            key_code = KEY_UP;
+            break;
+        case ANC_KEY_DOWN:
+            key_code = KEY_DOWN;
+            break;
+        case ANC_KEY_LEFT:
+            key_code = KEY_LEFT;
+            break;
+        case ANC_KEY_RIGHT:
+            key_code = KEY_RIGHT;
+            break;
+        case ANC_KEY_POWER:
+            key_code = KEY_POWER;
+            break;
+        case ANC_KEY_WAKEUP:
+            key_code = KEY_WAKEUP;
+            break;
+        case ANC_KEY_CAMERA:
+            key_code = KEY_CAMERA;
+            break;
+        default:
+            key_code = (unsigned int)(data->key_event.key);
+            break;
+    }
+
+    input_report_key(data->input, key_code, data->key_event.value);
+    input_sync(data->input);
+
+    return rc;
+}
+#endif
+
 static int anc_open(struct inode *inode, struct file *filp) {
     struct anc_data *dev_data;
     dev_data = container_of(inode->i_cdev, struct anc_data, cdev);
@@ -844,6 +902,17 @@ static long anc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
             pr_info("%s: cancle epoll wait \n", __func__);
             wake_up_interruptible(&epoll_waitqueue);
             break;
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+        case ANC_IOC_REPORT_KEY_EVENT:
+            if (copy_from_user(
+                    &(dev_data->key_event), (ANC_KEY_EVENT *)arg, sizeof(ANC_KEY_EVENT))) {
+                pr_err("Failed to copy input key event from user to kernel\n");
+                rc = -EFAULT;
+                break;
+            }
+            anc_report_key_event(dev_data);
+            break;
+#endif
         default:
             rc = -EINVAL;
             break;
@@ -990,6 +1059,41 @@ static uint32_t anc_read_sensor_id(struct anc_data *data) {
 }
 #endif
 
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+static int anc_input_init(struct device *dev, struct anc_data *data) {
+    int rc = 0;
+
+    data->input = input_allocate_device();
+    if (!data->input) {
+        dev_err(dev, "%s: Failed to allocate input device\n", __func__);
+        return -ENOMEM;
+    }
+
+    data->input->name = ANC_INPUT_NAME;
+    __set_bit(EV_KEY, data->input->evbit);
+    __set_bit(KEY_HOME, data->input->keybit);
+    __set_bit(KEY_MENU, data->input->keybit);
+    __set_bit(KEY_BACK, data->input->keybit);
+    __set_bit(KEY_UP, data->input->keybit);
+    __set_bit(KEY_DOWN, data->input->keybit);
+    __set_bit(KEY_LEFT, data->input->keybit);
+    __set_bit(KEY_RIGHT, data->input->keybit);
+    __set_bit(KEY_POWER, data->input->keybit);
+    __set_bit(KEY_WAKEUP, data->input->keybit);
+    __set_bit(KEY_CAMERA, data->input->keybit);
+
+    rc = input_register_device(data->input);
+    if (rc) {
+        dev_err(dev, "%s: Failed to register input device\n", __func__);
+        input_free_device(data->input);
+        data->input = NULL;
+        return -ENODEV;
+    }
+
+    return rc;
+}
+#endif
+
 static int anc_probe(anc_device_t *pdev) {
     struct device *dev = &pdev->dev;
     int rc = 0;
@@ -1070,6 +1174,14 @@ static int anc_probe(anc_device_t *pdev) {
 
     mutex_init(&dev_data->lock);
 
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    rc = anc_input_init(dev, dev_data);
+    if (rc) {
+        dev_err(dev, "%s: Failed to init input dev\n", __func__);
+        goto input_dev_err;
+    }
+#endif
+
     rc = anc_gpio_init(dev, dev_data);
     if (rc) {
         dev_err(dev, "%s: Failed to init gpio", __func__);
@@ -1120,6 +1232,10 @@ static int anc_probe(anc_device_t *pdev) {
     return 0;
 
 exit:
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    input_unregister_device(dev_data->input);
+input_dev_err:
+#endif
 cdev_add_err:
     device_destroy(dev_data->dev_class, dev_data->dev_num);
 device_create_err:
@@ -1158,6 +1274,11 @@ static int anc_remove(anc_device_t *pdev) {
 #endif
 #ifdef ANC_USE_NETLINK
     fb_unregister_client(&data->notifier);
+#endif
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    if (data->input) {
+        input_unregister_device(data->input);
+    }
 #endif
     cdev_del(&data->cdev);
     device_destroy(data->dev_class, data->dev_num);
@@ -1243,11 +1364,7 @@ static int __init ancfp_init(void) {
     }
 
 #ifdef ANC_USE_NETLINK
-    anc_netlink_init();
-    /*Register for receiving tp touch event.
-     * Must register after get_fpsensor_type filtration as only one handler can be registered.
-     */
-    pr_info("register tp event handler");
+    anc_cap_netlink_init();
 #endif
 
     return rc;
@@ -1256,7 +1373,7 @@ static int __init ancfp_init(void) {
 static void __exit ancfp_exit(void) {
     pr_info("%s\n", __func__);
 #ifdef ANC_USE_NETLINK
-    anc_netlink_exit();
+    anc_cap_netlink_exit();
 #endif
 #ifdef ANC_USE_SPI
     spi_unregister_driver(&anc_driver);

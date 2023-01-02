@@ -164,16 +164,14 @@ extern int creds_change_dac(void);
 extern int shutdown_kernel_log_save(void *args);
 extern void shutdown_dump_android_log(void);
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-static struct timespec current_kernel_time(void)
+static struct timespec current_boottime_time(void)
 {
-	struct timespec64 ts64;
+	struct timespec ts;
 
-	ktime_get_real_ts64(&ts64);
+	getboottime(&ts);
 
-	return timespec64_to_timespec(ts64);
+	return ts;
 }
-#endif
 
 static ssize_t shutdown_detect_trigger(struct file *filp, const char *ubuf, size_t cnt, loff_t *data)
 {
@@ -238,7 +236,7 @@ static ssize_t shutdown_detect_trigger(struct file *filp, const char *ubuf, size
         pr_err("shutdown_detect: abort shutdown detect\n");
         break;
     case SHUTDOWN_STAGE_KERNEL:
-        shutdown_kernel_start_time = current_kernel_time().tv_sec;
+        shutdown_kernel_start_time = current_boottime_time().tv_sec;
         pr_info("shutdown_kernel_start_time %ld\n", shutdown_kernel_start_time);
         if((shutdown_kernel_start_time - shutdown_init_start_time) > gnativetimeout) {
             pr_err("shutdown_detect_timeout: timeout happened in reboot.cpp\n");
@@ -256,7 +254,7 @@ static ssize_t shutdown_detect_trigger(struct file *filp, const char *ubuf, size
     case SHUTDOWN_STAGE_INIT:
         if (!shutdown_detect_started) {
             shutdown_detect_started = true;
-            shutdown_init_start_time = current_kernel_time().tv_sec;
+			shutdown_init_start_time = current_boottime_time().tv_sec;
             shutdown_start_time = shutdown_init_start_time;
             shd_complete_monitor = kthread_run(shutdown_detect_func, NULL, "shutdown_detect_thread");
             if (IS_ERR(shd_complete_monitor)) {
@@ -265,7 +263,7 @@ static ssize_t shutdown_detect_trigger(struct file *filp, const char *ubuf, size
             }
 
         } else {
-            shutdown_init_start_time = current_kernel_time().tv_sec;
+			shutdown_init_start_time = current_boottime_time().tv_sec;
 
             if((shutdown_init_start_time - shutdown_systemserver_start_time) > gjavatimeout) {
                 pr_err("shutdown_detect_timeout: timeout happened in system_server stage\n");
@@ -284,7 +282,7 @@ static ssize_t shutdown_detect_trigger(struct file *filp, const char *ubuf, size
         pr_err("shutdown_detect_timeout: volume shutdown timeout\n");
         break;
     case SHUTDOWN_STAGE_SYSTEMSERVER:
-        shutdown_systemserver_start_time = current_kernel_time().tv_sec;
+        shutdown_systemserver_start_time = current_boottime_time().tv_sec;
 
         //pr_err("shutdown_systemserver_start_time %ld\n", shutdown_systemserver_start_time);
         if (!shutdown_detect_started) {
@@ -533,7 +531,7 @@ static void shutdown_timeout_flag_write(int timeout)
 
     gtimeout = timeout;
 
-    shutdown_end_time = current_kernel_time().tv_sec;
+	shutdown_end_time = current_boottime_time().tv_sec;
 
     tsk = kthread_run(shutdown_timeout_flag_write_now, NULL, "shd_to_flag");
     if(IS_ERR(tsk))

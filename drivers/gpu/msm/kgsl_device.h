@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2002,2007-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2002,2007-2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef __KGSL_DEVICE_H
 #define __KGSL_DEVICE_H
@@ -327,6 +328,10 @@ struct kgsl_device {
 	bool snapshot_control;
 	int snapshotfault;
 	#endif /* OPLUS_FEATURE_GPU_MINIDUMP */
+	/** @timelines: Iterator for assigning IDs to timelines */
+	struct idr timelines;
+	/** @timelines_lock: Spinlock to protect the timelines idr */
+	spinlock_t timelines_lock;
 };
 
 #define KGSL_MMU_DEVICE(_mmu) \

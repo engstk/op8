@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /**************************************************************
 * Copyright (c)  2008- 2020  Oplus. All rights reserved.
+* VENDOR_EDIT
 * File       : oplus_root_check.c
 * Description: root check and kill process.
 * Version   : 1.0
@@ -16,10 +17,12 @@
 #include <linux/version.h>
 #include <linux/vmalloc.h>
 #include <linux/selinux.h>
+#ifdef VENDOR_EDIT
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 #include <linux/sched/task.h>
 #endif/* LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0) */
+#endif/* VENDOR_EDIT */
 #include <linux/oplus_kevent.h>
 #ifdef CONFIG_OPLUS_KEVENT_UPLOAD
 

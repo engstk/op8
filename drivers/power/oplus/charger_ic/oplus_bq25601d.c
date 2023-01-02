@@ -7,6 +7,7 @@
 #include <linux/i2c.h>
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/irq.h>
 #include <linux/miscdevice.h>
@@ -29,9 +30,9 @@
 	|| defined(CONFIG_OPLUS_CHARGER_MTK6833) \
 	|| defined(CONFIG_OPLUS_CHARGER_MTK6781)
 #include <linux/module.h>
-
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include <mt-plat/mtk_gpio.h>
-
+#endif
 #include <mt-plat/mtk_rtc.h>
 #elif defined(CONFIG_OPLUS_CHARGER_MTK6873)
 #include <linux/module.h>
@@ -947,10 +948,18 @@ int bq25601d_enable_charging(void)
 		chg_err("Couldn'tbq25601d_enable_charging rc = %d\n", rc);
 	}
 #ifdef CONFIG_OPLUS_CHARGER_MTK6781
-	rc = bq25601d_float_voltage_write(BQ25601D_VFLOAT_4467MV);
-	if (rc < 0) {
-		chg_debug("set sub float voltage:%d fail\n", BQ25601D_VFLOAT_4467MV);
+	if (chip->bat_cv_mv > 0) {
+		rc = bq25601d_float_voltage_write(chip->bat_cv_mv);
+		if (rc < 0) {
+			chg_debug("set sub float voltage:%d fail\n", chip->bat_cv_mv);
+		}
+	} else {
+		rc = bq25601d_float_voltage_write(BQ25601D_VFLOAT_4467MV);
+		if (rc < 0) {
+			chg_debug("set sub float voltage:%d fail\n", BQ25601D_VFLOAT_4467MV);
+		}
 	}
+
 	rc = bq25601d_config_interface(chip, REG05_BQ25601D_ADDRESS, REG05_BQ25601D_CHG_SAFETY_TIMER_DISABLE,
 			REG05_BQ25601D_CHG_SAFETY_TIMER_MASK);
 	if (rc < 0) {
@@ -1133,8 +1142,13 @@ int bq25601d_otg_enable(void)
 	}
 #endif /* CONFIG_OPLUS_CHARGER_MTK */
 
-	bq25601d_config_interface(chip, REG00_BQ25601D_ADDRESS,
+	rc = bq25601d_config_interface(chip, REG00_BQ25601D_ADDRESS,
 			REG00_BQ25601D_SUSPEND_MODE_DISABLE, REG00_BQ25601D_SUSPEND_MODE_MASK);
+	if (rc) {
+		chg_err("Couldn't enable SUSPEND mode rc=%d\n", rc);
+	} else {
+		chg_debug("bq25601d_SUSPEND_enable rc=%d\n", rc);
+	}
 
 	rc = bq25601d_config_interface(chip, REG01_BQ25601D_ADDRESS,
 			REG01_BQ25601D_OTG_ENABLE, REG01_BQ25601D_OTG_MASK);
@@ -1444,9 +1458,7 @@ static int bq25601d_hardware_init(void)
 int bq25601d_hardware_init(void)
 #endif
 {
-#if defined(CONFIG_OPLUS_CHARGER_MTK6873) || defined(CONFIG_OPLUS_CHARGER_MTK6781)
 	int rc = 0;
-#endif
 	struct chip_bq25601d *chip = charger_ic;
 	if (!charger_ic) {
 		chg_err("chip bq25601d not ready!\n");
@@ -1467,7 +1479,13 @@ int bq25601d_hardware_init(void)
 		msleep(100);
 	}
 
-	bq25601d_float_voltage_write(4370);
+	if (chip->bat_cv_mv > 0) {
+		rc = bq25601d_float_voltage_write(chip->bat_cv_mv);
+		if (rc < 0) {
+			chg_debug("set sub float voltage:%d fail\n", chip->bat_cv_mv);
+		}
+	} else
+		bq25601d_float_voltage_write(4370);
 
 	bq25601d_set_enable_volatile_writes();
 
@@ -1519,6 +1537,8 @@ int bq25601d_hardware_init(void)
 	return true;
 }
 
+
+#if !defined(CONFIG_OPLUS_CHARGER_MTK6873)
 #ifdef CONFIG_OPLUS_RTC_DET_SUPPORT
 static int rtc_reset_check(void)
 {
@@ -1564,7 +1584,6 @@ close_time:
 	return 0;
 }
 #endif /* CONFIG_OPLUS_RTC_DET_SUPPORT */
-#if !defined(CONFIG_OPLUS_CHARGER_MTK6873)
 #if !defined(CONFIG_OPLUS_CHARGER_MTK6781)
 extern bool oplus_chg_get_shortc_hw_gpio_status(void);
 #endif
@@ -1653,6 +1672,7 @@ struct oplus_chg_operations  bq25601d_chg_ops = {
 
 static int bq2560x_detect_device(void)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int ret;
 	int reg_val;
 	enum bq2560x_part_no part_no;
@@ -1694,6 +1714,7 @@ static int bq2560x_detect_device(void)
 		chg_err("!!!register_charger_devinfo fail\n");
 
 	 return ret;
+#endif
 }
 #endif
 
@@ -2143,6 +2164,14 @@ static int bq25601d_parse_dts(void)
 		return -1;
 	}
 
+	if (of_property_read_u32(chip->client->dev.of_node, "bat_cv_mv", &chip->bat_cv_mv) < 0)
+		chg_err("%s: Couldn't read bat_cv_mv default = %d\n", __func__, chip->bat_cv_mv);
+	else
+		chg_err("%s: read bat_cv_mv = %d\n", __func__, chip->bat_cv_mv);
+
+	chip->sub_chg_irq_disable = of_property_read_bool(chip->client->dev.of_node, "sub_chg_irq_disable");
+	chg_err("%s: read sub_chg_irq_disable = %d\n", __func__, chip->sub_chg_irq_disable);
+
 	chip->irq_gpio = of_get_named_gpio(chip->client->dev.of_node, "chg-irq-gpio", 0);
 	if (chip->irq_gpio <= 0) {
 		chg_err("Couldn't read chg-irq-gpio:%d\n", chip->irq_gpio);
@@ -2196,6 +2225,9 @@ static int bq25601d_irq_registration(void)
 		chg_err("chip->irq_gpio fail\n");
 		return -1;
 	}
+
+	if(chip->sub_chg_irq_disable)
+		return 0;
 
 	ret = request_threaded_irq(gpio_to_irq(chip->irq_gpio), NULL,
 			bq25601d_irq_handler_fn,

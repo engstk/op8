@@ -28,11 +28,6 @@ config OPLUS_TP_APK
 	help
 	  Say Y here if you use apk for TP.
 
-config TOUCHPANEL_ALGORITHM
-	bool "touch alogoritm in driver support"
-	help
-	  Say Y here if you use touch alogoritm in driver.
-
 config TOUCHPANEL_MULTI_NOFLASH
 	bool "Multiple noflash TPs using"
 	help
@@ -78,7 +73,7 @@ config TOUCHPANEL_ILITEK
 	bool "TP ilitek IC enable or not for OPLUS"
 	---help---
 	say Y to enable driver for Touchpanel using ilitek IC
-	
+
 source "drivers/input/touchscreen/oplus_touchscreen/util_interface/Kconfig"
 
 if TOUCHPANEL_SYNAPTICS
@@ -89,6 +84,22 @@ if TOUCHPANEL_GOODIX
 source "drivers/input/touchscreen/oplus_touchscreen/Goodix/Kconfig"
 endif
 
+if TOUCHPANEL_FOCAL
+source "drivers/input/touchscreen/oplus_touchscreen/Focal/Kconfig"
+endif
+
+if TOUCHPANEL_NOVA
+source "drivers/input/touchscreen/oplus_touchscreen/Novatek/Kconfig"
+endif
+
+if TOUCHPANEL_HIMAX
+source "drivers/input/touchscreen/oplus_touchscreen/Himax/Kconfig"
+endif
+
 if TOUCHPANEL_SAMSUNG
 source "drivers/input/touchscreen/oplus_touchscreen/Samsung/Kconfig"
+endif
+
+if TOUCHPANEL_ILITEK
+source "drivers/input/touchscreen/oplus_touchscreen/ilitek/Kconfig"
 endif

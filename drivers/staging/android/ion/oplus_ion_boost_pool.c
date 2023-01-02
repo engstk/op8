@@ -516,7 +516,7 @@ static int boost_pool_stat_proc_show(struct seq_file *s, void *v)
 {
 	struct ion_boost_pool *boost_pool = s->private;
 
-	seq_printf(s, "%d,%d,%d\n",
+	seq_printf(s, "%d,%d,%ld\n",
 		   M(boost_pool_nr_pages(boost_pool)),
 		   boost_pool->prefill, M(si_mem_available()));
 

@@ -1,0 +1,6 @@
+config OPLUS_FEATURE_INPUT_BOOST_V4
+        bool "config input boost"
+        depends on SCHED_WALT
+        default n
+        help
+          track load of all ux tasks,opt task placement and frequency selection

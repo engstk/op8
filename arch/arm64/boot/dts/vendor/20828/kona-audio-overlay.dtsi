@@ -352,7 +352,7 @@
 	/* #ifdef OPLUS_ARCH_EXTENDS */
 	qcom,msm-mbhc-hs-mic-max-threshold-mv = <2600>;
 	qcom,msm-mbhc-hs-mic-min-threshold-mv = <75>;
-	oppo,mbhc-check-cross-conn = <0>;
+	oplus,mbhc-check-cross-conn = <0>;
         qcom,msm-mbhc-usbc-audio-supported = <1>;
         oplus,mbhc-check-irq-en = <1>;
         oplus,mbhc-headset-bias-alwayon = <1>;

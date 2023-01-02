@@ -1,5 +1,6 @@
 /******************************************************************************
 ** Copyright (C), 2019-2029, OPLUS Mobile Comm Corp., Ltd
+** VENDOR_EDIT, All rights reserved.
 ** File: - oplus_sla.c
 ** Description: sla
 **
@@ -2049,7 +2050,7 @@ static int sla_skb_reroute(struct sk_buff *skb,struct nf_conn *ct,const struct n
 {
 	int err;
 
-	err = ip_route_me_harder(state->net, skb, RTN_UNSPEC);
+	err = ip_route_me_harder(state->net, state->sk, skb, RTN_UNSPEC);
 	if (err < 0){
 		return NF_DROP_ERR(err);
 	}

@@ -311,7 +311,7 @@ static void ist8801_dump_reg(u8 *buf)
 	sprintf(_buf,  "reg 0x%x:0x%x\n", 0x54, val);
 	strcat(buffer, _buf);
 
-	sprintf(buf, "%s\n", buffer);
+	sprintf(buf, "%s\n", (char*)buffer);
 	TRI_KEY_LOG("%s\n", buf);
 }
 

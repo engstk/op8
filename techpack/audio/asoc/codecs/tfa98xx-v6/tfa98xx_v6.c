@@ -168,6 +168,8 @@ static enum Tfa98xx_Error tfa9874_calibrate(struct tfa98xx *tfa98xx, int *speake
 #ifdef OPLUS_FEATURE_TFA98XX_VI_FEEDBACK
 
 extern int send_tfa_cal_apr(void *buf, int cmd_size, bool bRead);
+int set_tfa_i2s(u32 tfa_i2s);
+static int (*extend_set_tfa_i2s)(u32 tfa_i2s);
 extern int send_tfa_cal_in_band(void *buf, int cmd_size);
 /*zhenyu.dong@MM.AUDIO.DRIVER.CODEC Add for distinguishing nxp smartpa */
 extern void set_smartpa_id(int id);
@@ -516,8 +518,15 @@ static enum Tfa98xx_Error tfa9874_calibrate(struct tfa98xx *tfa98xx_cal, int *sp
 	char buffer[6] = {0};
 	unsigned char bytes[6] = {0};
 	struct tfa98xx *tfa98xx = tfa98xx_cal;
+	#ifndef OPLUS_ARCH_EXTENDS
 	/*impLR[0] - impedance of left channel;   impLR[1] - impedance of right*/
 	int impLR[2];
+	#else
+	//Add for 4 PA solution
+	int is_break = 0;
+	int impLR[4] = {0};
+	struct tfa98xx *tfa98xx_ins2= NULL;
+	#endif
 
 	if (tfa98xx->tfa->dev_idx == 0) {
 		cal_profile = tfaContGetCalProfile_v6(tfa98xx->tfa);
@@ -529,6 +538,14 @@ static enum Tfa98xx_Error tfa9874_calibrate(struct tfa98xx *tfa98xx_cal, int *sp
 		pr_info("Calibration started profile %d\n", profile);
 
 		list_for_each_entry(tfa98xx, &tfa98xx_device_list, list) {
+			#ifdef OPLUS_ARCH_EXTENDS
+			/*Add for 4 PA solution*/
+			// add for 4PA mmi test, need to send cmd to SB instance1
+			if (tfa98xx_device_count == 4 && tfa98xx->tfa->dev_idx==2) {
+				pr_info("tfa98xx_ins2 is init\n");
+				tfa98xx_ins2 = tfa98xx;
+			}
+			#endif /*OPLUS_ARCH_EXTENDS*/
 			#ifndef OPLUS_ARCH_EXTENDS
 			err = (enum Tfa98xx_Error)tfa_dev_mtp_set(tfa98xx->tfa, TFA_MTP_OTC, 0);
 			if (err) {
@@ -575,48 +592,136 @@ static enum Tfa98xx_Error tfa9874_calibrate(struct tfa98xx *tfa98xx_cal, int *sp
 			pr_err("profile write failed\n");
 			return Tfa98xx_Error_Bad_Parameter;
 		}
+		#ifdef OPLUS_ARCH_EXTENDS
+		/*modified for 4 pa solution*/
+		if (tfa98xx_ins2 != NULL) {
+			pr_info("ins2 tfaContWriteProfile_v6\n");
+			err = tfaContWriteProfile_v6(tfa98xx_ins2->tfa, profile, 0);
+			if (err) {
+				pr_err("profile write failed\n");
+				return Tfa98xx_Error_Bad_Parameter;
+			}
+		}
+		#endif /*OPLUS_ARCH_EXTENDS*/
 
 		/* clear the DSP commands SetAlgoParams and SetMBDrc reset flag */
 		tfa98xx->tfa->needs_reset = 0;
 
 		/* First read the GetStatusChange to clear the status (sticky) */
 		err = tfa_dsp_cmd_id_write_read_v6(tfa98xx->tfa, MODULE_FRAMEWORK, FW_PAR_ID_GET_STATUS_CHANGE, 6, (unsigned char *)buffer);
-
+		#ifdef OPLUS_ARCH_EXTENDS
+		/*modified for 4 pa solution*/
+		if (tfa98xx_ins2 != NULL)
+			err = tfa_dsp_cmd_id_write_read_v6(tfa98xx_ins2->tfa, MODULE_FRAMEWORK, FW_PAR_ID_GET_STATUS_CHANGE, 6, (unsigned char *)buffer);
+		#endif /*OPLUS_ARCH_EXTENDS*/
 		/* We need to send zero's to trigger calibration */
 		memset(bytes, 0, 6);
 		err = tfa_dsp_cmd_id_write_v6(tfa98xx->tfa, MODULE_SPEAKERBOOST, SB_PARAM_SET_RE25C, sizeof(bytes), bytes);
-
+		#ifdef OPLUS_ARCH_EXTENDS
+		/*modified for 4 pa solution*/
+		if (tfa98xx_ins2 != NULL)
+			err = tfa_dsp_cmd_id_write_v6(tfa98xx_ins2->tfa, MODULE_SPEAKERBOOST, SB_PARAM_SET_RE25C, sizeof(bytes), bytes);
+		#endif /*OPLUS_ARCH_EXTENDS*/
 		/* Wait a maximum of 5 seconds to get the calibration results */
-		for (i=0; i < 50; i++ ) {
+		#ifdef OPLUS_ARCH_EXTENDS
+		/*add for 4 pa solution*/
+		if (tfa98xx_device_count == 4) {
+			for (i=0; i < 50; i++ ) {
 
-			/* Avoid busload */
-			msleep_interruptible(100);
+				/* Avoid busload */
+				msleep_interruptible(100);
+				if ((is_break & 0x01) == 0) {
+					/* Get the GetStatusChange results */
+					err = tfa_dsp_cmd_id_write_read_v6(tfa98xx->tfa, MODULE_FRAMEWORK, FW_PAR_ID_GET_STATUS_CHANGE, 6, (unsigned char *)buffer);
 
-			/* Get the GetStatusChange results */
-			err = tfa_dsp_cmd_id_write_read_v6(tfa98xx->tfa, MODULE_FRAMEWORK, FW_PAR_ID_GET_STATUS_CHANGE, 6, (unsigned char *)buffer);
+					/* If the calibration trigger is set break the loop */
+					if(buffer[5] & TFADSP_FLAG_CALIBRATE_DONE) {
+						is_break |= 0x1;
+					}
+					/* bit1 is TFADSP_FLAG_DAMAGED_SPEAKER_P
+					   bit2 is TFADSP_FLAG_DAMAGED_SPEAKER_S
+					*/
+					if(buffer[2] & 0x6) {
+						if (buffer[2] & 0x2)
+							pr_info("%s: ##ERROR## Primary SPK damaged event detected 0x%x\n", __func__, buffer[2]);
+						if (buffer[2] & 0x4)
+							pr_info("%s: ##ERROR## Second SPK damaged event detected 0x%x\n", __func__, buffer[2]);
+						break;
+					}
+				}
 
-			/* If the calibration trigger is set break the loop */
-			if(buffer[5] & TFADSP_FLAG_CALIBRATE_DONE) {
-				break;
+
+				if ((tfa98xx_ins2 != NULL) && ((is_break & 0x02) == 0)) {
+					/* Get the GetStatusChange results */
+					err = tfa_dsp_cmd_id_write_read_v6(tfa98xx_ins2->tfa, MODULE_FRAMEWORK, FW_PAR_ID_GET_STATUS_CHANGE, 6, (unsigned char *)buffer);
+
+					/* If the calibration trigger is set break the loop */
+					if(buffer[5] & TFADSP_FLAG_CALIBRATE_DONE) {
+						is_break |= 0x2;
+					}
+
+					if(buffer[2] & 0x6) {
+						if (buffer[2] & 0x2)
+							pr_info("%s: ##ERROR## Primary SPK with instance1 damaged event detected 0x%x\n", __func__, buffer[2]);
+						if (buffer[2] & 0x4)
+							pr_info("%s: ##ERROR## Second SPK with instance1  damaged event detected 0x%x\n", __func__, buffer[2]);
+						break;
+					}
+				}
+
+				if (is_break == 0x3)
+					break;
 			}
-			/* bit1 is TFADSP_FLAG_DAMAGED_SPEAKER_P
-			   bit2 is TFADSP_FLAG_DAMAGED_SPEAKER_S
-			*/
-			if(buffer[2] & 0x6) {
-				if (buffer[2] & 0x2)
-					pr_info("%s: ##ERROR## Primary SPK damaged event detected 0x%x\n", __func__, buffer[2]);
-				if (buffer[2] & 0x4)
-					pr_info("%s: ##ERROR## Second SPK damaged event detected 0x%x\n", __func__, buffer[2]);
-				break;
+		} else {
+		#endif/*OPLUS_ARCH_EXTENDS*/
+			for (i=0; i < 50; i++ ) {
+
+				/* Avoid busload */
+				msleep_interruptible(100);
+
+				/* Get the GetStatusChange results */
+				err = tfa_dsp_cmd_id_write_read_v6(tfa98xx->tfa, MODULE_FRAMEWORK, FW_PAR_ID_GET_STATUS_CHANGE, 6, (unsigned char *)buffer);
+
+				/* If the calibration trigger is set break the loop */
+				if(buffer[5] & TFADSP_FLAG_CALIBRATE_DONE) {
+					break;
+				}
+				/* bit1 is TFADSP_FLAG_DAMAGED_SPEAKER_P
+				   bit2 is TFADSP_FLAG_DAMAGED_SPEAKER_S
+				*/
+				if(buffer[2] & 0x6) {
+					if (buffer[2] & 0x2)
+						pr_info("%s: ##ERROR## Primary SPK damaged event detected 0x%x\n", __func__, buffer[2]);
+					if (buffer[2] & 0x4)
+						pr_info("%s: ##ERROR## Second SPK damaged event detected 0x%x\n", __func__, buffer[2]);
+					break;
+				}
 			}
+	#ifdef OPLUS_ARCH_EXTENDS
 		}
-
+	#endif
 		err = tfa_dsp_get_calibration_impedance_v6(tfa98xx->tfa);
 
+		#ifndef OPLUS_ARCH_EXTENDS
 		if (tfa98xx_device_count == 2) {
+		#else
+		/*Add for 4 PA solution*/
+		if (tfa98xx_ins2 != NULL)
+			err = tfa_dsp_get_calibration_impedance_v6(tfa98xx_ins2->tfa);
+
+		if ((tfa98xx_device_count == 2)||(tfa98xx_device_count == 4)) {
+		#endif
 			/*make sure:left and right impedance update to the correct device*/
 			impLR[0] = (tfa_get_calibration_info_v6(tfa98xx->tfa, 0));
 			impLR[1] = (tfa_get_calibration_info_v6(tfa98xx->tfa, 1));
+			#ifdef OPLUS_ARCH_EXTENDS
+			/*Add for 4 PA solution*/
+			if (tfa98xx_ins2 != NULL) {
+				impLR[2] = (tfa_get_calibration_info_v6(tfa98xx_ins2->tfa, 0));
+				impLR[3] = (tfa_get_calibration_info_v6(tfa98xx_ins2->tfa, 1));
+				pr_info("%s: impLR-ins2 is %d,  %d \n", __func__, impLR[2], impLR[3]);
+			}
+			#endif
 			list_for_each_entry(tfa98xx, &tfa98xx_device_list, list) {
 				if (tfa98xx->tfa->channel != 0xff){
 					/*if channel initialized, update impendance to the left/right device through tfa->channel*/
@@ -627,10 +732,22 @@ static enum Tfa98xx_Error tfa9874_calibrate(struct tfa98xx *tfa98xx_cal, int *sp
 						tfa98xx->tfa->mohm[0] = impLR[1];
 				} else {
 					/*if channel not initialized, set as defalut, cnt-id 0 is left, cnt-id 1 is right*/
-					if (tfa98xx->tfa->dev_idx == 0)
-						tfa98xx->tfa->mohm[0] = impLR[0];
-					else
-						tfa98xx->tfa->mohm[0] = impLR[1];
+					#ifdef OPLUS_ARCH_EXTENDS
+					/*Add for 4 PA solution*/
+					if (tfa98xx_device_count == 4) {
+						tfa98xx->tfa->mohm[0] = impLR[tfa98xx->tfa->dev_idx];
+						if (tfa98xx->tfa->dev_idx > 4)
+							tfa98xx->tfa->mohm[0] = impLR[1];
+					} else {
+					#endif /*OPLUS_ARCH_EXTENDS*/
+						if (tfa98xx->tfa->dev_idx == 0)
+							tfa98xx->tfa->mohm[0] = impLR[0];
+						else
+							tfa98xx->tfa->mohm[0] = impLR[1];
+					#ifdef OPLUS_ARCH_EXTENDS
+					/*Add for 4 PA solution*/
+					}
+					#endif
 				}
 			}
 			/* restore the org point*/
@@ -2450,6 +2567,84 @@ static int tfa98xx_get_cal_ctl(struct snd_kcontrol *kcontrol,
 
 	return 0;
 }
+#ifdef OPLUS_ARCH_EXTENDS
+/*modified for pad tdm device multi speaker*/
+static int tfa98xx_info_four_pa_ctl(struct snd_kcontrol *kcontrol,
+                                struct snd_ctl_elem_info *uinfo)
+{
+        uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
+        uinfo->count = 1;
+        uinfo->value.integer.min = 0;
+        uinfo->value.integer.max = 7;
+        return 0;
+}
+
+static int tfa98xx_set_four_pa_ctl(struct snd_kcontrol *kcontrol,
+                               struct snd_ctl_elem_value *ucontrol)
+{
+	struct tfa98xx *tfa98xx;
+	int selector;
+
+	selector = ucontrol->value.integer.value[0];
+	tfa98xx_selector = selector;
+	pr_info("%s: selector = %d\n", __func__, selector);
+
+	mutex_lock(&tfa98xx_mutex);
+	list_for_each_entry(tfa98xx, &tfa98xx_device_list, list) {
+		 if (selector == CHIP_SELECTOR_4PA_LEFT_UP) {
+			if (tfa98xx->i2c->addr == CHIP_LEFT_UP_ADDR)
+				tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+			else
+				tfa98xx->flags &= ~TFA98XX_FLAG_CHIP_SELECTED;
+		} else if (selector == CHIP_SELECTOR_4PA_LEFT_DOWN) {
+			if (tfa98xx->i2c->addr == CHIP_LEFT_DOWN_ADDR)
+				tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+			else
+				tfa98xx->flags &= ~TFA98XX_FLAG_CHIP_SELECTED;
+		} else if (selector == CHIP_SELECTOR_4PA_RIGHT_UP) {
+			if (tfa98xx->i2c->addr == CHIP_RIGHT_UP_ADDR)
+				tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+			else
+				tfa98xx->flags &= ~TFA98XX_FLAG_CHIP_SELECTED;
+		} else if (selector == CHIP_SELECTOR_4PA_RIGHT_DOWN) {
+			if (tfa98xx->i2c->addr == CHIP_RIGHT_DOWN_ADDR)
+				tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+			else
+				tfa98xx->flags &= ~TFA98XX_FLAG_CHIP_SELECTED;
+		} else if (selector == CHIP_SELECTOR_4PA_LEFT_BOTH) {
+			if ((tfa98xx->i2c->addr == CHIP_LEFT_UP_ADDR)||(tfa98xx->i2c->addr == CHIP_LEFT_DOWN_ADDR))
+				tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+			else
+				tfa98xx->flags &= ~TFA98XX_FLAG_CHIP_SELECTED;
+		} else if (selector == CHIP_SELECTOR_4PA_RIGHT_BOTH) {
+			if ((tfa98xx->i2c->addr == CHIP_RIGHT_UP_ADDR)||(tfa98xx->i2c->addr == CHIP_RIGHT_DOWN_ADDR))
+				tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+			else
+				tfa98xx->flags &= ~TFA98XX_FLAG_CHIP_SELECTED;
+		} else {
+			tfa98xx->flags |= TFA98XX_FLAG_CHIP_SELECTED;
+		}
+	}
+	mutex_unlock(&tfa98xx_mutex);
+
+	return 1;
+}
+
+static int tfa98xx_get_four_pa_ctl(struct snd_kcontrol *kcontrol,
+                               struct snd_ctl_elem_value *ucontrol)
+{
+	struct tfa98xx *tfa98xx;
+
+	mutex_lock(&tfa98xx_mutex);
+	list_for_each_entry(tfa98xx, &tfa98xx_device_list, list) {
+		ucontrol->value.integer.value[0] = tfa98xx_selector;
+	}
+	mutex_unlock(&tfa98xx_mutex);
+
+	return 0;
+}
+
+#endif /* OPLUS_ARCH_EXTENDS */
 
 #ifdef OPLUS_ARCH_EXTENDS
 static int tfa98xx_info_stereo_ctl(struct snd_kcontrol *kcontrol,
@@ -2891,12 +3086,23 @@ static int tfa98xx_create_controls(struct tfa98xx *tfa98xx)
 	}
 
 	#ifdef OPLUS_ARCH_EXTENDS
-	tfa98xx_controls[mix_index].name = "TFA_CHIP_SELECTOR";
-	tfa98xx_controls[mix_index].iface = SNDRV_CTL_ELEM_IFACE_MIXER;
-	tfa98xx_controls[mix_index].info = tfa98xx_info_stereo_ctl;
-	tfa98xx_controls[mix_index].get = tfa98xx_get_stereo_ctl;
-	tfa98xx_controls[mix_index].put = tfa98xx_set_stereo_ctl;
-	mix_index++;
+	if (tfa98xx_device_count == CHIP_4PA_COUNT) {
+		/*Add for four speaker*/
+		tfa98xx_controls[mix_index].name = "TFA_CHIP_4PA_SELECTOR";
+		tfa98xx_controls[mix_index].iface = SNDRV_CTL_ELEM_IFACE_MIXER;
+		tfa98xx_controls[mix_index].info = tfa98xx_info_four_pa_ctl;
+		tfa98xx_controls[mix_index].get = tfa98xx_get_four_pa_ctl;
+		tfa98xx_controls[mix_index].put = tfa98xx_set_four_pa_ctl;
+		mix_index++;
+	} else {
+		/*Add for two speaker*/
+		tfa98xx_controls[mix_index].name = "TFA_CHIP_SELECTOR";
+		tfa98xx_controls[mix_index].iface = SNDRV_CTL_ELEM_IFACE_MIXER;
+		tfa98xx_controls[mix_index].info = tfa98xx_info_stereo_ctl;
+		tfa98xx_controls[mix_index].get = tfa98xx_get_stereo_ctl;
+		tfa98xx_controls[mix_index].put = tfa98xx_set_stereo_ctl;
+		mix_index++;
+	}
 	#endif /* OPLUS_ARCH_EXTENDS */
 
 	#ifdef OPLUS_ARCH_EXTENDS
@@ -3215,6 +3421,11 @@ tfa98xx_write_dsp(struct tfa_device *tfa,  int num_bytes, const char *command_bu
 	memcpy(buffer ,command_buffer, num_bytes);
 
 	//mutex_lock(&tfa98xx->dsp_lock);
+	#ifdef OPLUS_ARCH_EXTENDS
+	/*Add for 4 pa solution*/
+	if ( tfa->dev_idx == 2 || tfa->dev_idx==3 )
+		buffer[0] = 0x10 | buffer[0];
+	#endif /*OPLUS_ARCH_EXTENDS*/
 
 	err = send_tfa_cal_apr(buffer, num_bytes, false);
 	if (err) {
@@ -4161,6 +4372,10 @@ static int tfa98xx_hw_params(struct snd_pcm_substream *substream,
 }
 
 static uint8_t bytes[3*3+1] = {0};
+#ifdef OPLUS_ARCH_EXTENDS
+/*Add for 4 pa solution*/
+static uint8_t bytes_id2[3*3+1] = {0};
+#endif
 
 enum Tfa98xx_Error tfa98xx_adsp_send_calib_values(void)
 {
@@ -4191,14 +4406,35 @@ enum Tfa98xx_Error tfa98xx_adsp_send_calib_values(void)
 				else
 					nr = 7;
 			}
+			#ifdef OPLUS_ARCH_EXTENDS
+			/*add for 4 pa solution*/
+			else {
+				if ((tfa98xx->tfa->dev_idx == 0) || (tfa98xx->tfa->dev_idx == 2))
+					nr = 4;
+				else
+					nr = 7;
+			}
+			#endif
 			value = tfa_dev_mtp_get(tfa, TFA_MTP_RE25);
 			pr_info("Device 0x%x, nr%d cal value is %d\n", tfa98xx->i2c->addr, nr, value);
 			dsp_cal_value = (value * 65536) / 1000;
 
+			#ifdef OPLUS_ARCH_EXTENDS
+			/*Add for 4 pa solution*/
+			if (tfa->dev_idx == 0 || tfa->dev_idx == 1) {
+			#endif
+				bytes[nr++] = (uint8_t)((dsp_cal_value >> 16) & 0xff);
+				bytes[nr++] = (uint8_t)((dsp_cal_value >> 8) & 0xff);
+				bytes[nr++] = (uint8_t)(dsp_cal_value & 0xff);
+			#ifdef OPLUS_ARCH_EXTENDS
+			/*Add for 4 pa solution*/
+			} else if (tfa->dev_idx == 2 || tfa->dev_idx == 3) {
+				bytes_id2[nr++] = (uint8_t)((dsp_cal_value >> 16) & 0xff);
+				bytes_id2[nr++] = (uint8_t)((dsp_cal_value >> 8) & 0xff);
+				bytes_id2[nr++] = (uint8_t)(dsp_cal_value & 0xff);
+			}
+			#endif /*OPLUS_ARCH_EXTENDS*/
 
-			bytes[nr++] = (uint8_t)((dsp_cal_value >> 16) & 0xff);
-			bytes[nr++] = (uint8_t)((dsp_cal_value >> 8) & 0xff);
-			bytes[nr++] = (uint8_t)(dsp_cal_value & 0xff);
 			bytes[0] += 1;
 		}
 	}
@@ -4225,7 +4461,18 @@ enum Tfa98xx_Error tfa98xx_adsp_send_calib_values(void)
 		/* for mono case, we should clear flag here. */
 		if (1 == tfa98xx_device_count)
 			bytes[0] = 0;
-
+		#ifdef OPLUS_ARCH_EXTENDS
+		/*Add for 4 pa solution*/
+		if (tfa98xx_device_count == 4) {
+			bytes_id2[1] = 0x10;
+			bytes_id2[2] = 0x81;
+			bytes_id2[3] = 0x05;
+			ret = send_tfa_cal_in_band(&bytes_id2[1], sizeof(bytes_id2)-1);
+			if (ret) {
+				pr_info("calibration value send to host DSP fail, returning\n");
+			}
+		}
+		#endif /*OPLUS_ARCH_EXTENDS*/
 	} else {
 		pr_err("load calibration data from device failed.\n");
 		ret = Tfa98xx_Error_Bad_Parameter;
@@ -4693,6 +4940,9 @@ static int tfa98xx_i2c_probe(struct i2c_client *i2c,
 	#ifdef OPLUS_ARCH_EXTENDS
 	int i = 0;
 	int retries = 5;
+	#ifdef OPLUS_FEATURE_TFA98XX_VI_FEEDBACK
+	u32 tfa_i2s = 0;
+	#endif /*OPLUS_FEATURE_TFA98XX_VI_FEEDBACK*/
 	#endif /* OPLUS_ARCH_EXTENDS */
 
 	#ifdef OPLUS_FEATURE_FADE_IN
@@ -4905,6 +5155,20 @@ static int tfa98xx_i2c_probe(struct i2c_client *i2c,
 	tfa98xx->tfa->cachep = tfa98xx_cache;
 
 	#ifdef OPLUS_ARCH_EXTENDS
+	#ifdef OPLUS_FEATURE_TFA98XX_VI_FEEDBACK
+	ret = of_property_read_u32(i2c->dev.of_node, "tfa_use_i2s", &tfa_i2s);
+	if (ret) {
+		pr_info("no defined tfa_use_i2s, use primary i2s");
+	} else {
+		extend_set_tfa_i2s = symbol_request(set_tfa_i2s);
+		if(extend_set_tfa_i2s) {
+			extend_set_tfa_i2s(tfa_i2s);
+		} else {
+			pr_info("no defined Function:set_tfa_i2s, use primary i2s");
+		}
+	}
+	#endif /*OPLUS_FEATURE_TFA98XX_VI_FEEDBACK*/
+
 	ret = of_property_read_u32(i2c->dev.of_node, "tfa_min_range", &tfa98xx->tfa->min_mohms);
 	if (ret) {
 		dev_err(&i2c->dev, "Failed to parse spk_min_range node\n");

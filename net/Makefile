@@ -18,7 +18,7 @@ obj-$(CONFIG_NETFILTER)		+= netfilter/
 obj-$(CONFIG_INET)		+= ipv4/
 obj-$(CONFIG_TLS)		+= tls/
 obj-$(CONFIG_XFRM)		+= xfrm/
-obj-$(CONFIG_UNIX)		+= unix/
+obj-$(CONFIG_UNIX_SCM)		+= unix/
 obj-$(CONFIG_NET)		+= ipv6/
 obj-$(CONFIG_BPFILTER)		+= bpfilter/
 obj-$(CONFIG_PACKET)		+= packet/
@@ -94,6 +94,10 @@ obj-y				+= oplus_nwpower/
 #ifdef OPLUS_FEATURE_WIFI_SLA
 obj-y                   	+= oplus_connectivity_sla/
 #endif /* OPLUS_FEATURE_WIFI_SLA */
+
+#ifdef OPLUS_FEATURE_WIFI_ROUTERBOOST
+obj-$(CONFIG_OPLUS_FEATURE_WIFI_ROUTERBOOST) += oplus_connectivity_routerboost/
+#endif /* OPLUS_FEATURE_WIFI_ROUTERBOOST */
 
 #ifdef OPLUS_FEATURE_IPV6_OPTIMIZE
 obj-y                   	+= oplus_ipv6/

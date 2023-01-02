@@ -788,7 +788,7 @@ static void m1120_dump_reg(u8 *buf)
 			return;
 		}
 
-		snprintf(_buf, sizeof(_buf), "reg 0x%x:0x%x\n", i, val);
+		snprintf(_buf, sizeof(_buf), "reg 0x%x:0x%d\n", i, val);
 		strcat(buffer, _buf);
 	}
 	snprintf(buf, PAGE_SIZE, "%s\n", buffer);

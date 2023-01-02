@@ -396,6 +396,7 @@ struct hal_srng {
 	uint8_t reg_write_in_progress;
 	/* last dequeue elem time stamp */
 	qdf_time_t last_dequeue_time;
+
 	/* srng specific delayed write stats */
 	struct hal_reg_write_srng_stats wstats;
 #endif
@@ -587,6 +588,8 @@ struct hal_hw_txrx_ops {
 	bool (*hal_rx_get_fisa_flow_agg_continuation)(uint8_t *buf);
 	uint8_t (*hal_rx_get_fisa_flow_agg_count)(uint8_t *buf);
 	bool (*hal_rx_get_fisa_timeout)(uint8_t *buf);
+	void (*hal_rx_msdu_get_reo_destination_indication)(uint8_t *buf,
+							uint32_t *reo_destination_indication);
 };
 
 /**

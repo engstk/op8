@@ -74,7 +74,7 @@ static int memory_monitor_show(struct seq_file *m, void *p)
 {
 	struct task_struct *tsk;
 	unsigned long start = 0, rcu_lock_end = 0, end = 0, task_lock_start = 0,
-			task_lock_end = 0, task_lock_time = 0, gpu_read_time = 0, gpu_read_start = 0;
+		      task_lock_end = 0, task_lock_time = 0, gpu_read_time = 0, gpu_read_start = 0;
 	int record_tasks = 0, i = 0;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,19,0)
 	unsigned long ptes, pmds;
@@ -173,6 +173,9 @@ static ssize_t memory_monitor_write(struct file *file, const char __user *buff, 
 	char write_data[16] = {0};
 	char *data_first_num = NULL;
 
+	if (!buff || (len <= 0))
+		return -EINVAL;
+
 	if (len > 15)
 		len = 15;
 	if (copy_from_user(&write_data, buff, len)) {
@@ -181,9 +184,10 @@ static ssize_t memory_monitor_write(struct file *file, const char __user *buff, 
 	}
 
 	write_data[len] = '\0';
-    if (write_data[len - 1] == '\n') {
+	if (write_data[len - 1] == '\n') {
 		write_data[len - 1] = '\0';
-    }
+	}
+
 	/* handle: just show one uid, write_data = u[uid_num] */
 	data_first_num = strstr(write_data, "u");
 	if (data_first_num) {

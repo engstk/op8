@@ -22,7 +22,9 @@
 #include <linux/regulator/of_regulator.h>
 #include <linux/regulator/machine.h>
 #include <linux/rtc.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
+#endif
 
 #include "oplus_charger.h"
 #include "oplus_vooc.h"
@@ -42,7 +44,6 @@ static struct oplus_wpc_chip *g_wpc_chip = NULL;
 int oplus_wpc_get_online_status(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return 0;
 	}
 
@@ -55,7 +56,6 @@ int oplus_wpc_get_online_status(void)
 int oplus_wpc_get_voltage_now(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return 0;
 	}
 
@@ -68,7 +68,6 @@ int oplus_wpc_get_voltage_now(void)
 int oplus_wpc_get_current_now(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return 0;
 	}
 
@@ -81,7 +80,6 @@ int oplus_wpc_get_current_now(void)
 int oplus_wpc_get_real_type(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return POWER_SUPPLY_TYPE_UNKNOWN;
 	}
 
@@ -94,7 +92,6 @@ int oplus_wpc_get_real_type(void)
 int oplus_wpc_get_max_wireless_power(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return -EINVAL;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_max_wireless_power) {
@@ -102,6 +99,19 @@ int oplus_wpc_get_max_wireless_power(void)
 	} else {
 		return 0;
 	}
+}
+
+int oplus_wpc_get_break_sub_crux_info(char *sub_crux_info)
+{
+	if (!g_wpc_chip)
+		return -EINVAL;
+
+	if (g_wpc_chip->wpc_ops &&
+	    g_wpc_chip->wpc_ops->wpc_get_break_sub_crux_info)
+		return g_wpc_chip->wpc_ops->wpc_get_break_sub_crux_info(
+			sub_crux_info);
+
+	return 0;
 }
 
 void oplus_wpc_set_otg_en_val(int value)
@@ -117,7 +127,6 @@ int oplus_wpc_get_otg_en_val(struct oplus_chg_chip *chip)
 void oplus_wpc_set_vbat_en_val(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_vbat_en) {
@@ -131,7 +140,6 @@ void oplus_wpc_set_vbat_en_val(int value)
 void oplus_wpc_set_booster_en_val(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_booster_en) {
@@ -145,7 +153,6 @@ void oplus_wpc_set_booster_en_val(int value)
 void oplus_wpc_set_ext1_wired_otg_en_val(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_ext1_wired_otg_en) {
@@ -159,7 +166,6 @@ void oplus_wpc_set_ext1_wired_otg_en_val(int value)
 void oplus_wpc_set_ext2_wireless_otg_en_val(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_ext2_wireless_otg_en) {
@@ -173,7 +179,6 @@ void oplus_wpc_set_ext2_wireless_otg_en_val(int value)
 void oplus_wpc_set_rtx_function_prepare(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_rtx_function_prepare) {
@@ -187,7 +192,6 @@ void oplus_wpc_set_rtx_function_prepare(void)
 void oplus_wpc_set_rtx_function(bool enable)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_rtx_function) {
@@ -201,7 +205,6 @@ void oplus_wpc_set_rtx_function(bool enable)
 void oplus_wpc_dis_wireless_chg(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_dis_wireless_chg) {
@@ -235,7 +238,6 @@ void oplus_wpc_dcin_irq_enable(bool enable)
 bool oplus_wpc_get_wireless_charge_start(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return false;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_wireless_charge_start) {
@@ -248,7 +250,6 @@ bool oplus_wpc_get_wireless_charge_start(void)
 bool oplus_wpc_get_normal_charging(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return false;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_normal_charging) {
@@ -261,7 +262,6 @@ bool oplus_wpc_get_normal_charging(void)
 bool oplus_wpc_get_fast_charging(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return false;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_fast_charging) {
@@ -274,7 +274,6 @@ bool oplus_wpc_get_fast_charging(void)
 bool oplus_wpc_get_otg_charging(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return false;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_otg_charging) {
@@ -287,7 +286,6 @@ bool oplus_wpc_get_otg_charging(void)
 bool oplus_wpc_get_ffc_charging(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return false;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_ffc_charging) {
@@ -300,7 +298,6 @@ bool oplus_wpc_get_ffc_charging(void)
 bool oplus_wpc_check_chip_is_null(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return true;
 	}
 	return false;
@@ -309,7 +306,6 @@ bool oplus_wpc_check_chip_is_null(void)
 bool oplus_wpc_get_fw_updating(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return false;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_fw_updating) {
@@ -322,7 +318,6 @@ bool oplus_wpc_get_fw_updating(void)
 int oplus_wpc_get_adapter_type(void)
 {
 	if (!g_wpc_chip) {
-		//chg_err("g_wpc_chip null, return\n");
 		return -EINVAL;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_adapter_type) {
@@ -332,10 +327,33 @@ int oplus_wpc_get_adapter_type(void)
 	}
 }
 
+int oplus_wpc_get_skewing_curr(void)
+{
+	if (!g_wpc_chip)
+		return 0;
+
+	if (g_wpc_chip->wpc_ops &&
+	    g_wpc_chip->wpc_ops->wpc_get_skewing_curr)
+		return g_wpc_chip->wpc_ops->wpc_get_skewing_curr();
+
+	return 0;
+}
+
+bool oplus_wpc_get_verity(void)
+{
+	if (!g_wpc_chip)
+		return false;
+
+	if (g_wpc_chip->wpc_ops &&
+	    g_wpc_chip->wpc_ops->wpc_get_verity)
+		return g_wpc_chip->wpc_ops->wpc_get_verity();
+
+	return false;
+}
+
 int oplus_wpc_set_tx_start(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return -EINVAL;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_tx_start) {
@@ -348,7 +366,6 @@ int oplus_wpc_set_tx_start(void)
 void oplus_wpc_dis_tx_power(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops->wpc_dis_tx_power) {
@@ -362,7 +379,6 @@ void oplus_wpc_dis_tx_power(void)
 void oplus_wpc_print_log(void)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_print_log) {
@@ -376,7 +392,6 @@ void oplus_wpc_print_log(void)
 void oplus_wpc_set_wrx_en_value(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_wrx_en) {
@@ -391,7 +406,6 @@ int oplus_wpc_get_wrx_en_val(void)
 {
 	struct oplus_wpc_chip *chip = g_wpc_chip;
 	if (!chip) {
-		chg_err("oplus_wpc_chip not ready!\n", __func__);
 		return 0;
 	}
 	if (chip->wpc_gpios.wrx_en_gpio <= 0) {
@@ -411,7 +425,6 @@ int oplus_wpc_get_wrx_otg_en_val(void)
 {
 	struct oplus_wpc_chip *chip = g_wpc_chip;
 	if (!chip) {
-		chg_err("oplus_wpc_chip not ready!\n", __func__);
 		return 0;
 	}
 	if (chip->wpc_gpios.wrx_otg_en_gpio <= 0) {
@@ -430,7 +443,6 @@ int oplus_wpc_get_wrx_otg_en_val(void)
 void oplus_wpc_set_wrx_otg_en_value(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_wrx_otg_en) {
@@ -444,7 +456,6 @@ void oplus_wpc_set_wrx_otg_en_value(int value)
 void oplus_wpc_set_wls_pg_value(int value)
 {
 	if (!g_wpc_chip) {
-		chg_err("g_wpc_chip null, return\n");
 		return;
 	}
 	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_set_wls_pg) {

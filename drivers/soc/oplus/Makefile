@@ -5,7 +5,9 @@ obj-$(CONFIG_OPLUS_COMMON_SOFT)  +=  device_info/
 obj-$(CONFIG_OPLUS_FEATURE_LOWMEM_DBG)	+=  lowmem_dbg/
 #endif /* OPLUS_FEATURE_LOWMEM_DBG */
 
+#ifdef VENDOR_EDIT
 obj-$(CONFIG_OPLUS_FEATURE_MIDAS)    += midas/
+#endif /* VENDOR_EDIT */
 
 #ifdef OPLUS_FEATURE_MEMLEAK_DETECT
 #Add for svelte logging

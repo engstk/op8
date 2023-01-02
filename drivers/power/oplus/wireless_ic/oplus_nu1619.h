@@ -6,6 +6,7 @@
 #define __OPLUS_NU1619_H__
 
 #include "../oplus_wireless.h"
+#include "../oplus_chg_track.h"
 
 /*Add for nu1619 update fw */
 #define nu1619_DRIVER_NAME      "nu1619"
@@ -237,6 +238,10 @@ struct oplus_nu1619_ic{
 	struct delayed_work charger_disconnect_work;
 	struct delayed_work charger_start_work;
 	struct wpc_data nu1619_chg_status;
+	oplus_chg_track_trigger trx_err_load_trigger;
+	struct delayed_work trx_err_load_trigger_work;
+	oplus_chg_track_trigger trx_info_load_trigger;
+	struct delayed_work trx_info_load_trigger_work;
 /*int         batt_volt_2cell_max;*/
 /*int         batt_volt_2cell_min;*/
 	atomic_t suspended;
@@ -259,12 +264,6 @@ struct target_ichg_table {
 	int vbat;			/*mv*/
 	int target_ichg;	/*ma*/
 	int input_current;	/*ma*/
-};
-
-struct wls_pwr_table {
-	u8 f2_id;
-	int r_power; /*watt*/
-	int t_power; /*watt*/
 };
 
 bool nu1619_wpc_get_fast_charging(void);

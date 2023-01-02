@@ -4,4 +4,4 @@
 config OPLUS_FEATURE_QR_SCAN
         tristate "Add for qr scan"
         help
-          Add for Add for tqr scan.
+          Add for Add for tqr scan

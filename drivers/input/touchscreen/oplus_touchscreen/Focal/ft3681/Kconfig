@@ -1,0 +1,5 @@
+config TOUCHPANEL_FOCAL_FT3681
+	tristate "TP focal ft3681 IC enable or not for OPLUS"
+	help
+	Say Y to enable driver for Touchpanel using Focal FT3681
+	Say M to enable driver for Touchpanel using Focal FT3681 as module

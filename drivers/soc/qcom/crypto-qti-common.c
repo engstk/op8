@@ -416,7 +416,6 @@ int crypto_qti_keyslot_program(void *priv_data,
 		if (err2) {
 			pr_err("%s: invalidate key failed with error %d\n",
 				__func__, err2);
-			return err2;
 		}
 	}
 

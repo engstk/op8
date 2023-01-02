@@ -14,12 +14,15 @@
 
 #include <linux/timer.h>
 #include <linux/slab.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
 #include <soc/oplus/system/oplus_project.h>
+#endif
 #include <linux/firmware.h>
 #ifndef CONFIG_OPLUS_CHARGER_MTK
 #include <linux/soc/qcom/smem.h>
 #endif
+#include "op_wlchg_v2/oplus_chg_wls.h"
 
 #define SUPPORT_WPC
 #define SUPPORT_OPLUS_WPC_VERIFY
@@ -171,6 +174,8 @@
 #define WPC_CHARGE_TYPE_NORMAL								3
 #define WPC_CHARGE_TYPE_EPP									4
 
+#define WPC_TRX_ERR_REASON_LEN	16
+
 enum {
 WPC_CHG_STATUS_DEFAULT,
 WPC_CHG_STATUS_READY_FOR_FASTCHG,
@@ -264,6 +269,11 @@ typedef enum {
     WPC_DISCHG_STATUS_UNKNOW,
 }E_WPC_DISCHG_STATUS;
 
+struct wpc_trx_err_reason_table {
+	u8 trx_err;
+	const char reason[WPC_TRX_ERR_REASON_LEN];
+};
+
 typedef enum {
 	WPC_CHG_IC_ERR_NULL,
 	WPC_CHG_IC_ERR_RX_OCP,
@@ -278,13 +288,6 @@ typedef enum {
 	WPC_CHG_IC_ERR_TX_CEPTIMEOUT,
 	WPC_CHG_IC_ERR_UNKNOW,
 }E_WPC_CHG_ERR_TYPE;
-
-enum wls_status_keep_type {
-	WLS_SK_NULL,
-	WLS_SK_BY_KERNEL,
-	WLS_SK_BY_HAL,
-	WLS_SK_WAIT_TIMEOUT,
-};
 
 enum wireless_mode {
 	WIRELESS_MODE_NULL,
@@ -409,6 +412,9 @@ struct wpc_data{
 	enum WLCHG_TEMP_REGION_TYPE temp_region;
 	struct wpc_chg_param_t wpc_chg_param;
 	bool tx_online;
+	int trx_transfer_start_time;
+	int trx_transfer_end_time;
+	bool trx_usb_present_once;
 	bool tx_present;
 	bool charge_online;
 	int send_message;
@@ -554,15 +560,12 @@ struct gauge_auth_result {
 	unsigned char rcv_msg[GAUGE_AUTH_MSG_LEN];
 };
 
-struct wls_auth_result {
-	unsigned char random_num[WLS_AUTH_RANDOM_LEN];
-	unsigned char encode_num[WLS_AUTH_ENCODE_LEN];
-};
 
 struct oplus_chg_auth_result {
 	struct gauge_auth_result rst_k0;
 	struct gauge_auth_result rst_k1;
 	struct wls_auth_result wls_auth_data;
+	struct gauge_auth_result rst_k2;
 };
 #endif /*SUPPORT_OPLUS_WPC_VERIFY*/
 
@@ -588,6 +591,7 @@ struct oplus_wpc_operations {
 	bool (*wpc_get_ffc_charging)(void);
 	bool (*wpc_get_fw_updating)(void);
 	int (*wpc_get_adapter_type)(void);
+	int (*wpc_get_skewing_curr)(void);
 	void (*wpc_set_vbat_en)(int value);
 	void (*wpc_set_booster_en)(int value);
 	void (*wpc_set_ext1_wired_otg_en)(int value);
@@ -601,7 +605,8 @@ struct oplus_wpc_operations {
 	void (*wpc_set_wls_pg)(int value);
 	void (*wpc_dis_tx_power)(void);
 	void (*wpc_print_log)(void);
-
+	int (*wpc_get_break_sub_crux_info)(char *crux_info);
+	bool (*wpc_get_verity)(void);
 /*
 	bool nu1619_wireless_charge_start(void);
 	bool nu1619_wpc_get_fast_charging(void);
@@ -667,11 +672,16 @@ bool oplus_wpc_get_fw_updating(void);
 
 int oplus_wpc_get_adapter_type(void);
 
+int oplus_wpc_get_dock_type(void);
+
 int oplus_wpc_set_tx_start(void);
 void oplus_wpc_set_wls_pg_value(int value);
 void oplus_wpc_dis_tx_power(void);
 void oplus_wpc_print_log(void);
 void oplus_get_wpc_chip_handle(struct oplus_wpc_chip **chip);
+int oplus_wpc_get_break_sub_crux_info(char *sub_crux_info);
+int oplus_wpc_get_skewing_curr(void);
+bool oplus_wpc_get_verity(void);
 
 #endif	/* OPLUS_WPC_H */
 

@@ -65,6 +65,7 @@ typedef enum {
     FP_FPS_980 = 30,
     FP_JIIOV_0101 = 31,
     FP_JIIOV_0301 = 32,
+    FP_FT_9396 = 33,
     FP_UNKNOWN,
 } fp_vendor_t;
 

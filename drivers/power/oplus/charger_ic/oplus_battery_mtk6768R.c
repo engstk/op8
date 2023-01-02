@@ -2370,6 +2370,8 @@ void mtk_charger_int_handler(void)
 #endif /*CONFIG_OPLUS_CHARGER_MTK6769*/
 		charger_manager_notifier(pinfo, CHARGER_NOTIFY_START_CHARGING);
 	}
+	if (g_oplus_chip && g_oplus_chip->usb_psy)
+		power_supply_changed(g_oplus_chip->usb_psy);
 	chr_err("wake_up_charger\n");
 	_wake_up_charger(pinfo);
 }
@@ -3747,9 +3749,9 @@ void charger_debug_init(void)
 {
 	struct proc_dir_entry *charger_dir;
 
-	charger_dir = proc_mkdir("charger", NULL);
+	charger_dir = proc_mkdir("mtk_charger", NULL);
 	if (!charger_dir) {
-		chr_err("fail to mkdir /proc/charger\n");
+		chr_err("fail to mkdir /proc/mtk_charger\n");
 		return;
 	}
 

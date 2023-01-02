@@ -418,20 +418,6 @@
 				qcom,hw-settle-time = <200>;
 				qcom,pre-scaling = <1 1>;
 			};
-			chgID_voltage_adc {
-				reg = <ADC_GPIO3>;
-				label = "chgID_voltage_adc";
-				qcom,pre-scaling = <1 1>;
-				qcom,ratiometric;
-				qcom,hw-settle-time = <200>;
-			};
-			usb_temp_adc {
-				reg = <ADC_AMUX_THM4_PU2>;
-				label = "usb_temp_adc";
-				qcom,pre-scaling = <1 1>;
-				qcom,ratiometric;
-				qcom,hw-settle-time = <200>;
-			};
 		};
 
 		pm8150b_adc_tm: adc_tm@3500 {

@@ -245,6 +245,7 @@ enum dynamic_config_id {
     DC_GRIP_ABS_DARK_SEL = 0xE5,
     DC_SET_REPORT_FRE = 0xE6,
     DC_GESTURE_MASK = 0xFE,
+	DC_LOW_TEMP_ENABLE = 0xFD,
 };
 
 enum command {
@@ -468,6 +469,11 @@ struct syna_tcm_test {
 };
 
 #define FPS_REPORT_NUM 6
+#define FIRMWARE_MODE_BL_MAX 2
+#define ERROR_STATE_MAX 3
+#define FWUPDATE_BL_MAX 3
+#define FW_BUF_SIZE             (256 * 1024)
+
 struct syna_tcm_data {
     /*must be first*/
     struct invoke_method cb;
@@ -521,7 +527,22 @@ struct syna_tcm_data {
     struct syna_tcm_identification id_info;
 	int gesture_state;
 	bool black_gesture_indep;
-	bool calibration_support;
+	//temperatue data
+	u32 syna_tempepratue[2];
+	unsigned int syna_low_temp_enable;
+	unsigned int syna_low_temp_disable;
+	struct monitor_data_v2 *monitor_data_v2;
+	int identify_state;
+	unsigned int firmware_mode_count;
+	unsigned int upload_flag;
+	unsigned int error_state_count;
+	u8 *g_fw_buf;
+	size_t g_fw_len;
+	bool g_fw_sta;
+	int	probe_done;
+	bool *fw_update_app_support;
+	int fwupdate_bootloader;
+	bool *loading_fw;
 };
 
 struct device_hcd {

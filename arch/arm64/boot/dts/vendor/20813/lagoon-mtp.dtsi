@@ -19,7 +19,7 @@
 			label = "volume_up";
 			gpios = <&pm6350_gpios 2 GPIO_ACTIVE_LOW>;
 			linux,input-type = <1>;
-			linux,code = <KEY_VOLUMEUP>;
+			linux,code = <KEY_VOLUMEDOWN>;
 			gpio-key,wakeup;
 			debounce-interval = <15>;
 			linux,can-disable;

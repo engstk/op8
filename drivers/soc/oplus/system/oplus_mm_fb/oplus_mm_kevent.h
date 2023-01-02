@@ -56,7 +56,7 @@ struct mm_kevent_packet {
 	unsigned char data[0];				/* Optional packet data */
 }__attribute__((packed));
 
-#ifdef CONFIG_OPLUS_FEATURE_MM_FEEDBACK
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_MM_FEEDBACK)
 int mm_fb_kevent_send_to_user(struct mm_kevent_packet *userinfo);
 void mm_fb_kevent_set_recv_user(mm_kevent_recv_user_func recv_func);
 #else //CONFIG_OPLUS_FEATURE_MM_FEEDBACK

@@ -10,6 +10,7 @@
 * <version> <date> < author > <desc>
 *
 ****************************************************************/
+//#ifdef VENDOR_EDIT
 //Add for dual Sta: do not enable dual sta when main wifi's Router is 1x1 IOT Router
 
 #include <sme_api.h>
@@ -156,4 +157,5 @@ void hdd_driver_oplus_deinit(void)
     hdd_driver_oplus_procfs_remove();
 }
 
+//#endif /* VENDOR_EDIT */
 

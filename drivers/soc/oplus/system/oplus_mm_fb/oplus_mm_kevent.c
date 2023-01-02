@@ -30,7 +30,7 @@ static spinlock_t mm_slock;
 static mm_kevent_recv_user_func mm_fb_kevent_recv_fb = NULL;
 
 /* record connect pid and modules*/
-void mm_fb_kevent_add_module(u32 pid, char* module) {
+void mm_fb_kevent_add_module(u32 pid, char *module) {
 	int i	= 0x0;
 	int len = 0x0;
 
@@ -59,7 +59,7 @@ void mm_fb_kevent_add_module(u32 pid, char* module) {
 }
 
 /* record connect pid and modules*/
-int mm_fb_kevent_get_pid(char* module) {
+int mm_fb_kevent_get_pid(char *module) {
 	int i = 0;
 
 	if (!module) {
@@ -316,5 +316,5 @@ module_exit(mm_fb_kevent_module_exit);
 
 MODULE_DESCRIPTION("mm_kevent@1.0");
 MODULE_VERSION("1.0");
-MODULE_LICENSE("GPL");
+MODULE_LICENSE("GPL v2");
 

@@ -730,6 +730,7 @@ __lim_handle_sme_start_bss_request(struct mac_context *mac_ctx, uint32_t *msg_bu
 
 			break;
 		case eSIR_NDI_MODE:
+			session->vdev_nss = vdev_type_nss->ndi;
 			session->limSystemRole = eLIM_NDI_ROLE;
 			break;
 
@@ -1403,8 +1404,29 @@ __lim_process_sme_join_req(struct mac_context *mac_ctx, void *msg_buf)
 		handle_ht_capabilityand_ht_info(mac_ctx, session);
 		session->force_24ghz_in_ht20 =
 			sme_join_req->force_24ghz_in_ht20;
-		lim_prepare_ch_width_params(mac_ctx, session,
-					    sme_join_req->cbMode);
+		/* cbMode is already merged value of peer and self -
+		 * done by csr in csr_get_cb_mode_from_ies */
+		session->htSupportedChannelWidthSet =
+			(sme_join_req->cbMode) ? 1 : 0;
+		session->htRecommendedTxWidthSet =
+			session->htSupportedChannelWidthSet;
+		session->htSecondaryChannelOffset = sme_join_req->cbMode;
+
+		if (PHY_DOUBLE_CHANNEL_HIGH_PRIMARY == sme_join_req->cbMode) {
+			session->ch_center_freq_seg0 =
+				wlan_reg_freq_to_chan(
+				mac_ctx->pdev, session->curr_op_freq) - 2;
+			session->ch_width = CH_WIDTH_40MHZ;
+		} else if (PHY_DOUBLE_CHANNEL_LOW_PRIMARY ==
+				sme_join_req->cbMode) {
+			session->ch_center_freq_seg0 =
+				wlan_reg_freq_to_chan(
+				mac_ctx->pdev, session->curr_op_freq) + 2;
+			session->ch_width = CH_WIDTH_40MHZ;
+		} else {
+			session->ch_center_freq_seg0 = 0;
+			session->ch_width = CH_WIDTH_20MHZ;
+		}
 
 		if (IS_DOT11_MODE_HE(session->dot11mode)) {
 			lim_update_session_he_capable(mac_ctx, session);

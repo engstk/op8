@@ -58,6 +58,8 @@
 #define P9418_REG_CURRENT_MA	 							0X6E /* ma 16bit */
 #define P9418_REG_VOLTAGE_MV								0X70 /* mv 16bit */
 
+#define P9418_REG_IDENTITY									0x5870
+
 #define P9418_UPDATE_INTERVAL							round_jiffies_relative(msecs_to_jiffies(3000))
 #define P9418_UPDATE_RETRY_INTERVAL						round_jiffies_relative(msecs_to_jiffies(3000))
 
@@ -152,9 +154,9 @@ struct oplus_p9418_ic{
 };
 
 void p9418_wpc_print_log(void);
-void p9418_set_vbat_en_val(int value);
+void p9418_set_vbat_en_val(struct oplus_p9418_ic *chip, int value);
 int p9418_get_vbat_en_val(void);
-void p9418_set_booster_en_val(int value);
+void p9418_set_booster_en_val(struct oplus_p9418_ic *chip, int value);
 int p9418_get_booster_en_val(void);
 bool p9418_firmware_is_updating(void);
 bool p9418_check_chip_is_null(void);

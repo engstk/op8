@@ -30,9 +30,16 @@ static atomic64_t hash_cal_sum_us = ATOMIC64_INIT(0);
 static atomic64_t hash_cal_times = ATOMIC64_INIT(0);
 static unsigned long hash_cal_max_us;
 
-#if defined(CONFIG_MEMLEAK_DETECT_THREAD) && defined(CONFIG_SVELTE)
+#if defined(CONFIG_MEMLEAK_DETECT_THREAD)
 #define LOGGER_PRELOAD_SIZE 4076
+#if defined(CONFIG_SVELTE)
 extern void logger_kmsg_nwrite(const char *tag, const char *msg, size_t len);
+#else /* CONFIG_SVELTE */
+static inline void logger_kmsg_nwrite(const char *tag, const char *msg, size_t len)
+{
+	return;
+}
+#endif /* CONFIG_SVELTE */
 
 static inline int find_last_lf(char *buf, size_t len)
 {

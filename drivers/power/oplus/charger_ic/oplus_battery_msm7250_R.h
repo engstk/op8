@@ -688,6 +688,7 @@ struct smb_charger {
 #endif
 	struct delayed_work	ccdetect_work;
 	bool		usbtemp_parameter;
+	bool		usbtemp_parameter_20813;
 #endif
 
 #ifdef OPLUS_FEATURE_CHG_BASIC

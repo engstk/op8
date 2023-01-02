@@ -10,22 +10,24 @@
 #include <linux/proc_fs.h>
 #include <soc/oplus/system/oplus_mm_kevent_fb.h>
 #include "oplus_mm_kevent.h"
+#include <linux/version.h>
 
 static void mm_fb_kevent_upload_jobs(struct work_struct *work);
 
 static LIST_HEAD(mm_kevent_list);
 static DEFINE_MUTEX(mm_kevent_lock);
-static DECLARE_DELAYED_WORK(mm_kevent_upload_work_thread, mm_fb_kevent_upload_jobs);
+static DECLARE_DELAYED_WORK(mm_kevent_upload_work_thread,
+			    mm_fb_kevent_upload_jobs);
 static struct workqueue_struct *mm_kevent_wq = NULL;
 static int mm_kevent_len = 0;
 static bool mm_fb_init = false;
 #define CAUSENAME_SIZE 128
 static char fid[CAUSENAME_SIZE]={"12345678"};
 
-#define LIMIT_UPLOAD_TIME_MS    10000//ms
+#define LIMIT_UPLOAD_TIME_MS    10000 /*ms*/
 struct limit_upload_frq {
-    unsigned int last_id;
-    ktime_t last_time;
+	unsigned int last_id;
+	ktime_t last_time;
 };
 static struct limit_upload_frq g_limit;
 
@@ -46,9 +48,55 @@ struct mm_kevent {
 	char name[0];
 };
 
+#define RELATION_EVENT_LIMIT_NUM    6
+struct relation_event_limit {
+	unsigned int fst_id;
+	ktime_t fst_time;
+	unsigned int limit_ms;
+	unsigned int limit_id[RELATION_EVENT_LIMIT_NUM];
+};
+
+static struct relation_event_limit g_relate[] = {
+	{10001, 0, 2000, {10003, 10008, 10041, 10042, 10046, 10047}},
+	{10003, 0, 1000, {10008, 10046, 0, 0, 0, 0}},
+	{10046, 0, 1000, {10008, 0, 0, 0, 0, 0}}
+};
+
+static void record_relation_first_event(unsigned int id)
+{
+	int lp = 0;
+
+	for (lp = 0; lp < sizeof(g_relate)/sizeof(struct relation_event_limit); lp++) {
+		if (id == g_relate[lp].fst_id) {
+			g_relate[lp].fst_time = ktime_get();
+		}
+	}
+}
+
+static bool is_relation_event_limit(unsigned int id)
+{
+	int lp = 0;
+	int offset = 0;
+
+	for (lp = 0; lp < sizeof(g_relate)/sizeof(struct relation_event_limit); lp++) {
+		for (offset = 0; offset < RELATION_EVENT_LIMIT_NUM; offset++) {
+			if ((id == g_relate[lp].limit_id[offset]) && \
+					(g_relate[lp].fst_time != 0) && \
+					ktime_before(ktime_get(), \
+					ktime_add_ms(g_relate[lp].fst_time, g_relate[lp].limit_ms))) {
+				return true;
+			} else if (0 == g_relate[lp].limit_id[offset]) {
+				break;
+			}
+		}
+	}
+
+	return false;
+}
+
 static unsigned int BKDRHash(char *str, unsigned int len)
 {
-	unsigned int seed = 131; // 31 131 1313 13131 131313 etc.. 
+	unsigned int seed = 131; /* 31 131 1313 13131 131313 etc.. */
 	unsigned int hash = 0;
 	unsigned int i    = 0;
 
@@ -72,7 +120,6 @@ static void calc_fid(unsigned char *str)
 	ktime_t t;
 
 	t = ktime_get();
-	/* get_random_bytes(&rdm, sizeof(unsigned long)); */
 	rdm = get_random_u64();
 	snprintf(strHashSource, MAX_PAYLOAD_DATASIZE, "%lu %lu %s", rdm, t, str);
 	hashid = BKDRHash(strHashSource, strlen(strHashSource));
@@ -81,14 +128,16 @@ static void calc_fid(unsigned char *str)
 	printk(KERN_INFO "calc_fid: fid=%u\n", hashid);
 }
 
-static int upload_mm_fb_kevent(unsigned int event_id, unsigned char *payload) {
+static int upload_mm_fb_kevent(unsigned int event_id, unsigned char *payload)
+{
 	struct mm_kevent_packet *user_msg_info;
 	char event_id_str[MAX_PAYLOAD_EVENTID] = {0};
-	void* buffer = NULL;
+	void *buffer = NULL;
 	int len, size;
 	int ret = 0;
 
-	printk(KERN_INFO "%s: mm_kevent fb: enter, event_id = %d\n", __func__, event_id);
+	printk(KERN_INFO "%s: mm_kevent fb: enter, event_id = %d\n", __func__,
+	       event_id);
 
 	mutex_lock(&mm_kevent_lock);
 	len = strlen(payload);
@@ -122,6 +171,8 @@ static int upload_mm_fb_kevent(unsigned int event_id, unsigned char *payload) {
 
 	kfree(buffer);
 
+	record_relation_first_event(event_id);
+
 _exit:
 	mutex_unlock(&mm_kevent_lock);
 	return ret;
@@ -145,7 +196,7 @@ static void mm_fb_kevent_upload_work(struct work_struct *work)
 
 	if (!found) {
 		if (mm_kevent_len > 200) {
-			unsigned char payload[MM_KEVENT_MAX_PAYLOAD_SIZE] = "";
+			unsigned char payload[MAX_PAYLOAD_DATASIZE] = "";
 			pr_err("mm_kevent large than 200");
 
 			if (OPLUS_MM_DIRVER_FB_EVENT_AUDIO == new_kevent->module) {
@@ -170,8 +221,9 @@ static void mm_fb_kevent_upload_work(struct work_struct *work)
 		goto done;
 	}
 
-	if (WARN_ON(!kevent))
+	if (WARN_ON(!kevent)) {
 		goto done;
+	}
 
 	mutex_lock(&kevent->lock);
 	kevent->count++;
@@ -183,28 +235,32 @@ static void mm_fb_kevent_upload_work(struct work_struct *work)
 	mutex_unlock(&kevent->lock);
 done:
 	mm_fb_kevent_upload_jobs(NULL);
-	if (new_kevent)
+	if (new_kevent) {
 		kfree(new_kevent->payload);
+	}
 	kfree(new_kevent);
 }
 
 static void mm_fb_kevent_upload_jobs(struct work_struct *work)
 {
 	struct mm_kevent *kevent = NULL, *n = NULL;
-	unsigned char payload[MM_KEVENT_MAX_PAYLOAD_SIZE] = "";
+	unsigned char payload[MAX_PAYLOAD_DATASIZE] = "";
 	int cnt;
 
 	list_for_each_entry_safe(kevent, n, &mm_kevent_list, head) {
-		if (ktime_before(kevent->last, kevent->last_upload))
+		if (ktime_before(kevent->last, kevent->last_upload)) {
 			continue;
+		}
 
 		if (kevent->count_limit && (kevent->count_total % kevent->count_limit == 0)) {
 			kevent->count_limit <<= 1;
-			if (kevent->count_limit > 4096)
+			if (kevent->count_limit > 4096) {
 				kevent->count_limit = 4096;
+			}
 		} else if (!kevent->rate_limit_ms || (kevent->rate_limit_ms &&
-			   ktime_before(ktime_get(), ktime_add_ms(kevent->last_upload, kevent->rate_limit_ms)))) {
-				continue;
+						      ktime_before(ktime_get(), ktime_add_ms(kevent->last_upload,
+								      kevent->rate_limit_ms)))) {
+			continue;
 		}
 
 		mutex_lock(&kevent->lock);
@@ -239,33 +295,40 @@ static void mm_fb_kevent_upload_jobs(struct work_struct *work)
 	}
 }
 
-static void mm_fb_kevent_upload_recv_user(int type, int flags, char* data) {
+static void mm_fb_kevent_upload_recv_user(int type, int flags, char *data)
+{
 	printk(KERN_INFO "mm_kevent fb recv user type=0x%x, flags=0x%x, data=%s\n",
 		type, flags, data);
-    #ifdef OPLUS_NETLINK_MM_KEVENT_TEST
-    if (flags & OPLUS_NETLINK_MM_DBG_LV2) {
-        upload_mm_fb_kevent(OPLUS_MM_EVENTID_TEST_OR_DEBUG, data);
-    }
-    #endif
+	#ifdef OPLUS_NETLINK_MM_KEVENT_TEST
+	if (flags & OPLUS_NETLINK_MM_DBG_LV2) {
+		upload_mm_fb_kevent(OPLUS_MM_EVENTID_TEST_OR_DEBUG, data);
+	}
+	#endif
 }
 
 /* queue a  delaywork to upload the feedback info, can used in interrupt function or timeliness requirement place*/
-int upload_mm_fb_kevent_limit(enum OPLUS_MM_DIRVER_FB_EVENT_MODULE module, unsigned int event_id,
-		     const char *name, int rate_limit_ms, char *payload)
+int upload_mm_fb_kevent_limit(enum OPLUS_MM_DIRVER_FB_EVENT_MODULE module,
+			      unsigned int event_id,
+		     const char *name, int rate_limit_ms, unsigned int delay_s, char *payload)
 {
 	struct mm_kevent *kevent = NULL;
 	int size;
-	char buf[MM_KEVENT_MAX_PAYLOAD_SIZE] = {0};
+	char buf[MAX_PAYLOAD_DATASIZE] = {0};
 
 	if (!mm_fb_init || !mm_kevent_wq) {
 		pr_err("%s: error: not init or mm_kevent_wq is null\n", __func__);
 		return -EINVAL;
 	}
 
+	if(is_relation_event_limit(event_id)) {
+		pr_info("%s: relation event has feedback before, not feedback %u\n", __func__, event_id);
+		return -EINVAL;
+	}
 	size = strlen(name) + sizeof(*kevent) + 1;
 	kevent = kzalloc(size, GFP_ATOMIC);
-	if (!kevent)
+	if (!kevent) {
 		return -ENOMEM;
+	}
 
 	kevent->module = module;
 	kevent->event_id = event_id;
@@ -277,7 +340,7 @@ int upload_mm_fb_kevent_limit(enum OPLUS_MM_DIRVER_FB_EVENT_MODULE module, unsig
 	memcpy(kevent->name, name, strlen(name) + 1);
 	if (OPLUS_AUDIO_EVENTID_ADSP_CRASH == event_id) {
 		calc_fid(payload);
-		scnprintf(buf, MM_KEVENT_MAX_PAYLOAD_SIZE, "EventField@@%s$$%s",
+		scnprintf(buf, MAX_PAYLOAD_DATASIZE, "EventField@@%s$$%s",
 				fid, payload ? payload : "NULL");
 		kevent->payload = kmemdup(buf, strlen(buf) + 1, GFP_ATOMIC);
 	} else {
@@ -285,7 +348,12 @@ int upload_mm_fb_kevent_limit(enum OPLUS_MM_DIRVER_FB_EVENT_MODULE module, unsig
 	}
 	mutex_init(&kevent->lock);
 	INIT_DELAYED_WORK(&kevent->dwork, mm_fb_kevent_upload_work);
-	queue_delayed_work(mm_kevent_wq, &kevent->dwork, 0);
+	if (delay_s > 0) {
+		printk(KERN_INFO "%s:feedback delay %d second\n", __func__, delay_s);
+		queue_delayed_work(mm_kevent_wq, &kevent->dwork, delay_s * HZ);
+	} else {
+		queue_delayed_work(mm_kevent_wq, &kevent->dwork, 0);
+	}
 	printk(KERN_INFO "%s:event_id=%d,payload:%s\n", __func__, event_id, payload);
 
 	return 0;
@@ -293,11 +361,12 @@ int upload_mm_fb_kevent_limit(enum OPLUS_MM_DIRVER_FB_EVENT_MODULE module, unsig
 EXPORT_SYMBOL(upload_mm_fb_kevent_limit);
 
 /* upload the feedback info immediately, can't used in interrupt function */
-int upload_mm_fb_kevent_to_atlas_limit(unsigned int event_id, unsigned char *payload, int limit_ms)
+int upload_mm_fb_kevent_to_atlas_limit(unsigned int event_id,
+				       unsigned char *payload, int limit_ms)
 {
 	struct mm_kevent_packet *user_msg_info;
 	char event_id_str[MAX_PAYLOAD_EVENTID] = {0};
-	void* buffer = NULL;
+	void *buffer = NULL;
 	int len, size;
 	int ret = 0;
 
@@ -305,6 +374,11 @@ int upload_mm_fb_kevent_to_atlas_limit(unsigned int event_id, unsigned char *pay
 
 	if (!mm_fb_init) {
 		pr_err("%s: error, module not init\n", __func__);
+		return -EINVAL;
+	}
+
+	if(is_relation_event_limit(event_id)) {
+		pr_info("%s: relation event has feedback before, not feedback %u\n", __func__, event_id);
 		return -EINVAL;
 	}
 
@@ -336,7 +410,10 @@ int upload_mm_fb_kevent_to_atlas_limit(unsigned int event_id, unsigned char *pay
 	user_msg_info = (struct mm_kevent_packet *)buffer;
 	user_msg_info->type = 1;
 
-	memcpy(user_msg_info->tag, ATLAS_FB_EVENT, strlen(ATLAS_FB_EVENT));
+	if ((MAX_PAYLOAD_TAG - 1) > strlen(ATLAS_FB_EVENT)) {
+		memcpy(user_msg_info->tag, ATLAS_FB_EVENT, strlen(ATLAS_FB_EVENT));
+		user_msg_info->tag[strlen(ATLAS_FB_EVENT)] = 0;
+	}
 
 	snprintf(event_id_str, sizeof(event_id_str) - 1, "%d", event_id);
 	memcpy(user_msg_info->event_id, event_id_str, strlen(event_id_str));
@@ -344,13 +421,15 @@ int upload_mm_fb_kevent_to_atlas_limit(unsigned int event_id, unsigned char *pay
 	user_msg_info->len = len + 1;
 	memcpy(user_msg_info->data, payload, len + 1);
 
-	pr_info("%s: mm_kevent: type %d, tag=%s, event_id=%s, len=%zu, payload=%s\n", __func__,
-	         user_msg_info->type, user_msg_info->tag, user_msg_info->event_id, user_msg_info->len, user_msg_info->data);
+	pr_info("%s: mm_kevent: type %d, tag=%s, event_id=%s, len=%zu, payload=%s\n",
+		__func__,
+		user_msg_info->type, user_msg_info->tag, user_msg_info->event_id,
+		user_msg_info->len, user_msg_info->data);
 	mm_fb_kevent_send_to_user(user_msg_info);
-	//msleep(20);
 	kfree(buffer);
 	g_limit.last_id = event_id;
 	g_limit.last_time = ktime_get();
+	record_relation_first_event(event_id);
 
 _exit:
 	mutex_unlock(&mm_kevent_lock);
@@ -359,7 +438,7 @@ _exit:
 EXPORT_SYMBOL(upload_mm_fb_kevent_to_atlas_limit);
 
 #define MM_FB_EVENTID_LEN   5
-#define MM_FB_HAL_LIMIT    (60*1000)
+#define MM_FB_HAL_LIMIT    (30*1000)
 #define IS_DIGITAL(x) (((x) >= '0') && ((x) <= '9'))
 static ssize_t mm_fb_write(struct file *file,
 				const char __user *buf,
@@ -378,9 +457,10 @@ static ssize_t mm_fb_write(struct file *file,
 	r_buf = (char *)kzalloc(MAX_PAYLOAD_DATASIZE, GFP_KERNEL);
 	if (!r_buf) {
 		return count;
-    }
+	}
 
-	if (copy_from_user(r_buf, buf, MAX_PAYLOAD_DATASIZE > count ? count : MAX_PAYLOAD_DATASIZE)) {
+	if (copy_from_user(r_buf, buf,
+			   MAX_PAYLOAD_DATASIZE > count ? count : MAX_PAYLOAD_DATASIZE)) {
 		goto exit;
 	}
 
@@ -396,12 +476,14 @@ static ssize_t mm_fb_write(struct file *file,
 		if (IS_DIGITAL(r_buf[i])) {
 			event_id = event_id*10 + r_buf[i] - '0';
 		} else {
-			printk(KERN_INFO "%s: mm_kevent fb eventid is error, data=%s\n", __func__, r_buf);
+			printk(KERN_INFO "%s: mm_kevent fb eventid is error, data=%s\n", __func__,
+			       r_buf);
 			goto exit;
 		}
 	}
 
-	upload_mm_fb_kevent_to_atlas_limit(event_id, r_buf + MM_FB_EVENTID_LEN + 1, MM_FB_HAL_LIMIT);
+	upload_mm_fb_kevent_to_atlas_limit(event_id, r_buf + MM_FB_EVENTID_LEN + 1,
+					   MM_FB_HAL_LIMIT);
 
 exit:
 	kfree(r_buf);
@@ -421,12 +503,20 @@ static ssize_t mm_fb_read(struct file *file,
 	return count;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+static const struct proc_ops mm_fb_fops = {
+	.proc_write = mm_fb_write,
+	.proc_read  = mm_fb_read,
+	.proc_open  = simple_open,
+};
+#else
 static const struct file_operations mm_fb_fops = {
 	.write = mm_fb_write,
 	.read  = mm_fb_read,
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#endif
 
 static ssize_t adsp_crash_cause_read(struct file *file,
 	char __user *buf,
@@ -441,11 +531,18 @@ static ssize_t adsp_crash_cause_read(struct file *file,
 	return len;
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+static const struct proc_ops adsp_crash_cause_fops = {
+	.proc_read  = adsp_crash_cause_read,
+	.proc_open  = simple_open,
+};
+#else
 static const struct file_operations adsp_crash_cause_fops = {
 	.read  = adsp_crash_cause_read,
 	.open  = simple_open,
 	.owner = THIS_MODULE,
 };
+#endif
 
 int mm_fb_kevent_init(void)
 {
@@ -471,7 +568,8 @@ int mm_fb_kevent_init(void)
 		goto failed_proc_create_data;
 	}
 
-	d_entry = proc_create_data("adsp_crash_cause", 0664, NULL, &adsp_crash_cause_fops, NULL);
+	d_entry = proc_create_data("adsp_crash_cause", 0664, NULL,
+				   &adsp_crash_cause_fops, NULL);
 	if (!d_entry) {
 		pr_err("failed to adsp_crash_cause node\n");
 		ret = -ENODEV;
@@ -484,8 +582,10 @@ int mm_fb_kevent_init(void)
 	return 0;
 
 failed_proc_create_data:
-	if (mm_kevent_wq)
+	if (mm_kevent_wq) {
 		destroy_workqueue(mm_kevent_wq);
+		mm_kevent_wq = NULL;
+	}
 failed_create_workqueue:
 	return ret;
 }
@@ -505,4 +605,6 @@ void mm_fb_kevent_deinit(void)
 
 module_init(mm_fb_kevent_init);
 module_exit(mm_fb_kevent_deinit);
+
+MODULE_LICENSE("GPL v2");
 

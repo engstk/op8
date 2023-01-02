@@ -93,7 +93,7 @@ static void get_blackscreen_check_dcs_logmap(char* logmap)
     int stages_len;
 
     stages_len = get_pwkey_stages(stages);
-    snprintf(logmap, 512, "logmap{logType:%s;error_id:%s;error_count:%d;systemserver_pid:%d;stages:%s;catchlog:%s}", PWKKEY_BLACK_SCREEN_DCS_LOGTYPE,
+	snprintf(logmap, 512, "logmap{logType:%s;error_id:%s;error_count:%u;systemserver_pid:%d;stages:%s;catchlog:%s}", PWKKEY_BLACK_SCREEN_DCS_LOGTYPE,
         g_black_data.error_id, g_black_data.error_count, get_systemserver_pid(), stages, get_log_swich() ? "true" : "false");
 }
 
@@ -111,7 +111,7 @@ static bool is_normal_resume()
 
 static void get_blackscreen_resume_dcs_logmap(char* logmap)
 {
-    snprintf(logmap, 512, "logmap{logType:%s;error_id:%s;resume_count:%d;normalReborn:%s;catchlog:false}", PWKKEY_BLACK_SCREEN_DCS_LOGTYPE,
+	snprintf(logmap, 512, "logmap{logType:%s;error_id:%s;resume_count:%u;normalReborn:%s;catchlog:false}", PWKKEY_BLACK_SCREEN_DCS_LOGTYPE,
         g_black_data.error_id, g_black_data.error_count, (is_normal_resume() ? "true" : "false"));
 }
 
@@ -199,7 +199,7 @@ static int black_write_error_count(struct black_data *bla_data)
         return -1;
     }
 
-    sprintf(buf, "%d\n", bla_data->error_count);
+	sprintf(buf, "%u\n", bla_data->error_count);
 
     pos = 0;
     len = kernel_write(fp, buf, strlen(buf), &pos);

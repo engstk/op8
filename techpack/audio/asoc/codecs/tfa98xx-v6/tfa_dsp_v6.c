@@ -3631,6 +3631,11 @@ enum Tfa98xx_Error tfa_dsp_get_calibration_impedance_v6(struct tfa_device *tfa)
 		/* SoftDSP interface differs from hw-dsp interfaces */
 		if(tfa->is_probus_device && tfa->cnt->ndev > 1) {
 			spkr_count = tfa->cnt->ndev;
+			#ifdef OPLUS_ARCH_EXTENDS
+			/*Add for 4 PA solution */
+			if (spkr_count == 4 )
+				spkr_count = 2;
+			#endif /*OPLUS_ARCH_EXTENDS*/
 		}
 
 		nr_bytes = spkr_count * 3;
@@ -3643,7 +3648,13 @@ enum Tfa98xx_Error tfa_dsp_get_calibration_impedance_v6(struct tfa_device *tfa)
 				/* for probus devices, calibration values coming from soft-dsp speakerboost,
 				   are ordered in a different way. Re-align to standard representation. */
 				cal_idx=i;
+				#ifdef OPLUS_ARCH_EXTENDS
+				/*Add for 4 PA solution*/
+				// cnt-id 0,2 is left, cnt-id 1,3 is right
+				if((tfa->is_probus_device && (tfa->dev_idx % 2) == 1) ) {
+				#else
 				if((tfa->is_probus_device && tfa->dev_idx >= 1) ) {
+				#endif/*OPLUS_ARCH_EXTENDS*/
 					cal_idx=0;
 				}
 

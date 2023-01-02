@@ -140,15 +140,15 @@ static void oplus_check_hung_task(struct task_struct *t, unsigned long timeout, 
 	if (is_usersapce_key_process(t))
 	{
 		if (t->state == TASK_UNINTERRUPTIBLE)
-			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,uninterruptible for %ld seconds", t->comm, timeout);
+			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,uninterruptible for %lu seconds", t->comm, timeout);
 		else if (t->state == TASK_STOPPED)
-			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,stopped for %ld seconds", t->comm, timeout);
+			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,stopped for %lu seconds", t->comm, timeout);
 		else if (t->state == TASK_TRACED)
-			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,traced for %ld seconds", t->comm, timeout);
+			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,traced for %lu seconds", t->comm, timeout);
 		else
-			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,unknown hung for %ld seconds", t->comm, timeout);
+			snprintf(sysctl_hung_task_kill, HUNG_TASK_KILL_LEN, "%s,unknown hung for %lu seconds", t->comm, timeout);
 
-		printk(KERN_ERR "DeathHealer: task %s:%d blocked for more than %ld seconds in state 0x%lx. Count:%d\n",
+		printk(KERN_ERR "DeathHealer: task %s:%d blocked for more than %lu seconds in state 0x%lx. Count:%d\n",
 			t->comm, t->pid, timeout, t->state, death_count+1);
 
                 sched_show_task(t);

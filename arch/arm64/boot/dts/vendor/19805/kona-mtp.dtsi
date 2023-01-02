@@ -166,7 +166,7 @@
 	};
 
 	//#ifdef OPLUS_FEATURE_FINGERPRINT
-	oppo_fp_common {
+	oplus_fp_common {
 		compatible = "oplus,fp_common";
 		oplus,fp_gpio_num = <1>; /* the gpio number of fingerprint id used */
 		oplus,fp_gpio_0 = <&tlmm 77 0x0>;
@@ -174,13 +174,13 @@
 		pinctrl-0 = <&gpio_id2_default>;
 		goodix_optical_G5 {
 			oplus,fp-id = <1>; /* fp id mapping table */
-			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
 			chip-name = "G_OPTICAL_19805_G6_7";  /* /proc/fp_id, will be displayed in engineer menu  */
 		};
 		goodix_optical_G6 {
 			oplus,fp-id = <0>; /* fp id mapping table */
-			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
 			chip-name = "G_OPTICAL_19805_G6_3";  /* /proc/fp_id, will be displayed in engineer menu  */
 		};
@@ -190,7 +190,7 @@
 		compatible = "goodix,goodix_fp";
 		interrupt-parent = <&tlmm>;
 		interrupts = <23 0>;
-		power-mode = <1> ; /*please refer to the struct fp_power_mode_t in oppo_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
+		power-mode = <1> ; /*please refer to the struct fp_power_mode_t in oplus_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
 		ldo-supply = <&pm8150_l16>;
 		ldo-config = <3300000 3300000 150000>;
 		goodix,gpio_irq = <&tlmm 23 0x1>;
@@ -280,6 +280,9 @@
 		Hw,sim_det = "modem_det";
 	};
 	//#endif /* OPLUS_BUG_DEBUG */
+	feedback_fb {
+		compatible = "oplus,haptic-feedback";
+	};
 };
 /*&qupv3_se13_i2c {
 	#address-cells = <1>;
@@ -353,6 +356,8 @@
 
 	/* SW Support Feature Control */
 		black_gesture_support;
+		black_gesture_indep_support;
+		sportify_aod_gesture_support;
 		fw_edge_limit_support;
 		//kernel_grip_support;
 		pressure_report_support;
@@ -511,6 +516,7 @@
 
 };
 
+//#ifdef OPLUS_FEATURE_CHG_BASIC//Qingjun.Wang@BSP.Haptic,add 2020/03/17 for vib aw8697
 &qupv3_se11_i2c  {
 	status = "ok";
 	/* AWINIC AW8697 Haptic */
@@ -527,6 +533,7 @@
 	};
 	/* AWINIC AW8697 Haptic End */
 };
+//#endif
 
 &pm8150b_charger {
 	status = "ok";
@@ -540,6 +547,9 @@
 			  <&pm8150b_vadc ADC_USB_IN_V_16>,
 			  <&pm8150b_vadc ADC_AMUX_THM4_PU1>,
 			  <&pm8150b_vadc ADC_GPIO4_PU1>;
+//#else
+		      //<&pm8150b_vadc ADC_CHG_TEMP>;
+//#endif
 	io-channel-names = "mid_voltage",
 			   "usb_in_current",
 			   "sbux_res",
@@ -548,6 +558,9 @@
 			   "usb_in_voltage",
 			   "usb_temp_adc",
 			   "usb_supplementary_temp_adc";
+//#else
+			   //"chg_temp";
+//#endif
 	qcom,battery-data = <&kona_mtp_batterydata>;
 	qcom,step-charging-enable;
 	qcom,sw-jeita-enable;
@@ -598,6 +611,7 @@
 	status = "ok";
 };
 */
+//#endif
 #if 0
 &smb1390_charger {
 	io-channels = <&pm8150b_vadc ADC_AMUX_THM2>;
@@ -854,7 +868,7 @@
 	qcom,platform-sec-reset-gpio = <&tlmm 128 0>;
 };
 &sde_dsi {
-	qcom,dsi-default-panel = <&dsi_oplus20828samsung_amb655x_1080_2400_cmd>;
+	qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
 };
 //#endif
 &thermal_zones {
@@ -1287,7 +1301,7 @@
 		qcom,vooc_hw_id_no_pull_val = <2>;
 
 		qcom,vooc_multistep_adjust_current_support;
-		qcom,vooc_multistep_initial_batt_temp = <310>;
+		qcom,vooc_multistep_initial_batt_temp = <1000>;
 		qcom,vooc_strategy_normal_current = <0x06>;
 		qcom,vooc-normal-to-little-cool-current = <0x05>;
 		qcom,vooc_batt_over_high_temp = <440>;
@@ -1493,6 +1507,7 @@
 			qcom,vooc_project = <3>;
 			qcom,vbatt_num = <2>;
 			qcom,ffc_support;
+			qcom,dual_ffc;
 			recharge_after_full;
 
 			qcom,normal_vterm_hw_inc = <18>;
@@ -1591,6 +1606,17 @@
 			pinctrl-17 = <&input_pg_default>;
 			pinctrl-18 = <&charger_error_default>;
 
+};
+
+&soc {
+	oplus,track-charge {
+		compatible = "oplus,track-charge";
+		track,fast_chg_break_t_thd = <1000>;
+		track,general_chg_break_t_thd = <200>;
+		track,voocphy_type = <4>;
+		track,wired_max_power = <65000>;
+		track,wired_fast_chg_scheme = <1>;
+	};
 };
 //#endif //OPLUS_FEATURE_CHG_BASIC
 

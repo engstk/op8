@@ -31,7 +31,7 @@
 #define WPC_CHARGE_CURRENT_ZERO 0 // 0mA
 #define WPC_CHARGE_CURRENT_INIT_100MA 100
 #define WPC_CHARGE_CURRENT_200MA 200
-#define WPC_CHARGE_CURRENT_DEFAULT 500 // 500mA
+#define WPC_CHARGE_CURRENT_DEFAULT 250 // 250mA
 #define WPC_CHARGE_CURRENT_ON_TRX 650 // 650mA
 #define WPC_CHARGE_CURRENT_BPP 1000 // 1000mA
 #define WPC_CHARGE_CURRENT_EPP 1100
@@ -236,13 +236,6 @@ enum wlchg_msg_type {
 	WLCHG_TX_ID_MSG,
 };
 
-enum wls_status_keep_type {
-	WLS_SK_NULL,
-	WLS_SK_BY_KERNEL,
-	WLS_SK_BY_HAL,
-	WLS_SK_WAIT_TIMEOUT,
-};
-
 struct wlchg_msg_t {
 	char type;
 	char data;
@@ -441,6 +434,13 @@ bool oplus_wpc_get_fw_updating(void);
 
 int oplus_wpc_get_adapter_type(void);
 
+int oplus_wpc_get_break_sub_crux_info(char *sub_crux_info);
+
+int oplus_wpc_get_dock_type(void);
+
+int oplus_wpc_get_skewing_curr(void);
+
+bool oplus_wpc_get_verity(void);
 int oplus_wpc_set_tx_start(void);
 void oplus_wpc_set_wls_pg_value(int value);
 void oplus_wpc_dis_tx_power(void);

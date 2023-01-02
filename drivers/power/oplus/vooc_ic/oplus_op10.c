@@ -29,7 +29,9 @@
 
 //#include <mt-plat/battery_meter.h>
 #include <linux/module.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
+#endif
 
 #else
 #include <linux/i2c.h>
@@ -48,10 +50,13 @@
 #include <linux/regulator/driver.h>
 #include <linux/regulator/of_regulator.h>
 #include <linux/regulator/machine.h>
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 #include <soc/oplus/device_info.h>
+#endif
 #endif
 #include "oplus_vooc_fw.h"
 #include "../oplus_pps.h"
+#include "../oplus_pps_ops_manager.h"
 
 extern int charger_abnormal_log;
 
@@ -433,14 +438,14 @@ int op10_check_btb_temp(void)
 
 	if (!the_chip) {
 		printk("op10_check_btb_temp fail\n");
-		return -1;
+		return 1;
 	}
 
 	//ret = oplus_i2c_dma_read(the_chip->client, REG_STATE, 4, read_buf);
 	ret = oplus_vooc_i2c_read(the_chip->client, REG_STATE, 4, read_buf);
 	if (ret < 0) {
 		printk("op10_check_btb_temp read REG_STATE fail\n");
-		return -1;
+		return 1;
 	}
 	printk("op10_check_btb_temp the data: %x, %x, %x, %x\n", read_buf[0], read_buf[1], read_buf[2], read_buf[3]);
 
@@ -450,10 +455,10 @@ int op10_check_btb_temp(void)
 
 	if (usb_btb < protect_temp_80 || bat_btb < protect_temp_80) {
 		printk("usb_btb or bat_btb over 80\n");
-		return -1;
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 
@@ -481,10 +486,6 @@ int op10_pps_mos_ctrl(int on)
 		ovp_flag =  DISABLE_OVP_AND_WDT_FLAG;
 		//ret = oplus_i2c_dma_write(the_chip->client, REG_HOST, 4, (u8 *)(&ovp_flag));
 		ret = oplus_vooc_i2c_write(the_chip->client, REG_HOST, 4, (u8 *)(&ovp_flag));
-		if (ret < 0) {
-			printk("op10_pps_mos_ctrl write REG_HOST fail\n");
-			return -1;
-		}
 		printk("op10_pps_mos_ctrl disable flags:0x%x, ret:%d\n", ovp_flag, ret);
 		if (ret < 0) {
 			for (i=0; i<3; i++) {
@@ -497,6 +498,8 @@ int op10_pps_mos_ctrl(int on)
 		}
 		if(ret >= 0){
 			printk("op10_pps_mos_ctrl disable success\n");
+		} else {
+			printk("op10_pps_mos_ctrl write REG_HOST fail\n");
 		}
 	}
 
@@ -804,9 +807,6 @@ struct oplus_vooc_operations oplus_op10_ops = {
 	.set_switch_mode = opchg_set_switch_mode,
 	.eint_regist = oplus_vooc_eint_register,
 	.eint_unregist = oplus_vooc_eint_unregister,
-	.pps_eint_regist = oplus_pps_eint_register,
-	.pps_eint_unregist = oplus_pps_eint_unregister,
-	.pps_get_value = oplus_pps_get_gpio_value,
 	.set_data_active = opchg_set_data_active,
 	.set_data_sleep = opchg_set_data_sleep,
 	.set_clock_active = opchg_set_clock_active,
@@ -830,15 +830,131 @@ struct oplus_vooc_operations oplus_op10_ops = {
 	.update_temperature_soc = op10_update_temperature_soc,
 };
 
-struct oplus_pps_mcu_operations oplus_op10_pps_ops = {
-	.get_input_volt = op10_read_input_voltage,
+static int oplus_sm8350_pps_get_authentiate(void)
+{
+	return 1;
+}
+
+
+void oplus_op10_hardware_init(void)
+{
+	pps_err(" end\n");
+}
+
+void oplus_op10_cp_reset(void)
+{
+	pps_err(" end\n");
+}
+
+int oplus_op10_master_get_vbus(void)
+{
+	return op10_read_input_voltage() & 0xffff;
+}
+
+int oplus_op10_slave_get_vbus(void)
+{
+	return 0;
+}
+
+int oplus_op10_master_get_ibus(void)
+{
+	return 0;
+}
+
+int oplus_op10_slave_get_ibus(void)
+{
+	return 0;
+}
+
+int oplus_op10_slave_cp_enable(int enable)
+{
+	return 0;
+}
+
+int oplus_op10_master_get_ucp_flag(void)
+{
+	return 0;
+}
+
+int oplus_op10_cfg_mode_init(int mode)
+{
+	return 0;
+}
+int oplus_op10_master_get_vac(void)
+{
+	return 0;
+}
+
+int oplus_op10_slave_get_vac(void)
+{
+	return 0;
+}
+
+int oplus_op10_master_get_vout(void)
+{
+	return 0;
+}
+
+int oplus_op10_slave_get_vout(void)
+{
+	return 0;
+}
+
+void oplus_op10_set_mcu_pps_mode(bool pps)
+{
+	if (!the_chip) {
+		printk("op10_read_vbat0_voltage fail\n");
+		return;
+	}
+	oplus_vooc_set_mcu_pps_mode(the_chip, pps);
+}
+
+int oplus_op10_get_mcu_pps_mode(void)
+{
+	int ret = 0;
+
+	if (!the_chip) {
+		printk("oplus_op10_get_mcu_pps_mode fail\n");
+		return -1;
+	}
+	ret = oplus_vooc_get_mcu_pps_mode(the_chip);
+
+	return ret;
+}
+
+
+struct oplus_pps_operations oplus_op10_pps_ops = {
+	.set_mcu_pps_mode = oplus_op10_set_mcu_pps_mode,
+	.get_mcu_pps_mode = oplus_op10_get_mcu_pps_mode,
 	.get_vbat0_volt = op10_read_vbat0_voltage,
 	.check_btb_temp = op10_check_btb_temp,
+
+	.pps_get_authentiate = oplus_sm8350_pps_get_authentiate,
+	.pps_pdo_select = oplus_chg_set_pps_config,
+	.get_pps_status = oplus_chg_get_pps_status,
+	.get_pps_max_cur = oplus_chg_pps_get_max_cur,
+
+	.pps_cp_hardware_init = oplus_op10_hardware_init,
+	.pps_cp_reset = oplus_op10_cp_reset,
+	.pps_cp_mode_init = oplus_op10_cfg_mode_init,
+
 	.pps_mos_ctrl = op10_pps_mos_ctrl,
+	.pps_get_cp_master_vbus = oplus_op10_master_get_vbus,
+	.pps_get_cp_master_ibus = oplus_op10_master_get_ibus,
+	.pps_get_ucp_flag = oplus_op10_master_get_ucp_flag,
+	.pps_get_cp_master_vac = oplus_op10_master_get_vac,
+	.pps_get_cp_master_vout = oplus_op10_master_get_vout,
+
+	.pps_get_cp_slave_vbus = oplus_op10_slave_get_vbus,
+	.pps_get_cp_slave_ibus = oplus_op10_slave_get_ibus,
+	.pps_mos_slave_ctrl = oplus_op10_slave_cp_enable,
+	.pps_get_cp_slave_vac = oplus_op10_slave_get_vac,
+	.pps_get_cp_slave_vout = oplus_op10_slave_get_vout,
 };
 
 static void register_vooc_devinfo(void)
 {
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
 	int ret = 0;
 	char *version;
 	char *manufacture;
@@ -850,6 +966,7 @@ static void register_vooc_devinfo(void)
 	if (ret) {
 		chg_err(" fail\n");
 	}
+#endif
 }
 
 static int op10_parse_fw_from_dt(struct oplus_vooc_chip *chip)
@@ -1027,7 +1144,7 @@ static int op10_driver_probe(struct i2c_client *client, const struct i2c_device_
 	else
 		op10_parse_fw_from_array(chip);
 
-	oplus_pps_register_ops(&oplus_op10_pps_ops);
+	oplus_pps_ops_register("mcu-op10", &oplus_op10_pps_ops);
 
 	chip->vops = &oplus_op10_ops;
 	chip->fw_mcu_version = 0;
@@ -1054,6 +1171,8 @@ static int op10_driver_probe(struct i2c_client *client, const struct i2c_device_
 	register_vooc_devinfo();
 
 	init_proc_vooc_fw_check();
+
+	oplus_vooc_bcc_curves_init(chip);
 
 	the_chip = chip;
 	chg_debug("op10 success\n");

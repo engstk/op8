@@ -72,6 +72,10 @@ OPLUS_FEATURE_IPV6_OPTIMIZE  \
 OPLUS_FEATURE_DATA_EVAL  \
 OPLUS_FEATURE_DHCP  \
 OPLUS_FEATURE_PHOENIX  \
+OPLUS_FEATURE_PHOENIX_REBOOT_SPEED  \
+OPLUS_FEATURE_KMSG_WB  \
+OPLUS_FEATURE_SHUTDOWN_SPEED  \
+OPLUS_FEATURE_OLC \
 OPLUS_FEATURE_DUMPDEVICE  \
 OPLUS_FEATURE_SAUPWK  \
 OPLUS_FEATURE_MEMORY_ISOLATE  \
@@ -101,7 +105,9 @@ OPLUS_BUG_DEBUG \
 OPLUS_ARCH_INJECT \
 OPLUS_ARCH_EXTENDS \
 OPLUS_FEATURE_AUDIODETECT \
+VENDOR_EDIT \
 OPLUS_FEATURE_DC \
+OPLUS_FEATURE_POWERINFO_STANDBY \
 OPLUS_FEATURE_POWERINFO_RPMH \
 OPLUS_FEATURE_CAMERA_COMMON \
 OPLUS_FEATURE_ADSP_RECOVERY \
@@ -121,18 +127,15 @@ OPLUS_FEATURE_RT_INFO \
 OPLUS_FEATURE_MIC_VA_MIC_CLK_SWITCH
 
 ifeq ($(OPLUS_FEATURE_ADFR_KERNEL), yes)
-    $(warning add OPLUS_FEATURE_ADFR in kernel)
     ALLOWED_MCROS += OPLUS_FEATURE_ADFR
 endif
 
 ifeq ($(OPLUS_FEATURE_GAMMA_SWITCH_KERNEL), yes)
-     $(warning add OPLUS_FEATURE_GAMMA_SWITCH_KERNEL in kernel)
      ALLOWED_MCROS += OPLUS_FEATURE_GAMMA_SWITCH
 endif
 
 
 $(foreach myfeature,$(ALLOWED_MCROS),\
-         $(warning make $(myfeature) to be a macro here) \
          $(eval KBUILD_CFLAGS += -D$(myfeature)) \
          $(eval KBUILD_CPPFLAGS += -D$(myfeature)) \
          $(eval CFLAGS_KERNEL += -D$(myfeature)) \
@@ -223,23 +226,13 @@ ifeq ($(OPLUS_FEATURE_PXLW_IRIS5),yes)
 export OPLUS_FEATURE_PXLW_IRIS5=yes
 endif
 
-#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-inner_mk_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-inner_mk_dir := $(shell dirname $(inner_mk_path))
-inner_dir := $(wildcard $(inner_mk_dir)/../vendor/oplus/kernel/*/oplus_wakelock_profiler.h)
-inner_wakelock_dir := $(shell echo $(inner_dir) | awk -F '/' '{ print $$(NF-1) }')
-ifneq ($(inner_wakelock_dir),)
-$(warning "ln the wakelock_profiler_h,mk is $(inner_mk_dir),dir is $(inner_dir), wakelock_dir is $(inner_wakelock_dir)")
-$(shell ln -sf $(inner_mk_dir)/../vendor/oplus/kernel/$(inner_wakelock_dir) $(inner_mk_dir)/../kernel/msm-4.19/drivers/soc/oplus/owakelock)
-$(shell ln -sf $(inner_mk_dir)/../vendor/oplus/kernel/$(inner_wakelock_dir)/oplus_wakelock_profiler.h $(inner_mk_dir)/../kernel/msm-4.19/include/soc/oplus/oplus_wakelock_profiler.h)
-else
-$(warning "ln the wakelock_profiler_h fail, mkis $(inner_mk_dir), dir is $(inner_dir), wakelock_dir is $(inner_wakelock_dir)")
-endif
-#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
-
 ifeq ($(OPLUS_FEATURE_AOD_RAMLESS),yes)
 KBUILD_CFLAGS += -DOPLUS_FEATURE_AOD_RAMLESS
 KBUILD_CPPFLAGS += -DOPLUS_FEATURE_AOD_RAMLESS
 CFLAGS_KERNEL += -DOPLUS_FEATURE_AOD_RAMLESS
 CFLAGS_MODULE += -DOPLUS_FEATURE_AOD_RAMLESS
+endif
+
+ifeq ($(OPLUS_FEATURE_OP_SPECIFIC_AUDIO_KERNEL),yes)
+KBUILD_CFLAGS += -DOPLUS_FEATURE_OP_SPECIFIC_AUDIO_KERNEL
 endif

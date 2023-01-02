@@ -133,6 +133,8 @@ struct egistec_data {
 	struct spi_device  *spi;	
 	struct platform_device *pd;
 	struct list_head device_entry;
+        int irq_enable_flag;
+        spinlock_t irq_lock;
 
 	/* buffer is NULL unless this device is open (users > 0) */
 	struct mutex buf_lock;

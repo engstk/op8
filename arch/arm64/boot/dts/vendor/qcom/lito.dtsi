@@ -509,11 +509,6 @@
 			label = "dfps_data_region";
 		};
 
-		disp_rdump_memory: disp_rdump_region@0xa0000000 {
-			reg = <0x0 0xA0000000 0x0 0x02300000>;
-			label = "disp_rdump_region";
-		};
-
 		dump_mem: mem_dump_region {
 			compatible = "shared-dma-pool";
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
@@ -2116,16 +2111,6 @@
 		reg-names = "rmtfs";
 		qcom,client-id = <0x00000001>;
 	};
-
-    //add for creating a shared memory with uio for nv backup and restore
-    qcom,oembackup_sharedmem@0 {
-        compatible = "qcom,sharedmem-uio";
-        reg = <0x0 0x00100000>;
-        reg-names = "oembackup";
-        qcom,client-id = <0x00000004>;
-        qcom,guard-memory;
-    };
-    //#endif /* FEATURE_OPPO_NV_BACKUP */
 
 	ipcc_mproc: qcom,ipcc@408000 {
 		compatible = "qcom,ipcc";

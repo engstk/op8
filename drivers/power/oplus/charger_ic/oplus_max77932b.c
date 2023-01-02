@@ -27,10 +27,15 @@
 //#include <mtk_boot_common.h>
 #include <mt-plat/mtk_rtc.h>
 //#include <mt-plat/charging.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include <mt-plat/charger_type.h>
+#else
+#include <mt-plat/v1/charger_type.h>
+#endif
 #include <soc/oplus/device_info.h>
 
-extern void mt_power_off(void); 
+extern void mt_power_off(void);
 #else
 
 #include <linux/debugfs.h>

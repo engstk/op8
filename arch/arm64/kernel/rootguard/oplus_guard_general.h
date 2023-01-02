@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /**************************************************************
 * Copyright (c)  2008- 2020  Oplus. All rights reserved..
+* VENDOR_EDIT
 * File       : oplus_guard_general.h
 * Description: For rootguard general function
 * Version   : 1.0

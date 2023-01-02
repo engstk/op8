@@ -8528,7 +8528,7 @@ static int ufshcd_host_reset_and_restore(struct ufs_hba *hba)
 	unsigned long flags;
 
 #ifdef OPLUS_FEATURE_UFSPLUS
-#if defined(CONFIG_UFSFEATURE)
+#if defined(VENDOR_EDIT) && defined(CONFIG_UFSFEATURE)
 	ufsf_reset_host(&hba->ufsf);
 #endif
 #endif

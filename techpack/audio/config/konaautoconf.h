@@ -47,6 +47,7 @@
 #define OPLUS_FEATURE_SPEAKER_MUTE 1
 #define OPLUS_FEATURE_TFA98XX_VI_FEEDBACK 1
 #define OPLUS_FEATURE_SMARTPA_PM 1
+/*Can't disbale TDM since tablet needs tdm mode */
+//#define CONFIG_TDM_DISABLE 1
 #endif /* OPLUS_ARCH_EXTENDS */
-#define CONFIG_TDM_DISABLE 1
 #define CONFIG_AUXPCM_DISABLE 1

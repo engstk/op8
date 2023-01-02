@@ -12415,11 +12415,11 @@ static int smb5_init_hw(struct smb5 *chip)
 {
 	struct smb_charger *chg = &chip->chg;
 	int rc, type = 0;
-    #ifndef OPLUS_FEATURE_CHG_BASIC
+#ifndef OPLUS_FEATURE_CHG_BASIC
 	u8 val = 0, mask = 0;
-    #else
+#else
 	u8 val = 0;
-    #endif
+#endif
 	struct oplus_chg_chip *oplus_chip = g_oplus_chip;
 	union power_supply_propval pval;
 

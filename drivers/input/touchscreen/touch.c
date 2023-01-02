@@ -110,11 +110,14 @@ int tp_util_get_vendor(struct hw_resource *hw_res, struct panel_info *panel_data
 		memcpy(panel_data->manufacture_info.version, "0x504000000", 11);
 	}
 	if (prj_id == 21623) {
-		memcpy(panel_data->manufacture_info.version, "focalt_", 7);
+		memcpy(panel_data->manufacture_info.version, "focalt_", sizeof("focalt_"));
 	}
 	if (g_tp_ext_prj_name) {
-		strncpy(panel_data->manufacture_info.version + strlen(panel_data->manufacture_info.version),
+		if (NULL != panel_data->manufacture_info.version) {
+			strncpy(panel_data->manufacture_info.version + strlen(panel_data->manufacture_info.version),
 			g_tp_ext_prj_name, 7);
+			panel_data->manufacture_info.version[strlen(panel_data->manufacture_info.version)] = '\0';
+		}
 	}
 	if (panel_data->tp_type == TP_UNKNOWN) {
 		pr_err("[TP]%s type is unknown\n", __func__);
@@ -154,6 +157,34 @@ int tp_util_get_vendor(struct hw_resource *hw_res, struct panel_info *panel_data
 			panel_data->firmware_headfile.firmware_data = FW_20669_ILI7807S;
 			panel_data->firmware_headfile.firmware_size = sizeof(FW_20669_ILI7807S);
 		}
+	}
+	if (prj_id == 21027) {
+		strcpy(panel_data->manufacture_info.manufacture, "BOE");
+		memcpy(panel_data->manufacture_info.version, "BSFA26105", 9);
+		panel_data->firmware_headfile.firmware_data = FW_21027_NT36523_BOE;
+		panel_data->firmware_headfile.firmware_size = sizeof(FW_21027_NT36523_BOE);
+		snprintf(panel_data->fw_name, MAX_FW_NAME_LENGTH,
+		"tp/%d/FW_%s_%s.bin",
+		prj_id, panel_data->chip_name, vendor);
+
+		if (panel_data->test_limit_name) {
+			snprintf(panel_data->test_limit_name, MAX_LIMIT_DATA_LENGTH,
+			"tp/%d/LIMIT_%s_%s.img",
+			prj_id, panel_data->chip_name, vendor);
+		}
+	}
+	if (prj_id == 0x2065C) {
+	    snprintf(panel_data->fw_name, MAX_FW_NAME_LENGTH,
+            "tp/%s/FW_%s_%s.img",
+            "2065C", panel_data->chip_name, vendor);
+
+		if (panel_data->test_limit_name) {
+			snprintf(panel_data->test_limit_name, MAX_LIMIT_DATA_LENGTH,
+				"tp/%s/LIMIT_%s_%s.img",
+				"2065C", panel_data->chip_name, vendor);
+		}
+		memcpy(panel_data->manufacture_info.version, "focalt_0000", 11);
+		panel_data->manufacture_info.fw_path = panel_data->fw_name;
 	}
 
 	pr_info("[TP]vendor:%s fw:%s limit:%s\n",

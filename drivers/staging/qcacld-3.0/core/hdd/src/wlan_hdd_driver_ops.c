@@ -236,6 +236,38 @@ static void hdd_hif_set_attribute(struct hif_opaque_softc *hif_ctx)
 #endif
 
 /**
+
+ * hdd_hif_set_ce_max_yield_time() - Wrapper API to set CE max yield time
+ * @hif_ctx: hif context
+ * @bus_type: underlying bus type
+ * @ce_service_max_yield_time: max yield time to be set
+ *
+ * Return: None
+ */
+#if defined(CONFIG_SLUB_DEBUG_ON)
+#define CE_SNOC_MAX_YIELD_TIME_US 2000
+
+static void hdd_hif_set_ce_max_yield_time(struct hif_opaque_softc *hif_ctx,
+					  enum qdf_bus_type bus_type,
+					  uint32_t ce_service_max_yield_time)
+{
+	if (bus_type == QDF_BUS_TYPE_SNOC &&
+	    ce_service_max_yield_time < CE_SNOC_MAX_YIELD_TIME_US)
+		ce_service_max_yield_time = CE_SNOC_MAX_YIELD_TIME_US;
+
+	hif_set_ce_service_max_yield_time(hif_ctx, ce_service_max_yield_time);
+}
+
+#else
+static void hdd_hif_set_ce_max_yield_time(struct hif_opaque_softc *hif_ctx,
+					  enum qdf_bus_type bus_type,
+					  uint32_t ce_service_max_yield_time)
+{
+	hif_set_ce_service_max_yield_time(hif_ctx, ce_service_max_yield_time);
+}
+#endif
+
+/**
  * hdd_init_cds_hif_context() - API to set CDS HIF Context
  * @hif: HIF Context
  *
@@ -354,7 +386,8 @@ int hdd_hif_open(struct device *dev, void *bdev, const struct hif_bus_id *bid,
 		}
 	}
 
-	hif_set_ce_service_max_yield_time(hif_ctx,
+	hdd_hif_set_ce_max_yield_time(
+				hif_ctx, bus_type,
 				cfg_get(hdd_ctx->psoc,
 					CFG_DP_CE_SERVICE_MAX_YIELD_TIME));
 	ucfg_pmo_psoc_set_hif_handle(hdd_ctx->psoc, hif_ctx);
@@ -682,12 +715,11 @@ static int hdd_soc_recovery_reinit(struct device *dev,
 		return errno;
 
 	errno = __hdd_soc_recovery_reinit(dev, bdev, bid, bus_type);
-	if (errno)
-		return errno;
+
 
 	osif_psoc_sync_trans_stop(psoc_sync);
 
-	return 0;
+	return errno;
 }
 
 static void __hdd_soc_remove(struct device *dev)
@@ -1130,6 +1162,8 @@ static int __wlan_hdd_bus_suspend(struct wow_enable_params wow_params)
 		goto late_hif_resume;
 	}
 
+	hif_system_pm_set_state_suspended(hif_ctx);
+
 	err = hif_bus_suspend(hif_ctx);
 	if (err) {
 		hdd_err("Failed hif bus suspend: %d", err);
@@ -1168,6 +1202,7 @@ late_hif_resume:
 resume_cdp:
 	status = cdp_bus_resume(dp_soc, OL_TXRX_PDEV_ID);
 	QDF_BUG(QDF_IS_STATUS_SUCCESS(status));
+	hif_system_pm_set_state_on(hif_ctx);
 
 	return err;
 }
@@ -1330,6 +1365,8 @@ int wlan_hdd_bus_resume(void)
 		goto out;
 	}
 
+	hif_system_pm_set_state_resuming(hif_ctx);
+
 	qdf_status = ucfg_pmo_psoc_bus_resume_req(hdd_ctx->psoc,
 						  QDF_SYSTEM_SUSPEND);
 	status = qdf_status_to_os_return(qdf_status);
@@ -1337,6 +1374,8 @@ int wlan_hdd_bus_resume(void)
 		hdd_err("Failed pmo bus resume");
 		goto out;
 	}
+
+	hif_system_pm_set_state_on(hif_ctx);
 
 	status = hif_bus_late_resume(hif_ctx);
 	if (status) {
@@ -1356,6 +1395,7 @@ int wlan_hdd_bus_resume(void)
 	return 0;
 
 out:
+	hif_system_pm_set_state_suspended(hif_ctx);
 	if (cds_is_driver_recovering() || cds_is_driver_in_bad_state() ||
 		cds_is_fw_down())
 		return 0;
@@ -1487,6 +1527,11 @@ static int wlan_hdd_runtime_suspend(struct device *dev)
 	if (ucfg_scan_get_pdev_status(hdd_ctx->pdev) !=
 	    SCAN_NOT_IN_PROGRESS) {
 		hdd_debug("Scan in progress, ignore runtime suspend");
+		return -EBUSY;
+	}
+
+	if (ucfg_ipa_is_tx_pending(hdd_ctx->pdev)) {
+		hdd_debug("IPA TX comps pending, ignore rtpm suspend");
 		return -EBUSY;
 	}
 

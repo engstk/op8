@@ -483,6 +483,8 @@
                 fingerprint_underscreen_support;
                 esd_handle_support;
 		register-is-16bit;
+		disable_suspend_irq_handler_support;
+		irq_need_dev_resume_ok;
 
 				/*
                  *Virtual Key Config:
@@ -1107,6 +1109,8 @@
 
                         qcom,non_standard_vfloat_mv = <3980>;
                         qcom,non_standard_fastchg_current_ma = <512>;
+
+			qcom,skip_usbtemp_cool_down;
 
                         //qcom,short_c_bat_cv_mv = <4330>;
                         //qcom,short_c_bat_vfloat_mv = <3800>;

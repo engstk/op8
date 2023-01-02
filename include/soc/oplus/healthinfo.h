@@ -69,6 +69,7 @@ struct long_wait_record {
 	u32 pid;
 	u32 priv;
 	u64 timestamp;
+	u64 timestamp_ns;
 	u32 ms;
 };
 

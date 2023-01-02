@@ -283,19 +283,21 @@ static void ipa3_send_nop_desc(struct work_struct *work)
 		return;
 	}
 	list_add_tail(&tx_pkt->link, &sys->head_desc_list);
-	sys->nop_pending = false;
 
 	memset(&nop_xfer, 0, sizeof(nop_xfer));
 	nop_xfer.type = GSI_XFER_ELEM_NOP;
 	nop_xfer.flags = GSI_XFER_FLAG_EOT;
 	nop_xfer.xfer_user_data = tx_pkt;
 	if (gsi_queue_xfer(sys->ep->gsi_chan_hdl, 1, &nop_xfer, true)) {
+		list_del(&tx_pkt->link);
+		kmem_cache_free(ipa3_ctx->tx_pkt_wrapper_cache, tx_pkt);
 		spin_unlock_bh(&sys->spinlock);
 		IPAERR("gsi_queue_xfer for ch:%lu failed\n",
 			sys->ep->gsi_chan_hdl);
 		queue_work(sys->wq, &sys->work);
 		return;
 	}
+	sys->nop_pending = false;
 	spin_unlock_bh(&sys->spinlock);
 
 	/* make sure TAG process is sent before clocks are gated */
@@ -370,6 +372,12 @@ int ipa3_send(struct ipa3_sys_context *sys,
 	memset(gsi_xfer, 0, sizeof(gsi_xfer[0]) * num_desc);
 
 	spin_lock_bh(&sys->spinlock);
+
+	if (unlikely(atomic_read(&sys->ep->disconnect_in_progress))) {
+		IPAERR("Pipe disconnect in progress dropping the packet\n");
+		spin_unlock_bh(&sys->spinlock);
+		return -EFAULT;
+	}
 
 	for (i = 0; i < num_desc; i++) {
 		tx_pkt = kmem_cache_zalloc(ipa3_ctx->tx_pkt_wrapper_cache,
@@ -824,7 +832,6 @@ static int ipa3_rx_switch_to_intr_mode(struct ipa3_sys_context *sys)
 
 	atomic_set(&sys->curr_polling_state, 0);
 	__ipa3_update_curr_poll_state(sys->ep->client, 0);
-
 	ipa_pm_deferred_deactivate(sys->pm_hdl);
 	ipa3_dec_release_wakelock();
 	ret = gsi_config_channel_mode(sys->ep->gsi_chan_hdl,
@@ -857,7 +864,6 @@ static void ipa3_handle_rx(struct ipa3_sys_context *sys)
 	int inactive_cycles;
 	int cnt;
 	int ret;
-
 
 start_poll:
 	ipa_pm_activate_sync(sys->pm_hdl);
@@ -1291,10 +1297,12 @@ fail_repl:
 	ep->sys->repl_hdlr = ipa3_replenish_rx_cache;
 	ep->sys->repl->capacity = 0;
 	kfree(ep->sys->repl);
+	ep->sys->repl = NULL;
 fail_page_recycle_repl:
 	if (ep->sys->page_recycle_repl) {
 		ep->sys->page_recycle_repl->capacity = 0;
 		kfree(ep->sys->page_recycle_repl);
+		ep->sys->page_recycle_repl = NULL;
 	}
 fail_gen2:
 	ipa_pm_deregister(ep->sys->pm_hdl);
@@ -1342,6 +1350,7 @@ int ipa3_teardown_sys_pipe(u32 clnt_hdl)
 	if (IPA_CLIENT_IS_PROD(ep->client)) {
 		do {
 			spin_lock_bh(&ep->sys->spinlock);
+			atomic_set(&ep->disconnect_in_progress, 1);
 			empty = list_empty(&ep->sys->head_desc_list);
 			spin_unlock_bh(&ep->sys->spinlock);
 			if (!empty)
@@ -1720,22 +1729,29 @@ int ipa3_tx_dp(enum ipa_client_type dst, struct sk_buff *skb,
 		data_idx++;
 
 		for (f = 0; f < num_frags; f++) {
-			desc[data_idx + f].frag = &skb_shinfo(skb)->frags[f];
-			desc[data_idx + f].type = IPA_DATA_DESC_SKB_PAGED;
-			desc[data_idx + f].len =
-				skb_frag_size(desc[data_idx + f].frag);
+			if (skb_frag_size(&skb_shinfo(skb)->frags[f]) != 0) {
+				desc[data_idx].frag =
+					&skb_shinfo(skb)->frags[f];
+				desc[data_idx].type =
+					IPA_DATA_DESC_SKB_PAGED;
+				desc[data_idx].len =
+					skb_frag_size(desc[data_idx].frag);
+				data_idx++;
+			} else {
+				IPAERR_RL("Received zero len SKB frag pkt\n");
+				IPA_STATS_INC_CNT(
+					ipa3_ctx->stats.zero_len_frag_pkt_cnt);
+			}
 		}
 		/* don't free skb till frag mappings are released */
 		if (num_frags) {
-			desc[data_idx + f - 1].callback =
-				desc[skb_idx].callback;
-			desc[data_idx + f - 1].user1 = desc[skb_idx].user1;
-			desc[data_idx + f - 1].user2 = desc[skb_idx].user2;
+			desc[data_idx - 1].callback = desc[skb_idx].callback;
+			desc[data_idx - 1].user1 = desc[skb_idx].user1;
+			desc[data_idx - 1].user2 = desc[skb_idx].user2;
 			desc[skb_idx].callback = NULL;
 		}
 
-		if (unlikely(ipa3_send(sys, num_frags + data_idx,
-		    desc, true))) {
+		if (unlikely(ipa3_send(sys, data_idx, desc, true))) {
 			IPAERR_RL("fail to send skb %pK num_frags %u SWP\n",
 				skb, num_frags);
 			goto fail_send;
@@ -1831,7 +1847,6 @@ static void ipa3_wq_handle_rx(struct work_struct *work)
 	IPA_ACTIVE_CLIENTS_INC_EP(client_type);
 
 	if (sys->napi_obj) {
-
 		napi_schedule(sys->napi_obj);
 		IPA_STATS_INC_CNT(sys->napi_sch_cnt);
 	} else
@@ -1907,6 +1922,38 @@ fail_kmem_cache_alloc:
 		goto begin;
 	}
 }
+static struct page *ipa3_alloc_page(
+	gfp_t flag, u32 *page_order, bool try_lower, bool is_tmp_alloc)
+{
+	struct page *page = NULL;
+	u32 p_order = *page_order;
+
+	/* For temporary allocations, avoid triggering OOM Killer. */
+	if (is_tmp_alloc) {
+		flag |= __GFP_RETRY_MAYFAIL | __GFP_NOWARN;
+	}
+
+	page = __dev_alloc_pages(flag, p_order);
+	/* We will only try 1 page order lower. */
+	if (unlikely(!page)) {
+		if (try_lower && p_order > 0) {
+			p_order = p_order - 1;
+
+			// #ifdef OPLUS_BUG_DEBUG
+			if (p_order < IPA_WAN_PAGE_ORDER) {
+				flag &= ~(__GFP_RETRY_MAYFAIL | __GFP_NOWARN);
+			}
+			//pr_err_ratelimited("ipa3_alloc_page: trying lower order, order=%d, flag=%0x\n", p_order, flag);
+			// #endif
+
+			page = __dev_alloc_pages(flag, p_order);
+			if (likely(page))
+				ipa3_ctx->stats.lower_order++;
+		}
+	}
+	*page_order = p_order;
+	return page;
+}
 
 static struct ipa3_rx_pkt_wrapper *ipa3_alloc_rx_pkt_page(
 	gfp_t flag, bool is_tmp_alloc)
@@ -1918,11 +1965,16 @@ static struct ipa3_rx_pkt_wrapper *ipa3_alloc_rx_pkt_page(
 		flag);
 	if (unlikely(!rx_pkt))
 		return NULL;
-	rx_pkt->len = PAGE_SIZE << IPA_WAN_PAGE_ORDER;
-	rx_pkt->page_data.page = __dev_alloc_pages(flag,
-		IPA_WAN_PAGE_ORDER);
+	rx_pkt->page_data.page_order = IPA_WAN_PAGE_ORDER;
+
+	/* Try a lower order page for order 3 pages in case allocation fails. */
+	rx_pkt->page_data.page = ipa3_alloc_page(flag,
+				&rx_pkt->page_data.page_order,
+				(is_tmp_alloc && rx_pkt->page_data.page_order == IPA_WAN_PAGE_ORDER), is_tmp_alloc);
 	if (unlikely(!rx_pkt->page_data.page))
 		goto fail_page_alloc;
+
+	rx_pkt->len = PAGE_SIZE << rx_pkt->page_data.page_order;
 
 	rx_pkt->page_data.dma_addr = dma_map_page(ipa3_ctx->pdev,
 			rx_pkt->page_data.page, 0,
@@ -1941,7 +1993,7 @@ static struct ipa3_rx_pkt_wrapper *ipa3_alloc_rx_pkt_page(
 	return rx_pkt;
 
 fail_dma_mapping:
-	__free_pages(rx_pkt->page_data.page, IPA_WAN_PAGE_ORDER);
+	__free_pages(rx_pkt->page_data.page, rx_pkt->page_data.page_order);
 fail_page_alloc:
 	kmem_cache_free(ipa3_ctx->rx_pkt_wrapper_cache, rx_pkt);
 	return NULL;
@@ -2628,8 +2680,7 @@ static void free_rx_page(void *chan_user_data, void *xfer_user_data)
 	}
 	dma_unmap_page(ipa3_ctx->pdev, rx_pkt->page_data.dma_addr,
 		rx_pkt->len, DMA_FROM_DEVICE);
-	__free_pages(rx_pkt->page_data.page,
-		IPA_WAN_PAGE_ORDER);
+	__free_pages(rx_pkt->page_data.page, rx_pkt->page_data.page_order);
 	kmem_cache_free(ipa3_ctx->rx_pkt_wrapper_cache, rx_pkt);
 }
 
@@ -2680,8 +2731,7 @@ static void ipa3_cleanup_rx(struct ipa3_sys_context *sys)
 					rx_pkt->page_data.dma_addr,
 					rx_pkt->len,
 					DMA_FROM_DEVICE);
-				__free_pages(rx_pkt->page_data.page,
-					IPA_WAN_PAGE_ORDER);
+				__free_pages(rx_pkt->page_data.page, rx_pkt->page_data.page_order);
 			}
 			kmem_cache_free(ipa3_ctx->rx_pkt_wrapper_cache,
 				rx_pkt);
@@ -2690,6 +2740,7 @@ static void ipa3_cleanup_rx(struct ipa3_sys_context *sys)
 
 		kfree(sys->repl->cache);
 		kfree(sys->repl);
+		sys->repl = NULL;
 	}
 	if (sys->page_recycle_repl) {
 		for (i = 0; i < sys->page_recycle_repl->capacity; i++) {
@@ -2700,7 +2751,7 @@ static void ipa3_cleanup_rx(struct ipa3_sys_context *sys)
 					rx_pkt->len,
 					DMA_FROM_DEVICE);
 				__free_pages(rx_pkt->page_data.page,
-					IPA_WAN_PAGE_ORDER);
+					rx_pkt->page_data.page_order);
 				kmem_cache_free(
 					ipa3_ctx->rx_pkt_wrapper_cache,
 					rx_pkt);
@@ -2708,6 +2759,7 @@ static void ipa3_cleanup_rx(struct ipa3_sys_context *sys)
 		}
 		kfree(sys->page_recycle_repl->cache);
 		kfree(sys->page_recycle_repl);
+		sys->page_recycle_repl = NULL;
 	}
 }
 
@@ -3471,8 +3523,7 @@ static struct sk_buff *handle_page_completion(struct gsi_chan_xfer_notify
 		} else {
 			dma_unmap_page(ipa3_ctx->pdev, rx_page.dma_addr,
 					rx_pkt->len, DMA_FROM_DEVICE);
-			__free_pages(rx_pkt->page_data.page,
-							IPA_WAN_PAGE_ORDER);
+			__free_pages(rx_pkt->page_data.page, rx_pkt->page_data.page_order);
 		}
 		rx_pkt->sys->free_rx_wrapper(rx_pkt);
 		IPA_STATS_INC_CNT(ipa3_ctx->stats.rx_page_drop_cnt);
@@ -3489,17 +3540,20 @@ static struct sk_buff *handle_page_completion(struct gsi_chan_xfer_notify
 		sys->ep->client == IPA_CLIENT_APPS_LAN_CONS) {
 		rx_skb = alloc_skb(0, GFP_ATOMIC);
 		if (unlikely(!rx_skb)) {
-			IPAERR("skb alloc failure\n");
-			list_del(&rx_pkt->link);
-			if (!rx_page.is_tmp_alloc) {
-				init_page_count(rx_page.page);
-			} else {
-				dma_unmap_page(ipa3_ctx->pdev, rx_page.dma_addr,
-					rx_pkt->len, DMA_FROM_DEVICE);
-				__free_pages(rx_pkt->page_data.page,
-							IPA_WAN_PAGE_ORDER);
+			IPAERR("skb alloc failure, free all pending pages\n");
+			list_for_each_entry_safe(rx_pkt, tmp, head, link) {
+				rx_page = rx_pkt->page_data;
+				list_del_init(&rx_pkt->link);
+				if (!rx_page.is_tmp_alloc) {
+					init_page_count(rx_page.page);
+				} else {
+					dma_unmap_page(ipa3_ctx->pdev,
+						rx_page.dma_addr,
+						rx_pkt->len, DMA_FROM_DEVICE);
+					__free_pages(rx_pkt->page_data.page, rx_pkt->page_data.page_order);
+				}
+				rx_pkt->sys->free_rx_wrapper(rx_pkt);
 			}
-			rx_pkt->sys->free_rx_wrapper(rx_pkt);
 			IPA_STATS_INC_CNT(ipa3_ctx->stats.rx_page_drop_cnt);
 			return NULL;
 		}
@@ -3521,7 +3575,7 @@ static struct sk_buff *handle_page_completion(struct gsi_chan_xfer_notify
 				skb_shinfo(rx_skb)->nr_frags,
 				rx_page.page, 0,
 				notify->bytes_xfered,
-				PAGE_SIZE << IPA_WAN_PAGE_ORDER);
+				PAGE_SIZE << rx_page.page_order);
 		}
 	} else {
 		return NULL;
@@ -3759,7 +3813,9 @@ static void ipa3_set_aggr_limit(struct ipa_sys_connect_params *in,
 	sys->ep->status.status_en = false;
 	sys->rx_buff_sz = IPA_GENERIC_RX_BUFF_SZ(adjusted_sz);
 
-	if (in->client == IPA_CLIENT_APPS_WAN_COAL_CONS)
+	if (in->client == IPA_CLIENT_APPS_WAN_COAL_CONS ||
+		(in->client == IPA_CLIENT_APPS_WAN_CONS &&
+			ipa3_ctx->ipa_hw_type <= IPA_HW_v4_2))
 		in->ipa_ep_cfg.aggr.aggr_hard_byte_limit_en = 1;
 
 	*aggr_byte_limit = sys->rx_buff_sz < *aggr_byte_limit ?
@@ -4448,10 +4504,9 @@ void __ipa_gsi_irq_rx_scedule_poll(struct ipa3_sys_context *sys)
 	 * Have race condition to use PM on poll to isr
 	 * switch. Use the active no block instead
 	 * where we would have ref counts.
- 	 */
+	 */
 	if (sys->napi_obj)
 		clk_off = IPA_ACTIVE_CLIENTS_INC_EP_NO_BLOCK(client_type);
-
 
 	if (!clk_off && sys->napi_obj) {
 		napi_schedule(sys->napi_obj);
@@ -4722,7 +4777,7 @@ static int ipa_gsi_setup_transfer_ring(struct ipa3_ep_context *ep,
 	u32 ring_size, struct ipa3_sys_context *user_data, gfp_t mem_flag)
 {
 	dma_addr_t dma_addr;
-	union __packed gsi_channel_scratch ch_scratch;
+	union gsi_channel_scratch ch_scratch;
 	struct gsi_chan_props gsi_channel_props;
 	const struct ipa_gsi_ep_config *gsi_ep_info;
 	int result;

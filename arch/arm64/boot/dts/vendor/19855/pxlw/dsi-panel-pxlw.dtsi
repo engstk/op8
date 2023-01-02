@@ -27,8 +27,15 @@
 	qcom,mdss-dsi-sec-bl-pmic-control-type = "bl_ctrl_external";
 	qcom,platform-te-gpio = <&tlmm 67 0>;
 };
+
+&dsi_oplus19065_samsung_1440_3168_dsc_cmd {
+	pxlw,iris-chip-enable;
+	pxlw,soft-iris-enable;
+	qcom,iris-supply-entries = <&dsi_iris_pwr_supply>;
+	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0","pw_bb_clk2";
+};
 */
-&dsi_oppo19101samsung_amb655uv01_1080_2400_cmd {
+&dsi_oplus19101samsung_amb655uv01_1080_2400_cmd {
 	pxlw,soft-iris-enable;
 };
 &mdss_mdp {

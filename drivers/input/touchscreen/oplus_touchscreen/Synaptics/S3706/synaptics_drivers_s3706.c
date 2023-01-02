@@ -629,21 +629,12 @@ static void synaptics_enable_fingerprint_underscreen(void * chip_data, uint32_t 
         struct chip_data_s3706 *chip_info = (struct chip_data_s3706 *)chip_data;
 
         touch_i2c_write_byte(chip_info->client, 0xff, 0x4);
-		if (chip_info->old_firmware_flag_check) {
-			ret = touch_i2c_read_byte(chip_info->client, 0x29);
-			if (ret != enable)
-				ret = touch_i2c_write_byte(chip_info->client, 0x29, enable); /*open gesture for fingerprint under screen*/
+        ret = touch_i2c_read_byte(chip_info->client, chip_info->reg_info.F51_CUSTOM_CTRL20);
+        if (ret != enable)
+            ret = touch_i2c_write_byte(chip_info->client, chip_info->reg_info.F51_CUSTOM_CTRL20, enable);                    /*open gesture for fingerprint under screen*/
 
-			ret = touch_i2c_read_byte(chip_info->client, 0x29);
-			TPD_INFO("%s :0x29 is %d\n", __func__, ret);
-		} else {
-			ret = touch_i2c_read_byte(chip_info->client, chip_info->reg_info.F51_CUSTOM_CTRL20);
-			if (ret != enable)
-				ret = touch_i2c_write_byte(chip_info->client, chip_info->reg_info.F51_CUSTOM_CTRL20, enable); /*open gesture for fingerprint under screen*/
-
-			ret = touch_i2c_read_byte(chip_info->client, chip_info->reg_info.F51_CUSTOM_CTRL20);
-			TPD_INFO("%s :F51_CUSTOM_CTRL20 is %d\n", __func__, ret);
-		}
+        ret = touch_i2c_read_byte(chip_info->client, chip_info->reg_info.F51_CUSTOM_CTRL20);
+        TPD_INFO("%s :F51_CUSTOM_CTRL20 is %d\n", __func__, ret);
 
         if (!enable) {
                 chip_info->is_fp_down = false;
@@ -1068,11 +1059,11 @@ static int synaptics_get_gesture_info(void *chip_data, struct gesture_info * ges
         ret = touch_i2c_write_byte(chip_info->client, 0xff, 0x0);
 
         /*detect the gesture mode*/
-	switch (gesture_sign) {
-	case DTAP_DETECT:
+        switch (gesture_sign) {
+        case DTAP_DETECT:
                 gesture->gesture_type = DouTap;
                 break;
-	case SWIPE_DETECT:
+        case SWIPE_DETECT:
                 gesture->gesture_type = (regswipe == 0x41) ? Left2RightSwip   :
                         (regswipe == 0x42) ? Right2LeftSwip   :
                         (regswipe == 0x44) ? Up2DownSwip          :
@@ -1080,30 +1071,26 @@ static int synaptics_get_gesture_info(void *chip_data, struct gesture_info * ges
                         (regswipe == 0x80) ? DouSwip                  :
                         UnkownGesture;
                 break;
-	case CIRCLE_DETECT:
+        case CIRCLE_DETECT:
                 gesture->gesture_type = Circle;
                 break;
-	case VEE_DETECT:
+        case VEE_DETECT:
                 gesture->gesture_type = (gesture_buffer[2] == 0x01) ? DownVee  :
                         (gesture_buffer[2] == 0x02) ? UpVee        :
                         (gesture_buffer[2] == 0x04) ? RightVee :
                         (gesture_buffer[2] == 0x08) ? LeftVee  :
                         UnkownGesture;
                 break;
-	case UNICODE_DETECT:
+        case UNICODE_DETECT:
                 gesture->gesture_type = (gesture_buffer[2] == 0x77 && gesture_buffer[3] == 0x00) ? Wgestrue :
                         (gesture_buffer[2] == 0x6d && gesture_buffer[3] == 0x00) ? Mgestrue :
-                        (gesture_buffer[2] == 0x73 && gesture_buffer[3] == 0x00) ? SGESTRUE :
                         UnkownGesture;
                 break;
-	case SINGLE_TAP:
-			gesture->gesture_type = SingleTap;
-			break;
-	case FINGERPRINT_DOWN_DETECT:
+        case FINGERPRINT_DOWN_DETECT:
                 chip_info->is_fp_down = true;
                 gesture->gesture_type = FingerprintDown;
                 break;
-	case FINGERPRINT_UP_DETECT:
+        case FINGERPRINT_UP_DETECT:
                 chip_info->is_fp_down = false;
                 gesture->gesture_type = FingerprintUp;
                 if (chip_info->force_update_needed) {
@@ -1115,9 +1102,9 @@ static int synaptics_get_gesture_info(void *chip_data, struct gesture_info * ges
                         TPD_INFO("do force update\n");
                 }
                 break;
-	default:
+        default:
                 gesture->gesture_type = UnkownGesture;
-	}
+        }
 
         if (gesture->gesture_type != UnkownGesture) {
                 for (i = 0; i < 23; i += 2) {
@@ -1470,6 +1457,7 @@ static int synaptics_auto_test_rt25(struct seq_file *s, struct chip_data_s3706 *
         checkCMD(chip_info, 30);
         ret = touch_i2c_read_block(chip_info->client, chip_info->reg_info.F54_ANALOG_DATA_BASE + 3, 7, buffer);
 
+
         touch_i2c_write_byte(chip_info->client, 0xff, 0x3);
         touch_i2c_read_block(chip_info->client, chip_info->reg_info.F55_SENSOR_CTRL01, syna_testdata->RX_NUM, buffer_rx);
         touch_i2c_read_block(chip_info->client, chip_info->reg_info.F55_SENSOR_CTRL02, syna_testdata->TX_NUM, buffer_tx);
@@ -1544,6 +1532,7 @@ static int synaptics_auto_test_rt26(struct seq_file *s, struct chip_data_s3706 *
         /*msleep(100);*/
         checkCMD(chip_info, 30);
         ret = touch_i2c_read_block(chip_info->client, chip_info->reg_info.F54_ANALOG_DATA_BASE + 3, 7, buffer);
+
 
         touch_i2c_write_byte(chip_info->client, 0xff, 0x3);                /*page 3*/
         touch_i2c_read_block(chip_info->client, chip_info->reg_info.F55_SENSOR_CTRL01, syna_testdata->RX_NUM, buffer_rx);
@@ -1830,6 +1819,7 @@ static int synaptics_auto_test_rt133(struct seq_file *s, struct chip_data_s3706 
                 }
         }
 
+        seq_printf(s, "\n");
 
         return error_count;
 }
@@ -2297,14 +2287,12 @@ static void synaptics_auto_test(struct seq_file *s, void *chip_data, struct syna
                 goto END;
         }
 
-		if (!chip_info->old_firmware_flag_check) {
-			ret = synaptics_auto_test_rt154(s, chip_info, syna_testdata, data_buf);
-			if(ret > 0) {
-				TPD_INFO("synaptics_auto_test_rt154 failed! ret is %d\n", ret);
-				error_count++;
-				goto END;
-			}
-		}
+        ret = synaptics_auto_test_rt154(s, chip_info, syna_testdata, data_buf);
+        if(ret > 0) {
+                TPD_INFO("synaptics_auto_test_rt154 failed! ret is %d\n", ret);
+                error_count++;
+                goto END;
+        }
 
         if(!syna_testdata->fingerprint_underscreen_support) {
                 ret = synaptics_auto_test_rt155(s, chip_info, syna_testdata, data_buf);
@@ -5757,7 +5745,6 @@ static int synaptics_tp_probe(struct i2c_client *client, const struct i2c_device
         chip_info->fw_corner_limit_support = of_property_read_bool(ts->dev->of_node, "fw_corner_limit_support");
         chip_info->rt155_fdreplace_rt59_support = of_property_read_bool(ts->dev->of_node, "rt155_fdreplace_rt59_support");
         chip_info->report_120hz_support = of_property_read_bool(ts->dev->of_node, "report_120hz_support");
-		chip_info->old_firmware_flag_check = of_property_read_bool(ts->dev->of_node, "old_firmware_flag_check");
 
         /*step6: collect data for supurious_fp_touch*/
         if (ts->spurious_fp_support) {
@@ -5847,7 +5834,7 @@ static struct of_device_id tp_match_table[] = {
 };
 
 static const struct dev_pm_ops tp_pm_ops = {
-#ifdef CONFIG_FB
+#if defined(CONFIG_FB) || defined(CONFIG_DRM_MSM)
         .suspend = synaptics_i2c_suspend,
         .resume = synaptics_i2c_resume,
 #endif

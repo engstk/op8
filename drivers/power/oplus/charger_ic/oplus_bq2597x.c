@@ -512,7 +512,7 @@ int bq2597x_hardware_init_normal_vooc(void) {
 	ret = bq2597x_write_byte(bq, 0x5, 0x48);
 	ret = bq2597x_write_byte(bq, 0x6, 0x64);
 	ret = bq2597x_write_byte(bq, 0x7, 0xe4);
-	ret = bq2597x_write_byte(bq, 0x8, 0x17);
+	ret = bq2597x_write_byte(bq, 0x8, 0x1B);
 	ret = bq2597x_write_byte(bq, 0x9, 0x94);
 	ret = bq2597x_write_byte(bq, 0x0a, 0x68);
 	ret = bq2597x_write_byte(bq, 0x0b, 0xc8);

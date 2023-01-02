@@ -22,6 +22,8 @@
 #include "dsi-panel-sim-sec-hd-cmd.dtsi"
 #include "dsi-panel-xrsmrtvwr-jdi-dual-video.dtsi"
 #include "dsi-panel-samsung_oneplus_dsc.dtsi"
+#include "dsi-panel-oplus19065-samsung-1440-3168-dsc-cmd.dtsi"
+#include "dsi-panel-oplus19161samsung-amb655uv01-1080-2400-90fps.dtsi"
 #include "dsi-panel-oplus20828-samsung-amb655x-1080-2400-120fps.dtsi"
 //#endif
 #include <dt-bindings/clock/mdss-7nm-pll-clk.h>
@@ -260,7 +262,7 @@
 		vout-supply = <&L2C>;
 
 		avdd-supply = <&display_panel_avdd>;
-		qcom,dsi-default-panel = <&dsi_oplus20828samsung_amb655x_1080_2400_cmd>;
+		qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
 		qcom,mdp = <&mdss_mdp>;
 	};
 
@@ -271,7 +273,7 @@
 	};
 	msm_notifier: qcom,msm_notifier@0 {
 		compatible = "qcom,msm-notifier";
-		panel = <&dsi_oplus20828samsung_amb655x_1080_2400_cmd>;
+		panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
 	};
         //#endif
 };

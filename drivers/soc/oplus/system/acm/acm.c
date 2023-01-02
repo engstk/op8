@@ -22,6 +22,12 @@
 #define ACM_PHOTO_TYPE 1
 #define ACM_VIDEO_TYPE 2
 #define ACM_NOMEDIA_TYPE 3
+
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+#define ACM_SPECIAL_TYPE 4
+#define ACM_SPECIAL_RENAME_TYPE 5
+#endif
+
 #define ACM_NOMEDIA_FNAME ".nomedia"
 #define MIN_FNAME_LENGTH 2
 
@@ -33,6 +39,12 @@
 #endif
 #ifndef ACM_FLAG_CRT
 #define ACM_FLAG_CRT (0x01 << 2)
+#endif
+
+
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+#define MEDIAPROVIDER "com.android.providers.media.module"
+#define MEDIAPROVIDER2 "com.google.android.providers.media.module"
 #endif
 
 static int acm_flag = (ACM_FLAG_LOGGING | ACM_FLAG_DEL | ACM_FLAG_CRT);
@@ -941,13 +953,21 @@ static int delete_log_upload_fwk(const char *pkgname, uid_t taskuid,
 	return ACM_SUCCESS;
 }
 
-static char *dentry_without_usrrootentry(char *str)
+static char *dentry_without_usrrootentry(char *str, int file_type)
 {
 	int i;
 	int num = 0;
+	int skip;
+
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+	if (file_type == ACM_SPECIAL_TYPE || file_type == ACM_SPECIAL_RENAME_TYPE)
+		skip = 3;
+	else
+#endif
+		skip = 2;
 
 	for (i = 0; i < strlen(str); i++) {
-		if (num == 2) {
+		if (num == skip) {
 			break;
 		}
 		if (*(str + i) == '/') {
@@ -955,7 +975,7 @@ static char *dentry_without_usrrootentry(char *str)
 		}
 	}
 
-	return num == 2 ? (str + i) : str;
+	return num == skip ? (str + i) : str;
 }
 
 static int inquiry_delete_policy(char *pkgname, uid_t taskuid,
@@ -983,7 +1003,7 @@ static int inquiry_delete_policy(char *pkgname, uid_t taskuid,
 	spin_lock(&acm_dir_list.spinlock);
 	list_for_each_entry_safe(dir_node, n, &acm_dir_list.head, lnode) {
 		if (strlen(dentry_path) >= strlen(dir_node->afd.dir)) {
-			if (strncasecmp(dentry_without_usrrootentry(dentry_path),
+			if (strncasecmp(dentry_without_usrrootentry(dentry_path, file_type),
 				dir_node->afd.dir, strlen(dir_node->afd.dir)) == 0) {
 				dir_flag = dir_node->afd.flag;
 				break;
@@ -1002,6 +1022,12 @@ static int inquiry_delete_policy(char *pkgname, uid_t taskuid,
 					file_type, op);
 			}
 		}
+
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+		if (file_type == ACM_SPECIAL_TYPE || file_type == ACM_SPECIAL_RENAME_TYPE) {
+			return DEL_ALLOWED;
+		}
+#endif
 
 		if (op == FUSE_RENAME || op == FUSE_RENAME2) {
 			return DEL_ALLOWED;
@@ -1198,6 +1224,17 @@ static int acm_search2(struct dentry *dentry, struct dentry *dentry2,
 
 	pkgname[ACM_PKGNAME_LEN_MAX - 1] = '\0';
 
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+	/* has been monitored by fuse, ignore it at f2fs */
+	if (strncasecmp(pkgname, MEDIAPROVIDER, sizeof(MEDIAPROVIDER)) == 0) {
+		return DEL_ALLOWED;
+	}
+
+	if (strncasecmp(pkgname, MEDIAPROVIDER2, sizeof(MEDIAPROVIDER2)) == 0) {
+		return DEL_ALLOWED;
+	}
+#endif
+
 	if ((acm_opstat(ACM_FLAG_DEL | ACM_FLAG_LOGGING))
 		&& (op == FUSE_UNLINK || op == FUSE_RMDIR
 			|| op == FUSE_RENAME || op == FUSE_RENAME2)) {
@@ -1208,7 +1245,11 @@ static int acm_search2(struct dentry *dentry, struct dentry *dentry2,
 				pr_err("ACM: Failed to upload to fwk! err = %d ret=%d\n", err, ret);
 			}
 		}
-	} else if ((acm_opstat(ACM_FLAG_CRT))
+	} else if ((acm_opstat(ACM_FLAG_CRT)
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+					&& file_type != ACM_SPECIAL_TYPE && file_type != ACM_SPECIAL_RENAME_TYPE
+#endif
+)
 		&& (op == FUSE_CREATE || op == FUSE_MKNOD || op == FUSE_MKDIR)) {
 		ret = inquiry_create_nomedia_policy(dentry);
 		if (ret != CRT_ALLOWED) {
@@ -1273,7 +1314,7 @@ static int is_video_file(struct dentry *dentry)
 	static const char *const ext[] = {
 		"mpeg", "mpg", "mp4", "m4v", "mov", "3gp", "3gpp", "3g2",
 		"3gpp2", "mkv", "webm", "ts", "avi", "f4v", "flv", "m2ts",
-		"divx", "wmv", "asf", NULL
+		"divx", "wmv", "asf", "amr", NULL
 	};
 	int i;
 
@@ -1357,6 +1398,58 @@ int monitor_acm2(struct dentry *dentry, struct dentry *dentry2, int op)
 monitor_ret:
 	return err;
 }
+
+#ifdef CONFIG_OPLUS_FEATURE_ACM3
+static int is_special_file(struct dentry *dentry)
+{
+	static const char *const ext[] = {
+		".amr", NULL
+	};
+	int i;
+
+	for (i = 0; ext[i]; i++) {
+		if (strstr(dentry->d_name.name, ext[i])) {
+			return ACM_SPECIAL_TYPE;
+		}
+	}
+
+	return 0;
+}
+
+int monitor_acm3(struct dentry *dentry, struct dentry *dentry2, int op)
+{
+	struct inode *inode = d_inode(dentry);
+	int file_type = 0x0f;
+	int err = 0;
+
+	if (!acm_opstat(ACM_FLAG_LOGGING | ACM_FLAG_DEL | ACM_FLAG_CRT)) {
+		goto monitor_ret;
+	}
+
+	if (!inode) {
+		goto monitor_ret;
+	}
+
+	if (S_ISREG(inode->i_mode)) {
+		file_type = is_special_file(dentry);
+		if (file_type == 0) {
+			goto monitor_ret;
+		}
+		/* only unlink will be record */
+		if (op == FUSE_RENAME && file_type == ACM_SPECIAL_TYPE) {
+			op = FUSE_UNLINK;
+			file_type = ACM_SPECIAL_RENAME_TYPE;
+		}
+	} else {
+		goto monitor_ret;
+	}
+
+	err = acm_search2(dentry, dentry2, file_type, op);
+
+monitor_ret:
+	return err;
+}
+#endif
 
 static void set_logging_uevent_env(struct acm_lnode *node)
 {
@@ -1524,7 +1617,9 @@ static int acm_logging_loop(void *data)
 	*/
 
 	while (!kthread_should_stop()) {
-		wait_for_completion_interruptible(&acm_logging_comp);
+		if (wait_for_completion_interruptible(&acm_logging_comp)) {
+			pr_err("ACM: %s is interrupted!\n", __func__);
+		}
 
 		msleep(DELETE_LOG_UPLOAD_INTERVAL_MS);
 

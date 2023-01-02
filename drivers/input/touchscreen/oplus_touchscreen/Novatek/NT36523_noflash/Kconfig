@@ -1,0 +1,7 @@
+#ifdef OPLUS_FEATURE_TP_BASIC
+config TOUCHPANEL_NOVA_NT36523_NOFLASH
+#	default y
+	bool "TP nova nt36523 IC enable or not for OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel useing nova nt36523
+#endif

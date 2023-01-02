@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -156,7 +157,7 @@ static inline bool dp_rx_mcast_echo_check(struct dp_soc *soc,
 	return false;
 }
 
-void dp_rx_link_desc_refill_duplicate_check(
+bool dp_rx_link_desc_refill_duplicate_check(
 				struct dp_soc *soc,
 				struct hal_buf_info *buf_info,
 				hal_buff_addrinfo_t ring_buf_info)
@@ -173,7 +174,14 @@ void dp_rx_link_desc_refill_duplicate_check(
 			   current_link_desc_buf_info.sw_cookie);
 		DP_STATS_INC(soc, rx.err.dup_refill_link_desc, 1);
 	}
+
+	if (qdf_unlikely(!current_link_desc_buf_info.paddr)) {
+		dp_err_rl("NULL link desc addr found");
+		return true;
+	}
+
 	*buf_info = current_link_desc_buf_info;
+	return false;
 }
 
 /**
@@ -195,6 +203,7 @@ dp_rx_link_desc_return_by_addr(struct dp_soc *soc,
 	hal_soc_handle_t hal_soc = soc->hal_soc;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	void *src_srng_desc;
+	bool ret;
 
 	if (!wbm_rel_srng) {
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
@@ -203,10 +212,13 @@ dp_rx_link_desc_return_by_addr(struct dp_soc *soc,
 	}
 
 	/* do duplicate link desc address check */
-	dp_rx_link_desc_refill_duplicate_check(
+	ret = dp_rx_link_desc_refill_duplicate_check(
 				soc,
 				&soc->last_op_info.wbm_rel_link_desc,
 				link_desc_addr);
+
+	if (ret)
+		return QDF_STATUS_SUCCESS;
 
 	if (qdf_unlikely(hal_srng_access_start(hal_soc, wbm_rel_srng))) {
 
@@ -729,12 +741,26 @@ void dp_rx_err_handle_bar(struct dp_soc *soc,
 			       start_seq_num);
 }
 
+/**
+ * dp_rx_bar_frame_handle() - Function to handle err BAR frames
+ * @soc: core DP main context
+ * @ring_desc: Hal ring desc
+ * @rx_desc: dp rx desc
+ * @mpdu_desc_info: mpdu desc info
+ *
+ * Handle the error BAR frames received. Ensure the SOC level
+ * stats are updated based on the REO error code. The BAR frames
+ * are further processed by updating the Rx tids with the start
+ * sequence number (SSN) and BA window size. Desc is returned
+ * to the free desc list
+ *
+ * Return: none
+ */
 static void
 dp_rx_bar_frame_handle(struct dp_soc *soc,
 		       hal_ring_desc_t ring_desc,
 		       struct dp_rx_desc *rx_desc,
-		       struct hal_rx_mpdu_desc_info *mpdu_desc_info,
-		       uint8_t error)
+		       struct hal_rx_mpdu_desc_info *mpdu_desc_info)
 {
 	qdf_nbuf_t nbuf;
 	struct dp_pdev *pdev;
@@ -743,6 +769,7 @@ dp_rx_bar_frame_handle(struct dp_soc *soc,
 	uint16_t peer_id;
 	uint8_t *rx_tlv_hdr;
 	uint32_t tid;
+	uint8_t reo_err_code;
 
 	nbuf = rx_desc->nbuf;
 	rx_desc_pool = &soc->rx_desc_buf[rx_desc->pool_id];
@@ -763,25 +790,26 @@ dp_rx_bar_frame_handle(struct dp_soc *soc,
 	if (!peer)
 		goto next;
 
+	reo_err_code = HAL_RX_REO_ERROR_GET(ring_desc);
 	dp_info("BAR frame: peer = "QDF_MAC_ADDR_FMT
 		" peer_id = %d"
 		" tid = %u"
 		" SSN = %d"
-		" error status = %d",
+		" error code = %d",
 		QDF_MAC_ADDR_REF(peer->mac_addr.raw),
 		peer_id,
 		tid,
 		mpdu_desc_info->mpdu_seq,
-		error);
+		reo_err_code);
 
-	switch (error) {
+	switch (reo_err_code) {
 	case HAL_REO_ERR_BAR_FRAME_2K_JUMP:
 		DP_STATS_INC(soc,
-			     rx.err.reo_error[error], 1);
+			     rx.err.reo_error[reo_err_code], 1);
 	case HAL_REO_ERR_BAR_FRAME_OOR:
 		dp_rx_err_handle_bar(soc, peer, nbuf);
 		DP_STATS_INC(soc,
-			     rx.err.reo_error[error], 1);
+			     rx.err.reo_error[reo_err_code], 1);
 		break;
 	default:
 		DP_STATS_INC(soc, rx.bar_frame, 1);
@@ -1644,8 +1672,7 @@ dp_rx_err_process(struct dp_intr *int_ctx, struct dp_soc *soc,
 			dp_rx_bar_frame_handle(soc,
 					       ring_desc,
 					       rx_desc,
-					       &mpdu_desc_info,
-					       error);
+					       &mpdu_desc_info);
 
 			rx_bufs_reaped[mac_id] += 1;
 			goto next_entry;

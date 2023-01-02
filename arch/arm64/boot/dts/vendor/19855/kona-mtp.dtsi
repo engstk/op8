@@ -175,7 +175,7 @@
 	};
 
 	//#ifdef OPLUS_FEATURE_FINGERPRINT
-	oppo_fp_common {
+	oplus_fp_common {
 		compatible = "oplus,fp_common";
 		oplus,fp_gpio_num = <1>; /* the gpio number of fingerprint id used */
 		oplus,fp_gpio_0 = <&tlmm 77 0x0>;
@@ -183,13 +183,13 @@
 		pinctrl-0 = <&gpio_id2_default>;
 		goodix_optical_G5 {
 			oplus,fp-id = <1>; /* fp id mapping table */
-			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
 			chip-name = "G_OPTICAL_19821_G5";  /* /proc/fp_id, will be displayed in engineer menu  */
 		};
 		goodix_optical_G6 {
 			oplus,fp-id = <0>; /* fp id mapping table */
-			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
 			chip-name = "G_OPTICAL_19821_G6";  /* /proc/fp_id, will be displayed in engineer menu  */
 		};
@@ -199,7 +199,7 @@
 		compatible = "goodix,goodix_fp";
 		interrupt-parent = <&tlmm>;
 		interrupts = <23 0>;
-		power-mode = <2> ; /*please refer to the struct fp_power_mode_t in oppo_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
+		power-mode = <2> ; /*please refer to the struct fp_power_mode_t in oplus_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
 		//ldo-supply = <&pm8150_l16>;
 		//ldo-config = <3300000 3300000 150000>;
 		goodix,gpio_irq = <&tlmm 23 0x1>;
@@ -275,6 +275,17 @@
 		};
 	};
 
+	//#ifdef OPLUS_FEATURE_TP_BASIC
+	/*oplus_rf_cable {
+		compatible = "oplus,rf_cable";
+		interrupt-parent = <&tlmm>;
+		rf_cable_support_num = <1>;
+		rf,cable0-gpio = <&tlmm 84 0>;
+		rf,cable-support-timer = <0>;
+		pinctrl-names = "rf_cable_active";
+		pinctrl-0 = <&rf_cable0_active>;
+	};*/
+	//#endif /* OPLUS_FEATURE_TP_BASIC */
 };
 /*&qupv3_se13_i2c {
 	#address-cells = <1>;
@@ -351,6 +362,8 @@
 		//ear_sense_support;
 		oos_edge_limit_support;
 		black_gesture_support;
+		black_gesture_indep_support;
+		sportify_aod_gesture_support;
 		single_tap_support;
 		//fw_edge_limit_support;
 		charger_pump_support;
@@ -856,7 +869,7 @@
 	qcom,platform-sec-reset-gpio = <&tlmm 128 0>;
 };
 &sde_dsi {
-	qcom,dsi-default-panel = <&dsi_oppo19101samsung_amb655uv01_1080_2400_cmd>;
+	qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
 };
 //#endif
 &thermal_zones {
@@ -1579,6 +1592,17 @@
 			pinctrl-13 = <&charger_int_default>;
 			pinctrl-14 = <&input_pg_default>;
 
+};
+
+&soc {
+	oplus,track-charge {
+		compatible = "oplus,track-charge";
+		track,fast_chg_break_t_thd = <1000>;
+		track,general_chg_break_t_thd = <200>;
+		track,voocphy_type = <4>;
+		track,wired_max_power = <30000>;
+		track,wired_fast_chg_scheme = <1>;
+	};
 };
 //#endif //OPLUS_FEATURE_CHG_BASIC
 

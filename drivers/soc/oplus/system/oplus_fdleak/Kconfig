@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (C) 2022-2025 Oplus. All rights reserved.
+config OPLUS_FEATURE_FDLEAK_CHECK
+    tristate "fdleak check"
+    default n
+    depends on OPLUS_SYSTEM_KERNEL
+    help
+      general utility to detect fdleak for userspace key process.
+

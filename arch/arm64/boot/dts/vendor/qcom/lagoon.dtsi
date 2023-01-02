@@ -43,9 +43,6 @@
 		swr0 = &swr0;
 		swr1 = &swr1;
 		swr2 = &swr2;
-		//#ifdef OPLUS_ARCH_EXTENDS
-		i2c2 = &qupv3_se10_i2c;
-		//#endif /* OPLUS_ARCH_EXTENDS */
 	};
 
 	cpus {
@@ -461,11 +458,6 @@
 		cont_splash_memory: cont_splash_region {
 			reg = <0x0 0xA0000000 0x0 0x02300000>;
 			label = "cont_splash_region";
-		};
-
-		disp_rdump_memory: disp_rdump_region@0xa0000000 {
-			reg = <0x0 0xA0000000 0x0 0x02300000>;
-			label = "disp_rdump_region";
 		};
 
 		dfps_data_memory: dfps_data_region {
@@ -3808,7 +3800,7 @@
 	vdd_l1_l2-supply = <&S8E>;
 	vdd_l3_l4-supply = <&BOB>;
 	vdd_l5-supply = <&BOB>;
-//	vdd_l6-supply = <&S2A>;
+	vdd_l6-supply = <&S2A>;
 	vdd_l7-supply = <&BOB>;
 };
 

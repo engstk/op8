@@ -14,6 +14,6 @@
 	compatible = "qcom,kona-mtp", "qcom,kona", "qcom,mtp";
 	qcom,board-id = <0x10008 0>;
 	oplus,dtsi_no = <19811>;
-	oplus,pcb_range = <0  55>;
+	oplus,pcb_range = <0  56>;
 };
 

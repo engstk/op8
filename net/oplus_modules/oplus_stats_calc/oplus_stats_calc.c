@@ -29,7 +29,7 @@
 
 #define LOG_TAG "oplus_stats_calc"
 
-static int s_debug = 1;
+static int s_debug = 0;
 
 #define LOGK(flag, fmt, args...)     \
     do {                             \
@@ -131,7 +131,7 @@ static int add_iface_uid_stats(char *iface, u32 uid, u32 len, int dir) {
 		}
 		hash_add(s_iface_uid_stats_map, &(stats->node), key);
 		s_stats_count++;
-		LOGK(1, "add_iface_uid_stats add iface %s", iface);
+		LOGK(1, "add_iface_uid_stats add iface %s uid %u", iface, uid);
 	}else{
 		if(dir == 1) {
 			stats->value.rxBytes += len;
@@ -169,7 +169,7 @@ static inline int genl_msg_prepare_usr_msg(u8 cmd, size_t size, pid_t pid, struc
 
 	/* Add a new netlink message to an skb */
 	genlmsg_put(skb, pid, 0, &oplus_stats_calc_genl_family, 0, cmd);
-	LOGK(1, "genl_msg_prepare_usr_msg_1,skb_len=%u,pid=%u,cmd=%u,id=%u\n",
+	LOGK(0, "genl_msg_prepare_usr_msg_1,skb_len=%u,pid=%u,cmd=%u,id=%u\n",
 	skb->len, (unsigned int)pid, cmd, oplus_stats_calc_genl_family.id);
 	*skbp = skb;
 	return 0;
@@ -221,7 +221,7 @@ static int send_all_stats(struct nlattr *nla) {
 	int pkt = 0;
 	int ret = 0;
 
-	LOGK(1, "send_stats_to_user %u", s_stats_count);
+	LOGK(0, "send_stats_to_user %u", s_stats_count);
 	spin_lock_bh(&s_stats_calc_lock);
 	total_len = sizeof(s_stats_count) + sizeof(struct iface_uid_stats_value) * s_stats_count;
 	data = kmalloc(total_len, GFP_ATOMIC);
@@ -240,11 +240,11 @@ static int send_all_stats(struct nlattr *nla) {
 			}
 		}
 	}
-	LOGK(1, "get data count %d %u", count, s_stats_count);
+	LOGK(0, "get data count %d %u", count, s_stats_count);
 	memcpy(data, &count, sizeof(count));
 	spin_unlock_bh(&s_stats_calc_lock);
 	ret = send_netlink_data(OPLUS_STATS_CALC_MSG_GET_ALL, data, total_len);
-	LOGK(1, "send_netlink_data return %d", ret);
+	LOGK(0, "send_netlink_data return %d", ret);
 	if (data) {
 		kfree(data);
 	}
@@ -320,7 +320,7 @@ static int oplus_stats_calc_netlink_rcv_msg(struct sk_buff *skb, struct genl_inf
 		LOGK(1, "user pid changed!! %u - %u", s_user_pid, nlhdr->nlmsg_pid);
 		s_user_pid = nlhdr->nlmsg_pid;
 	}
-	LOGK(1, "nla->nla_type %d", nla->nla_type);
+	LOGK(0, "nla->nla_type %d", nla->nla_type);
 
 	switch (nla->nla_type) {
 	case OPLUS_STATS_CALC_MSG_GET_ALL:

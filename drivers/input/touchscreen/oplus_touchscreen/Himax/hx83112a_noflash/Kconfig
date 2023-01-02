@@ -1,0 +1,12 @@
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+
+
+config TOUCHPANEL_HIMAX_HX83112A_NOFLASH
+#	default y
+	bool "TP himax hx83112a no-flash IC enable or not for OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel useing himax hx83112a no-flash
+
+#endif
+

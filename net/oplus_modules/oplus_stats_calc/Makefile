@@ -1,4 +1,9 @@
 #
 # Add for kernel data info send to user space.
 #
-obj-$(CONFIG_OPLUS_FEATURE_STATS_CALC) += oplus_stats_calc.o
+KBUILD_OPTIONS += CONFIG_OPLUS_FEATURE_STATS_CALC=m
+
+KERNEL_SRC ?= /lib/modules/$(shell uname -r)/build
+M ?= $(shell pwd)
+modules modules_install clean:
+	$(MAKE) -C $(KERNEL_SRC) M=$(M) $(KBUILD_OPTIONS) $(@)

@@ -119,6 +119,7 @@ typedef struct _phx_action_mapping {
 // so make a if-else condition when use these function
 extern int __weak phx_is_system_boot_completed(void);
 extern int __weak phx_is_phoenix_boot_completed(void);
+extern int __weak phx_is_system_server_init_start(void);
 extern void __weak phx_set_boot_error(const char *error);
 extern void __weak phx_set_boot_stage(const char *stage);
 

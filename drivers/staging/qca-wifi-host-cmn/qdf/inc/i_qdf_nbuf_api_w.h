@@ -87,30 +87,6 @@ static inline uint16_t qdf_nbuf_get_rx_protocol_tag(qdf_nbuf_t buf)
 	return __qdf_nbuf_get_rx_protocol_tag(buf);
 }
 
-
-/**
- * qdf_nbuf_set_rx_ipa_smmu_map() - set ipa smmu mapped flag
- * @buf: Network buffer
- * @value: 1 - ipa smmu mapped, 0 - ipa smmu unmapped
- *
- * Return: none
- */
-static inline void qdf_nbuf_set_rx_ipa_smmu_map(qdf_nbuf_t buf,
-						uint8_t value)
-{
-}
-
-/**
- * qdf_nbuf_is_rx_ipa_smmu_map() - check ipa smmu map flag
- * @buf: Network buffer
- *
- * Return 0 or 1
- */
-static inline uint8_t qdf_nbuf_is_rx_ipa_smmu_map(qdf_nbuf_t buf)
-{
-	return 0;
-}
-
 /**
  * qdf_nbuf_set_rx_flow_tag() - set given value in flow tag field
  * of buf(skb->cb)
@@ -143,5 +119,40 @@ static inline uint16_t qdf_nbuf_get_rx_flow_tag(qdf_nbuf_t buf)
  */
 static inline void qdf_nbuf_set_exc_frame(qdf_nbuf_t buf, uint8_t value)
 {
+}
+
+/**
+ * qdf_nbuf_set_rx_reo_dest_ind() - set reo destination indication
+ * @buf: Network buffer
+ * @value: reo destination indication value to set
+ *
+ * Return: none
+ */
+static inline void qdf_nbuf_set_rx_reo_dest_ind(qdf_nbuf_t buf,
+						uint8_t value)
+{
+}
+
+/**
+* qdf_nbuf_set_rx_ipa_smmu_map() - set ipa smmu mapped flag
+ * @buf: Network buffer
+ * @value: 1 - ipa smmu mapped, 0 - ipa smmu unmapped
+ *
+ * Return: none
+ */
+static inline void qdf_nbuf_set_rx_ipa_smmu_map(qdf_nbuf_t buf,
+						uint8_t value)
+{
+}
+
+/**
+ * qdf_nbuf_is_rx_ipa_smmu_map() - check ipa smmu map flag
+ * @buf: Network buffer
+ *
+ * Return 0 or 1
+ */
+static inline uint8_t qdf_nbuf_is_rx_ipa_smmu_map(qdf_nbuf_t buf)
+{
+	return 0;
 }
 #endif /* _QDF_NBUF_W_H */

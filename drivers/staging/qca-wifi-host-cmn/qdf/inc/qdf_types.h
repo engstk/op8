@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -384,6 +385,7 @@ typedef bool (*qdf_irqlocked_func_t)(void *);
  * @QDF_MODULE_ID_FTM_TIME_SYNC: FTM Time sync module ID
  * @QDF_MODULE_ID_PKT_CAPTURE: PACKET CAPTURE module ID
  * @QDF_MODULE_ID_MON_FILTER: Monitor filter related config module ID
+ * @QDF_MODULE_ID_GPIO: GPIO configuration module ID
  * @QDF_MODULE_ID_ANY: anything
  * @QDF_MODULE_ID_MAX: Max place holder module ID
  */
@@ -506,6 +508,7 @@ typedef enum {
 	QDF_MODULE_ID_FTM_TIME_SYNC,
 	QDF_MODULE_ID_PKT_CAPTURE,
 	QDF_MODULE_ID_MON_FILTER,
+	QDF_MODULE_ID_GPIO = 123,
 	QDF_MODULE_ID_ANY,
 	QDF_MODULE_ID_MAX,
 } QDF_MODULE_ID;
@@ -1035,6 +1038,22 @@ struct qdf_ipv6_addr {
  * Return: QDF_STATUS
  */
 QDF_STATUS qdf_ipv6_parse(const char *ipv6_str, struct qdf_ipv6_addr *out_addr);
+
+/**
+ * qdf_uint32_array_parse() - parse the given string as uint32 array
+ * @in_str: the input string to parse
+ * @out_array: the output uint32 array, populated on success
+ * @array_size: size of the array
+ * @out_size: size of the populated array
+ *
+ * This API is called to convert string (each value separated by
+ * a comma) into an uint32 array
+ *
+ * Return: QDF_STATUS
+ */
+
+QDF_STATUS qdf_uint32_array_parse(const char *in_str, uint32_t *out_array,
+				  qdf_size_t array_size, qdf_size_t *out_size);
 
 /**
  * qdf_uint16_array_parse() - parse the given string as uint16 array

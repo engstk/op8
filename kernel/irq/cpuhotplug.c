@@ -200,7 +200,11 @@ void irq_migrate_all_off_this_cpu(void)
 		affinity_broken = migrate_one_irq(desc);
 		raw_spin_unlock(&desc->lock);
 
+#ifdef VENDOR_EDIT
 		if (affinity_broken && (get_eng_version() == AGING || oplus_daily_build())) {
+#else
+		if (affinity_broken) {
+#endif
 			pr_info_ratelimited("IRQ %u: no longer affine to CPU%u\n",
 					    irq, smp_processor_id());
 		}

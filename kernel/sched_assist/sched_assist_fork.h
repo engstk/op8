@@ -15,6 +15,9 @@ static inline void init_task_ux_info(struct task_struct *p)
 	p->ux_depth = 0;
 	p->enqueue_time = 0;
 	p->inherit_ux_start = 0;
+#ifdef CONFIG_OPLUS_UX_IM_FLAG
+	p->ux_im_flag = 0;
+#endif
 #ifdef CONFIG_MMAP_LOCK_OPT
 	p->ux_once = 0;
 	p->get_mmlock = 0;

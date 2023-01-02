@@ -285,7 +285,7 @@ int sctp_raw_to_bind_addrs(struct sctp_bind_addr *bp, __u8 *raw_addr_list,
 		rawaddr = (union sctp_addr_param *)raw_addr_list;
 
 		af = sctp_get_af_specific(param_type2af(param->type));
-			if (unlikely(!af) ||
+		if (unlikely(!af) ||
 		    !af->from_addr_param(&addr, rawaddr, htons(port), 0)) {
 			retval = -EINVAL;
 			goto out_err;
@@ -297,7 +297,7 @@ int sctp_raw_to_bind_addrs(struct sctp_bind_addr *bp, __u8 *raw_addr_list,
 					    SCTP_ADDR_SRC, gfp);
 		if (retval)
 			/* Can't finish building the list, clean up. */
-		goto out_err;
+			goto out_err;
 
 next:
 		len = ntohs(param->length);

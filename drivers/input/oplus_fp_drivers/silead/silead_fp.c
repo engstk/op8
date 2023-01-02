@@ -1328,7 +1328,7 @@ static const struct file_operations silfp_dev_fops = {
 
 static int silfp_probe(struct spi_device *spi)
 {
-    struct silfp_data	*fp_dev;
+    struct silfp_data	*fp_dev = NULL;
     int			status = 0;
     //unsigned long		minor;
 
@@ -1338,7 +1338,7 @@ static int silfp_probe(struct spi_device *spi)
     if (!fp_dev) {
         return -ENOMEM;
     }
-
+    memset(fp_dev, 0, sizeof(struct silfp_data));
     /* Initialize the driver data */
     fp_dev->spi = spi;
     spin_lock_init(&fp_dev->spi_lock);
@@ -1420,12 +1420,14 @@ static int silfp_remove(struct spi_device *spi)
 
     wake_lock_destroy(&fp_dev->wakelock);
     wake_lock_destroy(&fp_dev->wakelock_hal);
+
+    silfp_exit(fp_dev);
+
     /* make sure ops on existing fds can abort cleanly */
     spin_lock_irq(&fp_dev->spi_lock);
     fp_dev->spi = NULL;
     spin_unlock_irq(&fp_dev->spi_lock);
 
-    silfp_exit(fp_dev);
     /* prevent new opens */
     mutex_lock(&device_list_lock);
     list_del(&fp_dev->device_entry);

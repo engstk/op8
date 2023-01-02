@@ -1,0 +1,40 @@
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
+config OPLUS_WAKELOCK_PROFILER
+bool "config wakelock profiler"
+help
+    Select this config to enable wakelock profiler
+
+config OPLUS_POWER_QCOM
+bool "QCOM Config"
+help
+    Select this config to enable wakelock profiler
+
+config OPLUS_POWER_MTK
+bool "MTK Config"
+help
+    Select this config to enable wakelock profiler
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
+
+#ifdef OPLUS_FEATURE_POWERINFO_STANDBY_DEBUG
+config OPLUS_POWERINFO_STANDBY_DEBUG
+bool "powerinfo standby config"
+default n
+help
+    Select this config to enable powerinfo standby debug
+#endif /* OPLUS_FEATURE_POWERINFO_STANDBY_DEBUG */
+
+#ifdef OPLUS_FEATURE_POWERINFO_RPMH
+config OPLUS_POWERINFO_RPMH
+bool "powerinfo rpmh config"
+default n
+help
+    Select this config to enable powerinfo rpmh
+#endif /* OPLUS_FEATURE_POWERINFO_RPMH */
+
+#ifdef OPLUS_FEATURE_POWERINFO_FTM
+config OPLUS_POWERINFO_FTM
+bool "powerinfo ftm config"
+default n
+help
+    Select this config to enable powerinfo ftm
+#endif /* OPLUS_FEATURE_POWERINFO_FTM */

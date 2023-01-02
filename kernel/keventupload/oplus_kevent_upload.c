@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /**************************************************************
 * Copyright (c)  2008- 2020  Oplus. All rights reserved.
+* VENDOR_EDIT
 * File       : oplus_kevent_upload.c
 * Description: for kevent action upload,root action upload to user layer
 * Version   : 1.0

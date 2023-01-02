@@ -876,7 +876,7 @@ static ssize_t read_block_state(struct file *file, char __user *buf,
 			zram_test_flag(zram, index, ZRAM_HUGE) ? 'h' : '.',
 			zram_test_flag(zram, index, ZRAM_IDLE) ? 'i' : '.');
 
-		if (count < copied) {
+		if (count <= copied) {
 			zram_slot_unlock(zram, index);
 			break;
 		}
@@ -1087,7 +1087,7 @@ static ssize_t mm_stat_show(struct device *dev,
 			zram->limit_pages << PAGE_SHIFT,
 			max_used << PAGE_SHIFT,
 			(u64)atomic64_read(&zram->stats.same_pages),
-			pool_stats.pages_compacted,
+			atomic_long_read(&pool_stats.pages_compacted),
 			(u64)atomic64_read(&zram->stats.huge_pages),
 			zram_dedup_dup_size(zram),
 			zram_dedup_meta_size(zram));
@@ -1416,7 +1416,7 @@ compress_again:
 	zram_set_handle(zram, index, handle);
 	zram_set_obj_size(zram, index, comp_len);
 #ifdef CONFIG_HYBRIDSWAP_CORE
-	hybridswap_track(zram, index, page->mem_cgroup);
+	hybridswap_record(zram, index, page->mem_cgroup);
 #endif
 	zram_slot_unlock(zram, index);
 
@@ -1437,13 +1437,13 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
 
 	zram_slot_lock(zram, index);
 #ifdef CONFIG_HYBRIDSWAP_ASYNC_COMPRESS
-	if (akcompress_cache_fault_out(zram, page, index))
+	if (akcompress_cache_page_fault(zram, page, index))
 		return 0;
 #endif
 
 #ifdef CONFIG_HYBRIDSWAP_CORE
 	if (likely(!bio)) {
-		ret = hybridswap_fault_out(zram, index);
+		ret = hybridswap_page_fault(zram, index);
 		if (unlikely(ret)) {
 			pr_err("search in hybridswap failed! err=%d, page=%u\n",
 					ret, index);
@@ -1675,7 +1675,7 @@ out:
 	}
 
 #ifdef CONFIG_HYBRIDSWAP_CORE
-	hybridswap_track(zram, index, page->mem_cgroup);
+	hybridswap_record(zram, index, page->mem_cgroup);
 #endif
 	zram_slot_unlock(zram, index);
 

@@ -3234,12 +3234,6 @@ QDF_STATUS wma_open(struct wlan_objmgr_psoc *psoc,
 	wma_handle->staDynamicDtim =
 			ucfg_pmo_get_sta_dynamic_dtim(wma_handle->psoc);
 
-	/* register for install key completion event */
-	wmi_unified_register_event_handler(wma_handle->wmi_handle,
-				wmi_vdev_install_key_complete_event_id,
-				wma_vdev_install_key_complete_event_handler,
-				WMA_RX_SERIALIZER_CTX);
-
 #ifdef WLAN_FEATURE_STATS_EXT
 	/* register for extended stats event */
 	wmi_unified_register_event_handler(wma_handle->wmi_handle,
@@ -6784,7 +6778,8 @@ int wma_rx_service_ready_ext_event(void *handle, uint8_t *event,
 	 * indicate 3 vdevs and firmware shall add 1 vdev for NAN. So decrement
 	 * the num_vdevs by 1.
 	 */
-	if (ucfg_nan_is_vdev_creation_allowed(wma_handle->psoc)) {
+	if (ucfg_nan_is_vdev_creation_allowed(wma_handle->psoc) ||
+	    QDF_GLOBAL_FTM_MODE == cds_get_conparam()) {
 		wlan_res_cfg->nan_separate_iface_support = true;
 	} else {
 		wlan_res_cfg->num_vdevs--;

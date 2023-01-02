@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
 #include <linux/of.h>
@@ -11,6 +11,7 @@
 #include <linux/msm_gsi.h>
 #include <linux/platform_device.h>
 #include <linux/delay.h>
+#include <linux/slab.h>
 #include "gsi.h"
 #include "gsi_reg.h"
 #include "gsi_emulation.h"
@@ -30,6 +31,11 @@
 #define GSI_CHNL_STATE_MAX_RETRYCNT 10
 
 #define GSI_STTS_REG_BITS 32
+
+#ifndef MODULE
+ #undef EXPORT_SYMBOL
+ #define EXPORT_SYMBOL(x)
+#endif
 
 #ifndef CONFIG_DEBUG_FS
 void gsi_debugfs_init(void)
@@ -1787,7 +1793,7 @@ int gsi_alloc_evt_ring(struct gsi_evt_ring_props *props, unsigned long dev_hdl,
 EXPORT_SYMBOL(gsi_alloc_evt_ring);
 
 static void __gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
-		union __packed gsi_evt_scratch val)
+		union gsi_evt_scratch val)
 {
 	gsi_writel(val.data.word1, gsi_ctx->base +
 		GSI_EE_n_EV_CH_k_SCRATCH_0_OFFS(evt_ring_hdl,
@@ -1798,7 +1804,7 @@ static void __gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
 }
 
 int gsi_write_evt_ring_scratch(unsigned long evt_ring_hdl,
-		union __packed gsi_evt_scratch val)
+		union gsi_evt_scratch val)
 {
 	struct gsi_evt_ctx *ctx;
 
@@ -2354,7 +2360,7 @@ int gsi_alloc_channel(struct gsi_chan_props *props, unsigned long dev_hdl,
 {
 	struct gsi_chan_ctx *ctx;
 	uint32_t val;
-	int res;
+	int res, size;
 	int ee;
 	enum gsi_ch_cmd_opcode op = GSI_CH_ALLOCATE;
 	uint8_t erindex;
@@ -2415,9 +2421,8 @@ int gsi_alloc_channel(struct gsi_chan_props *props, unsigned long dev_hdl,
 	if (props->prot == GSI_CHAN_PROT_GCI)
 		user_data_size += GSI_VEID_MAX;
 
-	user_data = devm_kzalloc(gsi_ctx->dev,
-		user_data_size * sizeof(*user_data),
-		GFP_KERNEL);
+	size = user_data_size * sizeof(*user_data);
+	user_data = kzalloc(size, GFP_KERNEL);
 	if (user_data == NULL) {
 		GSIERR("context not allocated\n");
 		return -GSI_STATUS_RES_ALLOC_FAILURE;
@@ -2442,14 +2447,14 @@ int gsi_alloc_channel(struct gsi_chan_props *props, unsigned long dev_hdl,
 		if (res == 0) {
 			GSIERR("chan_hdl=%u timed out\n", props->ch_id);
 			mutex_unlock(&gsi_ctx->mlock);
-			devm_kfree(gsi_ctx->dev, user_data);
+			kfree(user_data);
 			return -GSI_STATUS_TIMED_OUT;
 		}
 		if (ctx->state != GSI_CHAN_STATE_ALLOCATED) {
 			GSIERR("chan_hdl=%u allocation failed state=%d\n",
 					props->ch_id, ctx->state);
 			mutex_unlock(&gsi_ctx->mlock);
-			devm_kfree(gsi_ctx->dev, user_data);
+			kfree(user_data);
 			return -GSI_STATUS_RES_ALLOC_FAILURE;
 		}
 		mutex_unlock(&gsi_ctx->mlock);
@@ -2462,7 +2467,7 @@ int gsi_alloc_channel(struct gsi_chan_props *props, unsigned long dev_hdl,
 		GSI_NO_EVT_ERINDEX;
 	if (erindex != GSI_NO_EVT_ERINDEX && erindex >= GSI_EVT_RING_MAX) {
 		GSIERR("invalid erindex %u\n", erindex);
-		devm_kfree(gsi_ctx->dev, user_data);
+		kfree(user_data);
 		return -GSI_STATUS_INVALID_PARAMS;
 	}
 
@@ -2549,7 +2554,7 @@ static int gsi_alloc_ap_channel(unsigned int chan_hdl)
 }
 
 static void __gsi_write_channel_scratch(unsigned long chan_hdl,
-		union __packed gsi_channel_scratch val)
+		union gsi_channel_scratch val)
 {
 	gsi_writel(val.data.word1, gsi_ctx->base +
 		GSI_EE_n_GSI_CH_k_SCRATCH_0_OFFS(chan_hdl,
@@ -2567,7 +2572,7 @@ static void __gsi_write_channel_scratch(unsigned long chan_hdl,
 }
 
 int gsi_write_channel_scratch3_reg(unsigned long chan_hdl,
-		union __packed gsi_wdi_channel_scratch3_reg val)
+		union gsi_wdi_channel_scratch3_reg val)
 {
 	struct gsi_chan_ctx *ctx;
 
@@ -2598,7 +2603,7 @@ int gsi_write_channel_scratch3_reg(unsigned long chan_hdl,
 EXPORT_SYMBOL(gsi_write_channel_scratch3_reg);
 
 int gsi_write_channel_scratch2_reg(unsigned long chan_hdl,
-		union __packed gsi_wdi2_channel_scratch2_reg val)
+		union gsi_wdi2_channel_scratch2_reg val)
 {
 	struct gsi_chan_ctx *ctx;
 
@@ -2630,7 +2635,7 @@ int gsi_write_channel_scratch2_reg(unsigned long chan_hdl,
 EXPORT_SYMBOL(gsi_write_channel_scratch2_reg);
 
 static void __gsi_read_channel_scratch(unsigned long chan_hdl,
-		union __packed gsi_channel_scratch * val)
+		union gsi_channel_scratch *val)
 {
 	val->data.word1 = gsi_readl(gsi_ctx->base +
 		GSI_EE_n_GSI_CH_k_SCRATCH_0_OFFS(chan_hdl,
@@ -2649,10 +2654,10 @@ static void __gsi_read_channel_scratch(unsigned long chan_hdl,
 			gsi_ctx->per.ee));
 }
 
-static union __packed gsi_channel_scratch __gsi_update_mhi_channel_scratch(
-	unsigned long chan_hdl, struct __packed gsi_mhi_channel_scratch mscr)
+static union gsi_channel_scratch __gsi_update_mhi_channel_scratch(
+	unsigned long chan_hdl, struct gsi_mhi_channel_scratch mscr)
 {
-	union __packed gsi_channel_scratch scr;
+	union gsi_channel_scratch scr;
 
 	/* below sequence is not atomic. assumption is sequencer specific fields
 	 * will remain unchanged across this sequence
@@ -2709,7 +2714,7 @@ static union __packed gsi_channel_scratch __gsi_update_mhi_channel_scratch(
 }
 
 int gsi_write_channel_scratch(unsigned long chan_hdl,
-		union __packed gsi_channel_scratch val)
+		union gsi_channel_scratch val)
 {
 	struct gsi_chan_ctx *ctx;
 
@@ -2742,7 +2747,7 @@ int gsi_write_channel_scratch(unsigned long chan_hdl,
 EXPORT_SYMBOL(gsi_write_channel_scratch);
 
 int gsi_read_channel_scratch(unsigned long chan_hdl,
-		union __packed gsi_channel_scratch *val)
+		union gsi_channel_scratch *val)
 {
 	struct gsi_chan_ctx *ctx;
 
@@ -2775,7 +2780,7 @@ int gsi_read_channel_scratch(unsigned long chan_hdl,
 EXPORT_SYMBOL(gsi_read_channel_scratch);
 
 int gsi_update_mhi_channel_scratch(unsigned long chan_hdl,
-		struct __packed gsi_mhi_channel_scratch mscr)
+		struct gsi_mhi_channel_scratch mscr)
 {
 	struct gsi_chan_ctx *ctx;
 
@@ -2952,7 +2957,8 @@ int gsi_stop_channel(unsigned long chan_hdl)
 
 	if (ctx->state != GSI_CHAN_STATE_STARTED &&
 		ctx->state != GSI_CHAN_STATE_STOP_IN_PROC &&
-		ctx->state != GSI_CHAN_STATE_ERROR) {
+		ctx->state != GSI_CHAN_STATE_ERROR &&
+		ctx->state != GSI_CHAN_STATE_FLOW_CONTROL) {
 		GSIERR("bad state %d\n", ctx->state);
 		return -GSI_STATUS_UNSUPPORTED_OP;
 	}
@@ -3228,7 +3234,7 @@ int gsi_dealloc_channel(unsigned long chan_hdl)
 								ctx->state);
 		mutex_unlock(&gsi_ctx->mlock);
 	}
-	devm_kfree(gsi_ctx->dev, ctx->user_data);
+	kfree(ctx->user_data);
 	ctx->allocated = false;
 	if (ctx->evtr && (ctx->props.prot != GSI_CHAN_PROT_GCI))
 		atomic_dec(&ctx->evtr->chan_ref_cnt);

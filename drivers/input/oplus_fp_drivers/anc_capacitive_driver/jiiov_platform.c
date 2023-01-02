@@ -12,26 +12,29 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
  * Public License for more details.
-**/
+ **/
 
 #include <linux/atomic.h>
+#include <linux/cdev.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
+#include <linux/input.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
+#include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 //#include <linux/wakelock.h>
 #include "../include/wakelock.h"
 #include <linux/cdev.h>
 #include <net/sock.h>
+
 #include "jiiov_platform.h"
 
-//#define ANC_CONFIG_PM_WAKELOCKS 0
 
 
 #ifdef ANC_CONFIG_PM_WAKELOCKS
@@ -45,23 +48,27 @@
 #include <linux/spi/spidev.h>
 #endif
 
-#include "../include/oplus_fp_common.h"
+#include <linux/fb.h>
 #include <linux/msm_drm_notify.h>
 #include <linux/notifier.h>
-#include <linux/fb.h>
 
+#include "../include/oplus_fp_common.h"
 
-#define ANC_COMPATIBLE_SW_FP    "jiiov,fingerprint"
-#define ANC_DEVICE_NAME         "jiiov_fp"
+#define ANC_COMPATIBLE_SW_FP "jiiov,fingerprint"
+#define ANC_DEVICE_NAME "jiiov_fp"
 
-#define ANC_DEVICE_MAJOR        0    /* default to dynamic major */
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+#define ANC_INPUT_NAME "jiiov-keys"
+#endif
+
+#define ANC_DEVICE_MAJOR 0 /* default to dynamic major */
 static int anc_major_num = ANC_DEVICE_MAJOR;
 
-#define ANC_WAKELOCK_HOLD_TIME  500  /* ms */
+#define ANC_WAKELOCK_HOLD_TIME 500 /* ms */
 
 #ifdef ANC_USE_SPI
-#define SPI_BUFFER_SIZE         (50 * 1024)
-#define ANC_DEFAULT_SPI_SPEED   (18 * 1000 * 1000)
+#define SPI_BUFFER_SIZE (50 * 1024)
+#define ANC_DEFAULT_SPI_SPEED (18 * 1000 * 1000)
 static uint8_t *spi_buffer = NULL;
 #endif
 
@@ -75,42 +82,41 @@ typedef struct platform_device anc_device_t;
 typedef struct platform_driver anc_driver_t;
 #endif
 
-
-static int anc_gpio_pwr_flag = 0;
-
-static const char * const pctl_names[] = {
+static const char *const pctl_names[] = {
     "anc_reset_reset",
-    "anc_reset_active",
-#ifdef ANC_USE_IRQ
     "anc_irq_active",
-#endif
 };
 
-#ifndef ANC_USE_POWER_GPIO
 struct vreg_config {
-	char *name;
-	unsigned long vmin;
-	unsigned long vmax;
-	int ua_load;
+    char *name;
+    unsigned long vmin;
+    unsigned long vmax;
+    int ua_load;
 };
 
-#define ANC_VREG_LDO_NAME    "ldo"
-static const struct vreg_config const vreg_conf[] = {
-    { ANC_VREG_LDO_NAME, 3300000UL, 3300000UL, 150000, },
+#define ANC_VREG_LDO_NAME "vdd"
+static struct vreg_config const vreg_conf[] = {
+    {
+        ANC_VREG_LDO_NAME,
+        3000000UL,
+        3000000UL,
+        150000,
+    },
 };
-#endif
 
 struct anc_data {
     struct device *dev;
     struct class *dev_class;
     dev_t dev_num;
     struct cdev cdev;
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    struct input_dev *input;
+    ANC_KEY_EVENT key_event;
+#endif
 
     struct pinctrl *fingerprint_pinctrl;
     struct pinctrl_state *pinctrl_state[ARRAY_SIZE(pctl_names)];
-#ifndef ANC_USE_POWER_GPIO
     struct regulator *vreg[ARRAY_SIZE(vreg_conf)];
-#endif
 #ifdef ANC_CONFIG_PM_WAKELOCKS
     struct wakeup_source fp_wakelock;
 #else
@@ -121,14 +127,21 @@ struct anc_data {
     int irq_gpio;
     int irq;
     atomic_t irq_enabled;
+    int irq_init;
+    int irq_mask_flag;
 #endif
-
+    bool vdd_use_gpio;
+    bool vdd_use_pmic;
+    bool vdd_use_ext_pmic;
+    unsigned int ext_pmic_ldo_num;
+    unsigned int ext_pmic_ldo_mv_max;
+    unsigned int ext_pmic_ldo_mv_min;
     int pwr_gpio;
+    int is_powered_on;
     int rst_gpio;
     struct mutex lock;
 
 #ifdef ANC_USE_NETLINK
-    struct fp_underscreen_info fp_tpinfo;
     struct notifier_block notifier;
     char fb_black;
 #endif
@@ -136,10 +149,15 @@ struct anc_data {
 
 static struct anc_data *g_anc_data;
 
+#ifdef ANC_USE_EXT_PMIC
+extern int fingerprint_ldo_enable(unsigned int ldo_num, unsigned int mv);
+extern int fingerprint_ldo_disable(unsigned int ldo_num, unsigned int mv);
+#else
+static int fingerprint_ldo_enable(unsigned int ldo_num, unsigned int mv) { return 0; }
+static int fingerprint_ldo_disable(unsigned int ldo_num, unsigned int mv) { return 0; }
+#endif
 
-#ifndef ANC_USE_POWER_GPIO
-static int vreg_setup(struct anc_data *data, const char *name, bool enable)
-{
+static int vreg_setup(struct anc_data *data, const char *name, bool enable) {
     size_t i;
     int rc;
     bool is_found = false;
@@ -172,13 +190,15 @@ static int vreg_setup(struct anc_data *data, const char *name, bool enable)
 
         if (regulator_count_voltages(vreg) > 0) {
             rc = regulator_set_voltage(vreg, vreg_conf[i].vmin, vreg_conf[i].vmax);
-            if (rc)
+            if (rc) {
                 dev_err(dev, "Unable to set voltage on %s, %d\n", name, rc);
+            }
         }
 
         rc = regulator_set_load(vreg, vreg_conf[i].ua_load);
-        if (rc < 0)
+        if (rc < 0) {
             dev_err(dev, "Unable to set current on %s, %d\n", name, rc);
+        }
 
         rc = regulator_enable(vreg);
         if (rc) {
@@ -201,130 +221,53 @@ static int vreg_setup(struct anc_data *data, const char *name, bool enable)
 
     return rc;
 }
-#endif
 
 /*-----------------------------------netlink-------------------------------*/
 #ifdef ANC_USE_NETLINK
-unsigned int lasttouchmode = 0;
-static int anc_opticalfp_tp_handler(struct fp_underscreen_info *tp_info)
-{
-    int rc = 0;
-    char netlink_msg = (char)ANC_NETLINK_EVENT_INVALID;
 
-    pr_info("[anc] %s\n", __func__);
-
-    g_anc_data->fp_tpinfo = *tp_info;
-    if(tp_info->touch_state == lasttouchmode){
-        return rc;
-    }
-#ifdef ANC_CONFIG_PM_WAKELOCKS
-    __pm_wakeup_event(&g_anc_data->fp_wakelock, msecs_to_jiffies(ANC_WAKELOCK_HOLD_TIME));
-#else
-    wake_lock_timeout(&g_anc_data->fp_wakelock, msecs_to_jiffies(ANC_WAKELOCK_HOLD_TIME));
-#endif
-    if (1 == tp_info->touch_state) {
-        netlink_msg = (char)ANC_NETLINK_EVENT_TOUCH_DOWN;
-        pr_info("[anc] Netlink touch down!");
-        netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
-        lasttouchmode = tp_info->touch_state;
-    } else {
-        netlink_msg = (char)ANC_NETLINK_EVENT_TOUCH_UP;
-        pr_info("[anc] Netlink touch up!");
-        netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
-        lasttouchmode = tp_info->touch_state;
-    }
-
-    return rc;
-}
-
-static int anc_fb_state_chg_callback(struct notifier_block *nb,
-        unsigned long val, void *data)
-{
+static int anc_fb_state_chg_callback(struct notifier_block *nb, unsigned long val, void *data) {
     struct anc_data *anc_data;
     struct msm_drm_notifier *evdata = data;
     unsigned int blank;
     char netlink_msg = (char)ANC_NETLINK_EVENT_INVALID;
-    int rc = 0;
 
     pr_info("[anc] %s\n", __func__);
 
     anc_data = container_of(nb, struct anc_data, notifier);
 
-    if (val == MSM_DRM_ONSCREENFINGERPRINT_EVENT) {
-        uint8_t op_mode = 0x0;
-        op_mode = *(uint8_t *)evdata->data;
-        pr_info("[anc] op_mode = %d\n", op_mode);
-
-        switch (op_mode) {
-            case ANC_UI_DISAPPREAR:
-                pr_info("[anc] UI disappear\n");
-                break;
-            case ANC_UI_READY:
-                pr_info("[anc] UI ready\n");
-                netlink_msg = ANC_NETLINK_EVENT_UI_READY;
-                netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
-                break;
-            default:
-                pr_err("[anc] Unknown MSM_DRM_ONSCREENFINGERPRINT_EVENT!\n");
-                break;
-        }
-        return rc;
-    }
-
-    /*if (evdata && evdata->data && val == FB_EARLY_EVENT_BLANK && anc_data) {
-        blank = *(int *)(evdata->data);
-        switch (blank) {
-            case FB_BLANK_POWERDOWN:
-                    anc_data->fb_black = 1;
-                    msg = JIIOV_NET_EVENT_SCR_OFF;                 
-                    pr_err("[anc] NET SCREEN OFF!\n");
-                    netlink_send_message_to_user(&msg, length);
-                break;
-            case FB_BLANK_UNBLANK:
-                    anc_data->fb_black = 0;
-                    msg = JIIOV_NET_EVENT_SCR_ON;
-                    pr_err("[anc] NET SCREEN ON!\n");
-                    netlink_send_message_to_user(&msg, length);
-                break;
-            default:
-                pr_err("[anc] Unknown screen state!\n");
-                break;
-        }
-    }*/
-	
-   if (evdata && evdata->data && (val == MSM_DRM_EARLY_EVENT_BLANK) && anc_data) {
+    if (evdata && evdata->data && (val == MSM_DRM_EARLY_EVENT_BLANK) && anc_data) {
         blank = *(int *)(evdata->data);
         switch (blank) {
             case MSM_DRM_BLANK_POWERDOWN:
                 anc_data->fb_black = 1;
                 netlink_msg = ANC_NETLINK_EVENT_SCR_OFF;
                 pr_info("[anc] NET SCREEN OFF!\n");
-                netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+                anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
                 break;
             case MSM_DRM_BLANK_UNBLANK:
                 anc_data->fb_black = 0;
                 netlink_msg = ANC_NETLINK_EVENT_SCR_ON;
                 pr_info("[anc] NET SCREEN ON!\n");
-                netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+                anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
                 break;
             default:
                 pr_err("[anc] Unknown screen state!\n");
                 break;
         }
     }
+
     return NOTIFY_OK;
 }
 
 static struct notifier_block anc_noti_block = {
- .notifier_call = anc_fb_state_chg_callback,
+    .notifier_call = anc_fb_state_chg_callback,
 };
 
 /**
  * sysfs node to forward netlink event
  */
-static ssize_t forward_netlink_event_set(struct device *p_dev,
-	struct device_attribute *p_attr, const char *p_buffer, size_t count)
-{
+static ssize_t forward_netlink_event_set(struct device *p_dev, struct device_attribute *p_attr,
+                                         const char *p_buffer, size_t count) {
     char netlink_msg = (char)ANC_NETLINK_EVENT_INVALID;
 
     pr_info("forward netlink event: %s\n", p_buffer);
@@ -349,7 +292,7 @@ static ssize_t forward_netlink_event_set(struct device *p_dev,
         return -EINVAL;
     }
 
-    return netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+    return anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
 }
 static DEVICE_ATTR(netlink_event, S_IWUSR, NULL, forward_netlink_event_set);
 #endif
@@ -359,8 +302,7 @@ static DEVICE_ATTR(netlink_event, S_IWUSR, NULL, forward_netlink_event_set);
  * sysfs node to select the set of pins (GPIOS) defined in a pin control node of
  * the device tree
  */
-static int select_pin_ctl(struct anc_data *data, const char *name)
-{
+static int select_pin_ctl(struct anc_data *data, const char *name) {
     size_t i;
     int rc;
     struct device *dev = data->dev;
@@ -371,10 +313,11 @@ static int select_pin_ctl(struct anc_data *data, const char *name)
 
         if (!strncmp(n, name, strlen(n))) {
             rc = pinctrl_select_state(data->fingerprint_pinctrl, data->pinctrl_state[i]);
-            if (rc)
+            if (rc) {
                 dev_err(dev, "cannot select %s\n", name);
-            else
+            } else {
                 dev_info(dev, "Selected %s\n", name);
+            }
             goto exit;
         }
     }
@@ -386,8 +329,8 @@ exit:
     return rc;
 }
 
-static ssize_t pinctl_set(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
-{
+static ssize_t pinctl_set(struct device *dev, struct device_attribute *attr, const char *buf,
+                          size_t count) {
     int rc;
     struct anc_data *data = dev_get_drvdata(dev);
 
@@ -399,23 +342,21 @@ static ssize_t pinctl_set(struct device *dev, struct device_attribute *attr, con
 }
 static DEVICE_ATTR(pinctl_set, S_IWUSR, NULL, pinctl_set);
 
-static int anc_reset(struct anc_data *data)
-{
-    int rc;
-    pr_err("anc reset\n");
+static int anc_reset(struct anc_data *data) {
+    pr_info("anc reset\n");
     mutex_lock(&data->lock);
-    rc = select_pin_ctl(data, "anc_reset_reset");
-    //T2 >= 10ms
+    gpio_direction_output(g_anc_data->rst_gpio, 0);
+    // T2 >= 10ms
     mdelay(10);
-    rc |= select_pin_ctl(data, "anc_reset_active");
+    gpio_direction_output(g_anc_data->rst_gpio, 1);
     mdelay(10);
     mutex_unlock(&data->lock);
 
-    return rc;
+    return 0;
 }
 
-static ssize_t hw_reset_set(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
-{
+static ssize_t hw_reset_set(struct device *dev, struct device_attribute *attr, const char *buf,
+                            size_t count) {
     int rc;
     struct anc_data *data = dev_get_drvdata(dev);
 
@@ -430,62 +371,49 @@ static ssize_t hw_reset_set(struct device *dev, struct device_attribute *attr, c
 }
 static DEVICE_ATTR(hw_reset, S_IWUSR, NULL, hw_reset_set);
 
-
-/*static int vreg_setup (struct anc_data *data, const char *name, bool enable)
-{
-    //size_t i;
-    int rc;
-    struct regulator *vreg;
-    struct device *dev = data->dev;
-    if (NULL == name) {
-        pr_err("name is NULL\n");
-        return -EINVAL;
-    }
-    if (1) {
-        if (!vreg) {
-            vreg = regulator_get(dev, name);
-            if (IS_ERR(vreg)) {
-                pr_err("Unable to get  %s\n", name);
-                return PTR_ERR(vreg);
+static void anc_power_onoff(struct anc_data *data, int power_onoff) {
+    pr_info("%s: power_onoff = %d powered_flag:%d \n",
+            __func__,
+            power_onoff,
+            g_anc_data->is_powered_on);
+    if (power_onoff == 1) {
+        if (g_anc_data->is_powered_on == 0) {
+            if (data->vdd_use_gpio) {
+                gpio_set_value(data->pwr_gpio, 1);
+            }
+            if (data->vdd_use_pmic) {
+                vreg_setup(data, ANC_VREG_LDO_NAME, 1);
+            }
+            if (data->vdd_use_ext_pmic) {
+                if (fingerprint_ldo_enable(data->ext_pmic_ldo_num, data->ext_pmic_ldo_mv_max)) {
+                    pr_err("%s, enable external ldo failed", __func__);
+                } else {
+                    pr_err("%s: enable external ldo success", __func__);
+                }
             }
         }
-        if (regulator_count_voltages(vreg) > 0) {
-            rc = regulator_set_voltage(vreg, 1500000, 3300000);
-            if (rc)
-                pr_err("Unable to set voltage on %s, %d\n",
-                        name, rc);
-        }
-        rc = regulator_set_load(vreg, 3300000);
-        if (rc < 0)
-            pr_err("Unable to set current on %s, %d\n",
-                    name, rc);
-        rc = regulator_enable(vreg);
-        if (rc) {
-            pr_err("error enabling %s: %d\n", name, rc);
-            regulator_put(vreg);
-            vreg = NULL;
-        }
-    }
-    return rc;
-}*/
-
-
-
-
-
-
-static void anc_power_onoff(struct anc_data *data, int power_onoff)
-{
-    pr_info("%s: power_onoff = %d \n", __func__, power_onoff);
-    if (anc_gpio_pwr_flag == 1) {
-        gpio_set_value(data->pwr_gpio, power_onoff);
+        g_anc_data->is_powered_on = 1;
     } else {
-        vreg_setup(data, ANC_VREG_LDO_NAME, power_onoff);
+        if (g_anc_data->is_powered_on == 1) {
+            /* Pull down reset pin */
+            gpio_direction_output(g_anc_data->rst_gpio, 0);
+
+            if (data->vdd_use_gpio) {
+                gpio_set_value(data->pwr_gpio, 0);
+            }
+            if (data->vdd_use_pmic) {
+                vreg_setup(data, ANC_VREG_LDO_NAME, 0);
+            }
+            if (data->vdd_use_ext_pmic) {
+                fingerprint_ldo_disable(data->ext_pmic_ldo_num, data->ext_pmic_ldo_mv_min);
+            }
+            mdelay(10);
+        }
+        g_anc_data->is_powered_on = 0;
     }
 }
 
-static void device_power_up(struct anc_data *data)
-{
+static void device_power_up(struct anc_data *data) {
     pr_info("device power up\n");
     anc_power_onoff(data, 1);
 }
@@ -493,8 +421,8 @@ static void device_power_up(struct anc_data *data)
 /**
  * sysfs node to power on/power off the sensor
  */
-static ssize_t device_power_set(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
-{
+static ssize_t device_power_set(struct device *dev, struct device_attribute *attr, const char *buf,
+                                size_t count) {
     ssize_t rc = count;
     struct anc_data *data = dev_get_drvdata(dev);
 
@@ -519,19 +447,17 @@ static uint32_t anc_read_sensor_id(struct anc_data *data);
 /**
  * sysfs node to read sensor id
  */
-static ssize_t sensor_id_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
+static ssize_t sensor_id_show(struct device *dev, struct device_attribute *attr, char *buf) {
     struct anc_data *data = dev_get_drvdata(dev);
-    uint32_t senor_chip_id = anc_read_sensor_id(data);
+    uint32_t sensor_chip_id = anc_read_sensor_id(data);
 
-    return scnprintf(buf, PAGE_SIZE, "0x%04x\n", senor_chip_id);
+    return scnprintf(buf, PAGE_SIZE, "0x%04x\n", sensor_chip_id);
 }
 static DEVICE_ATTR(sensor_id, S_IRUSR, sensor_id_show, NULL);
 #endif
 
 #ifdef ANC_USE_IRQ
-static void anc_enable_irq(struct anc_data *data)
-{
+static void anc_enable_irq(struct anc_data *data) {
     pr_info("enable irq\n");
     if (atomic_read(&data->irq_enabled)) {
         pr_warn("IRQ has been enabled\n");
@@ -541,8 +467,7 @@ static void anc_enable_irq(struct anc_data *data)
     }
 }
 
-static void anc_disable_irq(struct anc_data *data)
-{
+static void anc_disable_irq(struct anc_data *data) {
     pr_info("disable irq\n");
     if (atomic_read(&data->irq_enabled)) {
         disable_irq(data->irq);
@@ -552,18 +477,35 @@ static void anc_disable_irq(struct anc_data *data)
     }
 }
 
+static void anc_wake_lock(struct anc_data *data) {
+#ifdef ANC_CONFIG_PM_WAKELOCKS
+    __pm_stay_awake(&data->fp_wakelock);
+#else
+    wake_lock(&data->fp_wakelock);
+#endif
+}
+
+static void anc_wake_unlock(struct anc_data *data) {
+#ifdef ANC_CONFIG_PM_WAKELOCKS
+    __pm_relax(&data->fp_wakelock);
+    __pm_wakeup_event(&data->fp_wakelock, msecs_to_jiffies(ANC_WAKELOCK_HOLD_TIME));
+#else
+    wake_unlock(&data->fp_wakelock);
+    wake_lock_timeout(&data->fp_wakelock, msecs_to_jiffies(ANC_WAKELOCK_HOLD_TIME));
+#endif
+}
+
 /**
  * sysfs node for controlling whether the driver is allowed
  * to wake up the platform on interrupt.
  */
-static ssize_t irq_control_set(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
-{
+static ssize_t irq_control_set(struct device *dev, struct device_attribute *attr, const char *buf,
+                               size_t count) {
     ssize_t rc = count;
     struct anc_data *data = dev_get_drvdata(dev);
 
     mutex_lock(&data->lock);
-    if (!strncmp(buf, "enable", strlen("enable")))
-    {
+    if (!strncmp(buf, "enable", strlen("enable"))) {
         anc_enable_irq(data);
     } else if (!strncmp(buf, "disable", strlen("disable"))) {
         anc_disable_irq(data);
@@ -577,40 +519,39 @@ static ssize_t irq_control_set(struct device *dev, struct device_attribute *attr
 static DEVICE_ATTR(irq_set, S_IWUSR, NULL, irq_control_set);
 #endif
 
-static struct attribute *attributes[] = {
-    &dev_attr_pinctl_set.attr,
-    &dev_attr_device_power.attr,
-    &dev_attr_hw_reset.attr,
+static struct attribute *attributes[] = {&dev_attr_pinctl_set.attr,
+                                         &dev_attr_device_power.attr,
+                                         &dev_attr_hw_reset.attr,
 #ifdef ANC_USE_IRQ
-    &dev_attr_irq_set.attr,
+                                         &dev_attr_irq_set.attr,
 #endif
 #ifdef ANC_USE_NETLINK
-    &dev_attr_netlink_event.attr,
+                                         &dev_attr_netlink_event.attr,
 #endif
 #ifdef ANC_USE_SPI
-    &dev_attr_sensor_id.attr,
+                                         &dev_attr_sensor_id.attr,
 #endif
-    NULL
-};
+                                         NULL};
 
 static const struct attribute_group attribute_group = {
     .attrs = attributes,
 };
 
 #ifdef ANC_USE_IRQ
-static void anc_do_irq_work(struct work_struct *ws)
-{
-    char netlink_msg = (char)ANC_NETLINK_EVENT_IRQ;
+static void anc_do_irq_work(struct work_struct *ws) {
 #ifdef ANC_USE_NETLINK
-    netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
+    char netlink_msg = (char)ANC_NETLINK_EVENT_IRQ;
+    anc_cap_netlink_send_message_to_user(&netlink_msg, sizeof(netlink_msg));
 #endif
 }
 
-static irqreturn_t anc_irq_handler(int irq, void *handle)
-{
+static irqreturn_t anc_irq_handler(int irq, void *handle) {
     struct anc_data *data = handle;
 
     pr_info("irq handler\n");
+    if (data->irq_mask_flag) {
+        return IRQ_HANDLED;
+    }
 #ifdef ANC_CONFIG_PM_WAKELOCKS
     __pm_wakeup_event(&data->fp_wakelock, msecs_to_jiffies(ANC_WAKELOCK_HOLD_TIME));
 #else
@@ -622,8 +563,7 @@ static irqreturn_t anc_irq_handler(int irq, void *handle)
 }
 #endif
 
-static int anc_request_named_gpio(struct anc_data *data, const char *label, int *gpio)
-{
+static int anc_request_named_gpio(struct anc_data *data, const char *label, int *gpio) {
     struct device *dev = data->dev;
     struct device_node *np = dev->of_node;
     int rc = of_get_named_gpio(np, label, 0);
@@ -644,8 +584,7 @@ static int anc_request_named_gpio(struct anc_data *data, const char *label, int 
     return 0;
 }
 
-static int anc_gpio_init(struct device *dev, struct anc_data *data)
-{
+static int anc_gpio_init(struct device *dev, struct anc_data *data) {
     int rc = 0;
     size_t i;
 
@@ -656,34 +595,62 @@ static int anc_gpio_init(struct device *dev, struct anc_data *data)
         goto exit;
     }
 
-    if (of_property_read_bool(dev->of_node, "anc,enable-via-gpio")) {
-        dev_err(dev, "%s, Using GPIO Power \n", __func__);
-        anc_gpio_pwr_flag = 1;
-    }
+    data->vdd_use_gpio = of_property_read_bool(np, "anc,vdd_use_gpio");
+    data->vdd_use_pmic = of_property_read_bool(np, "anc,vdd_use_pmic");
+    data->vdd_use_ext_pmic = of_property_read_bool(np, "anc,enable-external-pmic");
 
+    dev_info(dev, "%s vdd_use_gpio = %d\n", __func__, data->vdd_use_gpio);
+    dev_info(dev, "%s vdd_use_pmic = %d\n", __func__, data->vdd_use_pmic);
+    dev_info(dev, "%s vdd_use_ext_pmic = %d\n", __func__, data->vdd_use_ext_pmic);
 
     rc = anc_request_named_gpio(data, "anc,gpio_rst", &data->rst_gpio);
-    if (rc)
+    if (rc) {
         goto exit;
+    }
 
 #ifdef ANC_USE_IRQ
     rc = anc_request_named_gpio(data, "anc,gpio_irq", &data->irq_gpio);
-    if (rc)
+    if (rc) {
         goto exit;
+    }
 
     rc = gpio_direction_input(data->irq_gpio);
-    if (rc)
+    if (rc) {
         goto exit;
+    }
 #endif
 
-    if (anc_gpio_pwr_flag == 1 ) {
+    if (data->vdd_use_gpio) {
         rc = anc_request_named_gpio(data, "anc,gpio_pwr", &data->pwr_gpio);
-        if (rc)
+        if (rc) {
             goto exit;
+        }
 
         rc = gpio_direction_output(data->pwr_gpio, 0);
-        if (rc)
+        if (rc) {
             goto exit;
+        }
+    }
+
+    if (data->vdd_use_ext_pmic) {
+        rc = of_property_read_u32(np, "anc,ext-pmic-ldo-num", &data->ext_pmic_ldo_num);
+        if (rc) {
+            dev_err(dev, "Unknown ldo_num");
+            data->vdd_use_ext_pmic = false;
+            goto exit;
+        }
+        rc = of_property_read_u32(np, "anc,ext-pmic-ldo-mv-max", &data->ext_pmic_ldo_mv_max);
+        if (rc) {
+            dev_err(dev, "Unknown mv_max");
+            data->vdd_use_ext_pmic = false;
+            goto exit;
+        }
+        rc = of_property_read_u32(np, "anc,ext-pmic-ldo-mv-min", &data->ext_pmic_ldo_mv_min);
+        if (rc) {
+            dev_err(dev, "Unknown mv_min");
+            data->vdd_use_ext_pmic = false;
+            goto exit;
+        }
     }
 
     data->fingerprint_pinctrl = devm_pinctrl_get(dev);
@@ -711,99 +678,191 @@ static int anc_gpio_init(struct device *dev, struct anc_data *data)
         data->pinctrl_state[i] = state;
     }
 
+    rc = select_pin_ctl(data, "anc_reset_reset");
+    if (rc) {
+        goto exit;
+    }
+    rc = select_pin_ctl(data, "anc_irq_active");
+
 exit:
     return rc;
 }
 
 #ifdef ANC_USE_IRQ
-static int anc_irq_init(struct device *dev, struct anc_data *data)
-{
+static int anc_irq_init(struct anc_data *data) {
     int rc = 0;
-    int irqf = IRQF_TRIGGER_FALLING | IRQF_ONESHOT;  // IRQF_TRIGGER_FALLING or IRQF_TRIGGER_RISING
-
-    rc = select_pin_ctl(data, "anc_irq_active");
-    if (rc)
-        goto exit;
-
-    data->irq = gpio_to_irq(data->irq_gpio);
-    rc = devm_request_threaded_irq(dev, data->irq, NULL, anc_irq_handler, irqf, dev_name(dev), data);
-    if (rc) {
-        dev_err(dev, "%s: Could not request irq %d\n", __func__, data->irq);
-        goto exit;
+    int irqf = IRQF_TRIGGER_RISING | IRQF_ONESHOT;  // IRQF_TRIGGER_FALLING or IRQF_TRIGGER_RISING
+    if (data->irq_init == 0) {
+        rc = devm_request_threaded_irq(
+            data->dev, data->irq, NULL, anc_irq_handler, irqf, dev_name(data->dev), data);
+        if (rc) {
+            dev_err(data->dev, "%s: Could not request irq %d\n", __func__, data->irq);
+            goto exit;
+        }
+        data->irq_init = 1;
+        /* Request that the interrupt should be wakeable */
+        enable_irq_wake(data->irq);
+        atomic_set(&data->irq_enabled, 1);
     }
-
-    /* Request that the interrupt should be wakeable */
-    enable_irq_wake(data->irq);
-    atomic_set(&data->irq_enabled, 1);
 
 exit:
     return rc;
 }
+
+static void anc_irq_deinit(struct anc_data *data) {
+    if (data->irq_init) {
+        disable_irq_wake(data->irq);
+        devm_free_irq(data->dev, data->irq, data);
+        data->irq_init = 0;
+    }
+}
 #endif
 
-static int anc_open(struct inode *inode, struct file *filp)
-{
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+static int anc_report_key_event(struct anc_data *data) {
+    int rc = 0;
+    unsigned int key_code = KEY_UNKNOWN;
+
+    pr_info("%s: key = %d, value = %d\n", __func__, data->key_event.key, data->key_event.value);
+
+    switch (data->key_event.key) {
+        case ANC_KEY_HOME:
+            key_code = KEY_HOME;
+            break;
+        case ANC_KEY_MENU:
+            key_code = KEY_MENU;
+            break;
+        case ANC_KEY_BACK:
+            key_code = KEY_BACK;
+            break;
+        case ANC_KEY_UP:
+            key_code = KEY_UP;
+            break;
+        case ANC_KEY_DOWN:
+            key_code = KEY_DOWN;
+            break;
+        case ANC_KEY_LEFT:
+            key_code = KEY_LEFT;
+            break;
+        case ANC_KEY_RIGHT:
+            key_code = KEY_RIGHT;
+            break;
+        case ANC_KEY_POWER:
+            key_code = KEY_POWER;
+            break;
+        case ANC_KEY_WAKEUP:
+            key_code = KEY_WAKEUP;
+            break;
+        case ANC_KEY_CAMERA:
+            key_code = KEY_CAMERA;
+            break;
+        default:
+            key_code = (unsigned int)(data->key_event.key);
+            break;
+    }
+
+    input_report_key(data->input, key_code, data->key_event.value);
+    input_sync(data->input);
+
+    return rc;
+}
+#endif
+
+static int anc_open(struct inode *inode, struct file *filp) {
     struct anc_data *dev_data;
     dev_data = container_of(inode->i_cdev, struct anc_data, cdev);
     filp->private_data = dev_data;
     return 0;
 }
 
-static long anc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-{
+static long anc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
     int rc = 0;
     struct anc_data *dev_data = filp->private_data;
 
-    if (_IOC_TYPE(cmd) != ANC_IOC_MAGIC)
+    if (_IOC_TYPE(cmd) != ANC_IOC_MAGIC) {
         return -ENOTTY;
+    }
 
     pr_info("%s: cmd = %d\n", __func__, _IOC_NR(cmd));
 
     switch (cmd) {
-    case ANC_IOC_RESET:
-        pr_info("%s: reset\n", __func__);
-        rc = anc_reset(dev_data);
-        break;
-    case ANC_IOC_ENABLE_POWER:
-        pr_info("%s: enable power\n", __func__);
-        anc_power_onoff(dev_data, 1);
-        break;
-    case ANC_IOC_DISABLE_POWER:
-        pr_info("%s: disable power\n", __func__);
-        anc_power_onoff(dev_data, 0);
-        break;
-    case ANC_IOC_CLEAR_FLAG:
+        case ANC_IOC_RESET:
+            pr_info("%s: reset\n", __func__);
+            rc = anc_reset(dev_data);
+            break;
+        case ANC_IOC_ENABLE_POWER:
+            pr_info("%s: enable power\n", __func__);
+            anc_power_onoff(dev_data, 1);
+            break;
+        case ANC_IOC_DISABLE_POWER:
+            pr_info("%s: disable power\n", __func__);
+            anc_power_onoff(dev_data, 0);
+            break;
+        case ANC_IOC_CLEAR_FLAG:
 #ifdef ANC_USE_NETLINK
-        lasttouchmode = 0;
-        pr_info("%s: clear tp flag\n", __func__);
+            pr_info("%s: clear tp flag\n", __func__);
 #endif
-        break;
+            break;
 #ifdef ANC_USE_IRQ
-    case ANC_IOC_ENABLE_IRQ:
-        pr_info("%s: enable irq\n", __func__);
-        anc_enable_irq(dev_data);
-        break;
-    case ANC_IOC_DISABLE_IRQ:
-        pr_info("%s: disable irq\n", __func__);
-        anc_disable_irq(dev_data);
-        break;
+        case ANC_IOC_ENABLE_IRQ:
+            pr_info("%s: enable irq\n", __func__);
+            anc_enable_irq(dev_data);
+            break;
+        case ANC_IOC_DISABLE_IRQ:
+            pr_info("%s: disable irq\n", __func__);
+            anc_disable_irq(dev_data);
+            break;
+        case ANC_IOC_SET_IRQ_FLAG_MASK:
+            pr_info("%s: set irq flag mask \n", __func__);
+            dev_data->irq_mask_flag = 1;
+            break;
+        case ANC_IOC_CLEAR_IRQ_FLAG_MASK:
+            pr_info("%s: clear irq flag mask \n", __func__);
+            dev_data->irq_mask_flag = 0;
+            break;
+        case ANC_IOC_INIT_IRQ:
+            pr_info("%s: init irq\n", __func__);
+            rc = anc_irq_init(dev_data);
+            break;
+        case ANC_IOC_DEINIT_IRQ:
+            anc_irq_deinit(dev_data);
+            pr_info("%s: deinit irq\n", __func__);
+            break;
 #endif
 #ifdef ANC_USE_SPI
-    case ANC_IOC_SPI_SPEED:
-        anc_spi_device->max_speed_hz = arg;
-        spi_setup(anc_spi_device);
-        break;
+        case ANC_IOC_SPI_SPEED:
+            anc_spi_device->max_speed_hz = arg;
+            spi_setup(anc_spi_device);
+            break;
 #endif
-    default:
-        rc = -EINVAL;
-        break;
+        case ANC_IOC_WAKE_LOCK:
+            pr_info("%s: wake lock\n", __func__);
+            anc_wake_lock(dev_data);
+            break;
+        case ANC_IOC_WAKE_UNLOCK:
+            pr_info("%s: wake unlock\n", __func__);
+            anc_wake_unlock(dev_data);
+            break;
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+        case ANC_IOC_REPORT_KEY_EVENT:
+            if (copy_from_user(
+                    &(dev_data->key_event), (ANC_KEY_EVENT *)arg, sizeof(ANC_KEY_EVENT))) {
+                pr_err("Failed to copy input key event from user to kernel\n");
+                rc = -EFAULT;
+                break;
+            }
+            anc_report_key_event(dev_data);
+            break;
+#endif
+        default:
+            rc = -EINVAL;
+            break;
     }
     return rc;
 }
 
 #ifdef CONFIG_COMPAT
-static long anc_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-{
+static long anc_compat_ioctl(struct file *filp, unsigned int cmd, unsigned long arg) {
     return anc_ioctl(filp, cmd, (unsigned long)compat_ptr(arg));
 }
 #endif
@@ -846,12 +905,10 @@ static ssize_t anc_read(struct file *filp, char __user *buf, size_t count, loff_
 
         if (status != 0) {
             status = -EFAULT;
-        }
-        else {
+        } else {
             status = count;
         }
-    }
-    else {
+    } else {
         pr_err("%s: spi_transfer failed\n", __func__);
     }
 
@@ -877,8 +934,7 @@ static ssize_t anc_write(struct file *filp, const char __user *buf, size_t count
 
     if (status == 0) {
         status = count;
-    }
-    else {
+    } else {
         pr_err("%s: spi_transfer failed\n", __func__);
     }
 
@@ -891,17 +947,16 @@ static const struct file_operations anc_fops = {
     .open = anc_open,
     .unlocked_ioctl = anc_ioctl,
 #ifdef CONFIG_COMPAT
-    .compat_ioctl   = anc_compat_ioctl,
+    .compat_ioctl = anc_compat_ioctl,
 #endif
 #ifdef ANC_USE_SPI
-    .write  = anc_write,
+    .write = anc_write,
     .read = anc_read,
 #endif
 };
 
 #ifdef ANC_USE_SPI
-static uint32_t anc_read_sensor_id(struct anc_data *data)
-{
+static uint32_t anc_read_sensor_id(struct anc_data *data) {
     int rc = -1;
     int trytimes = 3;
     uint32_t sensor_chip_id = 0;
@@ -928,15 +983,48 @@ static uint32_t anc_read_sensor_id(struct anc_data *data)
         } else {
             pr_err("%s: Read Sensor Id Fail\n", __func__);
         }
-    }
-    while (trytimes--);
+    } while (trytimes--);
 
     return sensor_chip_id;
 }
 #endif
 
-static int anc_probe(anc_device_t *pdev)
-{
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+static int anc_input_init(struct device *dev, struct anc_data *data) {
+    int rc = 0;
+
+    data->input = input_allocate_device();
+    if (!data->input) {
+        dev_err(dev, "%s: Failed to allocate input device\n", __func__);
+        return -ENOMEM;
+    }
+
+    data->input->name = ANC_INPUT_NAME;
+    __set_bit(EV_KEY, data->input->evbit);
+    __set_bit(KEY_HOME, data->input->keybit);
+    __set_bit(KEY_MENU, data->input->keybit);
+    __set_bit(KEY_BACK, data->input->keybit);
+    __set_bit(KEY_UP, data->input->keybit);
+    __set_bit(KEY_DOWN, data->input->keybit);
+    __set_bit(KEY_LEFT, data->input->keybit);
+    __set_bit(KEY_RIGHT, data->input->keybit);
+    __set_bit(KEY_POWER, data->input->keybit);
+    __set_bit(KEY_WAKEUP, data->input->keybit);
+    __set_bit(KEY_CAMERA, data->input->keybit);
+
+    rc = input_register_device(data->input);
+    if (rc) {
+        dev_err(dev, "%s: Failed to register input device\n", __func__);
+        input_free_device(data->input);
+        data->input = NULL;
+        return -ENODEV;
+    }
+
+    return rc;
+}
+#endif
+
+static int anc_probe(anc_device_t *pdev) {
     struct device *dev = &pdev->dev;
     int rc = 0;
     struct anc_data *dev_data;
@@ -964,13 +1052,14 @@ static int anc_probe(anc_device_t *pdev)
 
     dev_data->dev = dev;
     g_anc_data = dev_data;
+    g_anc_data->is_powered_on = 0;
 #ifdef ANC_USE_SPI
     spi_set_drvdata(pdev, dev_data);
     anc_spi_device = pdev;
     /* setup spi config */
-    anc_spi_device->mode            = SPI_MODE_0;
-    anc_spi_device->bits_per_word   = 8;
-    anc_spi_device->max_speed_hz    = ANC_DEFAULT_SPI_SPEED;
+    anc_spi_device->mode = SPI_MODE_0;
+    anc_spi_device->bits_per_word = 8;
+    anc_spi_device->max_speed_hz = ANC_DEFAULT_SPI_SPEED;
     spi_setup(anc_spi_device);
 #else
     platform_set_drvdata(pdev, dev_data);
@@ -996,7 +1085,8 @@ static int anc_probe(anc_device_t *pdev)
         dev_info(dev, "%s: Major number of device = %d\n", __func__, anc_major_num);
     }
 
-    device_ptr = device_create(dev_data->dev_class, NULL, dev_data->dev_num, dev_data, ANC_DEVICE_NAME);
+    device_ptr =
+        device_create(dev_data->dev_class, NULL, dev_data->dev_num, dev_data, ANC_DEVICE_NAME);
     if (IS_ERR(device_ptr)) {
         dev_err(dev, "%s: Failed to create char device\n", __func__);
         rc = -ENODEV;
@@ -1013,25 +1103,34 @@ static int anc_probe(anc_device_t *pdev)
 
     mutex_init(&dev_data->lock);
 
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    rc = anc_input_init(dev, dev_data);
+    if (rc) {
+        dev_err(dev, "%s: Failed to init input dev\n", __func__);
+        goto input_dev_err;
+    }
+#endif
+
     rc = anc_gpio_init(dev, dev_data);
     if (rc) {
         dev_err(dev, "%s: Failed to init gpio", __func__);
         goto exit;
     }
 
-    dev_info(dev, "%s, Enabling hardware\n", __func__);
-    device_power_up(dev_data);
+    if (of_property_read_bool(dev->of_node, "anc,enable-on-boot")) {
+        dev_info(dev, "%s, Enabling hardware\n", __func__);
+        device_power_up(dev_data);
+    }
 
 #ifdef ANC_USE_SPI
     anc_read_sensor_id(dev_data);
 #endif
 
 #ifdef ANC_USE_IRQ
-    rc = anc_irq_init(dev, dev_data);
-    if (rc) {
-        dev_err(dev, "%s: Failed to init irq", __func__);
-        goto exit;
-    }
+    dev_data->irq_init = 0;
+    dev_data->irq_mask_flag = 0;
+    dev_data->irq = gpio_to_irq(dev_data->irq_gpio);
+
     INIT_WORK(&dev_data->work_queue, anc_do_irq_work);
 #endif
 
@@ -1062,6 +1161,10 @@ static int anc_probe(anc_device_t *pdev)
     return 0;
 
 exit:
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    input_unregister_device(dev_data->input);
+input_dev_err:
+#endif
 cdev_add_err:
     device_destroy(dev_data->dev_class, dev_data->dev_num);
 device_create_err:
@@ -1081,8 +1184,7 @@ device_data_err:
     return rc;
 }
 
-static int anc_remove(anc_device_t *pdev)
-{
+static int anc_remove(anc_device_t *pdev) {
 #ifdef ANC_USE_SPI
     struct anc_data *data = spi_get_drvdata(pdev);
 #else
@@ -1102,6 +1204,11 @@ static int anc_remove(anc_device_t *pdev)
 #ifdef ANC_USE_NETLINK
     msm_drm_unregister_client(&data->notifier);
 #endif
+#ifdef ANC_SUPPORT_NAVIGATION_EVENT
+    if (data->input) {
+        input_unregister_device(data->input);
+    }
+#endif
     cdev_del(&data->cdev);
     device_destroy(data->dev_class, data->dev_num);
     unregister_chrdev_region(data->dev_num, 1);
@@ -1112,28 +1219,27 @@ static int anc_remove(anc_device_t *pdev)
     return 0;
 }
 
-static struct of_device_id anc_of_match[] = {
-    { .compatible = ANC_COMPATIBLE_SW_FP, },
-    {}
-};
+static struct of_device_id anc_of_match[] = {{
+                                                 .compatible = ANC_COMPATIBLE_SW_FP,
+                                             },
+                                             {}};
 MODULE_DEVICE_TABLE(of, anc_of_match);
 
 static anc_driver_t anc_driver = {
-    .driver = {
-        .name  = ANC_DEVICE_NAME,
-        .owner = THIS_MODULE,
-        .of_match_table = anc_of_match,
-    },
-    .probe  = anc_probe,
+    .driver =
+        {
+            .name = ANC_DEVICE_NAME,
+            .owner = THIS_MODULE,
+            .of_match_table = anc_of_match,
+        },
+    .probe = anc_probe,
     .remove = anc_remove,
 };
 
-static int __init ancfp_init(void)
-{
-    int rc;
-
-    if (FP_JIIOV_0302 != get_fpsensor_type()) {
-        pr_err("%s, found not jiiov sensor\n", __func__);
+static int __init ancfp_init(void) {
+    int rc = 0;
+    if (FP_JIIOV_0101 != (rc = get_fpsensor_type())) {
+        pr_err("%s, found not jiiov sensor rc:%d\n", __func__, rc);
         rc = -EINVAL;
         return rc;
     }
@@ -1150,22 +1256,16 @@ static int __init ancfp_init(void)
     }
 
 #ifdef ANC_USE_NETLINK
-    anc_netlink_init();
-    /*Register for receiving tp touch event.
-     * Must register after get_fpsensor_type filtration as only one handler can be registered.
-    */
-    opticalfp_irq_handler_register(anc_opticalfp_tp_handler);
-    pr_info("register tp event handler");
+    anc_cap_netlink_init();
 #endif
 
     return rc;
 }
 
-static void __exit ancfp_exit(void)
-{
+static void __exit ancfp_exit(void) {
     pr_info("%s\n", __func__);
 #ifdef ANC_USE_NETLINK
-    anc_netlink_exit();
+    anc_cap_netlink_exit();
 #endif
 #ifdef ANC_USE_SPI
     spi_unregister_driver(&anc_driver);
@@ -1174,10 +1274,9 @@ static void __exit ancfp_exit(void)
 #endif
 }
 
-late_initcall(ancfp_init);
+module_init(ancfp_init);
 module_exit(ancfp_exit);
 
 MODULE_LICENSE("GPL v2");
 MODULE_AUTHOR("JIIOV");
 MODULE_DESCRIPTION("JIIOV fingerprint sensor device driver");
-

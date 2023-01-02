@@ -60,10 +60,6 @@
 #ifdef OPLUS_BUG_STABILITY
 /* Add for uart control via cmdline*/
 #include <soc/oplus/system/boot_mode.h>
-
-#include <linux/rtc.h>
-#include <linux/time.h>
-
 static bool __read_mostly printk_disable_uart = true; /*set true avoid early console output*/
 static int __init printk_uart_disabled(char *str)
 {
@@ -79,7 +75,7 @@ bool oem_disable_uart(void)
 {
 	return printk_disable_uart;
 }
-#endif /* OPLUS_BUG_STABILITY */
+#endif /*VENDOR_EDIT*/
 
 int console_printk[4] = {
 	CONSOLE_LOGLEVEL_DEFAULT,	/* console_loglevel */
@@ -150,8 +146,10 @@ static int __control_devkmsg(char *str)
 
 static int __init control_devkmsg(char *str)
 {
-	if (__control_devkmsg(str) < 0)
+	if (__control_devkmsg(str) < 0) {
+		pr_warn("printk.devkmsg: bad option string '%s'\n", str);
 		return 1;
+	}
 
 	/*
 	 * Set sysctl string accordingly:
@@ -170,7 +168,7 @@ static int __init control_devkmsg(char *str)
 	 */
 	devkmsg_log |= DEVKMSG_LOG_MASK_LOCK;
 
-	return 0;
+	return 1;
 }
 __setup("printk.devkmsg=", control_devkmsg);
 
@@ -630,6 +628,7 @@ static int log_store(int facility, int level,
 	u32 size, pad_len;
 	u16 trunc_msg_len = 0;
 
+#ifdef VENDOR_EDIT
 	//part 1/2: add for add cpu number and current id and current comm to kmsg
 	int this_cpu = smp_processor_id();
 	char tbuf[64];
@@ -642,6 +641,7 @@ static int log_store(int facility, int level,
 		tlen = snprintf(tbuf, sizeof(tbuf), " %x)", this_cpu);
 	}
 	text_len += tlen;
+#endif //add end part 1/3
 
 	/* number of '\0' padding bytes to next message */
 	size = msg_used_size(text_len, dict_len, &pad_len);
@@ -667,8 +667,13 @@ static int log_store(int facility, int level,
 
 	/* fill message */
 	msg = (struct printk_log *)(log_buf + log_next_idx);
+#ifndef VENDOR_EDIT
+//part 2/2: add for add cpu number and current id and current comm to kmsg
+	memcpy(log_text(msg), text, text_len);
+#else
 	memcpy(log_text(msg), tbuf, tlen);
 	memcpy(log_text(msg) + tlen, text, text_len-tlen);
+#endif //add end part 3/3
 	msg->text_len = text_len;
 	if (trunc_msg_len) {
 		memcpy(log_text(msg) + text_len, trunc_msg, trunc_msg_len);
@@ -1288,12 +1293,6 @@ static inline void boot_delay_msec(int level)
 static bool printk_time = IS_ENABLED(CONFIG_PRINTK_TIME);
 module_param_named(time, printk_time, bool, S_IRUGO | S_IWUSR);
 
-#ifdef OPLUS_BUG_STABILITY
-static bool print_wall_time = 1;
-module_param_named(print_wall_time, print_wall_time, bool, 0644);
-#endif
-
-#ifndef OPLUS_BUG_STABILITY
 static size_t print_time(u64 ts, char *buf)
 {
 	unsigned long rem_nsec;
@@ -1309,7 +1308,6 @@ static size_t print_time(u64 ts, char *buf)
 	return sprintf(buf, "[%5lu.%06lu] ",
 		       (unsigned long)ts, rem_nsec / 1000);
 }
-#endif
 
 static size_t print_prefix(const struct printk_log *msg, bool syslog, char *buf)
 {
@@ -1329,9 +1327,8 @@ static size_t print_prefix(const struct printk_log *msg, bool syslog, char *buf)
 				len++;
 		}
 	}
-#ifndef OPLUS_BUG_STABILITY
+
 	len += print_time(msg->ts_nsec, buf ? buf + len : NULL);
-#endif
 	return len;
 }
 
@@ -1796,12 +1793,14 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
 		return;
 
 	for_each_console(con) {
+#ifdef VENDOR_EDIT
 		if ((con->flags & CON_CONSDEV) &&
 				(printk_disable_uart ||
 				get_boot_mode() == MSM_BOOT_MODE__FACTORY ||
 				get_boot_mode() == MSM_BOOT_MODE__RF ||
 				get_boot_mode() == MSM_BOOT_MODE__WLAN))
 			continue;
+#endif /*VENDOR_EDIT*/
 		if (exclusive_console && con != exclusive_console)
 			continue;
 		if (!(con->flags & CON_ENABLED))
@@ -1932,14 +1931,7 @@ int vprintk_store(int facility, int level,
 	char *text = textbuf;
 	size_t text_len;
 	enum log_flags lflags = 0;
-#ifdef OPLUS_BUG_STABILITY
-	static char texttmp[LOG_LINE_MAX];
-	static bool last_new_line = true;
-	u64 ts_sec = local_clock();
-	unsigned long rem_nsec;
 
-	rem_nsec = do_div(ts_sec, 1000000000);
-#endif
 	/*
 	 * The printf needs to come first; we need the syslog
 	 * prefix which might be passed-in as a parameter.
@@ -1973,50 +1965,6 @@ int vprintk_store(int facility, int level,
 			text += 2;
 		}
 	}
-
-#ifdef CONFIG_EARLY_PRINTK_DIRECT
-	printascii(text);
-#endif
-
-#ifdef OPLUS_BUG_STABILITY
-	if (last_new_line) {
-		if (print_wall_time && ts_sec >= 20) {
-			struct timespec64 tspec;
-			struct rtc_time tm;
-
-			ktime_get_real_ts64(&tspec);
-
-			if (sys_tz.tz_minuteswest < 0
-				|| (tspec.tv_sec-sys_tz.tz_minuteswest*60) >= 0)
-				tspec.tv_sec -= sys_tz.tz_minuteswest * 60;
-			rtc_time_to_tm(tspec.tv_sec, &tm);
-
-			text_len = scnprintf(texttmp, sizeof(texttmp),
-				"[%02d%02d%02d_%02d:%02d:%02d.%06ld]@%d %s",
-				tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-				tm.tm_hour, tm.tm_min, tm.tm_sec,
-				tspec.tv_nsec / 1000,
-				raw_smp_processor_id(), text);
-		} else {
-			text_len = scnprintf(texttmp, sizeof(texttmp),
-				"[%5lu.%06lu]@%d %s", (unsigned long)ts_sec,
-				rem_nsec / 1000, raw_smp_processor_id(), text);
-		}
-
-		text = texttmp;
-
-		/* mark and strip a trailing newline */
-		if (text_len && text[text_len-1] == '\n') {
-			text_len--;
-			lflags |= LOG_NEWLINE;
-		}
-	}
-
-	if (lflags & LOG_NEWLINE)
-		last_new_line = true;
-	else
-		last_new_line = false;
-#endif
 
 	if (level == LOGLEVEL_DEFAULT)
 		level = default_message_loglevel;
@@ -2252,8 +2200,15 @@ static int __init console_setup(char *str)
 	char *s, *options, *brl_options = NULL;
 	int idx;
 
-	if (str[0] == 0)
+	/*
+	 * console="" or console=null have been suggested as a way to
+	 * disable console output. Use ttynull that has been created
+	 * for exacly this purpose.
+	 */
+	if (str[0] == 0 || strcmp(str, "null") == 0) {
+		__add_preferred_console("ttynull", 0, NULL, NULL);
 		return 1;
+	}
 
 	if (_braille_console_setup(&str, &brl_options))
 		return 1;

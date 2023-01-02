@@ -646,11 +646,7 @@ static void csr_diag_reset_country_information(struct mac_context *mac)
 				mac->mlme_cfg->power.max_tx_power);
 		}
 	}
-	if (!mac->mlme_cfg->gen.enabled_11d)
-		p11dLog->supportMultipleDomain = WLAN_80211D_DISABLED;
-	else
-		p11dLog->supportMultipleDomain =
-			WLAN_80211D_SUPPORT_MULTI_DOMAIN;
+
 	WLAN_HOST_DIAG_LOG_REPORT(p11dLog);
 }
 #endif /* FEATURE_WLAN_DIAG_SUPPORT_CSR */
@@ -2377,7 +2373,7 @@ static QDF_STATUS csr_fill_bss_from_scan_entry(struct mac_context *mac_ctx,
 	qdf_mem_copy(bss_desc->bssId,
 			scan_entry->bssid.bytes,
 			QDF_MAC_ADDR_SIZE);
-	bss_desc->scansystimensec = scan_entry->scan_entry_time;
+	bss_desc->scansystimensec = scan_entry->boottime_ns;
 	qdf_mem_copy(bss_desc->timeStamp,
 		scan_entry->tsf_info.data, 8);
 

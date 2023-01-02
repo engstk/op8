@@ -241,6 +241,24 @@ static void silfp_hw_reset(struct silfp_data *fp_dev, u8 delay)
     //}
 }
 
+static int silfp_set_spi_cs_low(struct silfp_data *fp_dev)
+{
+    int ret = 0;
+#ifdef BSP_SIL_CTRL_SPI
+    struct pinctrl_state *spi_cs = pinctrl_lookup_state(fp_dev->pin.pinctrl,"cs-low");
+
+    if (IS_ERR(spi_cs)) {
+        ret = PTR_ERR(spi_cs);
+        pr_info("%s can't find silfp cs-low\n", __func__);
+        return ret;
+    }
+
+    pinctrl_select_state(fp_dev->pin.pinctrl, spi_cs);
+    LOG_MSG_DEBUG(ERR_LOG, "%s set spi cs low", __func__);
+#endif /* BSP_SIL_CTRL_SPI */
+    return ret;
+}
+
 /* -------------------------------------------------------------------- */
 /*                            power  down                               */
 /* -------------------------------------------------------------------- */
@@ -258,6 +276,7 @@ static void silfp_pwdn(struct silfp_data *fp_dev, u8 flag_avdd)
 
     if (SIFP_PWDN_POWEROFF == flag_avdd) {
         silfp_hw_poweroff(fp_dev);
+        silfp_set_spi_cs_low(fp_dev);
     }
 }
 
@@ -407,7 +426,7 @@ static int silfp_parse_dts(struct silfp_data* fp_dev)
 /* -------------------------------------------------------------------- */
 static int silfp_set_spi_default_status (struct silfp_data *fp_dev)
 {
-    int ret;
+    int ret = 0;
 #ifdef BSP_SIL_CTRL_SPI
 	fp_dev->pin.spi_default = pinctrl_lookup_state(fp_dev->pin.pinctrl, "spi-default");
 	if (IS_ERR(fp_dev->pin.spi_default)) {
@@ -479,9 +498,9 @@ static int silfp_resource_init(struct silfp_data *fp_dev, struct fp_dev_init_t *
         goto err;
     }
     //status = silfp_hw_poweron(fp_dev);
-    if (status < 0){
+    /*if (status < 0){
         goto err;
-    }
+    }*/
     /*fp_dev->int_port = of_get_named_gpio(fp_dev->spi->dev.of_node, "irq-gpios", 0);
     fp_dev->rst_port = of_get_named_gpio(fp_dev->spi->dev.of_node, "rst-gpios", 0); */
     LOG_MSG_DEBUG(INFO_LOG, "[%s] int_port %d, rst_port %d.\n",__func__,fp_dev->int_port,fp_dev->rst_port);

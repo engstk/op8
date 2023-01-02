@@ -2314,7 +2314,7 @@ struct roam_offload_scan_req {
 	uint32_t roam_inactive_data_packet_count;
 	uint32_t roam_scan_period_after_inactivity;
 	uint32_t btm_query_bitmask;
-	struct roam_trigger_min_rssi min_rssi_params[NUM_OF_ROAM_TRIGGERS];
+	struct roam_trigger_min_rssi min_rssi_params[NUM_OF_ROAM_MIN_RSSI];
 	struct roam_trigger_score_delta score_delta_param[NUM_OF_ROAM_TRIGGERS];
 	uint32_t full_roam_scan_period;
 };
@@ -2557,6 +2557,7 @@ typedef struct sSirScanOffloadEvent {
  * @dfsSet: is dfs supported or not
  * @half_rate: is the channel operating at 10MHz
  * @quarter_rate: is the channel operating at 5MHz
+ * @nan_disabled: is NAN disabled on @freq
  */
 typedef struct sSirUpdateChanParam {
 	uint32_t freq;
@@ -2564,6 +2565,7 @@ typedef struct sSirUpdateChanParam {
 	bool dfsSet;
 	bool half_rate;
 	bool quarter_rate;
+	bool nan_disabled;
 } tSirUpdateChanParam, *tpSirUpdateChanParam;
 
 typedef struct sSirUpdateChan {
@@ -3572,6 +3574,7 @@ struct wifi_interface_info {
 	uint8_t apCountryStr[CFG_COUNTRY_CODE_LEN];
 	/* country string for this association */
 	uint8_t countryStr[CFG_COUNTRY_CODE_LEN];
+	uint8_t time_slice_duty_cycle;
 };
 
 /**
@@ -5403,6 +5406,7 @@ struct ppet_hdr {
 	((uint8_t)(b0) | ((b1) << 1) | ((b2) << 2) |  ((b3) << 3) | \
 	((b4) << 4) | ((b5) << 5) | ((b6) << 6))
 #define HE_CH_WIDTH_CLR_BIT(ch_wd, bit)      (((ch_wd) >> (bit)) & ~1)
+
 /*
  * MCS values are interpreted as in IEEE 11ax-D1.4 spec onwards
  * +-----------------------------------------------------+

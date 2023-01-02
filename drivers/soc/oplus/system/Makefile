@@ -35,10 +35,6 @@ obj-$(CONFIG_OPLUS_FEATURE_MM_FEEDBACK)         += oplus_mm_fb/
 obj-$(CONFIG_OPLUS_FEATURE_QCOM_WATCHDOG)     += qcom_watchdog/
 #endif /* OPLUS_FEATURE_QCOM_WATCHDOG */
 
-#ifdef OPLUS_FEATURE_RT_INFO
-obj-$(CONFIG_OPLUS_FEATURE_RT_INFO) += rt_info/
-#endif
-
 #ifdef OPLUS_FEATURE_ACM
 obj-$(CONFIG_OPLUS_FEATURE_ACM)     += acm/
 #endif /* OPLUS_FEATURE_ACM */
@@ -54,3 +50,11 @@ obj-y += misc/
 #ifdef OPLUS_FEATURE_MDMFEATURE
 obj-$(CONFIG_OPLUS_FEATURE_MDMFEATURE)     += mdmfeature/
 #endif /*OPLUS_FEATURE_MDMFEATURE*/
+
+#ifdef OPLUS_FEATURE_OLC
+obj-$(CONFIG_OPLUS_FEATURE_OLC) += olc/
+#endif /*OPLUS_FEATURE_OLC */
+
+#ifdef CONFIG_OPLUS_FEATURE_FDLEAK_CHECK
+obj-$(CONFIG_OPLUS_FEATURE_FDLEAK_CHECK)     += oplus_fdleak/
+#endif /*CONFIG_OPLUS_FEATURE_FDLEAK_CHECK*/

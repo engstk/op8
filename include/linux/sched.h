@@ -28,6 +28,7 @@
 #include <linux/mm_event.h>
 #include <linux/task_io_accounting.h>
 #include <linux/rseq.h>
+#include <linux/android_kabi.h>
 
 #ifdef OPLUS_FEATURE_HEALTHINFO
 #ifdef CONFIG_OPLUS_JANK_INFO
@@ -35,7 +36,18 @@
 #endif
 #endif /* OPLUS_FEATURE_HEALTHINFO */
 
+#ifdef VENDOR_EDIT
 extern void show_regs(struct pt_regs *);
+#endif /* VENDOR_EDIT */
+
+#ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
+#include <linux/sched_assist/sched_assist_status.h>
+#endif
+
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+#include <linux/tuning/frame_boost_group.h>
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
+
 /* task_struct member predeclarations (sorted alphabetically): */
 struct audit_context;
 struct backing_dev_info;
@@ -581,6 +593,11 @@ struct sched_entity {
 	 */
 	struct sched_avg		avg;
 #endif
+
+	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_RESERVE(2);
+	ANDROID_KABI_RESERVE(3);
+	ANDROID_KABI_RESERVE(4);
 };
 
 struct sched_load {
@@ -661,6 +678,12 @@ struct ravg {
 	u16 pred_demand_scaled;
 	u64 active_time;
 	u64 last_win_size;
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+	u64 curr_window_exec;
+	u64 prev_window_exec;
+	u64 curr_window_scale;
+	u64 prev_window_scale;
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 };
 #else
 static inline void sched_exit(struct task_struct *p) { }
@@ -699,6 +722,11 @@ struct sched_rt_entity {
 	/* rq "owned" by this entity/group: */
 	struct rt_rq			*my_q;
 #endif
+
+	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_RESERVE(2);
+	ANDROID_KABI_RESERVE(3);
+	ANDROID_KABI_RESERVE(4);
 } __randomize_layout;
 
 struct sched_dl_entity {
@@ -833,6 +861,17 @@ struct wake_q_node {
 	struct wake_q_node *next;
 };
 
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_CPU_JANKINFO)
+#define OPLUS_NR_CPUS (8)
+/* hot-thread */
+struct task_record {
+#define RECOED_WINSIZE			(1 << 8)
+#define RECOED_WINIDX_MASK		(RECOED_WINSIZE - 1)
+	u8 winidx;
+	u8 count;
+};
+#endif
+
 #if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
 union reclaim_limit {
 	unsigned long stop_jiffies;
@@ -862,6 +901,11 @@ struct task_struct {
 	/* Per task flags (PF_*), defined further below: */
 	unsigned int			flags;
 	unsigned int			ptrace;
+
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	u64 wake_tid;
+	u64 running_start_time;
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 
 #ifdef CONFIG_SMP
 	struct llist_node		wake_entry;
@@ -919,9 +963,6 @@ struct task_struct {
 
 #ifdef CONFIG_CGROUP_SCHED
 	struct task_group		*sched_task_group;
-#endif
-#ifdef CONFIG_SCHED_TUNE
-	int				stune_idx;
 #endif
 	struct sched_dl_entity		dl;
 
@@ -1014,6 +1055,10 @@ struct task_struct {
 #ifdef CONFIG_MEMCG_KMEM
 	unsigned			memcg_kmem_skip_account:1;
 #endif
+#endif
+#ifdef CONFIG_LRU_GEN
+	/* whether the LRU algorithm may apply to this access */
+	unsigned			in_lru_fault:1;
 #endif
 #ifdef CONFIG_COMPAT_BRK
 	unsigned			brk_randomized:1;
@@ -1378,7 +1423,10 @@ struct task_struct {
 
 	struct tlbflush_unmap_batch	tlb_ubc;
 
-	struct rcu_head			rcu;
+	union {
+		refcount_t		rcu_users;
+		struct rcu_head		rcu;
+	};
 
 	/* Cache last used pipe for splice(): */
 	struct pipe_inode_info		*splice_pipe;
@@ -1540,12 +1588,23 @@ struct task_struct {
 	int ux_depth;
 	u64 enqueue_time;
 	u64 inherit_ux_start;
+#ifdef CONFIG_OPLUS_FEATURE_SCHED_SPREAD
+        int lb_state;
+        int ld_flag;
+#endif
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 //#ifdef CONFIG_UXCHAIN_V2
 	int ux_once;
 	u64 get_mmlock_ts;
 	int get_mmlock;
+#endif
+#ifdef CONFIG_OPLUS_FEATURE_AUDIO_OPT
+	struct task_info oplus_task_info;
+#endif
+
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_CPU_JANKINFO)
+	struct task_record record[OPLUS_NR_CPUS];	/* 2*u64 */
 #endif
 
 #ifdef OPLUS_FEATURE_HEALTHINFO
@@ -1575,8 +1634,43 @@ struct task_struct {
 	int dtpdg; /* dynamic tpd task group */
 	int tpd_st; /* affinity decision from im */
 #endif
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+	struct frame_boost_group *fbg;
+	struct list_head fbg_list;
+	int fbg_depth;
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
+#if IS_ENABLED(CONFIG_OPLUS_FEATURE_FDLEAK_CHECK)
+	unsigned int fdleak_flag;
+#endif
 	/* task is frozen/stopped (used by the cgroup freezer) */
+
 	ANDROID_KABI_USE(1, unsigned frozen:1);
+
+	/* 095444fad7e3 ("futex: Replace PF_EXITPIDONE with a state") */
+	ANDROID_KABI_USE(2, unsigned int futex_state);
+
+	/*
+	 * f9b0c6c556db ("futex: Add mutex around futex exit")
+	 * A struct mutex takes 32 bytes, or 4 64bit entries, so pick off
+	 * 4 of the reserved members, and replace them with a struct mutex.
+	 * Do the GENKSYMS hack to work around the CRC issues
+	 */
+#ifdef __GENKSYMS__
+	ANDROID_KABI_RESERVE(3);
+	ANDROID_KABI_RESERVE(4);
+	ANDROID_KABI_RESERVE(5);
+	ANDROID_KABI_RESERVE(6);
+#else
+	struct mutex			futex_exit_mutex;
+#endif
+
+	/* bca62a0ae565 ("sched/tune: Fix improper accounting of tasks") */
+#ifdef CONFIG_SCHED_TUNE
+	ANDROID_KABI_USE(7, int stune_idx);
+#else
+	ANDROID_KABI_RESERVE(7);
+#endif
+	ANDROID_KABI_RESERVE(8);
 
 	/*
 	 * New fields for task_struct should be added above here, so that
@@ -1755,7 +1849,6 @@ extern struct pid *cad_pid;
  */
 #define PF_IDLE			0x00000002	/* I am an IDLE thread */
 #define PF_EXITING		0x00000004	/* Getting shut down */
-#define PF_EXITPIDONE		0x00000008	/* PI exit done on shut down */
 #define PF_VCPU			0x00000010	/* I'm a virtual CPU */
 #define PF_WQ_WORKER		0x00000020	/* I'm a workqueue worker */
 #define PF_FORKNOEXEC		0x00000040	/* Forked but didn't exec */
@@ -1766,7 +1859,6 @@ extern struct pid *cad_pid;
 #define PF_MEMALLOC		0x00000800	/* Allocating memory */
 #define PF_NPROC_EXCEEDED	0x00001000	/* set_user() noticed that RLIMIT_NPROC was exceeded */
 #define PF_USED_MATH		0x00002000	/* If unset the fpu must be initialized before use */
-#define PF_USED_ASYNC		0x00004000	/* Used async_schedule*(), used by module init */
 #define PF_NOFREEZE		0x00008000	/* This thread should not be frozen */
 #define PF_FROZEN		0x00010000	/* Frozen for system suspend */
 #define PF_KSWAPD		0x00020000	/* I am kswapd */
@@ -1817,7 +1909,7 @@ extern struct pid *cad_pid;
 #define tsk_used_math(p)			((p)->flags & PF_USED_MATH)
 #define used_math()				tsk_used_math(current)
 
-static inline bool is_percpu_thread(void)
+static __always_inline bool is_percpu_thread(void)
 {
 #ifdef CONFIG_SMP
 	return (current->flags & PF_NO_SETAFFINITY) &&
@@ -2006,9 +2098,17 @@ extern pid_t alloc_svc_tgid;
 #endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
 
 extern void __set_task_comm(struct task_struct *tsk, const char *from, bool exec);
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+extern void get_target_thread_pid(struct task_struct *p);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 static inline void set_task_comm(struct task_struct *tsk, const char *from)
 {
 	__set_task_comm(tsk, from, false);
+
+#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
+	get_target_thread_pid(tsk);
+#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
+
 #ifdef CONFIG_OPLUS_ION_BOOSTPOOL
 	if (!strncmp(from, "allocator-servi", TASK_COMM_LEN))
 		alloc_svc_tgid = tsk->tgid;
@@ -2064,6 +2164,8 @@ static inline int test_and_clear_tsk_thread_flag(struct task_struct *tsk, int fl
 
 static inline int test_tsk_thread_flag(struct task_struct *tsk, int flag)
 {
+
+	//printk(KERN_ERR "++++++++++test_tsk_thread_flag++++++%ld\n",tsk->thread_info.flags);
 	return test_ti_thread_flag(task_thread_info(tsk), flag);
 }
 

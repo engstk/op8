@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2018-2020 Oplus. All rights reserved.
- * OPLUS Coding Static Checking Skip
  */
 #include <linux/uaccess.h>
 #include <linux/module.h>
@@ -435,45 +434,6 @@ static void dump_secure_stage(struct seq_file *s)
     seq_printf(s, "%d", secure_oem_config);
 }
 
-//#ifdef OPLUS_FEATURE_NFC_FELICA
-static void update_felica_cfg(struct proc_dir_entry *parent) {
-
-    static const char* simfree_cfg_src[3] = {
-        "/odm/etc/felica_cfg/simfree/common.cfg",
-        "/odm/etc/felica_cfg/simfree/mfm.cfg",
-        "/odm/etc/felica_cfg/simfree/mfs.cfg",
-    };
-
-    static const char* ymobile_cfg_file[3] = {
-        "/odm/etc/felica_cfg/ymobile/common.cfg",
-        "/odm/etc/felica_cfg/ymobile/mfm.cfg",
-        "/odm/etc/felica_cfg/ymobile/mfs.cfg",
-    };
-
-    char * substr = strstr(boot_command_line, "japan.operator=");
-    pr_err("update_japan_softlink\n");
-    if(!substr)
-        return;
-
-    substr += strlen("japan.operator=");
-
-    if (substr[0] == '0') {
-        proc_symlink("felicaCommon", parent, simfree_cfg_src[0]);
-        proc_symlink("felicaMfm", parent, simfree_cfg_src[1]);
-        proc_symlink("felicaMfs", parent, simfree_cfg_src[2]);
-    }
-    else if (substr[0] == '1') {
-        proc_symlink("felicaCommon", parent, ymobile_cfg_file[0]);
-        proc_symlink("felicaMfm", parent, ymobile_cfg_file[1]);
-        proc_symlink("felicaMfs", parent, ymobile_cfg_file[2]);
-    }
-    else
-    {
-       pr_err("no felica cfg\n");
-    }
-}
-//#endif /*OPLUS_FEATURE_NFC_FELICA*/
-
 static void update_manifest(struct proc_dir_entry *parent)
 {
     static const char* manifest_src[2] = {
@@ -683,7 +643,6 @@ static int __init oplus_project_init(void)
     /*update single or double cards*/
     update_manifest(oplus_info);
     update_telephony_manifest(oplus_info);
-    update_felica_cfg(oplus_info);
 
     return 0;
 

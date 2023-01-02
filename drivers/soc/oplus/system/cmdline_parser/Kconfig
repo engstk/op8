@@ -41,3 +41,9 @@ config OPLUS_FEATURE_CDT
   default n
   help
       define this config to get cdt_integrity cmdline.
+
+config OPLUS_FEATURE_SHUTDOWN_SPEED
+	tristate "Oplus shutdown speed"
+	default n
+	help
+	  define this config to get shutdown_speed cmdline.

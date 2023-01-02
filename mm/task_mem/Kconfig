@@ -6,3 +6,9 @@ config DUMP_TASKS_MEM
 	default n
 	help
 	  dump all userspace process meminfo
+
+config DUMP_MM_INFO
+	bool "dump all userspace process meminfo"
+	default n
+	help
+	  dump all userspace process meminfo

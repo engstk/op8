@@ -16,9 +16,11 @@
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
 #include <linux/sched.h>
 #include <linux/sched_assist/sched_assist_common.h>
+#ifndef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
 extern u64 ux_task_load[];
 extern u64 ux_load_ts[];
 #define UX_LOAD_WINDOW 8000000
+#endif
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
 const char *task_event_names[] = {"PUT_PREV_TASK", "PICK_NEXT_TASK",
@@ -533,9 +535,11 @@ static inline u64 freq_policy_load(struct rq *rq)
 	u64 load, tt_load = 0;
 	struct task_struct *cpu_ksoftirqd = per_cpu(ksoftirqd, cpu_of(rq));
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
+#ifndef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
 	u64 wallclock = sched_ktime_clock();
 	u64 timeline = 0;
 	int cpu = cpu_of(rq);
+#endif
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 	if (rq->ed_task != NULL) {
 		load = sched_ravg_window;
@@ -572,12 +576,14 @@ static inline u64 freq_policy_load(struct rq *rq)
 					 (u64)100);
 	}
 #ifdef OPLUS_FEATURE_SCHED_ASSIST
+#ifndef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
 	if (sched_assist_scene(SA_SLIDE) && ux_load_ts[cpu]) {
 		timeline = wallclock - ux_load_ts[cpu];
 		if  (timeline >= UX_LOAD_WINDOW)
 			ux_task_load[cpu] = 0;
 		load = max_t(u64, load, ux_task_load[cpu]);
 	}
+#endif
 #endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
 done:
@@ -1876,7 +1882,6 @@ account_busy_for_task_demand(struct rq *rq, struct task_struct *p, int event)
 			 (event == PICK_NEXT_TASK || event == TASK_MIGRATE)))
 		return 0;
 #endif
-
 	/*
 	 * The idle exit time is not accounted for the first task _picked_ up to
 	 * run on the idle CPU.
@@ -1995,6 +2000,10 @@ static void update_history(struct rq *rq, struct task_struct *p,
 			p->unfilter = max_t(int, 0,
 				p->unfilter - p->ravg.last_win_size);
 done:
+#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_SPREAD)
+	if (p == rq->curr && p == current && event != PUT_PREV_TASK && p->sched_class == &fair_sched_class && p->ld_flag)
+		update_load_flag(p, rq);
+#endif
 	trace_sched_update_history(rq, p, runtime, samples, event);
 }
 
@@ -2066,6 +2075,9 @@ static u64 update_task_demand(struct task_struct *p, struct rq *rq,
 	int new_window, nr_full_windows;
 	u32 window_size = sched_ravg_window;
 	u64 runtime;
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+	update_group_demand(p, rq, event, wallclock);
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 
 	new_window = mark_start < window_start;
 	if (!account_busy_for_task_demand(rq, p, event)) {
@@ -2211,6 +2223,9 @@ void update_task_ravg(struct task_struct *p, struct rq *rq, int event,
 	lockdep_assert_held(&rq->lock);
 
 	old_window_start = update_window_start(rq, wallclock, event);
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+	update_group_nr_running(p, event, wallclock);
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 
 	if (!p->ravg.mark_start) {
 		update_task_cpu_cycles(p, cpu_of(rq), wallclock);
@@ -2373,7 +2388,11 @@ static void walt_cpus_capacity_changed(const cpumask_t *cpus)
 
 
 struct sched_cluster *sched_cluster[NR_CPUS];
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+__read_mostly int num_sched_clusters;
+#else
 static int num_sched_clusters;
+#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 
 struct list_head cluster_head;
 cpumask_t asym_cap_sibling_cpus = CPU_MASK_NONE;
@@ -2550,6 +2569,9 @@ void sort_clusters(void)
 	move_list(&cluster_head, &new_head, false);
 }
 
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+bool walt_clusters_parsed;
+#endif
 static void update_all_clusters_stats(void)
 {
 	struct sched_cluster *cluster;
@@ -2620,6 +2642,9 @@ void update_cluster_topology(void)
 
 	if (cpumask_weight(&asym_cap_sibling_cpus) == 1)
 		cpumask_clear(&asym_cap_sibling_cpus);
+#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
+	walt_clusters_parsed = true;
+#endif
 }
 
 static unsigned long cpu_max_table_freq[NR_CPUS];

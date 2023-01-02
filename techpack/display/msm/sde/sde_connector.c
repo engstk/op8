@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define pr_fmt(fmt)	"[drm:%s:%d] " fmt, __func__, __LINE__
@@ -109,6 +110,9 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
 	display = (struct dsi_display *) c_conn->display;
 	if (brightness > display->panel->bl_config.bl_max_level)
 		brightness = display->panel->bl_config.bl_max_level;
+#ifdef OPLUS_BUG_STABILITY
+	display->panel->bl_config.oplus_raw_bl = brightness;
+#endif /*OPLUS_BUG_STABILITY*/
 
 #ifndef OPLUS_BUG_STABILITY
 	/* map UI brightness into driver backlight level with rounding */
@@ -686,7 +690,7 @@ static void sde_conn_update_bl_work(struct work_struct *work)
 			((dsi_display) ? dsi_display->panel : NULL));
 		return;
 	}
-
+	SDE_DEBUG("debug: bl_level = %u\n", dsi_display->panel->bl_config.bl_level);
 	rc = c_conn->ops.set_backlight(&c_conn->base,
 			dsi_display, dsi_display->panel->bl_config.bl_level);
 	if (rc)
@@ -2644,7 +2648,7 @@ int sde_connector_set_blob_data(struct drm_connector *conn,
 		return -EINVAL;
 	}
 
-	info = kzalloc(sizeof(*info), GFP_KERNEL);
+	info = vzalloc(sizeof(*info));
 	if (!info)
 		return -ENOMEM;
 
@@ -2702,7 +2706,7 @@ int sde_connector_set_blob_data(struct drm_connector *conn,
 			SDE_KMS_INFO_DATALEN(info),
 			prop_id);
 exit:
-	kfree(info);
+	vfree(info);
 
 	return rc;
 }

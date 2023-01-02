@@ -233,6 +233,8 @@ int oplus_optiga_parse_dt(struct oplus_optiga_chip *chip)
 	}
 	chg_err("key-id:%d\n", chip->key_id);
 
+	chip->support_optiga_in_lk = of_property_read_bool(node, "support_optiga_in_lk");
+	chg_err("support_optiga_in_lk: %d\n", chip->support_optiga_in_lk);
 	return 0;
 }
 
@@ -241,8 +243,7 @@ int optiga_authenticate(void){
 	int devloop = 0;
 	/*int i = 0;*/
 	static S_OPTIGA_PUID stDetectedPuids[MAX_DEV];
-	static int first_read_uid = 0; 
-
+	static int first_read_uid = 0;
 	unsigned long flags;
 
 	chg_err("optiga_authenticate devloop:%d\n",devloop);
@@ -407,6 +408,7 @@ static void oplus_optiga_test_func(struct work_struct *work)
 	}
 }
 
+#define OPLUS_OPTIGA_RETRY_COUNT    (5)
 
 int oplus_optiga_get_external_auth_hmac(void) {
 	int ret;
@@ -435,9 +437,84 @@ struct oplus_optiga_chip * oplus_get_optiga_info (void)
 	return g_oplus_optiga_chip;
 }
 
+
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+#define AUTH_MESSAGE_LEN	   20
+#define OPLUS_OPTIGA_AUTH_TAG      "optiga_auth="
+#define OPLUS_OPTIGA_AUTH_SUCCESS  "optiga_auth=TRUE"
+#define OPLUS_OPTIGA_AUTH_FAILED   "optiga_auth=FALSE"
+
+#ifdef MODULE
+#include <asm/setup.h>
+
+static char __oplus_chg_cmdline[COMMAND_LINE_SIZE];
+static char *oplus_chg_cmdline = __oplus_chg_cmdline;
+
+static const char *oplus_optiga_get_cmdline(void)
+{
+	struct device_node * of_chosen = NULL;
+	char *optiga_auth = NULL;
+
+	if (__oplus_chg_cmdline[0] != 0)
+		return oplus_chg_cmdline;
+
+	of_chosen = of_find_node_by_path("/chosen");
+	if (of_chosen) {
+		optiga_auth = (char *)of_get_property(
+					of_chosen, "optiga_auth", NULL);
+		if (!optiga_auth)
+			pr_err("%s: failed to get optiga_auth\n", __func__);
+		else {
+			strcpy(__oplus_chg_cmdline, optiga_auth);
+			pr_err("%s: optiga_auth: %s\n", __func__, optiga_auth);
+		}
+	} else {
+		pr_err("%s: failed to get /chosen \n", __func__);
+	}
+
+	return oplus_chg_cmdline;
+}
+#else
+static const char *oplus_optiga_get_cmdline(void)
+{
+	return NULL;
+}
+#endif
+#endif
+
+static bool oplus_optia_check_auth_msg(void) {
+	bool ret = false;
+#ifdef CONFIG_OPLUS_CHARGER_MTK
+	char *str = NULL;
+
+	if (NULL == oplus_optiga_get_cmdline()) {
+		pr_err("oplus_chg_check_auth_msg: cmdline is NULL!!!\n");
+		return false;
+	}
+
+	str = strstr(oplus_optiga_get_cmdline(), OPLUS_OPTIGA_AUTH_TAG);
+	if (str == NULL) {
+		pr_err("oplus_chg_check_auth_msg: Asynchronous authentication is not supported!!!\n");
+		return false;
+	}
+
+	pr_info("oplus_chg_check_auth_msg: %s\n", str);
+	if (0 == memcmp(str, OPLUS_OPTIGA_AUTH_SUCCESS, sizeof(OPLUS_OPTIGA_AUTH_SUCCESS))) {
+		ret = true;
+		pr_info("oplus_chg_check_auth_msg: %s\n", OPLUS_OPTIGA_AUTH_SUCCESS);
+	} else {
+		ret = false;
+		pr_info("oplus_chg_check_auth_msg: %s\n", OPLUS_OPTIGA_AUTH_FAILED);
+	}
+#else
+	/* QCom not realize now. */
+#endif
+	return ret;
+}
 static int oplus_optiga_probe(struct platform_device *pdev)
 {
 	int ret = 0;
+	int retry = 0;
 	struct oplus_external_auth_chip	*external_auth_chip = NULL;
 	g_oplus_optiga_chip = devm_kzalloc(&pdev->dev, sizeof(*g_oplus_optiga_chip), GFP_KERNEL);
 	chg_err("oplus_optiga_probe enter\n");
@@ -475,8 +552,31 @@ static int oplus_optiga_probe(struct platform_device *pdev)
 	init_completion(&g_oplus_optiga_chip->is_complete);
 	INIT_DELAYED_WORK(&g_oplus_optiga_chip->auth_work, oplus_optiga_auth_work);
 	INIT_DELAYED_WORK(&g_oplus_optiga_chip->test_work, oplus_optiga_test_func);
-	oplus_optiga_auth();
-	g_oplus_optiga_chip->hmac_status.total_count++;
+
+	if (g_oplus_optiga_chip->support_optiga_in_lk && oplus_optia_check_auth_msg()) {
+		chg_err("get lk auth success.\n");
+		ret = true;
+
+		/*LK already auth success, Kernel not auth again.*/
+		g_oplus_optiga_chip->hmac_status.authenticate_result = true;
+	} else {
+		chg_err("get lk auth failed or not support auth in LK.\n");
+		while (retry < OPLUS_OPTIGA_RETRY_COUNT) {
+			ret = oplus_optiga_get_external_auth_hmac();
+			if (ret) {
+				chg_err("get_external_auth_hmac success after retry %d.\n", retry);
+				break;
+			}
+			retry++;
+		}
+	}
+
+	if (!ret) {
+		chg_err("get_external_auth_hmac failed.\n");
+	} else {
+		chg_err("get_external_auth_hmac success.\n");
+	}
+
 	external_auth_chip = devm_kzalloc(&pdev->dev, sizeof(struct oplus_external_auth_chip), GFP_KERNEL);
 	if (!external_auth_chip) {
 		ret = -ENOMEM;

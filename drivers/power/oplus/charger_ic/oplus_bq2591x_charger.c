@@ -24,9 +24,15 @@
 
 #include "oplus_bq2591x_reg.h"
 #include <mt-plat/upmu_common.h>
+#include <mt-plat/mtk_boot.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
 #include <mt-plat/charger_class.h>
 #include <mt-plat/charger_type.h>
-#include <mt-plat/mtk_boot.h>
+#else
+#include <mt-plat/v1/charger_class.h>
+#include <mt-plat/v1/charger_type.h>
+#endif
 
 #include "../../mediatek/charger/mtk_charger_intf.h"
 #include "../oplus_charger.h"
@@ -34,6 +40,7 @@
 extern void set_charger_ic(int sel);
 
 static struct bq2591x *g_bq;
+static int bq2591x_online = false;
 
 enum bq2591x_part_no {
 	BQ25910 = 0x01,
@@ -658,9 +665,14 @@ static int bq2591x_detect_device(struct bq2591x *bq)
 	if (ret == 0) {
 		bq->part_no = (data & BQ2591X_PN_MASK) >> BQ2591X_PN_SHIFT;
 		bq->revision = (data & BQ2591X_DEV_REV_MASK) >> BQ2591X_DEV_REV_SHIFT;
+		bq2591x_online = true;
 	}
-
 	return ret;
+}
+
+bool bq2591x_is_detected(void)
+{
+	return bq2591x_online;
 }
 
 static int bq2591x_set_charge_profile(struct bq2591x *bq)
@@ -988,7 +1000,7 @@ int oplus_bq2591x_hardware_init(void)
 int oplus_bq2591x_set_ichg(int cur)
 {
 	u8 ichg;
-	u8 charge_enabled, ret, reg_val = 0;
+	u8 charge_enabled = 0, ret, reg_val = 0;
 
 	dev_info(g_bq->dev, "%s:%d\n", __func__,cur);
 
@@ -1231,7 +1243,7 @@ int oplus_bq2591x_reset_charger(void)
 
 int oplus_bq2591x_is_charging_done(void)
 {
-	bool done;
+	bool done = false;
 	int ret;
 	u8 val;
 
@@ -1429,15 +1441,17 @@ static int bq2591x_charger_probe(struct i2c_client *client,
 	
 	INIT_DELAYED_WORK(&bq->monitor_work, bq2591x_monitor_workfunc);
 
-	if (client->irq) {
-		ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
-				bq2591x_charger_interrupt,
-				IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
-				"bq2591x charger irq", bq);
-		if (ret < 0) {
-			pr_err("request irq for irq=%d failed,ret =%d\n",
-				client->irq, ret);
-			goto err_irq;
+	if (strcmp(g_bq->chg_dev_name, "secondary_chg") != 0) {
+		if (client->irq) {
+			ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
+					bq2591x_charger_interrupt,
+					IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+					"bq2591x charger irq", bq);
+			if (ret < 0) {
+				pr_err("request irq for irq=%d failed,ret =%d\n",
+					client->irq, ret);
+				goto err_irq;
+			}
 		}
 	}
 

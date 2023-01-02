@@ -95,6 +95,7 @@ struct downlink_score_info_st{
 	u32 downlink_rtt_num;
 	u32 seq;
 	s32 downlink_score_count;
+	u32 downlink_nodata_count;
 	char ifname[IFNAME_LEN];
 };
 
@@ -125,6 +126,7 @@ static u32 para_loss = 16;
 #define WORST_RTT_THRESH 400
 #define WORSE_RTT_THRESH 300
 #define NORMAL_RTT_THRESH 200
+#define BAD_GAME_RTT_THREAD 170
 #define WORST_BASE_SCORE 59
 #define WORSE_BASE_SCORE 70
 #define NORMAL_BASE_SCORE 80
@@ -286,13 +288,16 @@ void oplus_score_calc_and_report(void)
 	u32 downlink_packets, downlink_retrans_packets, downlink_srtt;
 	s32 uplink_score, downlink_score;
 	u32 uplink_seq, downlink_seq;
-	u32 retrans_rate;
+	u32 retrans_rate = 0;
 	s32 uplink_smooth_score, downlink_smooth_score;
-	u32 index;
+	u32 index = 0;
 	int uplink_report, downlink_report;
 	char ifname[IFNAME_LEN];
 	u32 uplink_nodata_count;
+	u32 downlink_nodata_count;
 	int downlink_rate = 0;
+	u32 uplink_total_packets = 0;
+	u32 downlink_total_packets = 0;
 
 	/* printk("[oplus_score]:enter oplus_score_calc_and_report,jiffies=%llu\n", jiffies);*/
 	for (i = 0; i < MAX_LINK_NUM; i++) {
@@ -308,12 +313,14 @@ void oplus_score_calc_and_report(void)
 		downlink_index = downlink_score_info[i].link_index;
 		downlink_packets = downlink_score_info[i].downlink_packets;
 		downlink_retrans_packets = downlink_score_info[i].downlink_retrans_packets;
+		downlink_total_packets = downlink_packets + downlink_retrans_packets;
 		downlink_srtt = downlink_score_info[i].downlink_srtt;
 		downlink_seq = downlink_score_info[i].seq;
 		downlink_score_info[i].downlink_packets = 0;
 		downlink_score_info[i].downlink_retrans_packets = 0;
 		/*downlink_score_info[i].downlink_srtt = 0;*/
 		downlink_score_info[i].downlink_rtt_num = 1;
+		downlink_nodata_count = downlink_score_info[i].downlink_nodata_count;
 		spin_unlock_bh(&downlink_score_lock);
 
 		spin_lock_bh(&uplink_score_lock);
@@ -325,11 +332,13 @@ void oplus_score_calc_and_report(void)
 		if (uplink_index != downlink_index) {
 			printk("[oplus_score]:link error:uplink_index=%u,downlink_index=%u\n",
 				uplink_index, downlink_index);
+			spin_unlock_bh(&uplink_score_lock);
 			continue;
 		}
 		memcpy((void*)ifname, (void*)uplink_score_info[i].ifname, IFNAME_LEN);
 		uplink_packets = uplink_score_info[i].uplink_packets;
 		uplink_retrans_packets = uplink_score_info[i].uplink_retrans_packets;
+		uplink_total_packets = uplink_packets + uplink_retrans_packets;
 		uplink_srtt = uplink_score_info[i].uplink_srtt;
 		uplink_seq = uplink_score_info[i].seq;
 		uplink_nodata_count = uplink_score_info[i].uplink_nodata_count;
@@ -340,7 +349,7 @@ void oplus_score_calc_and_report(void)
 			uplink_score_info[i].uplink_rtt_num = 1;
 		}
 
-		if (uplink_packets + uplink_retrans_packets == 0) {
+		if (uplink_total_packets == 0) {
 			if (oplus_score_debug) {
 				printk("[oplus_score]:uplink no_data\n");
 			}
@@ -348,10 +357,12 @@ void oplus_score_calc_and_report(void)
 			uplink_score_info[i].uplink_nodata_count++;
 		} else {
 			uplink_score_info[i].uplink_nodata_count = 0;
-			retrans_rate = 100 * uplink_retrans_packets / (uplink_packets + uplink_retrans_packets);
+			retrans_rate = 100 * uplink_retrans_packets / uplink_total_packets;
 			if (uplink_packets > ((para_rate * PACKET_PER_SEC) >> 3)) {
 				uplink_score = (s32)(GOOD_BASE_SCORE - (retrans_rate * para_loss) / 8);
-			} else {
+			} /*else if (uplink_srtt > BAD_GAME_RTT_THREAD && (uplink_total_packets < 10) && (downlink_total_packets < 10)) {
+				uplink_score = (s32)(WORST_BASE_SCORE - (WORST_BASE_SCORE * retrans_rate * para_loss) / 800);
+			} */else {
 				if (uplink_srtt > WORST_VIDEO_RTT_THRESH) {
 					uplink_score = (s32)(WORST_BASE_SCORE - (WORST_BASE_SCORE * retrans_rate * para_loss) / 800);
 				} else if (uplink_srtt > WORST_RTT_THRESH) {
@@ -380,10 +391,8 @@ void oplus_score_calc_and_report(void)
 
 		uplink_report = oplus_update_score_count(i, uplink_score, OPLUS_UPLINK);
 		if (uplink_report) {
-			if (uplink_score != -1) {
-				index = uplink_score_info[i].uplink_score_index++ % SCORE_WINDOW;
-				uplink_score_info[i].uplink_score_save[index] = uplink_score;
-			}
+			index = uplink_score_info[i].uplink_score_index++ % SCORE_WINDOW;
+			uplink_score_info[i].uplink_score_save[index] = uplink_score;
 		}
 		uplink_smooth_score = oplus_get_smooth_score(i, OPLUS_UPLINK);
 		if (uplink_smooth_score == -1) {
@@ -391,20 +400,23 @@ void oplus_score_calc_and_report(void)
 		}
 		spin_unlock_bh(&uplink_score_lock);
 
-		if (oplus_score_debug) {
-			printk("[oplus_score]:up_score:link=%u,if=%s,up_pack=%u,up_retran=%u,up_rtt=%u,score=%d,s_score=%d,seq=%u,uid=%u,retrans_rate=%u,index=%u,nodata=%u\n",
-				uplink_index, ifname, uplink_packets, uplink_retrans_packets, uplink_srtt, uplink_score,
-				uplink_smooth_score, uplink_seq, oplus_score_foreground_uid[0], retrans_rate, index, uplink_nodata_count);
+		if (oplus_score_debug || (uplink_smooth_score > 0 && uplink_smooth_score <= WORST_BASE_SCORE)) {
+			if (net_ratelimit())
+				printk("[oplus_score]:up_score:link=%u,if=%s,up_pack=%u,up_retran=%u,up_rtt=%u,score=%d,s_score=%d,seq=%u,uid=%u,retrans_rate=%u,index=%u,nodata=%u\n",
+					uplink_index, ifname, uplink_packets, uplink_retrans_packets, uplink_srtt, uplink_score,
+					uplink_smooth_score, uplink_seq, oplus_score_foreground_uid[0], retrans_rate, index, uplink_nodata_count);
 		}
 
 		/*start downlink score calc*/
-		if (downlink_packets + downlink_retrans_packets == 0) {
+		if (downlink_total_packets == 0) {
 			if (oplus_score_debug) {
 				printk("[oplus_score]:downlink no_data,if=%s\n", ifname);
 			}
 			downlink_score = -1;
+			downlink_score_info[i].downlink_nodata_count++;
 		} else {
-			retrans_rate = 100 * downlink_retrans_packets / (downlink_packets + downlink_retrans_packets);
+			downlink_score_info[i].downlink_nodata_count = 0;
+			retrans_rate = 100 * downlink_retrans_packets / downlink_total_packets;
 			if (downlink_packets > ((para_rate * PACKET_PER_SEC) >> 3)) {
 				downlink_score = (s32)(GOOD_BASE_SCORE - retrans_rate * para_loss / 4);
 			} else {
@@ -420,29 +432,27 @@ void oplus_score_calc_and_report(void)
 			}
 		}
 
-		if ((downlink_packets + downlink_retrans_packets < 15) && (downlink_score > WORST_BASE_SCORE)) {
+		if ((downlink_total_packets < 15) && (downlink_score > WORST_BASE_SCORE)) {
 			downlink_score = -1;
 		}
 
 		spin_lock_bh(&downlink_score_lock);
 		downlink_report = oplus_update_score_count(i, downlink_score, OPLUS_DOWNLINK);
 		if (downlink_report) {
-			if (downlink_score != -1) {
-				index = downlink_score_info[i].downlink_score_index++ % SCORE_WINDOW;
-				downlink_score_info[i].downlink_score_save[index] = downlink_score;
-			}
+			index = downlink_score_info[i].downlink_score_index++ % SCORE_WINDOW;
+			downlink_score_info[i].downlink_score_save[index] = downlink_score;
 		}
 		downlink_smooth_score = oplus_get_smooth_score(i, OPLUS_DOWNLINK);
 		if (downlink_smooth_score == -1) {
-				downlink_report = 0;
+			downlink_report = 0;
 		}
-
 		spin_unlock_bh(&downlink_score_lock);
 
-		if (oplus_score_debug) {
-			printk("[oplus_score]:down_score:link=%u,if=%s,down_pack=%u,down_retran=%u,down_rtt=%u,score=%d,s_score=%d,seq=%u,uid=%u,retrans_rate=%u,index=%u\n",
-				downlink_index, ifname, downlink_packets, downlink_retrans_packets, downlink_srtt, downlink_score,
-				downlink_smooth_score, downlink_seq, oplus_score_foreground_uid[0], retrans_rate, index);
+		if (oplus_score_debug || (downlink_smooth_score > 0 && downlink_smooth_score <= WORST_BASE_SCORE)) {
+			if (net_ratelimit())
+				printk("[oplus_score]:down_score:link=%u,if=%s,down_pack=%u,down_retran=%u,rtt=%u,score=%d,s_score=%d,seq=%u,uid=%u,retrans_rate=%u,index=%u,nodata=%u\n",
+					downlink_index, ifname, downlink_packets, downlink_retrans_packets, uplink_srtt, downlink_score,
+					downlink_smooth_score, downlink_seq, oplus_score_foreground_uid[0], retrans_rate, index, downlink_nodata_count);
 		}
 
 		if (uplink_report || downlink_report) {
@@ -460,9 +470,12 @@ void oplus_score_calc_and_report(void)
 			}
 
 			oplus_score_send_netlink_msg(OPLUS_SCORE_MSG_REPORT_NETWORK_SCORE, (char *)&link_score_msg, sizeof(link_score_msg));
-			printk("[oplus_score]:report_score1:link=%u,if=%s,up_score=%d,down_score=%d,uid=%u,ul_p=%d,dl_p=%d\n",
-					uplink_index, ifname, link_score_msg.uplink_score, link_score_msg.downlink_score,
-					oplus_score_foreground_uid[0], uplink_report, downlink_report);
+			if (oplus_score_debug || (downlink_smooth_score <= WORST_BASE_SCORE) || (uplink_smooth_score <= WORST_BASE_SCORE)) {
+				if (net_ratelimit())
+					printk("[oplus_score]:report_score1:link=%u,if=%s,up_score=%d,down_score=%d,uid=%u,ul_p=%d,dl_p=%d\n",
+						uplink_index, ifname, link_score_msg.uplink_score, link_score_msg.downlink_score,
+						oplus_score_foreground_uid[0], uplink_report, downlink_report);
+			}
 		}
 
 		if (oplus_score_debug) {
@@ -484,14 +497,13 @@ static void oplus_score_report_timer_function(struct timer_list *t)
 static void oplus_score_report_timer_init(void)
 {
 	printk("[oplus_score]:report_timer_init\n");
-	timer_setup(&oplus_score_report_timer,
-		    (void *)oplus_score_report_timer_function, 0);
+	timer_setup(&oplus_score_report_timer, oplus_score_report_timer_function, 0);
 }
 
 static void oplus_score_report_timer_start(void)
 {
 	printk("[oplus_score]:report_timer_start\n");
-	oplus_score_report_timer.function = (void *)oplus_score_report_timer_function;
+	/*oplus_score_report_timer.function = (void *)oplus_score_report_timer_function;*/
 	oplus_score_report_timer.expires = jiffies + REPORT_PERIOD * HZ;
 	mod_timer(&oplus_score_report_timer, oplus_score_report_timer.expires);
 }
@@ -673,10 +685,10 @@ static int is_downlink_retrans_pack(u32 skb_seq, struct sock *sk)
 	struct inet_connection_sock *icsk = inet_csk(sk);
 	u32 now = (u32)jiffies;
 
-	if(skb_seq == tp->rcv_nxt && !RB_EMPTY_ROOT(&tp->out_of_order_queue)) {
+	if((skb_seq == tp->rcv_nxt) && (!RB_EMPTY_ROOT(&tp->out_of_order_queue))) {
 		int m = (int)(now - icsk->icsk_ack.lrcvtime) * 1000 / HZ;
 		int half_rtt = (tp->srtt_us / 8000) >> 1;
-		if ((tp->srtt_us !=0) && (m > 50)) {
+		if ((tp->srtt_us != 0) && (m > 50)) {
 			if (oplus_score_debug) {
 				printk("[oplus_score]:now=%u,lrcttime=%u,half_rtt=%d,m=%d,Hz=%u,rtt=%u,seq=%u\n",
 					now, icsk->icsk_ack.lrcvtime, half_rtt, m, HZ, tp->srtt_us, skb_seq);
@@ -983,6 +995,7 @@ static void oplus_score_set_foreground_uid(struct nlattr *nla)
 	for (i = 0; i < MAX_LINK_NUM; i++) {
 		downlink_score_info[i].downlink_retrans_packets = 0;
 		downlink_score_info[i].downlink_packets = 0;
+		downlink_score_info[i].downlink_nodata_count = 0;
 		/*downlink_score_info[i].downlink_score = MAX_LINK_SCORE;*/
 	}
 	spin_unlock_bh(&downlink_score_lock);
@@ -1045,15 +1058,12 @@ static void oplus_score_add_uplink(u32 link_index, struct net_device *dev)
 		if (uplink_score_info[i].link_index != 0)
 			continue;
 
+		memset(&uplink_score_info[i], 0, sizeof(struct uplink_score_info_st));
 		uplink_score_info[i].link_index = link_index;
 		memcpy((void*)uplink_score_info[i].ifname, (void*)dev->name, IFNAME_LEN);
-		uplink_score_info[i].uplink_retrans_packets = 0;
-		uplink_score_info[i].uplink_packets = 0;
-		uplink_score_info[i].uplink_nodata_count = 0;
 		for (j = 0; j < SCORE_WINDOW; j++) {
 			uplink_score_info[i].uplink_score_save[j] = -1;
 		}
-		uplink_score_info[i].uplink_score_index = 0;
 		oplus_score_uplink_num++;
 		printk("[oplus_score]:up:add_link finish,link_index=%u,i=%d,link_num=%u", link_index, i, oplus_score_uplink_num);
 		break;
@@ -1081,14 +1091,12 @@ static void oplus_score_add_downlink(u32 link_index, struct net_device *dev)
 		if (downlink_score_info[i].link_index != 0)
 			continue;
 
+		memset(&downlink_score_info[i], 0, sizeof(struct downlink_score_info_st));
 		downlink_score_info[i].link_index = link_index;
 		memcpy((void*)uplink_score_info[i].ifname, (void*)dev->name, IFNAME_LEN);
-		downlink_score_info[i].downlink_retrans_packets = 0;
-		downlink_score_info[i].downlink_packets = 0;
 		for (j = 0; j < SCORE_WINDOW; j++) {
 			downlink_score_info[i].downlink_score_save[j] = -1;
 		}
-		uplink_score_info[i].uplink_score_index = 0;
 		oplus_score_downlink_num++;
 		printk("[oplus_score]:down:add_link finish,link_index=%u,i=%d,link_num=%u", link_index, i, oplus_score_downlink_num);
 		break;
@@ -1134,7 +1142,7 @@ static void oplus_score_add_link(struct nlattr *nla)
 static void oplus_score_del_link(struct nlattr *nla)
 {
 	u32 *data;
-	u32 i, j, link_index;
+	u32 i, link_index;
 
 	data = (u32 *)NLA_DATA(nla);
 	link_index = data[0];
@@ -1150,14 +1158,7 @@ static void oplus_score_del_link(struct nlattr *nla)
 	spin_lock_bh(&uplink_score_lock);
 	for (i = 0; i < MAX_LINK_NUM; i++) {
 		if (uplink_score_info[i].link_index == link_index) {
-			uplink_score_info[i].link_index = 0;
-			uplink_score_info[i].uplink_retrans_packets = 0;
-			uplink_score_info[i].uplink_packets = 0;
-			uplink_score_info[i].uplink_nodata_count = 0;
-			for (j = 0; j < SCORE_WINDOW; j++) {
-				uplink_score_info[i].uplink_score_save[j] = -1;
-			}
-			uplink_score_info[i].uplink_score_index = 0;
+			memset(&uplink_score_info[i], 0, sizeof(struct uplink_score_info_st));
 			oplus_score_uplink_num--;
 		}
 	}
@@ -1166,13 +1167,7 @@ static void oplus_score_del_link(struct nlattr *nla)
 	spin_lock_bh(&downlink_score_lock);
 	for (i = 0; i < MAX_LINK_NUM; i++) {
 		if (downlink_score_info[i].link_index == link_index) {
-			downlink_score_info[i].link_index = 0;
-			downlink_score_info[i].downlink_retrans_packets = 0;
-			downlink_score_info[i].downlink_packets = 0;
-			for (j = 0; j < SCORE_WINDOW; j++) {
-				downlink_score_info[i].downlink_score_save[j] = -1;
-			}
-			downlink_score_info[i].downlink_score_index = 0;
+			memset(&downlink_score_info[i], 0, sizeof(struct downlink_score_info_st));
 			oplus_score_downlink_num--;
 		}
 	}
@@ -1183,31 +1178,18 @@ static void oplus_score_del_link(struct nlattr *nla)
 
 static void oplus_score_clear_link(struct nlattr *nla)
 {
-	int i, j;
+	int i;
 
 	spin_lock_bh(&uplink_score_lock);
 	for (i = 0; i < MAX_LINK_NUM; i++) {
-		uplink_score_info[i].link_index = 0;
-		uplink_score_info[i].uplink_retrans_packets = 0;
-		uplink_score_info[i].uplink_packets = 0;
-		uplink_score_info[i].uplink_nodata_count = 0;
-		for (j = 0; j < SCORE_WINDOW; j++) {
-			uplink_score_info[i].uplink_score_save[j] = -1;
-		}
-		uplink_score_info[i].uplink_score_index = 0;
+		memset(&uplink_score_info[i], 0, sizeof(struct uplink_score_info_st));
 	}
 	oplus_score_uplink_num = 0;
 	spin_unlock_bh(&uplink_score_lock);
 
 	spin_lock_bh(&downlink_score_lock);
 	for (i = 0; i < MAX_LINK_NUM; i++) {
-		downlink_score_info[i].link_index = 0;
-		downlink_score_info[i].downlink_retrans_packets = 0;
-		downlink_score_info[i].downlink_packets = 0;
-		for (j = 0; j < SCORE_WINDOW; j++) {
-			downlink_score_info[i].downlink_score_save[j] = -1;
-		}
-		downlink_score_info[i].downlink_score_index = 0;
+		memset(&downlink_score_info[i], 0, sizeof(struct downlink_score_info_st));
 	}
 	oplus_score_downlink_num = 0;
 	spin_unlock_bh(&downlink_score_lock);

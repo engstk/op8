@@ -51,6 +51,7 @@
 		oplus,sec_en_anti_reg = <0x7801CC>;
 		oplus,sec_override1_reg = <0x7860C0>;
 		oplus,override1_en_value = <0x1>;
+		oplus,cryptokey_unsupport_status = <0x1>;
 	};
 	// #endif /* OPLUS_FEATURE_SECURITY_COMMON */
 };

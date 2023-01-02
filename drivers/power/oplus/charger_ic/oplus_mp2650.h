@@ -20,8 +20,13 @@
 
 #endif /* CONFIG_OPLUS_CHARGER_MTK */
 #include "../oplus_charger.h"
+#include "../oplus_pps.h"
 
 #define WPC_PRECHARGE_CURRENT								480
+#define NORMAL_CHECK_UPDATE_INTERVAL							5
+#define URGENT_CHECK_THRESHOLD								3
+
+
 
 #define MP2650_FIRST_REG										0x00
 #define MP2650_DUMP_MAX_REG										    0x22
@@ -39,18 +44,25 @@
 #define REG00_MP2650_1ST_CURRENT_LIMIT_OFFSET                  0
 #define REG00_MP2650_1ST_CURRENT_LIMIT_STEP                    50    //default 3A
 #define REG00_MP2650_1ST_CURRENT_LIMIT_500MA                  (BIT(3) | BIT(1))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_800MA                   BIT(4)
 #define REG00_MP2650_1ST_CURRENT_LIMIT_900MA                  (BIT(4) | BIT(1))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1100MA                  (BIT(4) | BIT(2) | BIT(1))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1200MA                  (BIT(4) | BIT(3))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1350MA                  (BIT(4) | BIT(3) | BIT(1) | BIT(0))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1400MA                  (BIT(4) |BIT(3) |BIT(2))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1500MA                  (BIT(4) |BIT(3) |BIT(2) |BIT(1))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1600MA                  (BIT(5))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1700MA                  (BIT(5) | BIT(1))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_1900MA                  (BIT(5) | BIT(2) | BIT(1))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_2000MA                  (BIT(5) | BIT(3))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_2400MA                  (BIT(5) | BIT(4))
-#define REG00_MP2650_1ST_CURRENT_LIMIT_3600MA                  (BIT(6) | BIT(3))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1000MA                 (BIT(4) | BIT(2))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1100MA                 (BIT(4) | BIT(2) | BIT(1))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1200MA                 (BIT(4) | BIT(3))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1350MA                 (BIT(4) | BIT(3) | BIT(1) | BIT(0))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1400MA                 (BIT(4) |BIT(3) |BIT(2))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1500MA                 (BIT(4) |BIT(3) |BIT(2) |BIT(1))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1600MA                 (BIT(5))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1700MA                 (BIT(5) | BIT(1))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1750MA                 (BIT(5) | BIT(1) | BIT(0))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_1900MA                 (BIT(5) | BIT(2) | BIT(1))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_2000MA                 (BIT(5) | BIT(3))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_2200MA                 (BIT(5) | BIT(3) | BIT(2))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_2400MA                 (BIT(5) | BIT(4))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_2500MA                 (BIT(5) | BIT(4) | BIT(1))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_2750MA                 (BIT(5) | BIT(4) | BIT(2) | BIT(1) | BIT(0))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_3000MA                 (BIT(5) | BIT(4) | BIT(3) | BIT(2))
+#define REG00_MP2650_1ST_CURRENT_LIMIT_3600MA                 (BIT(6) | BIT(3))
 
 /* Address:01h */
 #define REG01_MP2650_ADDRESS                                   0x01
@@ -572,6 +584,17 @@
 #define REG53_MP2650_ADDRESS                                 0x53
 #define REG3E_MP2650_ADDRESS                                 0x3E
 
+#define MP2762_AICL_POINT_VOL_9V		8500
+
+#define MP2762_AICL_POINT_VOL_PHASE1		4000
+#define MP2762_HW_AICL_POINT_5V_PHASE1		4440
+#define MP2762_SW_AICL_POINT_5V_PHASE1		4500
+
+#define MP2762_AICL_POINT_VOL_PHASE2		4140
+#define MP2762HW_AICL_POINT_5V_PHASE2		4520
+#define MP2762SW_AICL_POINT_5V_PHASE2		4535
+
+#define WAIT_RESUME_MAX_TRY_TIME                30
 
 enum {
 	OVERTIME_AC = 0,
@@ -579,22 +602,35 @@ enum {
 	OVERTIME_DISABLED,
 };
 
+enum {
+	INPUT_CURRENT_LIMIT_INDEX_0,
+	INPUT_CURRENT_LIMIT_INDEX_1,
+	INPUT_CURRENT_LIMIT_INDEX_2,
+	INPUT_CURRENT_LIMIT_INDEX_3,
+	INPUT_CURRENT_LIMIT_INDEX_4,
+	INPUT_CURRENT_LIMIT_INDEX_5,
+	INPUT_CURRENT_LIMIT_INDEX_6,
+	INPUT_CURRENT_LIMIT_INDEX_7,
+	INPUT_CURRENT_LIMIT_INDEX_8,
+	INPUT_CURRENT_LIMIT_INDEX_9,
+	INPUT_CURRENT_LIMIT_INDEX_10,
+	INPUT_CURRENT_LIMIT_INDEX_MAX,
+};
 
 struct chip_mp2650 {
-        struct i2c_client           *client;
-        struct device               *dev;
-        int                         hw_aicl_point;
-        int                         sw_aicl_point;
-        int         pre_current_ma;
+        struct i2c_client	*client;
+        struct device		*dev;
+        int			hw_aicl_point;
+        int			sw_aicl_point;
+        int			pre_current_ma;
 
-        struct pinctrl                       *pinctrl;
-        
-        int         mps_otg_en_gpio;
+        struct pinctrl		*pinctrl;
+
+        int			mps_otg_en_gpio;
         struct pinctrl_state    *mps_otg_en_active;
         struct pinctrl_state    *mps_otg_en_sleep;
         struct pinctrl_state    *mps_otg_en_default;
-
-        atomic_t                    charger_suspended;
+	atomic_t		charger_suspended;
         bool                    probe_flag;
 };
 
@@ -630,7 +666,21 @@ extern int mp2650_otg_disable(void);
 extern int mp2650_otg_wait_vbus_decline(void);
 extern void mp2650_dump_registers(void);
 extern int mp2650_set_voltage_slew_rate(int value);
+extern int mp2650_reset_charger(void);
+extern int mp2650_set_prechg_voltage_threshold(void);
+extern int mp2650_disable_buck_switch(void);
+extern int mp2650_input_current_limit_without_aicl(int current_ma);
+extern int mp2650_enable_buck_switch(void);
+extern int mp2650_set_switching_frequency(void);
+extern int mp2650_set_mps_otg_current(void);
+extern int mp2650_set_mps_otg_voltage(bool is_9V);
+extern int mp2650_set_mps_second_otg_voltage(bool is_750mv);
 extern int mp2650_wireless_get_mps_otg_en_val(void);
+extern int mp2650_get_termchg_voltage(void);
+extern int mp2650_get_termchg_current(void);
+extern void mp2650_wireless_set_mps_otg_en_val(int value);
+extern int mp2650_enable_async_mode(void);
+extern int mp2650_disable_async_mode(void);
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 extern int battery_meter_get_charger_voltage(void);
 extern void oplus_mt_power_off(void);
@@ -677,22 +727,12 @@ extern bool oplus_usbtemp_condition(void);
 extern int oplus_set_bcc_curr_to_voocphy(int bcc_curr);
 extern int mp2650_otg_ilim_set(int ilim);
 extern int mp2650_get_vbus_voltage(void);
-extern void mp2650_wireless_set_mps_otg_en_val(int value);
-extern int mp2650_wireless_get_mps_otg_en_val(void);
-extern int mp2650_set_mps_otg_voltage(bool is_9V);
-extern int mp2650_set_mps_second_otg_voltage(bool is_750mv);
-extern int mp2650_set_mps_otg_current(void);
-extern int mp2650_input_current_limit_without_aicl(int current_ma);
-extern int mp2650_enable_buck_switch(void);
-extern int mp2650_disable_buck_switch(void);
+
 extern int mp2650_enable_async_mode(void);
 extern int mp2650_disable_async_mode(void);
-extern int mp2650_get_termchg_voltage(void);
-extern int mp2650_get_termchg_current(void);
-extern int mp2650_reset_charger(void);
-extern int mp2650_set_prechg_voltage_threshold(void);
-extern int mp2650_set_switching_frequency(void);
+
 extern int mp2650_set_prochot_psys_cfg(void);
+extern int oplus_pps_get_support_type(void);
 #endif/* CONFIG_OPLUS_CHARGER_MTK */
 extern int mp2650_get_ibus_current(void);
 

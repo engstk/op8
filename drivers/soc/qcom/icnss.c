@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2015-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021, The Linux Foundation. All rights reserved.
  */
 
 #define pr_fmt(fmt) "icnss: " fmt
@@ -654,6 +654,15 @@ bool icnss_is_fw_ready(void)
 }
 EXPORT_SYMBOL(icnss_is_fw_ready);
 
+unsigned long icnss_get_device_config(void)
+{
+	if (!penv)
+		return 0;
+
+	return penv->device_config;
+}
+EXPORT_SYMBOL(icnss_get_device_config);
+
 void icnss_block_shutdown(bool status)
 {
 	if (!penv)
@@ -1081,26 +1090,26 @@ static int icnss_driver_event_server_arrive(void *data)
 			goto qmi_registered;
 		}
 		ignore_assert = true;
-		goto clear_server;
+		goto fail;
 	}
 
 	if (!penv->msa_va) {
 		icnss_pr_err("Invalid MSA address\n");
 		ret = -EINVAL;
-		goto clear_server;
+		goto fail;
 	}
 
 	ret = wlfw_msa_mem_info_send_sync_msg(penv);
 	if (ret < 0) {
 		ignore_assert = true;
-		goto clear_server;
+		goto fail;
 	}
 
 	if (!test_bit(ICNSS_MSA0_ASSIGNED, &penv->state)) {
 		ret = icnss_assign_msa_perm_all(penv,
 						ICNSS_MSA_PERM_WLAN_HW_RW);
 		if (ret < 0)
-			goto clear_server;
+			goto fail;
 		set_bit(ICNSS_MSA0_ASSIGNED, &penv->state);
 	}
 
@@ -1140,8 +1149,6 @@ static int icnss_driver_event_server_arrive(void *data)
 err_setup_msa:
 	icnss_assign_msa_perm_all(penv, ICNSS_MSA_PERM_HLOS_ALL);
 	clear_bit(ICNSS_MSA0_ASSIGNED, &penv->state);
-clear_server:
-	icnss_clear_server(penv);
 fail:
 	ICNSS_ASSERT(ignore_assert);
 qmi_registered:
@@ -3806,6 +3813,14 @@ static int icnss_smmu_dt_parse(struct icnss_priv *priv)
 	return 0;
 }
 
+static void icnss_read_device_configs(struct icnss_priv *priv)
+{
+	if (of_property_read_bool(priv->pdev->dev.of_node,
+				  "wlan-ipa-disabled")) {
+		set_bit(ICNSS_IPA_DISABLED, &priv->device_config);
+	}
+}
+
 static int icnss_probe(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -3832,6 +3847,8 @@ static int icnss_probe(struct platform_device *pdev)
 	priv->is_chain1_supported = true;
 
 	icnss_allow_recursive_recovery(dev);
+
+	icnss_read_device_configs(priv);
 
 	ret = icnss_resource_parse(priv);
 	if (ret)

@@ -612,7 +612,7 @@
 };
 
 &sde_dsi {
-	qcom,dsi-default-panel = <&dsi_oppo19101samsung_amb655uv01_1080_2400_cmd>;
+	qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
 };
 //#endif
 &thermal_zones {

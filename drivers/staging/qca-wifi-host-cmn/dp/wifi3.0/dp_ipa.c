@@ -129,29 +129,8 @@ QDF_STATUS dp_ipa_handle_rx_buf_smmu_mapping(struct dp_soc *soc,
 	    !qdf_mem_smmu_s1_enabled(soc->osdev))
 		return QDF_STATUS_SUCCESS;
 
-	/**
-	 * Even if ipa pipes is disabled, but if it's unmap
-	 * operation and nbuf has done ipa smmu map before,
-	 * do ipa smmu unmap as well.
-	 */
-	if (!qdf_atomic_read(&soc->ipa_pipes_enabled)) {
-		if (!create && qdf_nbuf_is_rx_ipa_smmu_map(nbuf)) {
-			DP_STATS_INC(soc, rx.err.ipa_unmap_no_pipe, 1);
-		} else {
-			return QDF_STATUS_SUCCESS;
-		}
-	}
-
-	if (qdf_unlikely(create == qdf_nbuf_is_rx_ipa_smmu_map(nbuf))) {
-		if (create) {
-			DP_STATS_INC(soc, rx.err.ipa_smmu_map_dup, 1);
-		} else {
-			DP_STATS_INC(soc, rx.err.ipa_smmu_unmap_dup, 1);
-		}
-		return QDF_STATUS_E_INVAL;
-	}
-
-	qdf_nbuf_set_rx_ipa_smmu_map(nbuf, create);
+	if (!qdf_atomic_read(&soc->ipa_pipes_enabled))
+		return QDF_STATUS_SUCCESS;
 
 	return __dp_ipa_handle_buf_smmu_mapping(soc, nbuf, create);
 }
@@ -189,19 +168,6 @@ static QDF_STATUS dp_ipa_handle_rx_buf_pool_smmu_mapping(struct dp_soc *soc,
 			continue;
 		nbuf = rx_desc->nbuf;
 
-		if (qdf_unlikely(create ==
-				 qdf_nbuf_is_rx_ipa_smmu_map(nbuf))) {
-			if (create) {
-				DP_STATS_INC(soc,
-					     rx.err.ipa_smmu_map_dup, 1);
-			} else {
-				DP_STATS_INC(soc,
-					     rx.err.ipa_smmu_unmap_dup, 1);
-			}
-			continue;
-		}
-		qdf_nbuf_set_rx_ipa_smmu_map(nbuf, create);
-
 		__dp_ipa_handle_buf_smmu_mapping(soc, nbuf, create);
 	}
 	qdf_spin_unlock_bh(&rx_pool->lock);
@@ -231,18 +197,6 @@ static QDF_STATUS dp_ipa_handle_rx_buf_pool_smmu_mapping(struct dp_soc *soc,
 			continue;
 
 		nbuf = rx_pool->array[i].rx_desc.nbuf;
-		if (qdf_unlikely(create ==
-				 qdf_nbuf_is_rx_ipa_smmu_map(nbuf))) {
-			if (create) {
-				DP_STATS_INC(soc,
-					     rx.err.ipa_smmu_map_dup, 1);
-			} else {
-				DP_STATS_INC(soc,
-					     rx.err.ipa_smmu_unmap_dup, 1);
-			}
-			continue;
-		}
-		qdf_nbuf_set_rx_ipa_smmu_map(nbuf, create);
 
 		__dp_ipa_handle_buf_smmu_mapping(soc, nbuf, create);
 	}
@@ -744,6 +698,7 @@ QDF_STATUS dp_ipa_set_doorbell_paddr(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 			soc->reo_dest_ring[IPA_REO_DEST_RING_IDX].hal_srng;
 	uint32_t tx_comp_doorbell_dmaaddr;
 	uint32_t rx_ready_doorbell_dmaaddr;
+	int ret = 0;
 
 	if (!pdev) {
 		dp_err("%s invalid instance", __func__);
@@ -758,13 +713,19 @@ QDF_STATUS dp_ipa_set_doorbell_paddr(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 				ioremap(ipa_res->tx_comp_doorbell_paddr, 4);
 
 	if (qdf_mem_smmu_s1_enabled(soc->osdev)) {
-		pld_smmu_map(soc->osdev->dev, ipa_res->tx_comp_doorbell_paddr,
-			     &tx_comp_doorbell_dmaaddr, sizeof(uint32_t));
+		ret = pld_smmu_map(soc->osdev->dev,
+				   ipa_res->tx_comp_doorbell_paddr,
+				   &tx_comp_doorbell_dmaaddr,
+				   sizeof(uint32_t));
 		ipa_res->tx_comp_doorbell_paddr = tx_comp_doorbell_dmaaddr;
+		qdf_assert_always(!ret);
 
-		pld_smmu_map(soc->osdev->dev, ipa_res->rx_ready_doorbell_paddr,
-			     &rx_ready_doorbell_dmaaddr, sizeof(uint32_t));
+		ret = pld_smmu_map(soc->osdev->dev,
+				   ipa_res->rx_ready_doorbell_paddr,
+				   &rx_ready_doorbell_dmaaddr,
+				   sizeof(uint32_t));
 		ipa_res->rx_ready_doorbell_paddr = rx_ready_doorbell_dmaaddr;
+		qdf_assert_always(!ret);
 	}
 
 	DP_IPA_SET_TX_DB_PADDR(soc, ipa_res);
@@ -1328,6 +1289,7 @@ QDF_STATUS dp_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 
 	dp_debug("Add Partial hdr: %s, "QDF_MAC_ADDR_FMT, ifname,
 		 QDF_MAC_ADDR_REF(mac_addr));
+	qdf_mem_zero(&in, sizeof(qdf_ipa_wdi_reg_intf_in_params_t));
 	qdf_mem_zero(&hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	qdf_ether_addr_copy(uc_tx_hdr.eth.h_source, mac_addr);
 
@@ -1585,6 +1547,7 @@ QDF_STATUS dp_ipa_setup_iface(char *ifname, uint8_t *mac_addr,
 		  "%s: Add Partial hdr: %s, "QDF_MAC_ADDR_FMT,
 		  __func__, ifname, QDF_MAC_ADDR_REF(mac_addr));
 
+	qdf_mem_zero(&in, sizeof(qdf_ipa_wdi_reg_intf_in_params_t));
 	qdf_mem_zero(&hdr_info, sizeof(qdf_ipa_wdi_hdr_info_t));
 	qdf_ether_addr_copy(uc_tx_hdr.eth.h_source, mac_addr);
 
@@ -1666,14 +1629,12 @@ QDF_STATUS dp_ipa_cleanup(struct cdp_soc_t *soc_hdl, uint8_t pdev_id,
 		ret = pld_smmu_unmap(soc->osdev->dev,
 				     ipa_res->rx_ready_doorbell_paddr,
 				     sizeof(uint32_t));
-		if (ret)
-			dp_err_rl("IPA RX DB smmu unmap failed");
+		qdf_assert_always(!ret);
 
 		ret = pld_smmu_unmap(soc->osdev->dev,
 				     ipa_res->tx_comp_doorbell_paddr,
 				     sizeof(uint32_t));
-		if (ret)
-			dp_err_rl("IPA TX DB smmu unmap failed");
+		qdf_assert_always(!ret);
 	}
 
 exit:
@@ -1774,40 +1735,11 @@ QDF_STATUS dp_ipa_enable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 	return QDF_STATUS_SUCCESS;
 }
 
-/*
- * dp_ipa_get_tx_comp_pending_check() - Check if tx completions are pending.
- * @soc: DP pdev Context
- *
- * Ring full condition is checked to find if buffers are left for
- * processing as host only allocates buffers in this ring and IPA HW processes
- * the buffer.
- *
- * Return: True if tx completions are pending
- */
-static bool dp_ipa_get_tx_comp_pending_check(struct dp_soc *soc)
-{
-	struct dp_srng *tx_comp_ring =
-				&soc->tx_comp_ring[IPA_TX_COMP_RING_IDX];
-	uint32_t hp, tp, entry_size, buf_cnt;
-
-	hal_get_hw_hptp(soc->hal_soc, tx_comp_ring->hal_srng, &hp, &tp,
-			WBM2SW_RELEASE);
-	entry_size = hal_srng_get_entrysize(soc->hal_soc, WBM2SW_RELEASE) >> 2;
-
-	if (hp > tp)
-		buf_cnt = (hp - tp) / entry_size;
-	else
-		buf_cnt = (tx_comp_ring->num_entries - tp + hp) / entry_size;
-
-	return (soc->ipa_uc_tx_rsc.alloc_tx_buf_cnt != buf_cnt);
-}
-
 QDF_STATUS dp_ipa_disable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 {
 	struct dp_soc *soc = cdp_soc_t_to_dp_soc(soc_hdl);
 	struct dp_pdev *pdev =
 		dp_get_pdev_from_soc_pdev_id_wifi3(soc, pdev_id);
-	int timeout = TX_COMP_DRAIN_WAIT_TIMEOUT_MS;
 	QDF_STATUS result;
 	struct dp_ipa_resources *ipa_res;
 
@@ -1825,14 +1757,6 @@ QDF_STATUS dp_ipa_disable_pipes(struct cdp_soc_t *soc_hdl, uint8_t pdev_id)
 	 * address post disable pipes.
 	 */
 	DP_IPA_RESET_TX_DB_PA(soc, ipa_res);
-	while (dp_ipa_get_tx_comp_pending_check(soc)) {
-		qdf_sleep(TX_COMP_DRAIN_WAIT_MS);
-		timeout -= TX_COMP_DRAIN_WAIT_MS;
-		if (timeout <= 0) {
-			dp_err("Tx completions pending. Force Disabling pipes");
-			break;
-		}
-	}
 
 	result = qdf_ipa_wdi_disable_pipes();
 	if (result) {

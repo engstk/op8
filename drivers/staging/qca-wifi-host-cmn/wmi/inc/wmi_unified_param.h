@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -620,6 +620,7 @@ typedef enum {
  * @set_agile: is agile mode
  * @allow_he: HE allowed on chan
  * @psc_channel: 6 ghz preferred scan chan
+ * @nan_disabled: is NAN disabled on @mhz
  * @phy_mode: phymode (vht80 or ht40 or ...)
  * @cfreq1: centre frequency on primary
  * @cfreq2: centre frequency on secondary
@@ -644,7 +645,8 @@ struct channel_param {
 		allow_vht:1,
 		set_agile:1,
 		allow_he:1,
-		psc_channel:1;
+		psc_channel:1,
+		nan_disabled:1;
 	uint32_t phy_mode;
 	uint32_t cfreq1;
 	uint32_t cfreq2;
@@ -3493,6 +3495,22 @@ enum wmi_host_preamble_type {
 };
 
 /**
+ * enum wmi_ratemask_type: ratemask type
+ * @WMI_RATEMASK_TYPE_CCK: CCK rate mask type
+ * @WMI_RATEMASK_TYPE_HT:  HT rate mask type
+ * @WMI_RATEMASK_TYPE_VHT: VHT rate mask type
+ * @WMI_RATEMASK_TYPE_HE:  HE rate mask type
+ *
+ * This is used for 'type' in WMI_VDEV_RATEMASK_CMDID
+ */
+enum wmi_ratemask_type {
+	WMI_RATEMASK_TYPE_CCK = 0,
+	WMI_RATEMASK_TYPE_HT  = 1,
+	WMI_RATEMASK_TYPE_VHT = 2,
+	WMI_RATEMASK_TYPE_HE  = 3,
+};
+
+/**
  * struct packet_power_info_params - packet power info params
  * @chainmask: chain mask
  * @chan_width: channel bandwidth
@@ -3514,24 +3532,117 @@ struct packet_power_info_params {
 };
 
 /**
- * WMI_GPIO_CONFIG_CMDID
+ * enum gpio_pull_type - GPIO PULL TYPE
+ * @WMI_HOST_GPIO_PULL_NONE: set gpio pull type to none
+ * @WMI_HOST_GPIO_PULL_UP: set gpio to pull up
+ * @WMI_HOST_GPIO_PULL_DOWN: set gpio to pull down
+ * @WMI_HOST_GPIO_PULL_MAX: invalid pull type
  */
-enum {
-	WMI_HOST_GPIO_PULL_NONE,
-	WMI_HOST_GPIO_PULL_UP,
-	WMI_HOST_GPIO_PULL_DOWN,
+enum gpio_pull_type {
+	WMI_HOST_GPIO_PULL_NONE = 0,
+	WMI_HOST_GPIO_PULL_UP = 1,
+	WMI_HOST_GPIO_PULL_DOWN = 2,
+	WMI_HOST_GPIO_PULL_MAX,
 };
 
 /**
- * WMI_GPIO_INTTYPE
+ * enum gpio_interrupt_mode - GPIO INTERRUPT MODE
+ * @WMI_HOST_GPIO_INTMODE_DISABLE: disable interrupt mode
+ * @WMI_HOST_GPIO_INTMODE_RISING_EDGE: interrupt with rising edge trigger
+ * @WMI_HOST_GPIO_INTMODE_FALLING_EDGE: interrupt with falling edge trigger
+ * @WMI_HOST_GPIO_INTMODE_BOTH_EDGE: interrupt with both edge trigger
+ * @WMI_HOST_GPIO_INTMODE_LEVEL_LOW: interrupt with gpio level low trigger
+ * @WMI_HOST_GPIO_INTMODE_LEVEL_HIGH: interrupt with gpio level high trigger
+ * @WMI_HOST_GPIO_INTMODE_MAX: invalid interrupt mode
  */
-enum {
-	WMI_HOST_GPIO_INTTYPE_DISABLE,
-	WMI_HOST_GPIO_INTTYPE_RISING_EDGE,
-	WMI_HOST_GPIO_INTTYPE_FALLING_EDGE,
-	WMI_HOST_GPIO_INTTYPE_BOTH_EDGE,
-	WMI_HOST_GPIO_INTTYPE_LEVEL_LOW,
-	WMI_HOST_GPIO_INTTYPE_LEVEL_HIGH
+enum gpio_interrupt_mode {
+	WMI_HOST_GPIO_INTMODE_DISABLE = 0,
+	WMI_HOST_GPIO_INTMODE_RISING_EDGE = 1,
+	WMI_HOST_GPIO_INTMODE_FALLING_EDGE = 2,
+	WMI_HOST_GPIO_INTMODE_BOTH_EDGE = 3,
+	WMI_HOST_GPIO_INTMODE_LEVEL_LOW = 4,
+	WMI_HOST_GPIO_INTMODE_LEVEL_HIGH = 5,
+	WMI_HOST_GPIO_INTMODE_MAX,
+};
+
+/**
+ * enum qca_gpio_direction - GPIO Direction
+ * @WLAN_GPIO_INPUT: set gpio as input mode
+ * @WLAN_GPIO_OUTPUT: set gpio as output mode
+ * @WLAN_GPIO_VALUE_MAX: invalid gpio direction
+ */
+enum gpio_direction {
+	WMI_HOST_GPIO_INPUT = 0,
+	WMI_HOST_GPIO_OUTPUT = 1,
+	WMI_HOST_GPIO_DIR_MAX,
+};
+
+/**
+ * enum fw_gpio_direction - GPIO Direction
+ * @WMI_FW_GPIO_OUTPUT: set gpio as output mode
+ * @WMI_FW_GPIO_INPUT: set gpio as input mode
+ */
+enum fw_gpio_direction {
+	WMI_FW_GPIO_OUTPUT = 0,
+	WMI_FW_GPIO_INPUT = 1,
+};
+
+/**
+ * enum qca_gpio_value - GPIO Value
+ * @WLAN_GPIO_LEVEL_LOW: set gpio output level low
+ * @WLAN_GPIO_LEVEL_HIGH: set gpio output level high
+ * @WLAN_GPIO_LEVEL_MAX: invalid gpio value
+ */
+enum gpio_value {
+	WMI_HOST_GPIO_LEVEL_LOW = 0,
+	WMI_HOST_GPIO_LEVEL_HIGH = 1,
+	WMI_HOST_GPIO_LEVEL_MAX,
+};
+
+/**
+ * enum gpio_init_enable - GPIO init enable
+ * @WMI_HOST_GPIO_INIT_DISABLE: Disable INIT
+ * @WMI_HOST_GPIO_INIT_ENABLE: Enable INIT
+ * @WMI_HOST_GPIO_INIT_MAX: invalid gpio init_enable
+ */
+enum gpio_init_enable {
+	WMI_HOST_GPIO_INIT_DISABLE = 0,
+	WMI_HOST_GPIO_INIT_ENABLE = 1,
+	WMI_HOST_GPIO_INIT_MAX,
+};
+
+/**
+ * enum gpio_drive - GPIO drive
+ * @WMI_HOST_GPIO_DRIVE_2MA: drive 2MA
+ * @WMI_HOST_GPIO_DRIVE_4MA: drive 4MA
+ * @WMI_HOST_GPIO_DRIVE_6MA: drive 6MA
+ * @WMI_HOST_GPIO_DRIVE_8MA: drive 8MA
+ * @WMI_HOST_GPIO_DRIVE_10MA: drive 10MA
+ * @WMI_HOST_GPIO_DRIVE_12MA: drive 12MA
+ * @WMI_HOST_GPIO_DRIVE_14MA: drive 14MA
+ * @WMI_HOST_GPIO_DRIVE_16MA: drive 16MA
+ * @WMI_HOST_GPIO_DRIVE_MAX: invalid gpio drive
+ */
+enum gpio_drive {
+	WMI_HOST_GPIO_DRIVE_2MA = 0,
+	WMI_HOST_GPIO_DRIVE_4MA = 1,
+	WMI_HOST_GPIO_DRIVE_6MA = 2,
+	WMI_HOST_GPIO_DRIVE_8MA = 3,
+	WMI_HOST_GPIO_DRIVE_10MA = 4,
+	WMI_HOST_GPIO_DRIVE_12MA = 5,
+	WMI_HOST_GPIO_DRIVE_14MA = 6,
+	WMI_HOST_GPIO_DRIVE_16MA = 7,
+	WMI_HOST_GPIO_DRIVE_MAX,
+};
+
+/**
+ * enum gpio_mux_config - GPIO mux_config
+ * @WMI_HOST_GPIO_MUX_DEFAULT: Default mux value
+ * @WMI_HOST_GPIO_MUX_MAX: maximum allowed gpio mux_config
+ */
+enum gpio_mux_config {
+	WMI_HOST_GPIO_MUX_DEFAULT = 0,
+	WMI_HOST_GPIO_MUX_MAX = 15,
 };
 
 /**
@@ -3544,26 +3655,29 @@ typedef struct {
 
 /**
  * struct gpio_config_params - GPIO config params
- * @gpio_num: GPIO number to config
- * @input: input/output
- * @pull_type: pull type
- * @intr_mode: int mode
+ * @pin_num: GPIO number to config
+ * @pin_dir: gpio direction, 1-input/0-output
+ * @pin_pull_type: pull type define in gpio_pull_type
+ * @pin_intr_mode: interrupt mode define in gpio_interrupt_mode
  */
 struct gpio_config_params {
-	uint32_t gpio_num;
-	uint32_t input;
-	uint32_t pull_type;
-	uint32_t intr_mode;
+	uint32_t pin_num;
+	enum gpio_direction pin_dir;
+	enum gpio_pull_type pin_pull_type;
+	enum gpio_interrupt_mode pin_intr_mode;
+	enum gpio_mux_config mux_config_val;
+	enum gpio_drive drive;
+	enum gpio_init_enable init_enable;
 };
 
 /**
  * struct gpio_output_params - GPIO output params
- * @gpio_num: GPIO number to configure
- * @set: set/reset
+ * @pin_num: GPIO number to configure
+ * @pinset: 1 mean gpio output high level, 0 mean gpio output low level
  */
 struct gpio_output_params {
-	uint32_t gpio_num;
-	uint32_t set;
+	uint32_t pin_num;
+	enum gpio_value pin_set;
 };
 
 /* flags bit 0: to configure wlan priority bitmap */
@@ -7724,6 +7838,25 @@ struct wmi_neighbor_report_data {
 };
 
 /**
+ * struct wmi_roam_msg_info - Roam message related information
+ * @present:    Flag to check if the roam msg info tlv is present
+ * @timestamp:  Timestamp is the absolute time w.r.t host timer which is
+ * synchronized between the host and target
+ * @msg_id:     Message ID from WMI_ROAM_MSG_ID
+ * @msg_param1: msg_param1, values is based on the host & FW
+ * understanding and depend on the msg ID
+ * @msg_param2: msg_param2 value is based on the host & FW understanding
+ * and depend on the msg ID
+ */
+struct wmi_roam_msg_info {
+	bool present;
+	uint32_t timestamp;
+	uint32_t msg_id;
+	uint32_t msg_param1;
+	uint32_t msg_param2;
+};
+
+/**
  * struct wmi_roam_trigger_info() - Roam trigger related details
  * @present:            Flag to check if the roam_trigger_info tlv is present
  * @trigger_reason:     Roam trigger reason(enum WMI_ROAM_TRIGGER_REASON_ID)
@@ -8195,4 +8328,21 @@ struct wmi_host_ani_level_event {
 	uint32_t ani_level;
 };
 #endif /* FEATURE_ANI_LEVEL_REQUEST */
+
+/**
+ * struct wmi_install_key_comp_event - params of install key complete event
+ * @vdev_id: unique id identifying the VDEV, generated by the caller
+ * @key_ix: key index
+ * @key_flags: key flags
+ * @status: Event status
+ * @peer_macaddr: MAC address used for installing
+ */
+struct wmi_install_key_comp_event {
+	uint32_t vdev_id;
+	uint32_t key_ix;
+	uint32_t key_flags;
+	uint32_t status;
+	uint8_t peer_macaddr[QDF_MAC_ADDR_SIZE];
+};
+
 #endif /* _WMI_UNIFIED_PARAM_H_ */

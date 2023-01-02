@@ -1,5 +1,6 @@
 /******************************************************************************
 ** Copyright (C), 2019-2029, OPLUS Mobile Comm Corp., Ltd
+** VENDOR_EDIT, All rights reserved.
 ** File: - oplus_ipv6_rto.c
 ** Description: ipv6 optimize
 **

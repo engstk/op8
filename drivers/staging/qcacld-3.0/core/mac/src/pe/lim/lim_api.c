@@ -2256,6 +2256,7 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 				sizeof(bss_desc_ptr->length) + ie_len);
 
 	bss_desc_ptr->fProbeRsp = !roam_synch_ind_ptr->isBeacon;
+	bss_desc_ptr->rssi = roam_synch_ind_ptr->rssi;
 	/* Copy Timestamp */
 	bss_desc_ptr->scansystimensec = qdf_get_monotonic_boottime_ns();
 	if (parsed_frm_ptr->he_op.oper_info_6g_present) {
@@ -2293,6 +2294,11 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 	qdf_mem_copy((uint8_t *) &bss_desc_ptr->bssId,
 		     (uint8_t *)roam_synch_ind_ptr->bssid.bytes,
 		     sizeof(tSirMacAddr));
+
+	qdf_mem_copy((uint8_t *)&bss_desc_ptr->seq_ctrl,
+		     (uint8_t *)&mac_hdr->seqControl,
+		     sizeof(tSirMacSeqCtl));
+
 	bss_desc_ptr->received_time =
 		      (uint64_t)qdf_mc_timer_get_system_time();
 	if (parsed_frm_ptr->mdiePresent) {
@@ -3169,67 +3175,4 @@ enum ani_akm_type lim_translate_rsn_oui_to_akm_type(uint8_t auth_suite[4])
 	pe_debug("akm_type: %d", akm_type);
 
 	return akm_type;
-}
-
-void lim_prepare_ch_width_params(struct mac_context *mac,
-				 struct pe_session *session,
-				 ePhyChanBondState cb_mode)
-{
-	/* cb_mode is already merged value of peer and self -
-	 * done by csr in csr_get_cb_mode_from_ies */
-	session->htSupportedChannelWidthSet = cb_mode ? 1 : 0;
-	session->htRecommendedTxWidthSet =
-		session->htSupportedChannelWidthSet;
-	session->htSecondaryChannelOffset = cb_mode;
-
-	if (PHY_DOUBLE_CHANNEL_HIGH_PRIMARY == cb_mode) {
-		session->ch_center_freq_seg0 =
-			wlan_reg_freq_to_chan(
-			mac->pdev, session->curr_op_freq) - 2;
-		session->ch_width = CH_WIDTH_40MHZ;
-	} else if (PHY_DOUBLE_CHANNEL_LOW_PRIMARY == cb_mode) {
-		session->ch_center_freq_seg0 =
-			wlan_reg_freq_to_chan(
-			mac->pdev, session->curr_op_freq) + 2;
-		session->ch_width = CH_WIDTH_40MHZ;
-	} else {
-		session->ch_center_freq_seg0 = 0;
-		session->ch_width = CH_WIDTH_20MHZ;
-	}
-}
-
-struct ch_params
-lim_get_cb_mode_for_p2p_client(struct mac_context *mac,
-			       struct pe_session *session,
-			       uint32_t ch_freq)
-{
-	struct ch_params ch_params = {0};
-
-	/*
-	 * Some IOT AP's/P2P-GO's (e.g. make: Intel and model: Intel(R)
-	 * Wireless-AC 9560160MHz as P2P GO), send beacon with 20mhz and assoc
-	 * resp with 80mhz and after assoc resp, next beacon also has 80mhz.
-	 * Connection is expected to happen in better possible
-	 * bandwidth(80MHz in this case).
-	 * Start the vdev with max supported ch_width in order to support this.
-	 * It'll be downgraded to appropriate ch_width or the same would be
-	 * continued based on assoc resp.
-	 * Restricting this check for p2p client and 5G only and this may be
-	 * extended to STA based on wider testing results with multiple AP's.
-	 */
-	ch_params.ch_width = wma_get_vht_ch_width();
-	wlan_reg_set_channel_params_for_freq(mac->pdev, ch_freq,
-					     0, &ch_params);
-	if (ch_params.ch_width == CH_WIDTH_20MHZ) {
-		pe_err("ch freq %d :: Supported HT BW %d and cbmode %d, so switch to 20Mhz",
-		       ch_freq, ch_params.ch_width, ch_params.sec_ch_offset);
-		ch_params.sec_ch_offset = PHY_SINGLE_CHANNEL_CENTERED;
-	}
-
-	pe_debug("Start P2P_CLI in ch freq %d max supported ch_width: %u cbmode: %u",
-		 ch_freq, ch_params.ch_width, ch_params.sec_ch_offset);
-	lim_prepare_ch_width_params(mac, session, ch_params.sec_ch_offset);
-	session->ch_width = ch_params.ch_width;
-
-	return ch_params;
 }

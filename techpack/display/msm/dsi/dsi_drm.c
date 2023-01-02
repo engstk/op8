@@ -21,6 +21,10 @@
 #define DEFAULT_PANEL_JITTER_ARRAY_SIZE		2
 #define DEFAULT_PANEL_PREFILL_LINES	25
 
+#ifdef OPLUS_BUG_STABILITY
+extern volatile int old_refresh_rate;
+#endif /*OPLUS_BUG_STABILITY*/
+
 static struct dsi_display_mode_priv_info default_priv_info = {
 	.panel_jitter_numer = DEFAULT_PANEL_JITTER_NUMERATOR,
 	.panel_jitter_denom = DEFAULT_PANEL_JITTER_DENOMINATOR,
@@ -245,7 +249,22 @@ static void dsi_bridge_enable(struct drm_bridge *bridge)
 		DSI_ERR("Invalid params\n");
 		return;
 	}
-
+	#ifdef OPLUS_BUG_STABILITY
+	if (c_bridge->display->panel->nt36523w_ktz8866) {
+		if (c_bridge->display->panel->panel_initialized) {
+			if (c_bridge->display->panel->cur_mode->timing.refresh_rate == 60
+					&& old_refresh_rate != c_bridge->display->panel->cur_mode->timing.refresh_rate) {
+				rc = dsi_panel_fps60_cmd_set(c_bridge->display->panel);
+				if (rc) {
+					DSI_ERR("fps60 [%s] failed to set cmd\n", c_bridge->display->name);
+				} else {
+					pr_info("fps60 [%s] success to set cmd,fps old_fps=%d\n", c_bridge->display->name, old_refresh_rate);
+					old_refresh_rate = c_bridge->display->panel->cur_mode->timing.refresh_rate;
+				}
+			}
+		}
+	}
+	#endif /*OPLUS_BUG_STABILITY*/
 	if (c_bridge->dsi_mode.dsi_mode_flags &
 			(DSI_MODE_FLAG_SEAMLESS | DSI_MODE_FLAG_VRR |
 			 DSI_MODE_FLAG_DYN_CLK)) {
@@ -453,6 +472,8 @@ static bool dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 		}
 	}
 #ifdef OPLUS_BUG_STABILITY
+	if (display->is_cont_splash_enabled)
+		dsi_mode.dsi_mode_flags &= ~DSI_MODE_FLAG_DMS;
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 	if (display->panel && display->panel->oplus_priv.is_aod_ramless) {
 		if (crtc_state->active_changed && (dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DYN_CLK)) {
@@ -885,9 +906,6 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 	for (i = 0; i < count; i++) {
 		struct drm_display_mode *m;
 
-		if (modes[i].splash_dms)
-			modes[i].dsi_mode_flags |= DSI_MODE_FLAG_DMS;
-
 		memset(&drm_mode, 0x0, sizeof(drm_mode));
 		dsi_convert_to_drm_mode(&modes[i], &drm_mode);
 		m = drm_mode_duplicate(connector->dev, &drm_mode);
@@ -910,10 +928,6 @@ int dsi_connector_get_modes(struct drm_connector *connector, void *data,
 			m->type |= DRM_MODE_TYPE_PREFERRED;
 		}
 		drm_mode_probed_add(connector, m);
-
-		if (modes[i].splash_dms)
-			drm_set_preferred_mode(
-				connector, m->hdisplay, m->vdisplay);
 	}
 
 	rc = dsi_drm_update_edid_name(&edid, display->panel->name);

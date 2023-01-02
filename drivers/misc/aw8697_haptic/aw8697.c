@@ -82,6 +82,11 @@
 struct pm_qos_request pm_qos_req_vb;
 
 static uint8_t AW8697_HAPTIC_RAM_VBAT_COMP_GAIN;
+#ifdef CONFIG_OPLUS_HAPTIC_OOS
+static uint8_t AW8697_HAPTIC_HIGH_LEVEL_REG_VAL = 0x16;
+#else
+static uint8_t AW8697_HAPTIC_HIGH_LEVEL_REG_VAL = 0x18;
+#endif
 
 #define AW8697_RTP_NAME_MAX        64
 //static char *aw8697_ram_name = "aw8697_haptic.bin";
@@ -1130,16 +1135,16 @@ static char aw8697_rtp_name_165Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_165Hz.bin"},
-    {"aw8697_realme_tune_RTP_162_165Hz.bin"},
-    {"aw8697_realme_jingle_RTP_163_165Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_165Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_165Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_165Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
     {"aw8697_reserved_167.bin"},
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
-    {"aw8697_realme_gt_RTP_170_165Hz.bin"},
+    {"aw8697_oplus_gt_RTP_170_165Hz.bin"},
 };
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -1322,16 +1327,16 @@ static char aw8697_rtp_name[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_170Hz.bin"},
-    {"aw8697_realme_tune_RTP_162_170Hz.bin"},
-    {"aw8697_realme_jingle_RTP_163_170Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_170Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_170Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_170Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
-    {"aw8697_reserved_167.bin"},
-    {"aw8697_reserved_168.bin"},
-    {"aw8697_reserved_169.bin"},
-    {"aw8697_realme_gt_RTP_170_170Hz.bin"},
+    {"ring_McLarn_167.bin"},
+    {"notif_Ardour_168.bin"},
+    {"notif_Chic_169.bin"},
+    {"aw8697_oplus_gt_RTP_170_170Hz.bin"},
 
 	{"ringtone_Alacrity_RTP.bin"},
     {"ring_Amenity_RTP.bin"},
@@ -1638,16 +1643,16 @@ static char aw8697_rtp_name_175Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_175Hz.bin"},
-    {"aw8697_realme_tune_RTP_162_175Hz.bin"},
-    {"aw8697_realme_jingle_RTP_163_175Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_175Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_175Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_175Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
     {"aw8697_reserved_167.bin"},
     {"aw8697_reserved_168.bin"},
     {"aw8697_reserved_169.bin"},
-    {"aw8697_realme_gt_RTP_170_175Hz.bin"},
+    {"aw8697_oplus_gt_RTP_170_175Hz.bin"},
 
 	{"ringtone_Alacrity_RTP.bin"},
     {"ring_Amenity_RTP.bin"},
@@ -1950,9 +1955,9 @@ static char aw8697_rtp_name_0832_226Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_226Hz.bin"},
-    {"aw8697_realme_tune_RTP_162_226Hz.bin"},
-    {"aw8697_realme_jingle_RTP_163_226Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_226Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_226Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_226Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -2140,9 +2145,9 @@ static char aw8697_rtp_name_0832_230Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_230Hz.bin"},
-    {"aw8697_realme_tune_RTP_162_230Hz.bin"},
-    {"aw8697_realme_jingle_RTP_163_230Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_230Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_230Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_230Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -2331,9 +2336,9 @@ static char aw8697_rtp_name_0832_234Hz[][AW8697_RTP_NAME_MAX] = {
 	{"aw8697_reserved_159.bin"},
 	{"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_234Hz.bin"},
-	{"aw8697_realme_tune_RTP_162_234Hz.bin"},
-	{"aw8697_realme_jingle_RTP_163_234Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_234Hz.bin"},
+	{"aw8697_oplus_tune_RTP_162_234Hz.bin"},
+	{"aw8697_oplus_jingle_RTP_163_234Hz.bin"},
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
@@ -2649,9 +2654,9 @@ static char aw8697_rtp_name_0832_237Hz[][AW8697_RTP_NAME_MAX] = {
     {"aw8697_reserved_159.bin"},
     {"aw8697_reserved_160.bin"},
 
-	{"aw8697_realme_its_realme_RTP_161_237Hz.bin"},
-    {"aw8697_realme_tune_RTP_162_237Hz.bin"},
-    {"aw8697_realme_jingle_RTP_163_237Hz.bin"},
+	{"aw8697_oplus_its_oplus_RTP_161_237Hz.bin"},
+    {"aw8697_oplus_tune_RTP_162_237Hz.bin"},
+    {"aw8697_oplus_jingle_RTP_163_237Hz.bin"},
     {"aw8697_reserved_164.bin"},
     {"aw8697_reserved_165.bin"},
     {"aw8697_reserved_166.bin"},
@@ -3481,9 +3486,9 @@ static char aw8697_rtp_name_0619_166Hz[][AW8697_RTP_NAME_MAX] = {
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
-	{"aw8697_reserved_167.bin"},
-	{"aw8697_reserved_168.bin"},
-	{"aw8697_reserved_169.bin"},
+	{"ring_McLarn_167.bin"},
+	{"notif_Ardour_168.bin"},
+	{"notif_Chic_169.bin"},
 	{"aw8697_reserved_170.bin"},
 	{"Alacrity_166Hz.bin"},
 	{"Amenity_166Hz.bin"},
@@ -3781,9 +3786,9 @@ static char aw8697_rtp_name_0619_170Hz[][AW8697_RTP_NAME_MAX] = {
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
-	{"aw8697_reserved_167.bin"},
-	{"aw8697_reserved_168.bin"},
-	{"aw8697_reserved_169.bin"},
+	{"ring_McLarn_167.bin"},
+	{"notif_Ardour_168.bin"},
+	{"notif_Chic_169.bin"},
 	{"aw8697_reserved_170.bin"},
 	{"Alacrity_170Hz.bin"},
 	{"Amenity_170Hz.bin"},
@@ -4081,9 +4086,9 @@ static char aw8697_rtp_name_0619_174Hz[][AW8697_RTP_NAME_MAX] = {
 	{"aw8697_reserved_164.bin"},
 	{"aw8697_reserved_165.bin"},
 	{"aw8697_reserved_166.bin"},
-	{"aw8697_reserved_167.bin"},
-	{"aw8697_reserved_168.bin"},
-	{"aw8697_reserved_169.bin"},
+	{"ring_McLarn_167.bin"},
+	{"notif_Ardour_168.bin"},
+	{"notif_Chic_169.bin"},
 	{"aw8697_reserved_170.bin"},
 	{"Alacrity_174Hz.bin"},
 	{"Amenity_174Hz.bin"},
@@ -4465,9 +4470,15 @@ static int aw8697_rtp_update(struct aw8697 *aw8697)
     aw8697_i2c_write(aw8697, AW8697_REG_RAMADDRH, aw8697_cont->data[0+shift]);
     aw8697_i2c_write(aw8697, AW8697_REG_RAMADDRL, aw8697_cont->data[1+shift]);
     shift = aw8697->ram.ram_shift;
-    for(i=shift; i<aw8697_cont->len; i++) {
-        aw8697_i2c_write(aw8697, AW8697_REG_RAMDATA, aw8697_cont->data[i]);
-    }
+	i = aw8697->ram.ram_shift;
+	while(i < aw8697_cont->len) {
+		if (aw8697_cont->len-i < 2048) {
+			aw8697_i2c_writes(aw8697, AW8697_REG_RAMDATA, &aw8697_cont->data[i], aw8697_cont->len-i);
+			break;
+		}
+		aw8697_i2c_writes(aw8697, AW8697_REG_RAMDATA, &aw8697_cont->data[i], 2048);
+		i += 2048;
+	}
 
 #if 0
     /* ram check */
@@ -4865,6 +4876,12 @@ static int aw8697_haptic_play_mode(struct aw8697 *aw8697, unsigned char play_mod
             }
 
            aw8697_haptic_active(aw8697);
+
+#if defined (OPLUS_FEATURE_CHG_BASIC) && !defined(CONFIG_OPLUS_HAPTIC_OOS)
+	   if (aw8697->device_id == DEV_ID_0619)
+		   break;
+#endif
+
             if(aw8697->auto_boost) {
                 aw8697_i2c_write_bits(aw8697, AW8697_REG_BST_AUTO,
                         AW8697_BIT_BST_AUTO_BST_RAM_MASK, AW8697_BIT_BST_AUTO_BST_RAM_ENABLE);
@@ -4949,7 +4966,7 @@ static int aw8697_haptic_play_mode(struct aw8697 *aw8697, unsigned char play_mod
 static int aw8697_haptic_play_go(struct aw8697 *aw8697, bool flag)
 {
     unsigned char reg_val = 0;
-    pr_debug("%s enter\n", __func__);
+	pr_debug("%s enter,flag = %d\n", __func__, flag);
 
     if(flag == true) {
         aw8697_i2c_write_bits(aw8697, AW8697_REG_GO,
@@ -5608,14 +5625,17 @@ static void aw8697_dump_rtp_regs(struct aw8697 *aw8697)
 
 static void aw8697_pm_qos_enable(struct aw8697 *aw8697, bool enabled)
 {
-    if (enabled) {
-        if (atomic_read(&aw8697->qos_cnt) == 0)
-            pm_qos_add_request(&pm_qos_req_vb, PM_QOS_CPU_DMA_LATENCY, PM_QOS_VALUE_VB);
-        atomic_inc(&aw8697->qos_cnt);
-    } else {
-        if (atomic_dec_and_test(&aw8697->qos_cnt))
-            pm_qos_remove_request(&pm_qos_req_vb);
-    }
+	mutex_lock(&aw8697->qos_lock);
+	if (enabled) {
+		if (!pm_qos_request_active(&pm_qos_req_vb)) {
+			pm_qos_add_request(&pm_qos_req_vb, PM_QOS_CPU_DMA_LATENCY, PM_QOS_VALUE_VB);
+		} else {
+			pm_qos_update_request(&pm_qos_req_vb, PM_QOS_VALUE_VB);
+		}
+	} else {
+		pm_qos_update_request(&pm_qos_req_vb, PM_QOS_DEFAULT_VALUE);
+	}
+	mutex_unlock(&aw8697->qos_lock);
 }
 
 static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
@@ -5626,7 +5646,9 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 
     pr_info("%s enter\n", __func__);
     aw8697_pm_qos_enable(aw8697, true);
-
+	if(aw8697->ram.base_addr == 0) {
+		aw8697_ram_update(aw8697);
+	}
     aw8697->rtp_cnt = 0;
     mutex_lock(&aw8697->rtp_lock);
     aw8697_dump_rtp_regs(aw8697);
@@ -5656,8 +5678,8 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
         }
         aw8697->rtp_cnt += buf_len;
 		aw8697_i2c_read(aw8697, AW8697_REG_GLB_STATE, &glb_state_val);
-		if (aw8697->rtp_cnt == aw8697_rtp->len || (glb_state_val & 0x0f) == 0) {
-			pr_info("%s: rtp update complete, glb_state_val=0x%x\n", __func__, glb_state_val);
+		if (aw8697->rtp_cnt >= aw8697_rtp->len || aw8697->ram.base_addr == 0 || (glb_state_val & 0x0f) == 0) {
+			pr_info("%s: rtp update complete, aw8697->ram.base_addr[%d], glb_state_val[%d]\n", __func__, aw8697->ram.base_addr, glb_state_val);
             aw8697->rtp_cnt = 0;
             aw8697_dump_rtp_regs(aw8697);
             mutex_unlock(&aw8697->rtp_lock);
@@ -5705,7 +5727,6 @@ static int aw8697_clock_OSC_trim_calibration(unsigned long int theory_time, unsi
             return DFT_LRA_TRIM_CODE;
         }
 
-        real_code = 32 + ((real_time - theory_time)* 400 )/ theory_time ;
         real_code = ((real_time - theory_time)* 4000) / theory_time;
         real_code = ((real_code%10 < 5)? 0 : 1) + real_code/10;
         real_code = 32 + real_code;
@@ -5880,7 +5901,11 @@ static int aw8697_rtp_osc_calibration(struct aw8697 *aw8697)
             {
                 if(aw8697->timeval_flags ==1)
                 {
+#ifdef KERNEL_VERSION_49
                     do_gettimeofday(&aw8697->start);
+#else
+					aw8697->kstart = ktime_get();
+#endif
                     aw8697->timeval_flags = 0;
                 }
 
@@ -5895,14 +5920,23 @@ static int aw8697_rtp_osc_calibration(struct aw8697 *aw8697)
         osc_int_state = aw8697_haptic_osc_read_INT(aw8697);
         if(osc_int_state&AW8697_BIT_SYSINT_DONEI)
         {
+#ifdef KERNEL_VERSION_49
             do_gettimeofday(&aw8697->end);
+#else
+			aw8697->kend = ktime_get();
+#endif
             pr_info("%s vincent playback done aw8697->rtp_cnt= %d \n", __func__,aw8697->rtp_cnt);
             break;
         }
 
+#ifdef KERNEL_VERSION_49
         do_gettimeofday(&aw8697->end);
         aw8697->microsecond = (aw8697->end.tv_sec - aw8697->start.tv_sec)*1000000 +
             (aw8697->end.tv_usec - aw8697->start.tv_usec);
+#else
+		aw8697->kend = ktime_get();
+		aw8697->microsecond = ktime_to_us(ktime_sub(aw8697->kend, aw8697->kstart));
+#endif
         if (aw8697->microsecond > 6000000)
         {
             pr_info("%s vincent time out aw8697->rtp_cnt %d osc_int_state %02x\n", __func__,aw8697->rtp_cnt, osc_int_state);
@@ -5913,8 +5947,12 @@ static int aw8697_rtp_osc_calibration(struct aw8697 *aw8697)
     //ENABLE IRQ
     aw8697_pm_qos_enable(aw8697, false);
     aw8697->osc_cali_flag =0;
+#ifdef KERNEL_VERSION_49
     aw8697->microsecond = (aw8697->end.tv_sec - aw8697->start.tv_sec)*1000000 +
         (aw8697->end.tv_usec - aw8697->start.tv_usec);
+#else
+	aw8697->microsecond = ktime_to_us(ktime_sub(aw8697->kend, aw8697->kstart));
+#endif
     /*calibration osc*/
     printk("%s 2018_microsecond:%ld \n",__func__,aw8697->microsecond);
 
@@ -6097,6 +6135,7 @@ const struct firmware *aw8697_rtp_load_file_accord_f0(struct aw8697 *aw8697)
 
     if ((aw8697->rtp_file_num >=  RINGTONES_START_INDEX && aw8697->rtp_file_num <= RINGTONES_END_INDEX)
         || (aw8697->rtp_file_num >=  NEW_RING_START && aw8697->rtp_file_num <= NEW_RING_END)
+		|| (aw8697->rtp_file_num >=  OS12_NEW_RING_START && aw8697->rtp_file_num <= OS12_NEW_RING_END)
         || aw8697->rtp_file_num == RINGTONES_SIMPLE_INDEX
         || aw8697->rtp_file_num == RINGTONES_PURE_INDEX)
     {
@@ -6154,11 +6193,15 @@ const struct firmware *aw8697_rtp_load_file_accord_f0(struct aw8697 *aw8697)
 }
 
 #ifdef CONFIG_OPLUS_HAPTIC_OOS
-#ifndef CONFIG_ARCH_LITO
-#define RTP_500MS_FIRST_SINE_PLACE	141
-#define ONE_SINE_DATA_LENGHT		141
-#define ONE_SINE_DATA_TIME		588
-unsigned char one_sine_data[] =  {
+unsigned char *one_sine_data;
+unsigned int rtp_500ms_first_sine_place;
+unsigned int one_sine_data_length;
+unsigned int one_sine_data_time;
+
+#define RTP_500MS_FIRST_SINE_PLACE_1815		141
+#define ONE_SINE_DATA_LENGTH_1815		141
+#define ONE_SINE_DATA_TIME_1815			588
+static unsigned char one_sine_data_1815[] =  {
 	0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0b, 0x0c,
 	0x0d, 0x0d, 0x0e, 0x0f, 0x0f, 0x10, 0x10, 0x11, 0x11, 0x12, 0x12, 0x12, 0x13, 0x13, 0x13, 0x13,
 	0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x13, 0x13, 0x13, 0x13, 0x12, 0x12, 0x12, 0x11,
@@ -6169,25 +6212,55 @@ unsigned char one_sine_data[] =  {
 	0xed, 0xed, 0xed, 0xee, 0xee, 0xef, 0xef, 0xf0, 0xf0, 0xf1, 0xf1, 0xf2, 0xf2, 0xf3, 0xf4, 0xf4,
 	0xf5, 0xf6, 0xf7, 0xf8, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff, 0xff,
 };
-#else /* CONFIG_ARCH_LITO */
-#define RTP_500MS_FIRST_SINE_PLACE	102
-#define ONE_SINE_DATA_LENGHT		102
-#define ONE_SINE_DATA_TIME		425
-unsigned char one_sine_data[] =  {
+
+#define RTP_500MS_FIRST_SINE_PLACE_0832         102
+#define ONE_SINE_DATA_LENGTH_0832               102
+#define ONE_SINE_DATA_TIME_0832                 425
+static unsigned char one_sine_data_0832[] =  {
 	0x00, 0x01, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x14, 0x16, 0x17, 0x19, 0x1a, 0x1c,
 	0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x22, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23, 0x22, 0x21,
 	0x21, 0x20, 0x1f, 0x1e, 0x1c, 0x1b, 0x19, 0x18, 0x16, 0x15, 0x13, 0x11, 0x0f, 0x0d, 0x0b, 0x09,
-	0x06, 0x04, 0x02, 0x00, 0xff, 0xfd, 0xfa, 0xf8, 0xf6, 0xf4, 0xf2, 0xf0,	0xee, 0xec, 0xea, 0xe9,
+	0x06, 0x04, 0x02, 0x00, 0xff, 0xfd, 0xfa, 0xf8, 0xf6, 0xf4, 0xf2, 0xf0, 0xee, 0xec, 0xea, 0xe9,
 	0xe7, 0xe6, 0xe4, 0xe3, 0xe2, 0xe1, 0xe0, 0xdf, 0xde, 0xde, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd, 0xdd,
 	0xdd, 0xde, 0xdf, 0xdf, 0xe0, 0xe1, 0xe2, 0xe4, 0xe5, 0xe6, 0xe8, 0xea, 0xeb, 0xed, 0xef, 0xf1,
 	0xf3, 0xf5, 0xf7, 0xf9, 0xfc, 0xfe,
 };
-#endif /* CONFIG_ARCH_LITO */
+
+#define RTP_500MS_FIRST_SINE_PLACE_0619         141
+#define ONE_SINE_DATA_LENGTH_0619               141
+#define ONE_SINE_DATA_TIME_0619                 588
+static unsigned char one_sine_data_0619[] =  {
+	0x00, 0x00, 0x01, 0x03, 0x04, 0x05, 0x06, 0x07, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+	0x11, 0x12, 0x13, 0x14, 0x14, 0x15, 0x16, 0x16, 0x17, 0x18, 0x18, 0x19, 0x19, 0x19, 0x1a, 0x1a,
+	0x1a, 0x1a, 0x1b, 0x1b, 0x1b, 0x1b, 0x1a, 0x1a, 0x1a, 0x1a, 0x1a, 0x19, 0x19, 0x18, 0x18, 0x17,
+	0x17, 0x16, 0x15, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09,
+	0x08, 0x07, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00, 0xff, 0xfe, 0xfd, 0xfc, 0xfa, 0xf9, 0xf8, 0xf7,
+	0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0, 0xef, 0xee, 0xed, 0xec, 0xeb, 0xeb, 0xea, 0xe9, 0xe9,
+	0xe8, 0xe8, 0xe7, 0xe7, 0xe6, 0xe6, 0xe6, 0xe6, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe6, 0xe6, 0xe6,
+	0xe6, 0xe7, 0xe7, 0xe7, 0xe8, 0xe8, 0xe9, 0xea, 0xea, 0xeb, 0xec, 0xed, 0xed, 0xee, 0xef, 0xf0,
+	0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd, 0xff,
+};
+
+#define RTP_500MS_FIRST_SINE_PLACE_1040         151
+#define ONE_SINE_DATA_LENGTH_1040               151
+#define ONE_SINE_DATA_TIME_1040                 588
+static unsigned char one_sine_data_1040[] =  {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x14, 0x15, 0x16, 0x16, 0x17, 0x17, 0x18, 0x18, 0x19, 0x19, 0x1a,
+	0x1a, 0x1a, 0x1a, 0x1a, 0x1a, 0x1b, 0x1b, 0x1b, 0x1a, 0x1a, 0x1a, 0x1a, 0x1a, 0x19, 0x19, 0x19,
+	0x18, 0x18, 0x17, 0x17, 0x16, 0x15, 0x15, 0x14, 0x13, 0x12, 0x12, 0x11, 0x10, 0x0f, 0x0e, 0x0d,
+	0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x02, 0x01, 0x00, 0x00, 0xff, 0xfe, 0xfd,
+	0xfc, 0xfb, 0xf9, 0xf8, 0xf7, 0xf6, 0xf5, 0xf4, 0xf3, 0xf2, 0xf1, 0xf0, 0xf0, 0xef, 0xee, 0xed,
+	0xec, 0xec, 0xeb, 0xea, 0xea, 0xe9, 0xe9, 0xe8, 0xe8, 0xe7, 0xe7, 0xe6, 0xe6, 0xe6, 0xe6, 0xe6,
+	0xe6, 0xe5, 0xe5, 0xe5, 0xe6, 0xe6, 0xe6, 0xe6, 0xe6, 0xe7, 0xe7, 0xe7, 0xe8, 0xe8, 0xe9, 0xe9,
+	0xea, 0xeb, 0xeb, 0xec, 0xed, 0xee, 0xef, 0xef, 0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+	0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfe, 0xff,
+};
 
 static void aw8697_update_sin_rtp_data(struct aw8697 *aw8697)
 {
-	aw8697->sin_num = ((aw8697->duration - 500) * 100 / ONE_SINE_DATA_TIME) + 1;
-	aw8697->sin_data_lenght = (size_t)(aw8697->sin_num * ONE_SINE_DATA_LENGHT);
+	aw8697->sin_num = ((aw8697->duration - 500) * 100 / one_sine_data_time) + 1;
+	aw8697->sin_data_lenght = (size_t)(aw8697->sin_num * one_sine_data_length);
 }
 
 static void aw8697_update_rtp_data(struct aw8697 *aw8697, const struct firmware *rtp_file)
@@ -6203,15 +6276,15 @@ static void aw8697_update_rtp_data(struct aw8697 *aw8697, const struct firmware 
 	}
 	memset(temp_rtp_data, 0x00, aw8697_rtp->len);
 
-	memcpy(temp_rtp_data, rtp_file->data, RTP_500MS_FIRST_SINE_PLACE);
-	data_location += RTP_500MS_FIRST_SINE_PLACE;
+	memcpy(temp_rtp_data, rtp_file->data, rtp_500ms_first_sine_place);
+	data_location += rtp_500ms_first_sine_place;
 
 	for (i = 1; i <= aw8697->sin_num; i++) {
-		memcpy(temp_rtp_data + data_location, one_sine_data, ONE_SINE_DATA_LENGHT);
-		data_location += ONE_SINE_DATA_LENGHT;
+		memcpy(temp_rtp_data + data_location, one_sine_data, one_sine_data_length);
+		data_location += one_sine_data_length;
 	}
 
-	memcpy(temp_rtp_data + data_location, rtp_file->data + RTP_500MS_FIRST_SINE_PLACE, rtp_file->size-RTP_500MS_FIRST_SINE_PLACE);
+	memcpy(temp_rtp_data + data_location, rtp_file->data + rtp_500ms_first_sine_place, rtp_file->size-rtp_500ms_first_sine_place);
 
 	memcpy(aw8697_rtp->data, temp_rtp_data, aw8697_rtp->len);
 
@@ -7435,7 +7508,7 @@ static int aw8697_haptic_f0_calibration(struct aw8697 *aw8697)
 		pr_debug("%s f0_cali_lra=%d\n", __func__, f0_cali_lra);
 
 		/* get cali step complement code*/
-		if (f0_cali_lra < 0) {
+		if (f0_cali_step < 0) {
 			f0_cali_lra += 0x40;
 		}
 		pr_debug("%s reg f0_cali_lra=%d\n", __func__, f0_cali_lra);
@@ -7588,7 +7661,8 @@ static long aw8697_file_unlocked_ioctl(struct file *file, unsigned int cmd, unsi
                 ret = -EINVAL;
                 break;
             }
-		aw8697_haptic_set_bst_vol(aw8697, 0x11);
+			aw8697_haptic_set_bst_vol(aw8697, 0x11);
+			aw8697_set_clock(aw8697, AW8697_HAPTIC_CLOCK_CALI_OSC_STANDARD);
             aw8697_haptic_play_mode(aw8697, AW8697_HAPTIC_RTP_MODE);
             aw8697_haptic_start(aw8697);
             usleep_range(2000, 2500);
@@ -7612,7 +7686,8 @@ static long aw8697_file_unlocked_ioctl(struct file *file, unsigned int cmd, unsi
             aw8697_haptic_stop(aw8697);
             aw8697->done_flag = false;
             aw8697->haptic_rtp_mode = true;
-		aw8697_haptic_set_bst_vol(aw8697, 0x11);
+			aw8697_haptic_set_bst_vol(aw8697, 0x11);
+			aw8697_set_clock(aw8697, AW8697_HAPTIC_CLOCK_CALI_OSC_STANDARD);
             schedule_work(&aw8697->haptic_rtp_work);
 			/*queue_work(aw8697->work_queue, &aw8697->haptic_rtp_work);*/
             break;
@@ -7715,20 +7790,30 @@ static ssize_t proc_vibration_style_write(struct file *filp, const char __user *
 				      size_t count, loff_t *lo)
 {
 	struct aw8697 *aw8697 = (struct aw8697 *)filp->private_data;
-	char buffer[5] = { 0 };
+	char *buffer = NULL;
 	int val;
+	int rc = 0;
 
-	if (count > 5) {
-		return -EFAULT;
+	buffer = (char *)kzalloc(count, GFP_KERNEL);
+	if(buffer == NULL) {
+		dev_err(aw8697->dev, "%s: alloc memory fail\n", __func__);
+		return count;
 	}
 
 	if (copy_from_user(buffer, buf, count)) {
+		if(buffer != NULL) {
+			kfree(buffer);
+		}
 		dev_err(aw8697->dev, "%s: error.\n", __func__);
-		return -EFAULT;
+		return count;
 	}
 
 	dev_err(aw8697->dev, "buffer=%s", buffer);
-	kstrtoint(buffer, 0, &val);
+	rc = kstrtoint(buffer, 0, &val);
+	if (rc < 0) {
+		kfree(buffer);
+		return count;
+	}
 	dev_err(aw8697->dev, "val = %d", val);
 
 	if (val == 0) {
@@ -7740,6 +7825,7 @@ static ssize_t proc_vibration_style_write(struct file *filp, const char __user *
 	} else {
 		aw8697->vibration_style = AW8697_HAPTIC_VIBRATION_CRISP_STYLE;
 	}
+	kfree(buffer);
 	return count;
 }
 
@@ -7916,7 +8002,7 @@ static int aw8697_haptic_init(struct aw8697 *aw8697)
 	aw8697->rtp_routine_on = 0; /*default rtp on is init to 0*/
     aw8697_op_clean_status(aw8697);
      mutex_init(&aw8697->rtp_lock);
-     //vincent
+	mutex_init(&aw8697->qos_lock);
     /* haptic init */
     mutex_lock(&aw8697->lock);
 
@@ -8240,12 +8326,6 @@ static ssize_t aw8697_activate_store(struct device *dev,
         return count;
 
     pr_err("%s: value=%d\n", __FUNCTION__, val);
-    //vincent
-    if (0 == val)
-    {
-        mdelay(10);
-    }
-    //vincent
 #ifndef CONFIG_OPLUS_HAPTIC_OOS
     hrtimer_cancel(&aw8697->timer);
 #endif
@@ -8506,6 +8586,9 @@ int aw8697_convert_level_to_vmax(struct aw8697 *aw8697, int val)
 		aw8697->gain = vmax_map[i - 1].gain;
 	}
 
+	if (aw8697->vmax > AW8697_HAPTIC_HIGH_LEVEL_REG_VAL)
+		aw8697->vmax = AW8697_HAPTIC_HIGH_LEVEL_REG_VAL;
+
 	return i;
 }
 
@@ -8542,22 +8625,6 @@ static ssize_t aw8697_vmax_store(struct device *dev,
     if (val == 2550) {  // for old test only
         aw8697->gain = AW8697_HAPTIC_RAM_VBAT_COMP_GAIN;
     }
-
-#ifdef CONFIG_OPLUS_HAPTIC_OOS
-	if (val == 100 || val == 101 || val == 102 || val == 105) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x50;
-	} else if (val == 103 || val == 106) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x60;
-	} else if (val == 104 || val == 107) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x70;
-	} else if (val == 108 || val == 109) {
-		aw8697->vmax = 0x16;
-		aw8697->gain = 0x80;
-	}
-#endif
 
     aw8697_haptic_set_gain(aw8697, aw8697->gain);
     aw8697_haptic_set_bst_vol(aw8697, aw8697->vmax);
@@ -8889,7 +8956,8 @@ static ssize_t aw8697_rtp_store(struct device *dev, struct device_attribute *att
     /*OP add for juge rtp on end*/
     if (((val >=  RINGTONES_START_INDEX && val <= RINGTONES_END_INDEX)
         || (val >=  NEW_RING_START && val <= NEW_RING_END)
-        || (val >=  REALME_RING_START && val <= REALME_RING_END)
+		|| (val >=  OS12_NEW_RING_START && val <= OS12_NEW_RING_END)
+        || (val >=  OPLUS_RING_START && val <= OPLUS_RING_END)
 #ifdef  CONFIG_OPLUS_HAPTIC_OOS
         || (val >= OPLUS_RING_START_INDEX && val <= OPLUS_RING_END_INDEX)
         || val == RINGTONES_NEWLIFE_INDEX
@@ -9809,8 +9877,8 @@ static ssize_t aw8697_osc_cali_show(struct device *dev, struct device_attribute 
 #ifdef CONFIG_OPLUS_HAPTIC_OOS
 	aw8697->microsecond = 5000000;
 #endif
-	printk("aw8697_osc_cali_show: 2018_microsecond:%ld \n", aw8697->microsecond);
-	len += snprintf(buf + len, PAGE_SIZE - len, "%ld\n", aw8697->microsecond);
+	printk("aw8697_osc_cali_show: 2018_microsecond:%lu \n", aw8697->microsecond);
+	len += snprintf(buf + len, PAGE_SIZE - len, "%lu\n", aw8697->microsecond);
     return len;
 }
 #endif
@@ -10483,11 +10551,11 @@ static void aw8697_vibrator_work_routine(struct work_struct *work)
         mutex_lock(&aw8697->lock);
         if(aw8697->activate_mode == AW8697_HAPTIC_ACTIVATE_RAM_MODE) {
 
-            if (aw8697->device_id == 832 || aw8697->device_id == 833)
-                aw8697_haptic_ram_vbat_comp(aw8697, false);
-            else
-                aw8697_haptic_ram_vbat_comp(aw8697, true);
-
+			if (aw8697->device_id == 832 || aw8697->device_id == 833 || aw8697->device_id == 81538) {
+				aw8697_haptic_ram_vbat_comp(aw8697, false);
+			} else {
+				aw8697_haptic_ram_vbat_comp(aw8697, true);
+			}
             aw8697_haptic_play_repeat_seq(aw8697, true);
         } else if(aw8697->activate_mode == AW8697_HAPTIC_ACTIVATE_CONT_MODE) {
             aw8697_haptic_cont(aw8697);
@@ -10720,6 +10788,14 @@ static int aw8697_parse_dt(struct device *dev, struct aw8697 *aw8697,
     if (of_property_read_u32(np, "qcom,device_id", &aw8697->device_id))
         aw8697->device_id = 815;
     dev_info(dev, "%s: aw8697->device_id=%d\n", __func__, aw8697->device_id);
+	if (of_property_read_u8(np, "qcom,aw8697_boost_voltage", &AW8697_HAPTIC_HIGH_LEVEL_REG_VAL)) {
+#ifdef CONFIG_OPLUS_HAPTIC_OOS
+		AW8697_HAPTIC_HIGH_LEVEL_REG_VAL = 0x16;
+#else
+		AW8697_HAPTIC_HIGH_LEVEL_REG_VAL = 0x18;
+#endif
+	}
+	dev_info(dev, "%s: aw8697 boost_voltage=%d\n", __func__, AW8697_HAPTIC_HIGH_LEVEL_REG_VAL);
 #endif
     return 0;
 }
@@ -10945,6 +11021,35 @@ static int aw8697_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
         aw8697->irq_gpio = -1;
     }
 
+#if defined (OPLUS_FEATURE_CHG_BASIC) && !defined(CONFIG_OPLUS_HAPTIC_OOS)
+	if (aw8697->device_id == DEV_ID_0619)
+		AW8697_HAPTIC_RAM_VBAT_COMP_GAIN = 0x3B;
+#endif
+
+#ifdef CONFIG_OPLUS_HAPTIC_OOS
+	if (aw8697->device_id == DEV_ID_0619) {
+		one_sine_data = one_sine_data_0619;
+		rtp_500ms_first_sine_place = RTP_500MS_FIRST_SINE_PLACE_0619;
+		one_sine_data_length = ONE_SINE_DATA_LENGTH_0619;
+		one_sine_data_time = ONE_SINE_DATA_TIME_0619;
+	} else if (aw8697->device_id == DEV_ID_0832) {
+		one_sine_data = one_sine_data_0832;
+		rtp_500ms_first_sine_place = RTP_500MS_FIRST_SINE_PLACE_0832;
+		one_sine_data_length = ONE_SINE_DATA_LENGTH_0832;
+		one_sine_data_time = ONE_SINE_DATA_TIME_0832;
+	} else if (aw8697->device_id == DEV_ID_1040) {
+		one_sine_data = one_sine_data_1040;
+                rtp_500ms_first_sine_place = RTP_500MS_FIRST_SINE_PLACE_1040;
+                one_sine_data_length = ONE_SINE_DATA_LENGTH_1040;
+                one_sine_data_time = ONE_SINE_DATA_TIME_1040;
+	} else {
+		one_sine_data = one_sine_data_1815;
+		rtp_500ms_first_sine_place = RTP_500MS_FIRST_SINE_PLACE_1815;
+		one_sine_data_length = ONE_SINE_DATA_LENGTH_1815;
+		one_sine_data_time = ONE_SINE_DATA_TIME_1815;
+	}
+#endif
+
     if (gpio_is_valid(aw8697->reset_gpio)) {
         ret = devm_gpio_request_one(&i2c->dev, aw8697->reset_gpio,
             GPIOF_OUT_INIT_LOW, "aw8697_rst");
@@ -11045,7 +11150,6 @@ static int aw8697_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
 #ifdef OPLUS_FEATURE_CHG_BASIC
     INIT_WORK(&aw8697->motor_old_test_work, motor_old_test_work);
     aw8697->motor_old_test_mode = 0;
-    atomic_set(&aw8697->qos_cnt, 0);
 #endif
 #ifdef CONFIG_OPLUS_HAPTIC_OOS
 #ifdef CONFIG_QGKI

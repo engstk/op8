@@ -1,0 +1,12 @@
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+
+
+config TOUCHPANEL_SYNAPTICS_S3508
+#	default y
+	bool "TP Synaptics_S3508 IC enable or not for OPLUS"
+	---help---
+	say Y to enable driver for Touchpanel useing synaptics s3508
+	
+#endif
+

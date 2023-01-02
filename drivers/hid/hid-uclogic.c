@@ -791,6 +791,9 @@ static int uclogic_tablet_enable(struct hid_device *hdev)
 	__u8 *p;
 	s32 v;
 
+	if (!hid_is_usb(hdev))
+		return -EINVAL;
+
 	/*
 	 * Read string descriptor containing tablet parameters. The specific
 	 * string descriptor and data were discovered by sniffing the Windows
@@ -940,6 +943,9 @@ static int uclogic_probe(struct hid_device *hdev,
 	struct usb_interface *intf = to_usb_interface(hdev->dev.parent);
 	struct usb_device *udev = hid_to_usb_dev(hdev);
 	struct uclogic_drvdata *drvdata;
+
+	if (!hid_is_usb(hdev))
+		return -EINVAL;
 
 	/*
 	 * libinput requires the pad interface to be on a different node

@@ -171,4 +171,13 @@ extern void mt_power_off(void);
 extern bool pmic_chrdet_status(void);
 extern void mt_usb_connect(void);
 extern void mt_usb_disconnect(void);
+bool bq2591x_is_detected(void);
+extern void oplus_bq2591x_dump_registers(void);
+extern int oplus_bq2591x_hardware_init(void);
+extern int oplus_bq2591x_charging_enable(void);
+extern int oplus_bq2591x_set_ichg(int cur);
+extern int oplus_bq2591x_charging_disable(void);
+extern int oplus_bq2591x_charger_suspend(void);
+extern int oplus_bq2591x_charger_unsuspend(void);
+extern int oplus_bq2591x_set_cv(int mv);
 #endif

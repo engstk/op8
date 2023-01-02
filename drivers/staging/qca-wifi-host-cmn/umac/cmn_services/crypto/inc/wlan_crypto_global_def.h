@@ -178,6 +178,12 @@ typedef enum wlan_crypto_rsn_cap {
 	WLAN_CRYPTO_RSN_CAP_MFP_REQUIRED  = 0x40,
 } wlan_crypto_rsn_cap;
 
+enum wlan_crypto_rsnx_cap {
+	WLAN_CRYPTO_RSNX_CAP_PROTECTED_TWT = 0x10,
+	WLAN_CRYPTO_RSNX_CAP_SAE_H2E = 0x20,
+	WLAN_CRYPTO_RSNX_CAP_SAE_PK = 0x40,
+};
+
 typedef enum wlan_crypto_key_mgmt {
 	WLAN_CRYPTO_KEY_MGMT_IEEE8021X             = 0,
 	WLAN_CRYPTO_KEY_MGMT_PSK                   = 1,
@@ -361,6 +367,8 @@ struct wlan_crypto_req_key {
  * @defaultkey: function pointer to set default key
  * @set_key: converged function pointer to set key in hw
  * @getpn: function pointer to get current pn value of peer
+ * @register_events: function pointer to register wmi event handler
+ * @deregister_events: function pointer to deregister wmi event handler
  */
 
 struct wlan_lmac_if_crypto_tx_ops {
@@ -380,6 +388,8 @@ struct wlan_lmac_if_crypto_tx_ops {
 			      enum wlan_crypto_key_type key_type);
 	QDF_STATUS(*getpn)(struct wlan_objmgr_vdev *vdev,
 			   uint8_t *macaddr, uint32_t key_type);
+	QDF_STATUS (*register_events)(struct wlan_objmgr_psoc *psoc);
+	QDF_STATUS (*deregister_events)(struct wlan_objmgr_psoc *psoc);
 };
 
 /**

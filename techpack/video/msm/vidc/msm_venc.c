@@ -3208,6 +3208,10 @@ int msm_venc_set_slice_control_mode(struct msm_vidc_inst *inst)
 
 	/* Update Slice Config */
 	mb_per_frame = NUM_MBS_PER_FRAME(output_height, output_width);
+	if (codec == V4L2_PIX_FMT_HEVC)
+		mb_per_frame =
+			NUM_MBS_PER_FRAME_HEVC(output_height, output_width);
+
 	mbps = NUM_MBS_PER_SEC(output_height, output_width, fps);
 
 	if (slice_mode == HFI_MULTI_SLICE_BY_MB_COUNT) {
@@ -3273,7 +3277,6 @@ int msm_venc_set_intra_refresh_mode(struct msm_vidc_inst *inst)
 		inst->rc_type == V4L2_MPEG_VIDEO_BITRATE_MODE_CBR))
 		return 0;
 
-	/* Firmware supports only random mode */
 	intra_refresh.mode = HFI_INTRA_REFRESH_RANDOM;
 
 	ctrl = get_ctrl(inst, V4L2_CID_MPEG_VIDC_VIDEO_INTRA_REFRESH_RANDOM);
@@ -3292,6 +3295,7 @@ int msm_venc_set_intra_refresh_mode(struct msm_vidc_inst *inst)
 	} else {
 		ctrl = get_ctrl(inst,
 			V4L2_CID_MPEG_VIDEO_CYCLIC_INTRA_REFRESH_MB);
+		intra_refresh.mode = HFI_INTRA_REFRESH_CYCLIC;
 		intra_refresh.mbs = ctrl->val;
 	}
 	if (!intra_refresh.mbs) {

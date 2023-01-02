@@ -83,20 +83,19 @@
 		};
 	};
 
-//delete low battery policy for performance
-//	soc {
-//		cooling-maps {
-//			soc_cpu6 {
-//				trip = <&soc_trip>;
-//				cooling-device = <&cpu6_isolate 1 1>;
-//			};
-//
-//			soc_cpu7 {
-//				trip = <&soc_trip>;
-//				cooling-device = <&cpu7_isolate 1 1>;
-//			};
-//		};
-//	};
+	soc {
+		cooling-maps {
+			soc_cpu6 {
+				trip = <&soc_trip>;
+				cooling-device = <&cpu6_isolate 1 1>;
+			};
+
+			soc_cpu7 {
+				trip = <&soc_trip>;
+				cooling-device = <&cpu7_isolate 1 1>;
+			};
+		};
+	};
 
 	pm7250b-bcl-lvl0 {
 		cooling-maps {

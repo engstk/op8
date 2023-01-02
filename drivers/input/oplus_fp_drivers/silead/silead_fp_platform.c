@@ -116,6 +116,10 @@ struct silfp_data {
     int avdd_port;
     int vddio_port;
     int sld_gpio_pwr_flag;
+    int sld_ext_pmic_flag;
+    unsigned int sld_ext_pmic_ldo_num;
+    unsigned int sld_ext_pmic_ldo_mv_max;
+    unsigned int sld_ext_pmic_ldo_mv_min;
 #ifdef PROC_NODE
     struct proc_dir_entry *proc_root;
     struct proc_dir_entry *proc_entry;

@@ -176,7 +176,7 @@
 	};
 
 	//#ifdef OPLUS_FEATURE_FINGERPRINT
-	oppo_fp_common {
+	oplus_fp_common {
 		compatible = "oplus,fp_common";
 		oplus,fp_gpio_num = <1>; /* the gpio number of fingerprint id used */
 		oplus,fp_gpio_0 = <&tlmm 77 0x0>;
@@ -184,13 +184,13 @@
 		pinctrl-0 = <&gpio_id2_default>;
 		goodix_optical_G5 {
 			oplus,fp-id = <1>; /* fp id mapping table */
-			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
 			chip-name = "G_OPTICAL_19811_G5";  /* /proc/fp_id, will be displayed in engineer menu  */
 		};
 		goodix_optical_G6 {
 			oplus,fp-id = <0>; /* fp id mapping table */
-			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oppo_fp_commmon.n */
+			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
 			chip-name = "G_OPTICAL_19811_G6";  /* /proc/fp_id, will be displayed in engineer menu  */
 		};
@@ -200,7 +200,7 @@
 		compatible = "goodix,goodix_fp";
 		interrupt-parent = <&tlmm>;
 		interrupts = <23 0>;
-		power-mode = <2> ; /*please refer to the struct fp_power_mode_t in oppo_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
+		power-mode = <2> ; /*please refer to the struct fp_power_mode_t in oplus_fp_commmon.n ,0: power mode not set, 1: ldo power, 2: gpio power, 3: auto power */
 		goodix,gpio_irq = <&tlmm 23 0x1>;
 		goodix,gpio_reset = <&tlmm 68 0x0>;
 		goodix,goodix_pwr = <&tlmm 125 0x0>;
@@ -270,11 +270,26 @@
 		};
 	};
 
+	//#ifdef OPLUS_FEATURE_TP_BASIC
+	/*oplus_rf_cable {
+		compatible = "oplus,rf_cable";
+		interrupt-parent = <&tlmm>;
+		rf_cable_support_num = <1>;
+		rf,cable0-gpio = <&tlmm 84 0>;
+		rf,cable-support-timer = <0>;
+		pinctrl-names = "rf_cable_active";
+		pinctrl-0 = <&rf_cable0_active>;
+	};*/
+	//#endif /* OPLUS_FEATURE_TP_BASIC */
+	//#ifdef OPLUS_BUG_DEBUG
 	oplus_sim_detect {
 		compatible = "oplus, sim_detect";
 		Hw,sim_det = "modem_det";
 	};
 	//#endif /* OPLUS_BUG_DEBUG */
+	feedback_fb {
+		compatible = "oplus,haptic-feedback";
+	};
 };
 /*&qupv3_se13_i2c {
 	#address-cells = <1>;
@@ -351,6 +366,8 @@
 		//ear_sense_support;
 		oos_edge_limit_support;
 		black_gesture_support;
+		black_gesture_indep_support;
+		sportify_aod_gesture_support;
 		single_tap_support;
 		//fw_edge_limit_support;
 		charger_pump_support;
@@ -614,6 +631,9 @@
 		      <&pm8150b_vadc ADC_USB_IN_V_16>,
 		      <&pm8150b_vadc ADC_AMUX_THM4_PU1>,
 		      <&pm8150b_vadc ADC_GPIO4_PU1>,
+//#else
+		      //<&pm8150b_vadc ADC_CHG_TEMP>,
+//#endif
 		      <&pm8150b_vadc ADC_AMUX_THM1_PU2>;
 	io-channel-names = "mid_voltage",
 			   "usb_in_current",
@@ -623,6 +643,9 @@
 			   "usb_in_voltage",
 			   "usb_temp_adc",
 			   "usb_supplementary_temp_adc",
+//#else
+			   ///"chg_temp",
+//#endif
 			   "skin_therm";
 
 	qcom,battery-data = <&kona_mtp_batterydata>;
@@ -670,6 +693,7 @@
 	status = "ok";
 };
 */
+//#endif
 
 &smb1390_charger {
 	io-channels = <&pm8150b_vadc ADC_AMUX_THM2>;
@@ -926,7 +950,7 @@
 	qcom,platform-sec-reset-gpio = <&tlmm 128 0>;
 };
 &sde_dsi {
-	qcom,dsi-default-panel = <&dsi_oplus20828samsung_amb655x_1080_2400_cmd>;
+	qcom,dsi-default-panel = <&dsi_oplus19065_samsung_1440_3168_dsc_cmd>;
 };
 //#endif
 &thermal_zones {
@@ -1675,6 +1699,7 @@
 			pinctrl-14 = <&input_pg_default>;
 
 };
+//#endif //OPLUS_FEATURE_CHG_BASIC
 
 &soc {
 	op_wlchg:oneplus_wlchg {
@@ -1703,6 +1728,21 @@
 		pinctrl-9 = <&dcdc_en_sleep>;
 		pinctrl-10 = <&dcdc_en_default>;
 		op-ap_control_dcdc;
+	};
+};
+
+&soc {
+	oplus,track-charge {
+		compatible = "oplus,track-charge";
+		track,fast_chg_break_t_thd = <1000>;
+		track,general_chg_break_t_thd = <200>;
+		track,voocphy_type = <4>;
+		track,wls_max_power = <30000>;
+		track,wired_max_power = <30000>;
+		track,wls_bpp_chg_scheme = <0>;
+		track,wls_epp_chg_scheme = <0>;
+		track,wls_fast_chg_scheme = <0>;
+		track,wired_fast_chg_scheme = <1>;
 	};
 };
 /*

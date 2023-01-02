@@ -39,8 +39,29 @@
 
 static struct oplus_voocphy_manager *oplus_voocphy_mg = NULL;
 static struct mutex i2c_rw_lock;
+static bool error_reported = false;
+extern void oplus_chg_sc8547_error(int report_flag, int *buf, int len);
 
 static int sc8517_get_chg_enable(struct oplus_voocphy_manager *chip, u8 *data);
+static void sc8517_i2c_error(bool happen)
+{
+	int report_flag = 0;
+	if (!oplus_voocphy_mg)
+		return;
+
+	if (error_reported)
+		return;
+
+	if (happen) {
+		oplus_voocphy_mg->voocphy_iic_err = 1;
+		oplus_voocphy_mg->voocphy_iic_err_num++;
+		report_flag |= (1 << 0);
+		oplus_chg_sc8547_error(report_flag, NULL, 0);
+		if (oplus_voocphy_mg->voocphy_iic_err_num >= 10){
+			error_reported = true;
+		}
+	}
+}
 
 /************************************************************************/
 static int __sc8517_read_byte(struct i2c_client *client, u8 reg, u8 *data)
@@ -49,6 +70,7 @@ static int __sc8517_read_byte(struct i2c_client *client, u8 reg, u8 *data)
 
 	ret = i2c_smbus_read_byte_data(client, reg);
 	if (ret < 0) {
+		sc8517_i2c_error(true);
 		chg_err("i2c read fail: can't read from reg 0x%02X\n", reg);
 		return ret;
 	}
@@ -64,6 +86,7 @@ static int __sc8517_write_byte(struct i2c_client *client, int reg, u8 val)
 
 	ret = i2c_smbus_write_byte_data(client, reg, val);
 	if (ret < 0) {
+		sc8517_i2c_error(true);
 		chg_err("i2c write fail: can't write 0x%02X to reg 0x%02X: %d\n",
 		       val, reg, ret);
 		return ret;
@@ -126,6 +149,7 @@ static s32 sc8517_read_word(struct i2c_client *client, u8 reg)
 	mutex_lock(&i2c_rw_lock);
 	ret = i2c_smbus_read_word_data(client, reg);
 	if (ret < 0) {
+		sc8517_i2c_error(true);
 		chg_err("i2c read word fail: can't read reg:0x%02X \n", reg);
 		mutex_unlock(&i2c_rw_lock);
 		return ret;
@@ -141,6 +165,7 @@ static s32 sc8517_write_word(struct i2c_client *client, u8 reg, u16 val)
 	mutex_lock(&i2c_rw_lock);
 	ret = i2c_smbus_write_word_data(client, reg, val);
 	if (ret < 0) {
+		sc8517_i2c_error(true);
 		chg_err("i2c write word fail: can't write 0x%02X to reg:0x%02X \n", val, reg);
 		mutex_unlock(&i2c_rw_lock);
 		return ret;
@@ -327,7 +352,7 @@ static int sc8517_get_adc_enable(struct oplus_voocphy_manager *chip, u8 *data)
 {
 	int ret = 0;
 
-	
+
 
 	return ret;
 }
@@ -341,7 +366,7 @@ static u8 sc8517_get_vbus_status(struct oplus_voocphy_manager *chip)
 {
 	int ret = 0;
 	u8 value = 0;
-	
+
 	if (!chip) {
 		chg_err("Failed\n");
 		return -1;
@@ -359,6 +384,35 @@ static u8 sc8517_get_vbus_status(struct oplus_voocphy_manager *chip)
 	return value;
 }
 
+static int sc8517_get_voocphy_enable(struct oplus_voocphy_manager *chip, u8 *data)
+{
+	int ret = 0;
+
+	if (!chip) {
+		pr_err("Failed\n");
+		return -1;
+	}
+
+	ret = sc8517_read_byte(chip->client, SC8517_REG_2B, data);
+	if (ret < 0) {
+		pr_err("SC8517_REG_2B\n");
+		return -1;
+	}
+
+	return ret;
+}
+
+static void sc8517_dump_reg_in_err_issue(struct oplus_voocphy_manager *chip)
+{
+	if(!chip) {
+		pr_err( "!!!!! oplus_voocphy_manager chip NULL");
+		return;
+	}
+	chg_err("SC8517_REG_09 -->09~0E[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", chip->reg_dump[9], chip->reg_dump[10], chip->reg_dump[11], chip->reg_dump[12], chip->reg_dump[13], chip->reg_dump[14]);
+
+	return;
+}
+
 static u8 sc8517_get_int_value(struct oplus_voocphy_manager *chip)
 {
 	int ret = 0;
@@ -368,14 +422,15 @@ static u8 sc8517_get_int_value(struct oplus_voocphy_manager *chip)
 		chg_err("%s: chip null\n", __func__);
 		return -1;
 	}
-	sc8517_read_i2c_block(chip->client, SC8517_REG_09, 6, int_column);
+	ret = sc8517_read_i2c_block(chip->client, SC8517_REG_09, 6, int_column);
 
 	if (ret < 0) {
+		sc8517_i2c_error(true);
 		chg_err(" read SC8517_REG_09 6 bytes failed\n");
 		return -1;
 	}
-	chg_err("SC8517_REG_09 -->09~0E[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n",
-				int_column[0], int_column[1], int_column[2], int_column[3], int_column[4], int_column[5]);
+	memcpy(chip->int_column, int_column, sizeof(chip->int_column));
+	chg_err("SC8517_REG_09 -->09~0E[0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x]\n", chip->int_column[0], chip->int_column[1], chip->int_column[2], chip->int_column[3], chip->int_column[4], chip->int_column[5]);
 
 	return int_column[1];
 }
@@ -384,15 +439,15 @@ static u8 sc8517_get_chg_auto_mode(struct oplus_voocphy_manager *chip)
 {
 	int ret = 0;
 	u8 value = 0;
-	
+
 	if (!chip) {
 		chg_err("Failed\n");
 		return -1;
 	}
 	ret = sc8517_read_byte(chip->client, SC8517_REG_15, &value);
 	value = value & SC8517_CHG_MODE_MASK;
-	
-	chg_err("----value = %d\n",value);	
+
+	chg_err("----value = %d\n",value);
 	return value;
 }
 
@@ -431,7 +486,7 @@ static void sc8517_set_pd_svooc_config(struct oplus_voocphy_manager *chip, bool 
 
 	sc8517_write_byte(chip->client, SC8517_REG_04, 0x36);	//WD:1000ms
 	sc8517_write_byte(chip->client, SC8517_REG_2C, 0xd1);	//Loose_det=1
-	
+
 	chg_err("pd svooc \n");
 }
 
@@ -468,7 +523,7 @@ static int sc8517_reset_voocphy(struct oplus_voocphy_manager *chip)
 
 	//disable vooc
 	sc8517_write_byte(chip->client, SC8517_REG_24, 0x00);
-	
+
 	sc8517_write_byte(chip->client, SC8517_REG_04, 0x06);	//disable wdt
 
 	//set predata
@@ -476,7 +531,7 @@ static int sc8517_reset_voocphy(struct oplus_voocphy_manager *chip)
 	sc8517_write_byte(chip->client, SC8517_REG_24, 0x02);//reset voocphy
 	msleep(1);
 	//sc8517_set_predata(0x0);
-	
+
 	chg_err("oplus_vooc_reset_voocphy done");
 
 	return VOOCPHY_SUCCESS;
@@ -554,6 +609,43 @@ static int sc8517_hardware_init(struct oplus_voocphy_manager *chip)
 	sc8517_write_byte(chip->client, SC8517_REG_29, 0x05);//Masked Pulse_filtered, RX_Start,Tx_Done,soft intflag
 	sc8517_write_byte(chip->client, SC8517_REG_10, 0x79);//Masked Pulse_filtered, RX_Start,Tx_Done
 	return 0;
+}
+
+int sc8517_dump_registers(struct oplus_voocphy_manager *chip)
+{
+	int ret = 0;
+	u8 int_column[7];
+
+	if (!chip) {
+		chg_err("%s: chip null\n", __func__);
+		return -1;
+	}
+
+	ret = sc8517_read_i2c_block(chip->client, SC8517_REG_00, 7, int_column);
+	if (ret < 0) {
+		chg_err(" read SC8517_REG_00 7 bytes failed\n");
+		return -1;
+	}
+	chg_err("[00~06][0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x]\n",
+				int_column[0], int_column[1], int_column[2], int_column[3], int_column[4], int_column[5], int_column[6]);
+
+	ret = sc8517_read_i2c_block(chip->client, SC8517_REG_07, 7, int_column);
+	if (ret < 0) {
+		chg_err(" read SC8517_REG_07 7 bytes failed\n");
+		return -1;
+	}
+	chg_err("[07~0D][0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x]\n",
+				int_column[0], int_column[1], int_column[2], int_column[3], int_column[4], int_column[5], int_column[6]);
+
+	ret = sc8517_read_i2c_block(chip->client, SC8517_REG_0E, 7, int_column);
+	if (ret < 0) {
+		chg_err(" read SC8517_REG_0E 7 bytes failed\n");
+		return -1;
+	}
+	chg_err("[0E~14][0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x]\n",
+				int_column[0], int_column[1], int_column[2], int_column[3], int_column[4], int_column[5], int_column[6]);
+
+	return ret;
 }
 
 static int sc8517_irq_gpio_init(struct oplus_voocphy_manager *chip)
@@ -890,6 +982,22 @@ static void sc8517_set_switch_mode(struct oplus_voocphy_manager *chip, int mode)
 	return;
 }
 
+static void register_voocphy_devinfo(void)
+{
+#ifndef CONFIG_DISABLE_OPLUS_FUNCTION
+	int ret = 0;
+	char *version;
+	char *manufacture;
+
+	version = "sc8517";
+	manufacture = "MP";
+
+	ret = register_device_proc("voocphy", version, manufacture);
+	if (ret)
+		chg_err("register_voocphy_devinfo fail\n");
+#endif
+}
+
 static struct oplus_voocphy_operations oplus_sc8517_ops = {
 	.hw_setting		= sc8517_hw_setting,
 	.init_vooc		= sc8517_init_vooc,
@@ -912,6 +1020,8 @@ static struct oplus_voocphy_operations oplus_sc8517_ops = {
 	.get_pd_svooc_config = sc8517_get_pd_svooc_config,
 	.get_vbus_status	 = sc8517_get_vbus_status,
 	.set_chg_auto_mode 	= sc8517_set_chg_auto_mode,
+	.get_voocphy_enable = sc8517_get_voocphy_enable,
+	.dump_voocphy_reg	= sc8517_dump_reg_in_err_issue,
 };
 
 static int sc8517_charger_probe(struct i2c_client *client,
@@ -951,8 +1061,9 @@ static int sc8517_charger_probe(struct i2c_client *client,
 	oplus_voocphy_init(chip);
 
 	oplus_voocphy_mg = chip;
-
+	register_voocphy_devinfo();
 	init_proc_voocphy_debug();
+	sc8517_dump_registers(chip);
 
 	chg_err("sc8517_parse_dt successfully!\n");
 

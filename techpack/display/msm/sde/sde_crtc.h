@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2015-2021 The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -276,6 +276,8 @@ struct sde_crtc_misr_info {
  * @cur_perf      : current performance committed to clock/bandwidth driver
  * @plane_mask_old: keeps track of the planes used in the previous commit
  * @frame_trigger_mode: frame trigger mode
+ * @cp_pu_feature_mask: mask indicating cp feature enable for partial update
+ * @cached_user_roi_list : Copy of user_roi_list from previous PU frame
  * @ltm_buffer_cnt  : number of ltm buffers
  * @ltm_buffers     : struct stores ltm buffer related data
  * @ltm_buf_free    : list of LTM buffers that are available
@@ -285,6 +287,7 @@ struct sde_crtc_misr_info {
  * @ltm_lock        : Spinlock to protect ltm buffer_cnt, hist_en and ltm lists
  * @needs_hw_reset  : Initiate a hw ctl reset
  * @comp_ratio      : Compression ratio
+ * @dspp_blob_info  : blob containing dspp hw capability information
  */
 struct sde_crtc {
 	struct drm_crtc base;
@@ -358,6 +361,9 @@ struct sde_crtc {
 	struct drm_property_blob *hist_blob;
 	enum frame_trigger_mode_type frame_trigger_mode;
 
+	u32 cp_pu_feature_mask;
+	struct msm_roi_list cached_user_roi_list;
+
 	u32 ltm_buffer_cnt;
 	struct sde_ltm_buffer *ltm_buffers[LTM_BUFFER_SIZE];
 	struct list_head ltm_buf_free;
@@ -369,6 +375,8 @@ struct sde_crtc {
 	bool needs_hw_reset;
 
 	int comp_ratio;
+
+	struct drm_property_blob *dspp_blob_info;
 };
 
 #define to_sde_crtc(x) container_of(x, struct sde_crtc, base)
@@ -389,7 +397,7 @@ struct sde_crtc {
  * @lm_roi        : Current LM ROI, possibly sub-rectangle of mode.
  *                  Origin top left of CRTC.
  * @user_roi_list : List of user's requested ROIs as from set property
- * @property_state: Local storage for msm_prop properties
+  * @property_state: Local storage for msm_prop properties
  * @property_values: Current crtc property values
  * @input_fence_timeout_ns : Cached input fence timeout, in ns
  * @num_dim_layers: Number of dim layers

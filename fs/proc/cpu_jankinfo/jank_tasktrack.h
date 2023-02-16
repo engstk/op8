@@ -6,6 +6,8 @@
 #ifndef __OPLUS_CPU_JANK_TASKTRACK_H__
 #define __OPLUS_CPU_JANK_TASKTRACK_H__
 
+#include <uapi/linux/android/binderfs.h>
+
 #include "jank_base.h"
 #include "../../../drivers/android/binder_internal.h"
 

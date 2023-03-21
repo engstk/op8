@@ -662,6 +662,29 @@
 				<2047 43>,
 				<2047 43>;
 
+	oplus,dsi-aod-high-brightness = <0 255>,
+				<17 185>,
+				<25 175>,
+				<33 165>,
+				<49 150>,
+				<64 130>,
+				<80 120>,
+				<96 110>,
+				<112 100>,
+				<128 90>,
+				<144 70>,
+				<250 0>;
+
+	oplus,dsi-aod-low-brightness = <0 255>,
+				<1 205>,
+				<3 150>,
+				<9 120>,
+				<17 90>,
+				<25 70>,
+				<33 0>;
+
+	oplus,dsi-aod-low-brightness-threshold = <33>;
+
 	qcom,ulps-enabled;
 	qcom,dsi-select-clocks = "mux_byte_clk0", "mux_pixel_clk0",
 				"src_byte_clk0", "src_pixel_clk0",

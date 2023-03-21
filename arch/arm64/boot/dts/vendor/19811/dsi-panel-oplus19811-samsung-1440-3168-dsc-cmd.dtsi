@@ -2138,6 +2138,22 @@
 				<2047 43>,
 				<2047 43>;
 
+	oplus,dsi-aod-high-brightness = <4 180>,
+				<17 150>,
+				<33 135>,
+				<49 110>,
+				<65 90>,
+				<81 80>,
+				<97 75>,
+				<113 70>,
+				<129 60>;
+
+	oplus,dsi-aod-low-brightness = <4 108>,
+				<17 95>,
+				<33 0>;
+
+	oplus,dsi-aod-low-brightness-threshold = <33>;
+
 	qcom,mdss-dsi-display-timings {
 		 timing@0 { /* FHD+ 60hz 412.8Mhz 825.6Mbps */
 			qcom,mdss-dsi-panel-phy-timings = [00 1C 07 07 23 22 07 07 05 02 04 00 18 17];

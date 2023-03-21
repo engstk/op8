@@ -74,4 +74,5 @@ int oplus_ramless_panel_set_aod_area(void *buf);
 int oplus_ramless_panel_get_video(void *buf);
 int oplus_ramless_panel_set_video(void *buf);
 #endif /* OPLUS_FEATURE_AOD_RAMLESS */
+void dsi_panel_parse_oplus_aod_config(struct dsi_panel *panel);
 #endif

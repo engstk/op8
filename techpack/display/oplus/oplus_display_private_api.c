@@ -80,7 +80,9 @@ ktime_t oplus_backlight_time;
 u32 oplus_backlight_delta = 0;
 
 extern int oplus_dimlayer_hbm;
+extern int oplus_dimlayer_hbm_saved;
 extern int enable_global_hbm_flags;
+extern int oplus_dimlayer_aod;
 
 /*#ifdef OPLUS_BUG_STABILITY*/
 EXPORT_SYMBOL(backlight_smooth_enable);
@@ -1686,7 +1688,7 @@ static ssize_t oplus_display_set_dimlayer_enable(struct device *dev,
 static ssize_t oplus_display_get_dimlayer_hbm(struct device *dev,
                                 struct device_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d\n", oplus_dimlayer_hbm);
+	return sprintf(buf, "%d\n", oplus_dimlayer_hbm_saved);
 }
 
 extern int oplus_dimlayer_hbm_vblank_count;
@@ -1702,24 +1704,28 @@ static ssize_t oplus_display_set_dimlayer_hbm(struct device *dev,
 
 	sscanf(buf, "%d", &value);
 	value = !!value;
-	if (oplus_dimlayer_hbm == value)
+	if (oplus_dimlayer_hbm_saved == value)
 		return count;
-	if (!dsi_connector || !dsi_connector->state || !dsi_connector->state->crtc) {
-		pr_err("[%s]: display not ready\n", __func__);
-	} else {
-		err = drm_crtc_vblank_get(dsi_connector->state->crtc);
-		if (err) {
-			pr_err("failed to get crtc vblank, error=%d\n", err);
+	if (get_oplus_display_power_status() == OPLUS_DISPLAY_POWER_ON) {
+		if (!dsi_connector || !dsi_connector->state || !dsi_connector->state->crtc) {
+			pr_err("[%s]: display not ready\n", __func__);
 		} else {
-			/* do vblank put after 5 frames */
-			oplus_dimlayer_hbm_vblank_count = 5;
-			atomic_inc(&oplus_dimlayer_hbm_vblank_ref);
+			err = drm_crtc_vblank_get(dsi_connector->state->crtc);
+			if (err) {
+				pr_err("failed to get crtc vblank, error=%d\n", err);
+			} else {
+				/* do vblank put after 5 frames */
+				oplus_dimlayer_hbm_vblank_count = 5;
+				atomic_inc(&oplus_dimlayer_hbm_vblank_ref);
+			}
 		}
+		oplus_dimlayer_hbm = value;
 	}
-	oplus_dimlayer_hbm = value;
+	oplus_dimlayer_hbm_saved = value;
 
 #ifdef OPLUS_BUG_STABILITY
-	pr_err("debug for oplus_display_set_dimlayer_hbm set oplus_dimlayer_hbm = %d\n",oplus_dimlayer_hbm);
+	pr_err("debug for oplus_display_set_dimlayer_hbm set oplus_dimlayer_hbm = %d, oplus_dimlayer_hbm_saved = %d\n",
+		oplus_dimlayer_hbm, oplus_dimlayer_hbm_saved);
 #endif
 
 	return count;
@@ -2313,35 +2319,12 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 		switch(get_oplus_display_scene()) {
 		case OPLUS_DISPLAY_NORMAL_SCENE:
 		case OPLUS_DISPLAY_NORMAL_HBM_SCENE:
+			oplus_dimlayer_hbm = 0;
+			oplus_dimlayer_aod = 1;
+			oplus_dimlayer_vblank(connector->state->crtc);
 			rc = dsi_panel_set_lp1(display->panel);
 			rc = dsi_panel_set_lp2(display->panel);
 			set_oplus_display_scene(OPLUS_DISPLAY_AOD_SCENE);
-			break;
-		case OPLUS_DISPLAY_AOD_HBM_SCENE:
-			/* Skip aod off if fingerprintpress exist */
-			if (!sde_crtc_get_fingerprint_pressed(connector->state->crtc->state)) {
-				mutex_lock(&display->panel->panel_lock);
-				dsi_display_clk_ctrl(display->dsi_clk_handle,
-						     DSI_CORE_CLK, DSI_CLK_ON);
-				if (display->panel->panel_initialized) {
-					if (!strcmp(display->panel->oplus_priv.vendor_name, "S6E3HC3") && (display->panel->panel_id2 >= 5)) {
-						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_OFF_PVT);
-					} else {
-						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_OFF);
-					}
-					if (!strcmp(display->panel->oplus_priv.vendor_name, "AMB655XL08")) {
-						display->panel->is_hbm_enabled = false;
-					}
-					oplus_update_aod_light_mode_unlock(display->panel);
-				} else {
-					pr_err("[%s][%d]failed to setting dsi command", __func__, __LINE__);
-				}
-				dsi_display_clk_ctrl(display->dsi_clk_handle,
-						     DSI_CORE_CLK, DSI_CLK_OFF);
-				mutex_unlock(&display->panel->panel_lock);
-				set_oplus_display_scene(OPLUS_DISPLAY_AOD_SCENE);
-			}
-
 			break;
 		case OPLUS_DISPLAY_AOD_SCENE:
 		default:
@@ -2370,39 +2353,11 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 				}
 			}
 #endif /* OPLUS_FEATURE_ADFR */
-			if (sde_crtc_get_fingerprint_mode(connector->state->crtc->state)) {
-				mutex_lock(&display->panel->panel_lock);
-				dsi_display_clk_ctrl(display->dsi_clk_handle,
-						     DSI_CORE_CLK, DSI_CLK_ON);
-				if (display->panel->panel_initialized) {
-					if (!strcmp(display->panel->oplus_priv.vendor_name, "S6E3HC3") && (display->panel->panel_id2 >= 5)) {
-						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_ON_PVT);
-					} else {
-						rc = dsi_panel_tx_cmd_set(display->panel, DSI_CMD_AOD_HBM_ON);
-
-						if ((display->panel->oplus_priv.is_oplus_project) &&
-							(!strcmp(display->panel->oplus_priv.vendor_name, "AMB655X")) &&
-							(get_oplus_display_scene() == OPLUS_DISPLAY_AOD_HBM_SCENE)) {
-							dsi_panel_tx_cmd_set(display->panel, DSI_CMD_HBM_ON);
-						}
-					}
-					if (!strcmp(display->panel->oplus_priv.vendor_name, "AMB655XL08")) {
-						display->panel->is_hbm_enabled = true;
-					}
-				} else {
-					pr_err("[%s][%d]failed to setting dsi command", __func__, __LINE__);
-				}
-				dsi_display_clk_ctrl(display->dsi_clk_handle,
-						     DSI_CORE_CLK, DSI_CLK_OFF);
-				mutex_unlock(&display->panel->panel_lock);
-				set_oplus_display_scene(OPLUS_DISPLAY_AOD_HBM_SCENE);
-			} else {
-				if (!strcmp(display->panel->oplus_priv.vendor_name, "AMS644VK04")) {
-					display->panel->need_power_on_backlight = true;
-				}
-				rc = dsi_panel_set_nolp(display->panel);
-				set_oplus_display_scene(OPLUS_DISPLAY_NORMAL_SCENE);
+			if (!strcmp(display->panel->oplus_priv.vendor_name, "AMS644VK04")) {
+				display->panel->need_power_on_backlight = true;
 			}
+			rc = dsi_panel_set_nolp(display->panel);
+			set_oplus_display_scene(OPLUS_DISPLAY_NORMAL_SCENE);
 		}
 		if (!strcmp(display->panel->oplus_priv.vendor_name, "S6E3HC3")) {
 			if (!sde_crtc_get_fingerprint_mode(connector->state->crtc->state)) {
@@ -2427,6 +2382,11 @@ int dsi_display_oplus_set_power(struct drm_connector *connector,
 			oplus_dsi_update_spr_mode();
 		}
 		set_oplus_display_power_status(OPLUS_DISPLAY_POWER_ON);
+		if (oplus_dimlayer_hbm != oplus_dimlayer_hbm_saved) {
+			oplus_dimlayer_hbm = oplus_dimlayer_hbm_saved;
+		}
+		oplus_dimlayer_aod = 0;
+		oplus_dimlayer_vblank(connector->state->crtc);
 		msm_drm_notifier_call_chain(MSM_DRM_EVENT_BLANK,
 					    &notifier_data);
 		break;

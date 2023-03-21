@@ -1115,8 +1115,9 @@ static int dsi_panel_update_backlight(struct dsi_panel *panel,
 		bl_lvl = (((bl_lvl & 0xff) << 8) | (bl_lvl >> 8));
 
 #ifdef OPLUS_BUG_STABILITY
-	if ((get_oplus_display_scene() == OPLUS_DISPLAY_AOD_SCENE) && ( bl_lvl == 1)) {
-		pr_err("dsi_cmd AOD mode return bl_lvl:%d\n",bl_lvl);
+	if (get_oplus_display_scene() == OPLUS_DISPLAY_AOD_SCENE) {
+		/* Don't set backlight; just update AoD mode */
+		oplus_update_aod_light_mode_unlock(panel);
 		return 0;
 	}
 

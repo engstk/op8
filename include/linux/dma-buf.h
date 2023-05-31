@@ -441,7 +441,7 @@ struct dma_buf {
 	const char *exp_name;
 	const char *name;
 	spinlock_t name_lock;
-#if defined(CONFIG_DEBUG_FS)
+#if defined(CONFIG_DEBUG_FS) || (defined(OPLUS_FEATURE_PERFORMANCE) && defined(CONFIG_PROC_FS))
 	ktime_t ktime;
 #endif
 	struct module *owner;

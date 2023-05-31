@@ -21,24 +21,6 @@ config OPLUS_SMART_CHARGER_SUPPORT
 	help
 	  Say Y to include support
 
-config OPLUS_RTC_DET_SUPPORT
-	bool "OPLUS RTC DET SUPPORT"
-	default n
-	help
-	  Say Y to include support
-
-config OPLUS_CHECK_CHARGERID_VOLT
-	bool "OPLUS CHECK CHARGERID VOLT"
-	default n
-	help
-	  Say Y to include support
-
-config OPLUS_SHIP_MODE_SUPPORT
-	bool "OPLUS_SHIP_MODE_SUPPORT"
-	default n
-	help
-	  Say Y to include support
-
 config OPLUS_CHG_DYNAMIC_CONFIG
 	bool "OPLUS_CHG_DYNAMIC_CONFIG"
 	default n

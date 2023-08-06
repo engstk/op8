@@ -457,7 +457,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-unused-result -Wno-deprecated -Wno-deprecated-declarations -Wformat=0 \
 		   -Wno-enum-conversion -Wno-vla-extension -Wno-c2x-extensions
 
->>>>>>> 57c30d671 (makefile: add initial build changes)
 KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=

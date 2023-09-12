@@ -122,7 +122,7 @@ export quiet Q KBUILD_VERBOSE
 # it is set on invocation of make with KBUILD_OUTPUT or O= specified.
 ifeq ($(KBUILD_SRC),)
 
-KBUILD_OUTPUT := out
+KBUILD_OUTPUT := /tmp/out_op8
 
 # OK, Make called in directory where kernel src resides
 # Do we want to locate output files in a separate directory?

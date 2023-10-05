@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.19.288 Kernel Configuration
+# Linux/arm64 4.19.294 Kernel Configuration
 #
 
 #
@@ -5409,6 +5409,10 @@ CONFIG_QCOM_SPMI_ADC5=y
 # CONFIG_TI_ADS8688 is not set
 # CONFIG_TI_TLC4541 is not set
 # CONFIG_VF610_ADC is not set
+
+#
+# Analog to digital and digital to analog converters
+#
 
 #
 # Analog Front Ends

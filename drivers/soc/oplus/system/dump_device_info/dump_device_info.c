@@ -147,7 +147,7 @@ static void pstore_write_device_info(const char *s, unsigned int c)
         }
 }
 
-static void board_hw_info_init()
+static void board_hw_info_init(void)
 {
 	scnprintf(pcb_version, sizeof(pcb_version), "%d", get_PCB_Version());
 	scnprintf(project_version, sizeof(project_version), "%d", get_project());

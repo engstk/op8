@@ -5882,7 +5882,7 @@ static int oplus_usbtemp_monitor_main_new_method(void *data)
 	struct timespec curr_range_change_first_time;
 	struct timespec curr_range_change_last_time;
 	bool usbtemp_first_time_in_curr_range = false;
-	static current_read_count = 0;
+	static int current_read_count = 0;
 
 	pr_err("[oplus_usbtemp_monitor_main_new_method]:run first!");
 

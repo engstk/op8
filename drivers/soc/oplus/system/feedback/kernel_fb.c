@@ -601,7 +601,7 @@ failed_kzalloc:
 	return ret;
 }
 
-static void __exit kernel_fb_exit()
+static void __exit kernel_fb_exit(void)
 {
 	genl_unregister_family(&oplus_fb_kevent_family);
 	kfree(g_pkts->flush_task);

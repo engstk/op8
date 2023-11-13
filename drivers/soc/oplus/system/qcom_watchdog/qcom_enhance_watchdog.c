@@ -23,7 +23,7 @@
 unsigned int smp_call_any_cpu;
 unsigned long smp_call_many_cpumask;
 
-static oplus_print_utc_cnt = 0;
+static int oplus_print_utc_cnt = 0;
 
 struct oplus_irq_counter {
 	unsigned int all_irqs_last;

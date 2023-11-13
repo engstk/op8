@@ -491,14 +491,14 @@ static void gf_kernel_key_input(struct gf_dev *gf_dev, struct gf_key *gf_key)
 	}
 }
 
-static void gf_auto_send_touchdown()
+static void gf_auto_send_touchdown(void)
 {
     struct fp_underscreen_info tp_info;
     tp_info.touch_state = 1;
     gf_opticalfp_irq_handler(&tp_info);
 }
 
-static void gf_auto_send_touchup()
+static void gf_auto_send_touchup(void)
 {
     struct fp_underscreen_info tp_info;
     tp_info.touch_state = 0;

@@ -13,7 +13,9 @@
 #include <linux/uio.h>
 #include <linux/uaccess.h>
 #include "overlayfs.h"
+
 #define OVL_IOCB_MASK (IOCB_DSYNC | IOCB_HIPRI | IOCB_NOWAIT | IOCB_SYNC)
+
 static char ovl_whatisit(struct inode *inode, struct inode *realinode)
 {
 	if (realinode != ovl_inode_upper(inode))
@@ -213,7 +215,6 @@ static void ovl_file_accessed(struct file *file)
 	touch_atime(&file->f_path);
 }
 
-
 static ssize_t ovl_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 {
 	struct file *file = iocb->ki_filp;
@@ -230,8 +231,7 @@ static ssize_t ovl_read_iter(struct kiocb *iocb, struct iov_iter *iter)
 
 	old_cred = ovl_override_creds(file_inode(file)->i_sb);
 	ret = vfs_iter_read(real.file, iter, &iocb->ki_pos,
-				    iocb_to_rw_flags(iocb->ki_flags,
-						     OVL_IOCB_MASK));
+			    iocb_to_rw_flags(iocb->ki_flags, OVL_IOCB_MASK));
 	ovl_revert_creds(old_cred);
 
 	ovl_file_accessed(file);

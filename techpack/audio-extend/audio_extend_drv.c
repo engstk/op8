@@ -342,7 +342,7 @@ void extend_codec_i2s_be_dailinks(struct snd_soc_dai_link *dailink, size_t size)
 		extend_codec_be_dailink(g_extend_pdata->hp_dac_info, dailink, size);
 	}
 }
-EXPORT_SYMBOL(extend_codec_i2s_be_dailinks);
+EXPORT_SYMBOL_GPL(extend_codec_i2s_be_dailinks);
 
 static int audio_extend_probe(struct platform_device *pdev)
 {

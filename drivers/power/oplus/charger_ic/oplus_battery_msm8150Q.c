@@ -14455,7 +14455,7 @@ int oplus_chg_get_charger_subtype(void)
 }
 
 extern int oplus_pdo_select(int vbus_mv, int ibus_ma);
-int oplus_chg_set_pd_config()
+int oplus_chg_set_pd_config(void)
 {
 	int ret = 0;
 	struct oplus_chg_chip *chip = g_oplus_chip;
@@ -14522,7 +14522,7 @@ int oplus_chg_enable_qc_detect(void)
 	return ret;
 }
 
-int oplus_chg_set_qc_config()
+int oplus_chg_set_qc_config(void)
 {
 	int ret = 0;
 	struct smb_charger *chg = NULL;

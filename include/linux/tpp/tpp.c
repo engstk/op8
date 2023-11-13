@@ -511,7 +511,7 @@ struct tpp_cpu_cluster {
 
 static struct tpp_cpu_cluster tpp_cpu_clusters[TPP_MAX_CLUSTER_SIZE];
 
-int tpp_cluster_amount()
+int tpp_cluster_amount(void)
 {
 	return tpp_cluster_size;
 }
@@ -655,7 +655,7 @@ static unsigned int save_cpu_cluster_and_ret_last_cpu(struct cpufreq_policy * po
 	return last;
 }
 
-static void record_system_cpu_state()
+static void record_system_cpu_state(void)
 {
 	struct cpufreq_policy * policy;
 	unsigned int cpu = 0;

@@ -11705,7 +11705,7 @@ static void oplus_chg_reset_adapter_work(struct work_struct *work) {
 	}
 }
 
-void oplus_chg_turn_on_charging_in_work()
+void oplus_chg_turn_on_charging_in_work(void)
 {
 	if (g_charger_chip)
 		schedule_delayed_work(&g_charger_chip->turn_on_charging_work, 0);

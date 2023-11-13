@@ -314,7 +314,6 @@ enum rw_hint {
 #define IOCB_WAITQ		(1 << 19)
 #define IOCB_NOIO		(1 << 20)
 
-
 struct kiocb {
 	struct file		*ki_filp;
 
@@ -2089,18 +2088,6 @@ static inline void init_sync_kiocb(struct kiocb *kiocb, struct file *filp)
 	};
 }
 
-static inline void kiocb_clone(struct kiocb *kiocb, struct kiocb *kiocb_src,
-			       struct file *filp)
-{
-	*kiocb = (struct kiocb) {
-		.ki_filp = filp,
-		.ki_flags = kiocb_src->ki_flags,
-		.ki_hint = kiocb_src->ki_hint,
-		.ki_ioprio = kiocb_src->ki_ioprio,
-		.ki_pos = kiocb_src->ki_pos,
-	};
-}
-
 /*
  * Inode state bits.  Protected by inode->i_lock
  *
@@ -3422,7 +3409,7 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
 	int kiocb_flags = 0;
 
 	/* make sure there's no overlap between RWF and private IOCB flags */
-	BUILD_BUG_ON((__force int) RWF_SUPPORTED & IOCB_EVENTFD);
+	BUILD_BUG_ON((__force int)RWF_SUPPORTED & IOCB_EVENTFD);
 
 	if (!flags)
 		return 0;
@@ -3434,7 +3421,7 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
 			return -EOPNOTSUPP;
 		kiocb_flags |= IOCB_NOIO;
 	}
-	kiocb_flags |= (__force int) (flags & RWF_SUPPORTED);
+	kiocb_flags |= (__force int)(flags & RWF_SUPPORTED);
 	if (flags & RWF_SYNC)
 		kiocb_flags |= IOCB_DSYNC;
 

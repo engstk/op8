@@ -136,7 +136,6 @@ int fuse_do_open(struct fuse_conn *fc, u64 nodeid, struct file *file,
 		if (!err) {
 			ff->fh = outarg.fh;
 			ff->open_flags = outarg.open_flags;
-
 			fuse_passthrough_setup(fc, ff, &outarg);
 		} else if (err != -ENOSYS || isdir) {
 			fuse_file_free(ff);
@@ -954,11 +953,9 @@ static ssize_t fuse_file_read_iter(struct kiocb *iocb, struct iov_iter *to)
 			return err;
 	}
 
-	if (ff && ff->passthrough.filp)
+	if (ff->passthrough.filp)
 		return fuse_passthrough_read_iter(iocb, to);
-	else
-		return generic_file_read_iter(iocb, to);
-
+	return generic_file_read_iter(iocb, to);
 }
 
 static void fuse_write_fill(struct fuse_req *req, struct fuse_file *ff,
@@ -1196,24 +1193,18 @@ static ssize_t fuse_file_write_iter(struct kiocb *iocb, struct iov_iter *from)
 {
 	struct file *file = iocb->ki_filp;
 	struct address_space *mapping = file->f_mapping;
-	struct fuse_file *ff = file->private_data;
 	ssize_t written = 0;
 	ssize_t written_buffered = 0;
 	struct inode *inode = mapping->host;
 	ssize_t err;
 	loff_t endbyte = 0;
+	struct fuse_file *ff = file->private_data;
+
+	if (ff->passthrough.filp)
+		return fuse_passthrough_write_iter(iocb, from);
 
 	if (fuse_is_bad(inode))
 		return -EIO;
-
-	if (ff && ff->passthrough.filp) {
-		/* Update size (EOF optimization) and mode (SUID clearing) */
-		err = fuse_update_attributes(mapping->host, file);
-		if (err)
-			return err;
-
-		return fuse_passthrough_write_iter(iocb, from);
-	}
 
 	if (get_fuse_conn(inode)->writeback_cache) {
 		/* Update size (EOF optimization) and mode (SUID clearing) */

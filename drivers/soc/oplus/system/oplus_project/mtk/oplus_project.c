@@ -625,7 +625,7 @@ static int project_read_func(struct seq_file *s, void *v)
     return 0;
 }
 
-unsigned int get_cdt_version()
+unsigned int get_cdt_version(void)
 {
     init_project_version();
 

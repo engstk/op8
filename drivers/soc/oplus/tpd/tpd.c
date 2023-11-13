@@ -910,7 +910,7 @@ void tpd_init_policy(struct cpufreq_policy *policy)
 		tpd_logi("%d ", i);
 }
 
-static void tpd_mgp_init()
+static void tpd_mgp_init(void)
 {
 	int i, j;
 

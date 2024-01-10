@@ -10,13 +10,15 @@
          pr_err("[theia powerkey_monitor]: " a, ##arg);\
     }while(0)
 
+#define STAGE_BRIEF_SIZE 64
+#define STAGE_TOTAL_SIZE 1024
+
 static char *flow_buf = NULL;
 static char *flow_buf_curr = NULL;
 static int flow_index=0;
 static int stage_start=0;
 static const int flow_size = 16;
-static const int stage_brief_size = 64;
-static const int stage_total_size = stage_brief_size*flow_size;
+static const int stage_brief_size = STAGE_BRIEF_SIZE;
 
 static struct task_struct *block_thread = NULL;
 static bool timer_started = false;
@@ -225,7 +227,7 @@ static void print_all_buffer(void)
 static ssize_t theia_powerkey_report_proc_read(struct file *file, char __user *buf,
         size_t count,loff_t *off)
 {
-    char stages[stage_total_size] = {0};
+    char stages[STAGE_TOTAL_SIZE] = {0};
     int stages_len;
 
     POWER_MONITOR_DEBUG_PRINTK("enter theia_powerkey_report_proc_read %d  %d",count,*off);
@@ -265,7 +267,7 @@ static ssize_t theia_powerkey_report_proc_write(struct file *file, const char __
         size_t count,loff_t *off)
 {
 
-    char buffer[stage_brief_size] = {0};
+    char buffer[STAGE_BRIEF_SIZE] = {0};
 
     if(g_black_data.status == BLACK_STATUS_INIT || g_black_data.status == BLACK_STATUS_INIT_FAIL){
         POWER_MONITOR_DEBUG_PRINTK("%s init not finish: status = %d\n", __func__, g_black_data.status);

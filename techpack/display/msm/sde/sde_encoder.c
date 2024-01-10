@@ -3324,21 +3324,6 @@ static void _sde_encoder_input_handler_register(
 	}
 }
 
-static void _sde_encoder_input_handler_unregister(
-		struct drm_encoder *drm_enc)
-{
-	struct sde_encoder_virt *sde_enc = to_sde_encoder_virt(drm_enc);
-
-	if (!sde_encoder_check_curr_mode(drm_enc, MSM_DISPLAY_CMD_MODE))
-		return;
-
-	if (sde_enc->input_handler && sde_enc->input_handler->private) {
-		input_unregister_handler(sde_enc->input_handler);
-		sde_enc->input_handler->private = NULL;
-	}
-
-}
-
 static int _sde_encoder_input_handler(
 		struct sde_encoder_virt *sde_enc)
 {

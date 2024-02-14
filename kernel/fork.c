@@ -2130,6 +2130,7 @@ static __latent_entropy struct task_struct *copy_process(
 					      O_RDWR | O_CLOEXEC);
 		if (IS_ERR(pidfile)) {
 			put_unused_fd(pidfd);
+			retval = PTR_ERR(pidfile);
 			goto bad_fork_free_pid;
 		}
 		get_pid(pid);	/* held by pidfile now */
@@ -2245,10 +2246,6 @@ static __latent_entropy struct task_struct *copy_process(
 		goto bad_fork_cancel_cgroup;
 	}
 
-	/* past the last point of failure */
-	if (pidfile)
-		fd_install(pidfd, pidfile);
-
 #ifdef CONFIG_OPLUS_FEATURE_UID_PERF
 	/* should init uid pevents before task added into any link */
 	memset(p->uid_pevents, 0, sizeof(struct perf_event *) * UID_PERF_EVENTS);
@@ -2312,6 +2309,9 @@ static __latent_entropy struct task_struct *copy_process(
 	spin_unlock(&current->sighand->siglock);
 	syscall_tracepoint_update(p);
 	write_unlock_irq(&tasklist_lock);
+
+	if (pidfile)
+		fd_install(pidfd, pidfile);
 
 	proc_fork_connector(p);
 	cgroup_post_fork(p);

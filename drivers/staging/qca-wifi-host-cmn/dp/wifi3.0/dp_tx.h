@@ -62,7 +62,6 @@ do {                                                           \
 #define DP_TX_QUEUE_MASK 0x3
 #define DP_TX_MSDU_INFO_META_DATA_DWORDS 9
 
-
 /**
  * struct dp_tx_frag_info_s
  * @vaddr: hlos vritual address for buffer

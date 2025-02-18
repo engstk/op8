@@ -1077,7 +1077,10 @@ static int __ipa_add_rt_rule(enum ipa_ip_type ip, const char *name,
 		list_add_tail(&entry->link, &tbl->head_rt_rule_list);
 	else
 		list_add(&entry->link, &tbl->head_rt_rule_list);
-	tbl->rule_cnt++;
+	if (tbl->rule_cnt < IPA_RULE_CNT_MAX)
+		tbl->rule_cnt++;
+	else
+		return -EINVAL;
 	if (entry->hdr)
 		entry->hdr->ref_cnt++;
 	else if (entry->proc_ctx)

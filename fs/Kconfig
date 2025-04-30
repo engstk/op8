@@ -14,11 +14,7 @@ config FS_IOMAP
 	bool
 
 source "fs/ext2/Kconfig"
-#ifdef CONFIG_OPLUS_FEATURE_OEXT4
-source "fs/oext4/Kconfig"
-#else
-#source "fs/ext4/Kconfig"
-#endif
+source "fs/ext4/Kconfig"
 source "fs/jbd2/Kconfig"
 
 config FS_MBCACHE
@@ -36,9 +32,7 @@ source "fs/gfs2/Kconfig"
 source "fs/ocfs2/Kconfig"
 source "fs/btrfs/Kconfig"
 source "fs/nilfs2/Kconfig"
-
 source "fs/f2fs/Kconfig"
-
 
 config FS_DAX
 	bool "Direct Access (DAX) support"
@@ -325,10 +319,6 @@ endif # NETWORK_FILESYSTEMS
 
 source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
-
-#ifdef OPLUS_FEATURE_EXFAT_SUPPORT
-source "fs/exfat/Kconfig"
-#endif /*OPLUS_FEATURE_EXFAT_SUPPORT*/
 source "fs/unicode/Kconfig"
 
 endmenu

@@ -39,7 +39,6 @@ typedef unsigned int ext4_group_t;
 #include <trace/events/mmc.h>
 #include <trace/events/scsi.h>
 #include <trace/events/sched.h>
-#include <trace/events/android_fs.h>
 
 /********************************************************************/
 #define do_posix_clock_monotonic_gettime(ts) ktime_get_ts(ts)

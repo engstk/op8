@@ -78,14 +78,14 @@ typedef enum {
     HEALTH_BELOW_RATE,
 } healthinfo_type;
 
-void reset_healthinfo_time_counter(u64 *time_counter);
-void reset_healthinfo_grip_time_record(void *tp_monitor_data, void *tp_grip_info);
-u64 check_healthinfo_time_counter_timeout(u64 time_counter, int ms);
+static inline void reset_healthinfo_time_counter(u64 *time_counter) {}
+static inline void reset_healthinfo_grip_time_record(void *tp_monitor_data, void *tp_grip_info) {}
+static inline u64 check_healthinfo_time_counter_timeout(u64 time_counter, int ms) { return 0; }
 
-int tp_healthinfo_report(void *tp_monitor_data, healthinfo_type type, void *value);
+static inline int tp_healthinfo_report(void *tp_monitor_data, healthinfo_type type, void *value) { return 0; }
 
-int tp_healthinfo_read(struct seq_file *s, void *tp_monitor_data);
+static inline int tp_healthinfo_read(struct seq_file *s, void *tp_monitor_data) { return 0; }
 
-int tp_healthinfo_init(struct device *dev, void *tp_monitor_data);
+static inline int tp_healthinfo_init(struct device *dev, void *tp_monitor_data) { return 0; }
 
 #endif /* _TOUCHPANEL_HEALTHONFO_ */

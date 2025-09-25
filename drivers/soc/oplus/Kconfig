@@ -17,19 +17,9 @@ config OPLUS_GPIO_NC
         define this config to compile oplus_gpio.c for device register
 #endif
 
-#ifdef OPLUS_FEATURE_LOWMEM_DBG
-#Add for dump memory usage when lowmmem occurs.
-source "drivers/soc/oplus/lowmem_dbg/Kconfig"
-##endif /* OPLUS_FEATURE_LOWMEM_DBG */
-
 #ifdef OPLUS_FEATURE_MIDAS
 source "drivers/soc/oplus/midas/Kconfig"
 #endif
-
-#ifdef OPLUS_FEATURE_MEMLEAK_DETECT
-#Add for svelte
-source "drivers/soc/oplus/svelte/Kconfig"
-#endif /* OPLUS_FEATURE_MEMLEAK_DETECT */
 
 #ifdef OPLUS_FEATURE_THERMAL_HORAE
 source "drivers/soc/oplus/thermal/Kconfig"

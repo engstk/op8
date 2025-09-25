@@ -33,7 +33,6 @@
 
 #ifdef OPLUS_BUG_STABILITY
 #define PP_TIMEOUT_BAD_TRIALS   10
-#include <soc/oplus/system/oplus_mm_kevent_fb.h>
 extern int oplus_dimlayer_fingerprint_failcount;
 #endif
 
@@ -616,9 +615,6 @@ static int _sde_encoder_phys_cmd_handle_ppdone_timeout(
 				phys_enc->hw_pp->idx - PINGPONG_0,
 				phys_enc->hw_ctl->idx - CTL_0,
 				pending_kickoff_cnt);
-#ifdef OPLUS_BUG_STABILITY
-		mm_fb_display_kevent("DisplayDriverID@@409$$", MM_FB_KEY_RATELIMIT_NONE, "ppdone timeout failed pp:%d kickoff timeout", phys_enc->hw_pp->idx - PINGPONG_0);
-#endif /* OPLUS_BUG_STABILITY */
 		SDE_EVT32(DRMID(phys_enc->parent), SDE_EVTLOG_FATAL);
 		mutex_lock(phys_enc->vblank_ctl_lock);
 		sde_encoder_helper_unregister_irq(phys_enc, INTR_IDX_RDPTR);
@@ -1773,9 +1769,6 @@ static int _sde_encoder_phys_cmd_handle_wr_ptr_timeout(
 		SDE_ERROR_CMDENC(cmd_enc,
 			"wr_ptr_irq wait failed, switch_te:%d\n", switch_te);
 		SDE_EVT32(DRMID(phys_enc->parent), switch_te, SDE_EVTLOG_ERROR);
-#ifdef OPLUS_BUG_STABILITY
-		mm_fb_display_kevent("DisplayDriverID@@418$$", MM_FB_KEY_RATELIMIT_30MIN, "wr_ptr_irq timeout failed switch_te:%d", switch_te);
-#endif
 
 		if (sde_encoder_phys_cmd_is_master(phys_enc) &&
 			atomic_add_unless(

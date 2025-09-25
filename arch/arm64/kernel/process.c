@@ -68,8 +68,6 @@ unsigned long __stack_chk_guard __ro_after_init;
 EXPORT_SYMBOL(__stack_chk_guard);
 #endif
 
-#ifndef CONFIG_OPLUS_FEATURE_QCOM_MINIDUMP_ENHANCE
-
 /*
  * Function pointers to optional machine specific functions
  */
@@ -78,19 +76,6 @@ EXPORT_SYMBOL_GPL(pm_power_off);
 
 void (*arm_pm_restart)(enum reboot_mode reboot_mode, const char *cmd);
 EXPORT_SYMBOL_GPL(arm_pm_restart);
-
-#else
-
-#include <soc/oplus/system/qcom_minidump_enhance.h>
-
-/*
- * Function pointers to optional machine specific functions
- */
-void (*pm_power_off)(void) = do_poweroff_early;
-EXPORT_SYMBOL_GPL(pm_power_off);
-void (*arm_pm_restart)(enum reboot_mode reboot_mode, const char *cmd) = do_restart_early;
-
-#endif /* CONFIG_OPLUS_FEATURE_QCOM_MINIDUMP_ENHANCE */
 
 /*
  * This is our default idle handler.
@@ -311,11 +296,6 @@ void __show_regs(struct pt_regs *regs)
 	if (!user_mode(regs)) {
 		printk("pc : %pS\n", (void *)regs->pc);
 		printk("lr : %pS\n", (void *)lr);
-#ifdef CONFIG_OPLUS_FEATURE_QCOM_MINIDUMP_ENHANCE
-		printk("pc : %016llx\n", regs->pc);
-		printk("lr : %016llx\n", lr);
-#endif
-
 	} else {
 		printk("pc : %016llx\n", regs->pc);
 		printk("lr : %016llx\n", lr);

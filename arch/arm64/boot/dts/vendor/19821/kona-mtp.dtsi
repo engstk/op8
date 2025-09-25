@@ -277,9 +277,6 @@
 		pinctrl-0 = <&rf_cable0_active>;
 	};*/
 	//#endif /* OPLUS_FEATURE_TP_BASIC */
-	feedback_fb {
-		compatible = "oplus,haptic-feedback";
-	};
 };
 /*&qupv3_se13_i2c {
 	#address-cells = <1>;

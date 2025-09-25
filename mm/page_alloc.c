@@ -76,16 +76,6 @@
 #include <asm/div64.h>
 #include "internal.h"
 
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_MEM_MONITOR
-#include <linux/healthinfo/memory_monitor.h>
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-#include <linux/memory_isolate.h>
-#endif /*OPLUS_FEATURE_MEMORY_ISOLATE*/
-
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA) && defined(CONFIG_PHYSICAL_ANTI_FRAGMENTATION)
 #include "multi_freearea.h"
 #endif
@@ -312,10 +302,6 @@ char * const migratetype_names[MIGRATE_TYPES] = {
 #ifdef CONFIG_CMA
 	"CMA",
 #endif
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-	"OPLUS2",
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
-
 	"HighAtomic",
 #ifdef CONFIG_MEMORY_ISOLATION
 	"Isolate",
@@ -2345,11 +2331,6 @@ static void change_pageblock_range(struct page *pageblock_page,
  */
 static bool can_steal_fallback(unsigned int order, int start_mt)
 {
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-	if(is_migrate_(start_mt))
-		return false;
-#endif /*OPLUS_FEATURE_MEMORY_ISOLATE*/
-
 	/*
 	 * Leaving this order check is intended, although there is
 	 * relaxed order check in next check. The reason is that
@@ -2616,9 +2597,6 @@ static void reserve_highatomic_pageblock(struct page *page, struct zone *zone,
 	/* Yoink! */
 	mt = get_pageblock_migratetype(page);
 	if (!is_migrate_highatomic(mt) && !is_migrate_isolate(mt)
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-		&&!is_migrate_oplus2(mt)
-#endif /*OPLUS_FEATURE_MEMORY_ISOLATE*/
 	    && !is_migrate_cma(mt)) {
 		zone->nr_reserved_highatomic += pageblock_nr_pages;
 		set_pageblock_migratetype(page, MIGRATE_HIGHATOMIC);
@@ -2927,12 +2905,6 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 		if (is_migrate_cma(get_pcppage_migratetype(page)))
 			__mod_zone_page_state(zone, NR_FREE_CMA_PAGES,
 					      -(1 << order));
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-		if (is_migrate_oplus2(get_pcppage_migratetype(page)))
-			__mod_zone_page_state(zone, NR_FREE_OPLUS2_PAGES,
-						  -(1 << order));
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
-
 	}
 
 	/*
@@ -3371,9 +3343,6 @@ int __isolate_free_page(struct page *page, unsigned int order)
 		for (; page < endpage; page += pageblock_nr_pages) {
 			int mt = get_pageblock_migratetype(page);
 			if (!is_migrate_isolate(mt) && !is_migrate_cma(mt)
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-			    && !is_migrate_oplus2(mt)
-#endif /*OPLUS_FEATURE_MEMORY_ISOLATE*/
 			    && !is_migrate_highatomic(mt))
 				set_pageblock_migratetype(page,
 							  MIGRATE_MOVABLE);
@@ -3509,18 +3478,9 @@ struct page *rmqueue(struct zone *preferred_zone,
 				gfp_flags & __GFP_CMA)
 			page = __rmqueue_cma(zone, order);
 
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-		if (!page && is_oplus2_order(order))
-			page = __rmqueue_smallest(zone, order, MIGRATE_OPLUS2);
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
-
 		if (!page)
 			page = __rmqueue(zone, order, migratetype, alloc_flags);
 	} while (page && check_new_pages(page, order));
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-			if (!page && is_oplus2_order(order))
-				page = __rmqueue_smallest(zone, order, MIGRATE_HIGHATOMIC);
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
 
 	spin_unlock(&zone->lock);
 	if (!page)
@@ -3683,27 +3643,8 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 		if (alloc_flags & ALLOC_OOM)
 			min -= min / 2;
 		else
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-/*
- * ALLOC_HIGH:ALLOC_HARDER is about 1:10, so more for ALLOC_HARDER
- * and since 2-order might allocate from MIGRATE_HIGHATOMIC as fallback,
- * so here should make it easier for ALLOC_HARDER.
- * after this change, kswapd might reclaim a bit more, which is what we want.
- */
-			min -= min / 4 + min / 8;
-#else
 			min -= min / 4;
-#endif /*OPLUS_FEATURE_MEMORY_ISOLATE*/
-
 	}
-
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-/*
- * Not OPLUS2_ORDER allocation cannot use MIGRATE_OPLUS
- */
-	if (!is_oplus2_order(order))
-		free_pages -= zone_page_state(z, NR_FREE_OPLUS2_PAGES);
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
 
 	/*
 	 * Check watermarks for an order-0 allocation request. If these
@@ -3731,10 +3672,6 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 
 		if (!area->nr_free)
 			continue;
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-		if (is_oplus2_order(order) && !list_empty(&area->free_list[MIGRATE_OPLUS2]))
-				return true;
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
 
 		for (mt = 0; mt < MIGRATE_PCPTYPES; mt++) {
 #ifdef CONFIG_CMA
@@ -3748,13 +3685,6 @@ bool __zone_watermark_ok(struct zone *z, unsigned int order, unsigned long mark,
 			if (!list_empty(&area->free_list[mt]))
 				return true;
 		}
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-/*
- * OPLUS2_ORDER could allocate from MIGRATE_HIGHATOMIC as last resert
- */
-			if (is_oplus2_order(order) && !list_empty(&area->free_list[MIGRATE_HIGHATOMIC]))
-				return true;
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
 
 #ifdef CONFIG_CMA
 		if ((alloc_flags & ALLOC_CMA) &&
@@ -4811,11 +4741,6 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 	unsigned int cpuset_mems_cookie;
 	unsigned int zonelist_iter_cookie;
 	int reserve_flags;
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_MEM_MONITOR
-	unsigned long oplus_alloc_start = jiffies;
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
 	/*
 	 * We also sanity check to catch abuse of atomic reserves being used by
 	 * callers that are not in atomic context.
@@ -4832,6 +4757,7 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
 restart:
 	compaction_retries = 0;
 	no_progress_loops = 0;
+	compact_result = COMPACT_SKIPPED;
 	compact_priority = DEF_COMPACT_PRIORITY;
 	cpuset_mems_cookie = read_mems_allowed_begin();
 	zonelist_iter_cookie = zonelist_iter_begin();
@@ -4911,6 +4837,14 @@ restart:
 	}
 
 retry:
+	/*
+	 * Deal with possible cpuset update races or zonelist updates to avoid
+	 * infinite retries.
+	 */
+	if (check_retry_cpuset(cpuset_mems_cookie, ac) ||
+	    check_retry_zonelist(zonelist_iter_cookie))
+		goto restart;
+
 	/* Ensure kswapd doesn't accidentally go to sleep as long as we loop */
 	if (alloc_flags & ALLOC_KSWAPD)
 		wake_all_kswapds(order, gfp_mask, ac);
@@ -5070,12 +5004,6 @@ fail:
 	warn_alloc(gfp_mask, ac->nodemask,
 			"page allocation failure: order:%u", order);
 got_pg:
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_MEM_MONITOR
-	memory_alloc_monitor(gfp_mask, order, jiffies_to_msecs(jiffies - oplus_alloc_start));
-	trace_android_vh_alloc_pages_slowpath(gfp_mask, order, oplus_alloc_start);
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
 	return page;
 }
 
@@ -5628,10 +5556,6 @@ static void show_migration_types(unsigned char type)
 #ifdef CONFIG_CMA
 		[MIGRATE_CMA]		= 'C',
 #endif
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-		[MIGRATE_OPLUS2]		= 'P',
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
-
 #ifdef CONFIG_MEMORY_ISOLATION
 		[MIGRATE_ISOLATE]	= 'I',
 #endif
@@ -5947,21 +5871,11 @@ char numa_zonelist_order[] = "Node";
  * sysctl handler for numa_zonelist_order
  */
 int numa_zonelist_order_handler(struct ctl_table *table, int write,
-		void __user *buffer, size_t *length,
-		loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
-	char *str;
-	int ret;
-
-	if (!write)
-		return proc_dostring(table, write, buffer, length, ppos);
-	str = memdup_user_nul(buffer, 16);
-	if (IS_ERR(str))
-		return PTR_ERR(str);
-
-	ret = __parse_numa_zonelist_order(str);
-	kfree(str);
-	return ret;
+	if (write)
+		return __parse_numa_zonelist_order(buffer);
+	return proc_dostring(table, write, buffer, length, ppos);
 }
 
 
@@ -8194,10 +8108,6 @@ static void __setup_per_zone_wmarks(void)
 					low + min;
 		zone->_watermark[WMARK_HIGH] = min_wmark_pages(zone) +
 					low + min * 2;
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-		setup_zone_migrate_oplus(zone, MIGRATE_OPLUS2);
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
-
 		spin_unlock_irqrestore(&zone->lock, flags);
 	}
 
@@ -8284,7 +8194,7 @@ postcore_initcall(init_per_zone_wmark_min)
  *	or extra_free_kbytes changes.
  */
 int min_free_kbytes_sysctl_handler(struct ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
 	int rc;
 
@@ -8312,7 +8222,7 @@ int watermark_boost_factor_sysctl_handler(struct ctl_table *table, int write,
 }
 
 int watermark_scale_factor_sysctl_handler(struct ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
 	int rc;
 
@@ -8342,7 +8252,7 @@ static void setup_min_unmapped_ratio(void)
 
 
 int sysctl_min_unmapped_ratio_sysctl_handler(struct ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
 	int rc;
 
@@ -8369,7 +8279,7 @@ static void setup_min_slab_ratio(void)
 }
 
 int sysctl_min_slab_ratio_sysctl_handler(struct ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
 	int rc;
 
@@ -8393,7 +8303,7 @@ int sysctl_min_slab_ratio_sysctl_handler(struct ctl_table *table, int write,
  * if in function of the boot time zone sizes.
  */
 int lowmem_reserve_ratio_sysctl_handler(struct ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
 	proc_dointvec_minmax(table, write, buffer, length, ppos);
 	setup_per_zone_lowmem_reserve();
@@ -8406,7 +8316,7 @@ int lowmem_reserve_ratio_sysctl_handler(struct ctl_table *table, int write,
  * pagelist can have before it gets flushed back to buddy allocator.
  */
 int percpu_pagelist_fraction_sysctl_handler(struct ctl_table *table, int write,
-	void __user *buffer, size_t *length, loff_t *ppos)
+		void *buffer, size_t *length, loff_t *ppos)
 {
 	struct zone *zone;
 	int old_percpu_pagelist_fraction;
@@ -8565,7 +8475,7 @@ void *__init alloc_large_system_hash(const char *tablename,
 			else
 				table = memblock_virt_alloc_raw(size, 0);
 		} else if (hashdist) {
-			table = __vmalloc(size, gfp_flags, PAGE_KERNEL);
+			table = __vmalloc(size, gfp_flags);
 		} else {
 			/*
 			 * If bucketsize is not a power-of-two, we may free

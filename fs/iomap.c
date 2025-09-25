@@ -32,9 +32,6 @@
 #include <linux/dax.h>
 #include <linux/sched/signal.h>
 #include <linux/swap.h>
-#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
-#include <linux/iomonitor/iomonitor.h>
-#endif /*OPLUS_FEATURE_IOMONITOR*/
 
 #include "internal.h"
 
@@ -1717,9 +1714,6 @@ iomap_dio_bio_actor(struct inode *inode, loff_t pos, loff_t length,
 			else
 				dio->flags &= ~IOMAP_DIO_WRITE_FUA;
 			task_io_account_write(n);
-#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
-			iomonitor_update_rw_stats(DIO_WRITE, NULL, n);
-#endif /*OPLUS_FEATURE_IOMONITOR*/
 		} else {
 			bio->bi_opf = REQ_OP_READ;
 			if (dio->flags & IOMAP_DIO_DIRTY)
@@ -1866,7 +1860,7 @@ iomap_dio_rw(struct kiocb *iocb, struct iov_iter *iter,
 		if (pos >= dio->i_size)
 			goto out_free_dio;
 
-		if (iter->type == ITER_IOVEC)
+		if (iter_is_iovec(iter) && iov_iter_rw(iter) == READ)
 			dio->flags |= IOMAP_DIO_DIRTY;
 	} else {
 		flags |= IOMAP_WRITE;

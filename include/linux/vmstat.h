@@ -16,8 +16,8 @@ extern int sysctl_stat_interval;
 #define DISABLE_NUMA_STAT   0
 extern int sysctl_vm_numa_stat;
 DECLARE_STATIC_KEY_TRUE(vm_numa_stat_key);
-extern int sysctl_vm_numa_stat_handler(struct ctl_table *table,
-		int write, void __user *buffer, size_t *length, loff_t *ppos);
+int sysctl_vm_numa_stat_handler(struct ctl_table *table, int write,
+		void *buffer, size_t *length, loff_t *ppos);
 #endif
 
 struct reclaim_stat {
@@ -273,8 +273,8 @@ void cpu_vm_stats_fold(int cpu);
 void refresh_zone_stat_thresholds(void);
 
 struct ctl_table;
-int vmstat_refresh(struct ctl_table *, int write,
-		   void __user *buffer, size_t *lenp, loff_t *ppos);
+int vmstat_refresh(struct ctl_table *, int write, void *buffer, size_t *lenp,
+		loff_t *ppos);
 
 void drain_zonestat(struct zone *zone, struct per_cpu_pageset *);
 
@@ -382,13 +382,6 @@ static inline void __mod_zone_freepage_state(struct zone *zone, int nr_pages,
 	__mod_zone_page_state(zone, NR_FREE_PAGES, nr_pages);
 	if (is_migrate_cma(migratetype))
 		__mod_zone_page_state(zone, NR_FREE_CMA_PAGES, nr_pages);
-#if defined(OPLUS_FEATURE_MEMORY_ISOLATE) && defined(CONFIG_OPLUS_MEMORY_ISOLATE)
-/* 
- * Account free pages for MIGRATE_OPLUS
- */
-	if (migratetype == MIGRATE_OPLUS2)
-		__mod_zone_page_state(zone, NR_FREE_OPLUS2_PAGES, nr_pages);
-#endif /* OPLUS_FEATURE_MEMORY_ISOLATE */
 }
 
 extern const char * const vmstat_text[];

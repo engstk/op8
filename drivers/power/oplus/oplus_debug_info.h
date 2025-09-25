@@ -156,14 +156,6 @@ struct oplus_chg_debug_info {
 	int rechg_counts;/*add for rechg counts*/
 	struct workqueue_struct *oplus_chg_debug_wq;
 
-#if defined(CONFIG_OPLUS_FEATURE_FEEDBACK) || defined(CONFIG_OPLUS_FEATURE_FEEDBACK_MODULE)
-	struct kernel_packet_info *dcs_info;
-	struct mutex dcs_info_lock;
-#define SEND_INFO_DELAY 3000
-	struct delayed_work send_info_dwork;
-#define SEND_INFO_MAX_CNT 5
-	int retry_cnt;
-#endif
 	char flag_reason[32];
 	char type_reason[32];
 	char sc85x7_error_reason[32];

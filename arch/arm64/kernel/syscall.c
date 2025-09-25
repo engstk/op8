@@ -17,11 +17,6 @@
 long compat_arm_syscall(struct pt_regs *regs, int scno);
 long sys_ni_syscall(void);
 
-#ifdef CONFIG_OPLUS_SECURE_GUARD
-extern void oplus_invoke_syscall(struct pt_regs *regs, unsigned int scno,
-			   unsigned int sc_nr,
-			   const syscall_fn_t syscall_table[]);
-#else 
 static long do_ni_syscall(struct pt_regs *regs, int scno)
 {
 #ifdef CONFIG_COMPAT
@@ -59,7 +54,6 @@ static void invoke_syscall(struct pt_regs *regs, unsigned int scno,
 
 	regs->regs[0] = ret;
 }
-#endif /* CONFIG_OPLUS_SECURE_GUARD */
 
 static inline bool has_syscall_work(unsigned long flags)
 {
@@ -118,11 +112,9 @@ static void el0_svc_common(struct pt_regs *regs, int scno, int sc_nr,
 		if (scno == NO_SYSCALL)
 			goto trace_exit;
 	}
-#ifdef CONFIG_OPLUS_SECURE_GUARD
-	oplus_invoke_syscall(regs, scno, sc_nr, syscall_table);
-#else 
+
 	invoke_syscall(regs, scno, sc_nr, syscall_table);
-#endif /* CONFIG_OPLUS_SECURE_GUARD */
+
 	/*
 	 * The tracing status may have changed under our feet, so we have to
 	 * check again. However, if we were tracing entry, then we always trace

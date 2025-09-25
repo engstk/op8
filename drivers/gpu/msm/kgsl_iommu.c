@@ -21,10 +21,6 @@
 #include "kgsl_sharedmem.h"
 #include "kgsl_trace.h"
 
-#ifdef OPLUS_BUG_STABILITY
-#include <soc/oplus/system/oplus_mm_kevent_fb.h>
-#endif /*OPLUS_BUG_STABILITY*/
-
 #define _IOMMU_PRIV(_mmu) (&((_mmu)->priv.iommu))
 
 #define ADDR_IN_GLOBAL(_mmu, _a) \
@@ -830,13 +826,6 @@ static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 		no_page_fault_log = kgsl_mmu_log_fault_addr(mmu, ptbase, addr);
 
 	if (!no_page_fault_log && __ratelimit(&_rs)) {
-		#ifdef OPLUS_BUG_STABILITY
-		mm_fb_kevent(OPLUS_MM_DIRVER_FB_EVENT_DISPLAY,
-		    OPLUS_DISPLAY_EVENTID_GPU_FAULT,
-		    "gpu fault", MM_FB_KEY_RATELIMIT_1H,
-		    "pid=%08lx,comm=%d", ptname, comm);
-		#endif /*OPLUS_BUG_STABILITY*/
-
 		dev_crit(ctx->kgsldev->dev,
 			"GPU PAGE FAULT: addr = %lX pid= %d name=%s\n", addr,
 			ptname, comm);

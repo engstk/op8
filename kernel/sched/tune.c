@@ -482,9 +482,7 @@ static int sched_colocate_write(struct cgroup_subsys_state *css,
 		return -EPERM;
 #endif /* OPLUS_FEATURE_POWER_CPUFREQ */
 	st->colocate = !!colocate;
-#ifndef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
 	st->colocate_update_disabled = true;
-#endif
 	return 0;
 }
 

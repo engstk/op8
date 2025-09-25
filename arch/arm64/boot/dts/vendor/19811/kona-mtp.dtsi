@@ -287,9 +287,6 @@
 		Hw,sim_det = "modem_det";
 	};
 	//#endif /* OPLUS_BUG_DEBUG */
-	feedback_fb {
-		compatible = "oplus,haptic-feedback";
-	};
 };
 /*&qupv3_se13_i2c {
 	#address-cells = <1>;

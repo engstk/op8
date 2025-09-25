@@ -34,7 +34,6 @@ extern unsigned long get_unmmaped_area_from_anti_fragment(struct mm_struct *mm,
 extern unsigned long get_unmmaped_area_from_reserved(struct mm_struct *mm,
 		struct vm_unmapped_area_info *info);
 extern int get_va_feature_value(unsigned int feature);
-extern void trigger_svm_oom_event(struct mm_struct *mm, bool brk_risk, bool is_locked);
 #ifdef CONFIG_DUMP_MM_INFO
 void dump_mm_info(unsigned long len, unsigned long flags, int dump_vma);
 #else /* CONFIG_DUMP_MM_INFO */

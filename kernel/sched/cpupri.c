@@ -66,12 +66,6 @@ drop_nopreempt_cpus(struct cpumask *lowest_mask)
 	}
 }
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-#include <linux/sched_assist/sched_assist_common.h>
-extern void drop_ux_task_cpus(struct task_struct *p, struct cpumask *lowest_mask);
-extern void kick_min_cpu_from_mask(struct cpumask *lowest_mask);
-extern bool sf_task_misfit(struct task_struct *p);
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 /**
  * cpupri_find - find the best (lowest-pri) CPU in the system
  * @cp: The cpupri context
@@ -93,9 +87,6 @@ int cpupri_find(struct cpupri *cp, struct task_struct *p,
 	int idx = 0;
 	int task_pri = convert_prio(p->prio);
 	bool drop_nopreempts = task_pri <= MAX_RT_PRIO;
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	bool drop_uxtasks = sysctl_sched_assist_enabled;
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 	BUG_ON(task_pri >= CPUPRI_NR_PRIORITIES);
 
 retry:
@@ -138,12 +129,6 @@ retry:
 				       cpu_isolated_mask);
 			if (drop_nopreempts)
 				drop_nopreempt_cpus(lowest_mask);
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-			if (drop_uxtasks)
-				drop_ux_task_cpus(p, lowest_mask);
-			if (drop_uxtasks && sf_task_misfit(p))
-				kick_min_cpu_from_mask(lowest_mask);
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 			/*
 			 * We have to ensure that we have at least one bit
 			 * still set in the array, since the map could have
@@ -166,12 +151,6 @@ retry:
 		drop_nopreempts = false;
 		goto retry;
 	}
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	if (drop_uxtasks) {
-		drop_uxtasks = false;
-		goto retry;
-	}
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 
 	return 0;
 }

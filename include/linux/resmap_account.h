@@ -11,9 +11,6 @@
 #include <linux/sched.h>
 #include <linux/atomic.h>
 #include <linux/proc_fs.h>
-#ifdef CONFIG_OPLUS_HEALTHINFO
-#include <soc/oplus/oplus_healthinfo.h>
-#endif
 
 #define VM_UNMAPPED_AREA_RESERVED 0x2
 
@@ -149,5 +146,4 @@ extern int dup_reserved_mmap(struct mm_struct *mm, struct mm_struct *oldmm, stru
 extern int reserved_area_checking(struct mm_struct *mm, unsigned long *vm_flags, unsigned long flags, unsigned long addr, unsigned long len);
 extern void trigger_stack_limit_changed(long value);
 extern int create_reserved_area_enable_proc(struct proc_dir_entry *parent);
-extern void trigger_svm_oom_event(struct mm_struct *mm, bool brk_risk, bool is_locked);
 #endif

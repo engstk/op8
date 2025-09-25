@@ -30,21 +30,12 @@ obj-y                           += oplus/
 obj-$(CONFIG_OPLUS_SYSTEM_KERNEL)	+= oplus/system/
 #endif /* VENDOR_EDIT */
 
-#ifdef OPLUS_FEATURE_IOMONITOR
-obj-$(CONFIG_IOMONITOR)    +=  oplus/iomonitor/
-#endif /*OPLUS_FEATURE_IOMONITOR*/
-
 #ifdef OPLUS_FEATURE_SENSOR_SMEM
 obj-y						+= oplus/sensor/
 #endif
 #ifdef OPLUS_FEATURE_SENSOR_CRASH_MONITOR
 obj-$(CONFIG_OPLUS_FEATURE_SENSOR_CRASH_MONITOR)	+= oplus/oplus_slpirst/
 #endif
-
-
-#ifdef OPLUS_FEATURE_HEALTHINFO
-obj-y     +=  oplus/healthinfo/
-#endif /* OPLUS_FEATURE_HEALTHINFO */
 
 #ifdef OPLUS_FEATURE_POWERINFO_STANDBY
 obj-$(CONFIG_OPLUS_WAKELOCK_PROFILER) += oplus/owakelock/
@@ -54,23 +45,5 @@ obj-$(CONFIG_OPLUS_WAKELOCK_PROFILER) += oplus/owakelock/
 obj-y += oplus/misc/
 #endif /* OPLUS_FEATURE_ESIM */
 
-#ifdef OPLUS_FEATURE_TPP
-#jacky.ho@optimization add for tpp module
-obj-$(CONFIG_OPLUS_FEATURE_TPP) += oplus/tpp/
-#endif /* OPLUS_FEATURE_TPP */
-
-#ifdef OPLUS_FEATURE_IM
-#ted.lin@optimization add for im module
-obj-$(CONFIG_OPLUS_FEATURE_IM) += oplus/im/
-#endif /* OPLUS_FEATURE_IM */
-
-#ifdef OPLUS_FEATURE_TPD
-obj-$(CONFIG_OPLUS_FEATURE_TPD)     +=  oplus/tpd/
-#endif
-
 #Add for NandSwap
 obj-$(CONFIG_NANDSWAP)		+= oplus/oplus_nandswap/
-
-#ifdef OPLUS_FEATURE_GAME_OPT
-obj-$(CONFIG_OPLUS_FEATURE_GAME_OPT) += oplus/game_opt/
-#endif /* OPLUS_FEATURE_GAME_OPT */

@@ -1313,67 +1313,6 @@ static void device_restart_work_hdlr(struct work_struct *work)
 							dev->desc->name);
 }
 
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-unsigned int getBKDRHash(char *str, unsigned int len)
-{
-	unsigned int seed = 131; /* 31 131 1313 13131 131313 etc.. */
-	unsigned int hash = 0;
-	unsigned int i    = 0;
-	if (str == NULL) {
-		return 0;
-	}
-	for(i = 0; i < len; str++, i++) {
-		hash = (hash * seed) + (*str);
-	}
-	return hash;
-}
-EXPORT_SYMBOL(getBKDRHash);
-
-void __subsystem_send_uevent(struct device *dev, char *reason)
-{
-	int ret_val;
-	char modem_event[] = "MODEM_EVENT=modem_failure";
-	char modem_reason[300] = {0};
-	char modem_hashreason[MAX_REASON_LEN] = {0};
-	char *envp[4];
-	unsigned int hashid = 0;
-
-	envp[0] = (char *)&modem_event;
-	if(reason){
-		snprintf(modem_reason, sizeof(modem_reason),"MODEM_REASON=%s", reason);
-	}else{
-	    snprintf(modem_reason, sizeof(modem_reason),"MODEM_REASON=unkown");
-	}
-	modem_reason[299] = 0;
-	envp[1] = (char *)&modem_reason;
-
-	hashid = getBKDRHash(reason, strlen(reason));
-	snprintf(modem_hashreason, sizeof(modem_hashreason), "MODEM_HASH_REASON=fid:%u;cause:%s", hashid, reason);
-	modem_hashreason[MAX_REASON_LEN - 1] = 0;
-	pr_info("__subsystem_send_uevent: modem_hashreason: %s\n", modem_hashreason);
-	envp[2] = (char *)&modem_hashreason;
-
-	envp[3] = 0;
-
-	if(dev){
-		ret_val = kobject_uevent_env(&(dev->kobj), KOBJ_CHANGE, envp);
-		if(!ret_val){
-			pr_info("modem crash:kobject_uevent_env success!\n");
-		}else{
-			pr_info("modem crash:kobject_uevent_env fail,error=%d!\n", ret_val);
-		}
-    }
-}
-EXPORT_SYMBOL(__subsystem_send_uevent);
-
-void subsystem_send_uevent(struct subsys_device *dev, char *reason)
-{
-	__subsystem_send_uevent(&(dev->dev), reason);
-	return;
-}
-EXPORT_SYMBOL(subsystem_send_uevent);
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
-
 #ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
 #define WCNSS_CRASH_REASON_SMEM		422
 #include <linux/soc/qcom/smem.h>

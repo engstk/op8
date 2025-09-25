@@ -25,6 +25,7 @@
 #include <linux/writeback.h>
 #include <linux/mpage.h>
 #include <linux/mount.h>
+#include <linux/pseudo_fs.h>
 #include <linux/uio.h>
 #include <linux/namei.h>
 #include <linux/log2.h>
@@ -35,9 +36,6 @@
 #include <linux/falloc.h>
 #include <linux/uaccess.h>
 #include "internal.h"
-#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
-#include <linux/iomonitor/iomonitor.h>
-#endif /*OPLUS_FEATURE_IOMONITOR*/
 
 struct bdev_inode {
 	struct block_device bdev;
@@ -249,9 +247,6 @@ __blkdev_direct_IO_simple(struct kiocb *iocb, struct iov_iter *iter,
 		bio.bi_opf = dio_bio_write_op(iocb);
 		task_io_account_write(ret);
 	}
-#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
-	iomonitor_update_rw_stats(DIO_WRITE, file, ret);
-#endif /*OPLUS_FEATURE_IOMONITOR*/
 
 	qc = submit_bio(&bio);
 	for (;;) {
@@ -369,7 +364,7 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
 
 	dio->size = 0;
 	dio->multi_bio = false;
-	dio->should_dirty = is_read && (iter->type == ITER_IOVEC);
+	dio->should_dirty = is_read && iter_is_iovec(iter);
 
 	blk_start_plug(&plug);
 	for (;;) {
@@ -394,9 +389,6 @@ __blkdev_direct_IO(struct kiocb *iocb, struct iov_iter *iter, int nr_pages)
 		} else {
 			bio->bi_opf = dio_bio_write_op(iocb);
 			task_io_account_write(bio->bi_iter.bi_size);
-#if defined(OPLUS_FEATURE_IOMONITOR) && defined(CONFIG_IOMONITOR)
-			iomonitor_update_rw_stats(DIO_WRITE, file, bio->bi_iter.bi_size);
-#endif /*OPLUS_FEATURE_IOMONITOR*/
 		}
 
 		dio->size += bio->bi_iter.bi_size;
@@ -811,19 +803,19 @@ static const struct super_operations bdev_sops = {
 	.evict_inode = bdev_evict_inode,
 };
 
-static struct dentry *bd_mount(struct file_system_type *fs_type,
-	int flags, const char *dev_name, void *data)
+static int bd_init_fs_context(struct fs_context *fc)
 {
-	struct dentry *dent;
-	dent = mount_pseudo(fs_type, "bdev:", &bdev_sops, NULL, BDEVFS_MAGIC);
-	if (!IS_ERR(dent))
-		dent->d_sb->s_iflags |= SB_I_CGROUPWB;
-	return dent;
+	struct pseudo_fs_context *ctx = init_pseudo(fc, BDEVFS_MAGIC);
+	if (!ctx)
+		return -ENOMEM;
+	fc->s_iflags |= SB_I_CGROUPWB;
+	ctx->ops = &bdev_sops;
+	return 0;
 }
 
 static struct file_system_type bd_type = {
 	.name		= "bdev",
-	.mount		= bd_mount,
+	.init_fs_context = bd_init_fs_context,
 	.kill_sb	= kill_anon_super,
 };
 

@@ -19,11 +19,6 @@
 #include <soc/oplus/boot_mode.h>
 #endif /* OPLUS_BUG_STABILITY */
 
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-//Add for: pcie self recovery statistics
-#include <linux/oplus_kevent.h>
-#endif /* CONFIG_OPLUS_KEVENT_UPLOAD */
-
 #include "main.h"
 #include "bus.h"
 #include "debug.h"
@@ -81,44 +76,6 @@ struct cnss_driver_event {
 //Add for wifi switch monitor
 static unsigned int cnssprobestate = 0;
 #endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
-
-#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-//Add for: pcie self recovery statistics
-int cnss_stats_self_recovery(void)
-{
-	const char* cnss_event_tag = "wifi_fool_proof";
-	const char* cnss_event_id = "wifi_pci_linkdown";
-	const char* cnss_event_payload = "cnss_pcie_self_recovery";
-	struct kernel_packet_info* cnss_event;
-	void *buffer = NULL;
-	int len, size;
-	cnss_pr_err("%s\n", __func__);
-
-	len = strlen(cnss_event_payload);
-	size = sizeof(struct kernel_packet_info) + len + 1;
-
-	buffer = kmalloc(size, GFP_KERNEL);
-	if (!buffer) {
-		cnss_pr_err("%s: Allocation failed\n", __func__);
-		return -ENOMEM;
-	}
-
-	memset(buffer, 0, size);
-	cnss_event = (struct kernel_packet_info *)buffer;
-	cnss_event->type = 1;
-
-	memcpy(cnss_event->log_tag, cnss_event_tag, strlen(cnss_event_tag) + 1);
-	memcpy(cnss_event->event_id, cnss_event_id, strlen(cnss_event_id) + 1);
-
-	cnss_event->payload_length = len + 1;
-	memcpy(cnss_event->payload, cnss_event_payload, cnss_event->payload_length);
-
-	kevent_send_to_user(cnss_event);
-	kfree(buffer);
-
-	return 0;
-}
-#endif /* CONFIG_OPLUS_KEVENT_UPLOAD */
 
 static void cnss_set_plat_priv(struct platform_device *plat_dev,
 			       struct cnss_plat_data *plat_priv)
@@ -1225,11 +1182,6 @@ self_recovery:
 			  &plat_priv->ctrl_params.quirks);
 
 	cnss_bus_dev_powerup(plat_priv);
-
-	#ifdef CONFIG_OPLUS_KEVENT_UPLOAD
-	//Add for: pcie self recovery statistics
-	cnss_stats_self_recovery();
-	#endif /* CONFIG_OPLUS_KEVENT_UPLOAD */
 
 	return 0;
 }

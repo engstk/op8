@@ -12,9 +12,6 @@
 #include <linux/seq_file.h>
 #include <linux/highmem.h>
 #include <linux/reserve_area.h>
-#ifdef CONFIG_OPLUS_HEALTHINFO
-#include <soc/oplus/healthinfo.h>
-#endif
 #include <linux/version.h>
 #define STACK_RLIMIT_OVERFFLOW (32<<20)
 #define THRIDPART_APP_UID_LOW_LIMIT 10000UL
@@ -140,89 +137,6 @@ int create_reserved_area_enable_proc(struct proc_dir_entry *parent)
 	return -ENOMEM;
 }
 EXPORT_SYMBOL(create_reserved_area_enable_proc);
-
-#ifdef CONFIG_OPLUS_HEALTHINFO
-void trigger_svm_oom_event(struct mm_struct *mm, bool brk_risk, bool is_locked)
-{
-	int len = 0;
-	int oom = 0;
-	int res = 0;
-	int over_time = 0;
-	int change_stack = 0;
-	struct rlimit *rlim;
-	unsigned long long current_time_ns;
-	char *svm_oom_msg = NULL;
-	unsigned int uid = (unsigned int)(current_uid().val);
-
-	if (!((va_feature & RESERVE_LOGGING) &&
-				(current->pid == current->tgid) &&
-				is_compat_task() &&
-				check_parent_is_zygote(current) &&
-				(uid >= THRIDPART_APP_UID_LOW_LIMIT)))
-		return;
-
-	svm_oom_msg = (char*)kmalloc(128, GFP_KERNEL);
-	if (!svm_oom_msg)
-		return;
-
-	if (is_locked) {
-		if (mm->va_feature & RESERVE_AREA)
-			res = 1;
-	} else {
-		down_read(&mm->mmap_sem);
-		if (mm->va_feature & RESERVE_AREA)
-			res = 1;
-		up_read(&mm->mmap_sem);
-	}
-
-	if ((svm_oom_pid == current->pid) &&
-			time_after_eq((svm_oom_jiffies + 15*HZ), jiffies)) {
-		svm_oom_pid = -1;
-		oom = 1;
-	}
-	rlim = current->signal->rlim + RLIMIT_STACK;
-	if (rlim->rlim_cur > STACK_RLIMIT_OVERFFLOW || brk_risk)
-		change_stack = 1;
-
-	if (change_stack) {
-		len = snprintf(svm_oom_msg, 127,
-				"{\"version\":1, \"size\":%ld, \"uid\":%u, \"type\":\"%s,%s,%s\"}",
-				(long)rlim->rlim_cur, uid,
-				(oom ? "oom" : "no_oom"),
-				(res ? "res" : "no_res"),
-				(brk_risk ? "brk" : "no_brk"));
-		svm_oom_msg[len] = '\0';
-		ohm_action_trig_with_msg(OHM_RLIMIT_MON, svm_oom_msg);
-		kfree(svm_oom_msg);
-		return;
-	}
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-	current_time_ns = ktime_to_ns(ktime_get_boottime());
-#else
-	current_time_ns = ktime_get_boot_ns();
-#endif
-	if ((current_time_ns > current->real_start_time) ||
-			(current_time_ns - current->real_start_time >= TRIGGER_TIME_NS))
-		over_time = 1;
-
-	if (oom || (!change_stack && !res && over_time)) {
-		len = snprintf(svm_oom_msg, 127,
-				"{\"version\":1, \"size\":%lu, \"uid\":%u, \"type\":\"%s,%s,%s\"}",
-				0, uid,
-				(oom ? "oom" : "no_oom"),
-				(res ? "res" : "no_res"),
-				(change_stack ? "stack" : "no_stack"));
-		svm_oom_msg[len] = '\0';
-		ohm_action_trig_with_msg(OHM_SVM_MON, svm_oom_msg);
-	}
-	kfree(svm_oom_msg);
-}
-#else
-void trigger_svm_oom_event(struct mm_struct *mm, bool brk_risk, bool is_locked)
-{
-	pr_warn("[gloom] CONFIG_OPLUS_HEALTHINFO is not enabled.\n");
-}
-#endif
 
 #ifdef CONFIG_DUMP_MM_INFO
 static int fetch_vma_name(struct vm_area_struct *vma, char *kbuf, int klen)

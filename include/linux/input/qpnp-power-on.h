@@ -66,13 +66,6 @@ enum pon_restart_reason {
 	PON_RESTART_REASON_MODEM			= 0x28,
 	PON_RESTART_REASON_ANDROID			= 0x29,
 	PON_RESTART_REASON_SAFE				= 0x2A,
-	#ifdef OPLUS_FEATURE_AGINGTEST
-	//Add for factory agingtest
-	PON_RESTART_REASON_SBL_DDRTEST			= 0x2B,
-	PON_RESTART_REASON_SBL_DDR_CUS			= 0x2C,
-	PON_RESTART_REASON_MEM_AGING			= 0x2D,
-	//0x2E is SBLTEST FAIL, just happen in ddrtest fail when xbl setup
-	#endif
 	PON_RESTART_REASON_REBOOT_NO_VIBRATION		= 0x2F,
 	PON_RESTART_REASON_NORMAL			= 0x3E,
 #endif

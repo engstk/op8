@@ -1,4 +1,0 @@
-
-source "drivers/input/touchscreen/oplus_touchscreen/Goodix/Goodix_gt5688/Kconfig"
-source "drivers/input/touchscreen/oplus_touchscreen/Goodix/GT9286/Kconfig"
-source "drivers/input/touchscreen/oplus_touchscreen/Goodix/GT9886/Kconfig"

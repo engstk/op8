@@ -23,14 +23,6 @@ help
     Select this config to enable powerinfo standby debug
 #endif /* OPLUS_FEATURE_POWERINFO_STANDBY_DEBUG */
 
-#ifdef OPLUS_FEATURE_POWERINFO_RPMH
-config OPLUS_POWERINFO_RPMH
-bool "powerinfo rpmh config"
-default n
-help
-    Select this config to enable powerinfo rpmh
-#endif /* OPLUS_FEATURE_POWERINFO_RPMH */
-
 #ifdef OPLUS_FEATURE_POWERINFO_FTM
 config OPLUS_POWERINFO_FTM
 bool "powerinfo ftm config"

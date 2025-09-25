@@ -402,6 +402,8 @@ READELF		= $(CROSS_COMPILE)readelf
 OBJSIZE		= $(CROSS_COMPILE)size
 STRIP		= $(CROSS_COMPILE)strip
 endif
+PAHOLE		= pahole
+RESOLVE_BTFIDS	= $(objtree)/tools/bpf/resolve_btfids/resolve_btfids
 LEX		= flex
 YACC		= bison
 AWK		= awk
@@ -457,12 +459,6 @@ KBUILD_LDFLAGS :=
 GCC_PLUGINS_CFLAGS :=
 CLANG_FLAGS :=
 
-# ifdef VENDOR_EDIT
-KBUILD_CFLAGS +=   -DVENDOR_EDIT
-KBUILD_CPPFLAGS += -DVENDOR_EDIT
-CFLAGS_KERNEL +=   -DVENDOR_EDIT
-CFLAGS_MODULE +=   -DVENDOR_EDIT
-# endif
 ifeq ($(BRAND_SHOW_FLAG),oneplus)
 KBUILD_CFLAGS += -DOPLUS_CUSTOM_OP_DEF
 endif
@@ -476,64 +472,8 @@ CFLAGS_MODULE +=   -DOPLUS_FEATURE_POWER_EFFICIENCY
 
 -include OplusKernelEnvConfig.mk
 
-#ifdef VENDOR_EDIT
-ifneq (,$(findstring Aging,$(SPECIAL_VERSION)))
-OPLUS_F2FS_DEBUG := true
-endif
-
-export OPLUS_F2FS_DEBUG
-#endif /* VENDOR_EDIT */
-
-#ifdef OPLUS_BUG_STABILITY
-#Add for Debug Config, slub/kmemleak/kasan config
-ifeq ($(AGING_DEBUG_MASK),1)
-#Agingtest enable rtb
-OPLUS_MEMLEAK_DETECT := true
-OPLUS_AGING_TEST := true
-endif
-
-ifeq ($(AGING_DEBUG_MASK),2)
-#enable kasan
-OPLUS_KASAN_TEST := true
-endif
-
-ifeq ($(AGING_DEBUG_MASK),3)
-#enable kmemleak
-OPLUS_KMEMLEAK_TEST := true
-endif
-
-ifeq ($(AGING_DEBUG_MASK),4)
-#enable rtb
-OPLUS_AGING_TEST := true
-#enable kasan
-OPLUS_SLUB_TEST := true
-endif
-
-ifeq ($(AGING_DEBUG_MASK),5)
-#enable rtb
-OPLUS_AGING_TEST := true
-#enable kasan
-OPLUS_PAGEOWNER_TEST := true
-endif
-
-export OPLUS_AGING_TEST OPLUS_KASAN_TEST OPLUS_KMEMLEAK_TEST OPLUS_SLUB_TEST OPLUS_PAGEOWNER_TEST
-#endif
-
-#ifdef OPLUS_FEATURE_MEMLEAK_DETECT
-#Add for memleak test
-ifeq ($(TARGET_MEMLEAK_DETECT_TEST),0)
-OPLUS_MEMLEAK_DETECT := false
-else ifeq ($(TARGET_MEMLEAK_DETECT_TEST),1)
-OPLUS_MEMLEAK_DETECT := true
-OPLUS_SLUB_TEST := true
-endif
-
-#Add for memleak test
-export OPLUS_MEMLEAK_DETECT
-#endif
-
-export ARCH SRCARCH CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE AS LD CC
-export CPP AR NM STRIP OBJCOPY OBJDUMP OBJSIZE READELF KBUILD_HOSTLDFLAGS KBUILD_HOSTLDLIBS
+export ARCH SRCARCH CONFIG_SHELL HOSTCC KBUILD_HOSTCFLAGS CROSS_COMPILE LD CC
+export CPP AR NM STRIP OBJCOPY OBJDUMP PAHOLE RESOLVE_BTFIDS OBJSIZE READELF KBUILD_HOSTLDFLAGS KBUILD_HOSTLDLIBS
 export MAKE LEX YACC AWK GENKSYMS INSTALLKERNEL PERL PYTHON PYTHON2 PYTHON3 UTS_MACHINE
 export HOSTCXX KBUILD_HOSTCXXFLAGS LDFLAGS_MODULE CHECK CHECKFLAGS
 
@@ -1059,6 +999,9 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=incompatible-pointer-types)
 
 # Require designated initializers for all marked structures
 KBUILD_CFLAGS   += $(call cc-option,-Werror=designated-init)
+
+# Ensure compilers do not transform certain loops into calls to wcslen()
+KBUILD_CFLAGS += -fno-builtin-wcslen
 
 # change __FILE__ to the relative path from the srctree
 KBUILD_CFLAGS	+= $(call cc-option,-fmacro-prefix-map=$(srctree)/=)

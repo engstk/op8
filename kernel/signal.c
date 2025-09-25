@@ -64,10 +64,6 @@
 #include <soc/oplus/system/oplus_process.h>
 #endif
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST)
-#include <linux/sched_assist/sched_assist_common.h>
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
 /*
  * SLAB caches for signal bits.
  */
@@ -1329,9 +1325,6 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
         }
 #endif
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST)
-	oplus_boost_kill_signal(sig, current, p);
-#endif
 	if (lock_task_sighand(p, &flags)) {
 		ret = send_signal(sig, info, p, type);
 		unlock_task_sighand(p, &flags);

@@ -32,25 +32,6 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/sched.h>
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-#include <linux/sched_assist/sched_assist_common.h>
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-#include <linux/task_sched_info.h>
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
-
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-#include <linux/tuning/frame_info.h>
-#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
-
-#ifdef CONFIG_OPLUS_FEATURE_GAME_OPT
-#include "../../drivers/soc/oplus/game_opt/game_ctrl.h"
-#endif
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_CPU_JANKINFO)
-#include <linux/cpu_jankinfo/sa_jankinfo.h>
-#endif
-
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 #ifdef CONFIG_SCHED_DEBUG
@@ -193,13 +174,15 @@ static void update_rq_clock_task(struct rq *rq, s64 delta)
 #endif
 #ifdef CONFIG_PARAVIRT_TIME_ACCOUNTING
 	if (static_key_false((&paravirt_steal_rq_enabled))) {
-		steal = paravirt_steal_clock(cpu_of(rq));
+		u64 prev_steal;
+
+		steal = prev_steal = paravirt_steal_clock(cpu_of(rq));
 		steal -= rq->prev_steal_time_rq;
 
 		if (unlikely(steal > delta))
 			steal = delta;
 
-		rq->prev_steal_time_rq += steal;
+		rq->prev_steal_time_rq = prev_steal;
 		delta -= steal;
 	}
 #endif
@@ -1160,8 +1143,7 @@ static void uclamp_update_root_tg(void) { }
 #endif
 
 int sysctl_sched_uclamp_handler(struct ctl_table *table, int write,
-				void __user *buffer, size_t *lenp,
-				loff_t *ppos)
+				void *buffer, size_t *lenp, loff_t *ppos)
 {
 	bool update_root_tg = false;
 	int old_min, old_max;
@@ -1437,9 +1419,6 @@ static inline void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
 	}
 
 	uclamp_rq_inc(rq, p);
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_CPU_JANKINFO)
-	jankinfo_android_rvh_enqueue_task_handler(NULL, rq, p, flags);
-#endif
 	p->sched_class->enqueue_task(rq, p, flags);
 	walt_update_last_enqueue(p);
 	trace_sched_enq_deq_task(p, 1, cpumask_bits(&p->cpus_allowed)[0]);
@@ -1568,17 +1547,6 @@ static inline void check_class_changed(struct rq *rq, struct task_struct *p,
 void check_preempt_curr(struct rq *rq, struct task_struct *p, int flags)
 {
 	const struct sched_class *class;
-
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-//#ifdef CONFIG_UXCHAIN_V2
-	u64 wallclock = sched_clock();
-
-	if (sysctl_uxchain_v2 &&
-		wallclock - rq->curr->get_mmlock_ts < PREEMPT_DISABLE_RWSEM &&
-		rq->curr->get_mmlock &&
-		!(p->flags & PF_WQ_WORKER) && !task_has_rt_policy(p))
-		return;
-#endif
 
 	if (p->sched_class == rq->curr->sched_class) {
 		rq->curr->sched_class->check_preempt_curr(rq, p, flags);
@@ -1861,7 +1829,6 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
 		/* Need help from migration thread: drop lock and wait. */
 		task_rq_unlock(rq, p, &rf);
 		stop_one_cpu(cpu_of(rq), migration_cpu_stop, &arg);
-		tlb_migrate_finish(p->mm);
 		return 0;
 	} else if (task_on_rq_queued(p)) {
 		/*
@@ -2639,13 +2606,6 @@ static void ttwu_queue(struct task_struct *p, int cpu, int wake_flags)
 	rq_unlock(rq, &rf);
 }
 
-#ifdef CONFIG_OPLUS_FEATURE_RT_INFO
-rt_info_handler rt_handler = NULL;
-void register_rt_info_handler(rt_info_handler h) {
-    rt_handler = h;
-    pr_info("Add a rt_info handler\n");
-}
-#endif
 /*
  * Notes on Program-Order guarantees on SMP systems.
  *
@@ -2786,16 +2746,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 {
 	unsigned long flags;
 	int cpu, success = 0;
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-	bool in_grp = false;
-	struct frame_boost_group *grp = NULL;
-	rcu_read_lock();
-	grp = task_frame_boost_group(p);
-	rcu_read_unlock();
-	if (grp) {
-		in_grp = true;
-	}
-#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 
 	/*
 	 * If we are going to wake up a thread waiting for CONDITION we
@@ -2809,18 +2759,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 		goto out;
 
 	trace_sched_waking(p);
-
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-	update_wake_tid(p, current, other_runnable);
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
-
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-	trace_sched_in_fbg(p, in_grp);
-#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
-#ifdef CONFIG_OPLUS_FEATURE_RT_INFO
-    if (rt_handler != NULL)
-        rt_handler(p);
-#endif
 
 	/* We're going to change ->state: */
 	success = 1;
@@ -2893,10 +2831,6 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 		atomic_dec(&task_rq(p)->nr_iowait);
 	}
 
-#ifdef CONFIG_OPLUS_FEATURE_GAME_OPT
-        g_rt_try_to_wake_up(p);
-#endif
-
 	cpu = select_task_rq(p, p->wake_cpu, SD_BALANCE_WAKE, wake_flags,
 			     sibling_count_hint);
 	if (task_cpu(p) != cpu) {
@@ -2966,10 +2900,6 @@ static void try_to_wake_up_local(struct task_struct *p, struct rq_flags *rf)
 		goto out;
 
 	trace_sched_waking(p);
-
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-	update_wake_tid(p, current, other_runnable);
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 
 	if (!task_on_rq_queued(p)) {
 		u64 wallclock = sched_ktime_clock();
@@ -3082,7 +3012,7 @@ void set_numabalancing_state(bool enabled)
 
 #ifdef CONFIG_PROC_SYSCTL
 int sysctl_numa_balancing(struct ctl_table *table, int write,
-			 void __user *buffer, size_t *lenp, loff_t *ppos)
+			  void *buffer, size_t *lenp, loff_t *ppos)
 {
 	struct ctl_table t;
 	int err;
@@ -3156,8 +3086,8 @@ static void __init init_schedstats(void)
 }
 
 #ifdef CONFIG_PROC_SYSCTL
-int sysctl_schedstats(struct ctl_table *table, int write,
-			 void __user *buffer, size_t *lenp, loff_t *ppos)
+int sysctl_schedstats(struct ctl_table *table, int write, void *buffer,
+		size_t *lenp, loff_t *ppos)
 {
 	struct ctl_table t;
 	int err;
@@ -3605,13 +3535,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 		 * task and put them back on the free list.
 		 */
 		kprobe_flush_task(prev);
-#ifdef CONFIG_OPLUS_FEATURE_GAME_OPT
-		g_rt_task_dead(prev);
-#endif
-
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-	        sched_set_frame_boost_group(prev, false);
-#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 
 		/* Task is done with its stack. */
 		put_task_stack(prev);
@@ -3944,50 +3867,6 @@ unsigned long long task_sched_runtime(struct task_struct *p)
 }
 
 unsigned int capacity_margin_freq = 1280; /* ~20% margin */
-#ifndef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-extern int sysctl_frame_rate;
-extern unsigned int sched_ravg_window;
-extern bool ux_task_misfit(struct task_struct *p, int cpu);
-u64 ux_task_load[NR_CPUS] = {0};
-u64 ux_load_ts[NR_CPUS] = {0};
-static u64 calc_freq_ux_load(struct task_struct *p, u64 wallclock)
-{
-	unsigned int maxtime = 0, factor = 0;
-	unsigned int window_size = sched_ravg_window / NSEC_PER_MSEC;
-	u64 timeline = 0, freq_exec_load = 0, freq_ravg_load = 0;
-	u64 wakeclock = p->last_wake_ts;
-
-	if (wallclock < wakeclock)
-		return 0;
-
-	switch (sysctl_frame_rate) {
-		case 60:
-		case 90:
-			maxtime = 5;
-			break;
-		case 120:
-			maxtime = 4;
-			break;
-		default:
-			return 0;
-	}
-
-	timeline = wallclock - wakeclock;
-	factor = window_size / maxtime;
-	freq_exec_load = timeline * factor;
-
-	if (freq_exec_load > sched_ravg_window)
-		freq_exec_load = sched_ravg_window;
-
-	freq_ravg_load = (p->ravg.prev_window + p->ravg.curr_window) << 1;
-	if (freq_ravg_load > sched_ravg_window)
-		freq_ravg_load = sched_ravg_window;
-
-	return max(freq_exec_load, freq_ravg_load);
-}
-#endif
-#endif
 /*
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
@@ -4022,29 +3901,7 @@ void scheduler_tick(void)
 	if (early_notif)
 		flag = SCHED_CPUFREQ_WALT | SCHED_CPUFREQ_EARLY_DET;
 
-#ifndef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	if (sched_assist_scene(SA_SLIDE)) {
-		if(rq->curr && is_heavy_ux_task(rq->curr) && !ux_task_misfit(rq->curr, cpu)) {
-			ux_task_load[cpu] = calc_freq_ux_load(rq->curr, wallclock);
-			ux_load_ts[cpu] = wallclock;
-			flag |= (SCHED_CPUFREQ_WALT | SCHED_CPUFREQ_BOOST);
-		}
-		else if (ux_task_load[cpu] != 0) {
-			ux_task_load[cpu] = 0;
-			ux_load_ts[cpu] = wallclock;
-			flag |= (SCHED_CPUFREQ_WALT | SCHED_CPUFREQ_RESET);
-		}
-	} else {
-		ux_task_load[cpu] = 0;
-		ux_load_ts[cpu] = 0;
-	}
-#endif
-#endif
 	cpufreq_update_util(rq, flag);
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-	sched_update_fbg_tick(rq->curr, wallclock);
-#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 	rq_unlock(rq, &rf);
 
 	perf_event_task_tick();
@@ -4070,9 +3927,6 @@ void scheduler_tick(void)
 	rq_unlock(rq, &rf);
 #endif
 
-#if defined(OPLUS_FEATURE_SCHED_ASSIST) && defined(CONFIG_OPLUS_FEATURE_SCHED_SPREAD)
-	update_rq_nr_imbalance(cpu);
-#endif
 }
 
 #ifdef CONFIG_NO_HZ_FULL
@@ -4503,18 +4357,11 @@ static void __sched notrace __schedule(bool preempt)
 		switch_count = &prev->nvcsw;
 	}
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	prev->enqueue_time = rq->clock;
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-
 	next = pick_next_task(rq, prev, &rf);
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 
 	wallclock = sched_ktime_clock();
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_CPU_JANKINFO)
-	jankinfo_android_rvh_schedule_handler(NULL, prev, next, rq);
-#endif
 	if (likely(prev != next)) {
 		if (!prev->on_rq)
 			prev->last_sleep_ts = wallclock;
@@ -4540,11 +4387,6 @@ static void __sched notrace __schedule(bool preempt)
 		++*switch_count;
 
 		trace_sched_switch(preempt, prev, next);
-
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-		update_wake_tid(prev, next, running_runnable);
-		update_running_start_time(prev, next);
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 
 		/* Also unlocks the rq: */
 		rq = context_switch(rq, prev, next, &rf);
@@ -6172,7 +6014,7 @@ SYSCALL_DEFINE0(sched_yield)
 #ifndef CONFIG_PREEMPT
 int __sched _cond_resched(void)
 {
-	if (should_resched(0)) {
+	if (should_resched(0) && !irqs_disabled()) {
 		preempt_schedule_common();
 		return 1;
 	}
@@ -7098,10 +6940,6 @@ out:
 	trace_sched_isolate(cpu, cpumask_bits(cpu_isolated_mask)[0],
 			    start_time, 1);
 
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-	update_cpu_isolate_info(cpu, cpu_isolate);
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
-
 	return ret_code;
 }
 
@@ -7146,9 +6984,6 @@ int sched_unisolate_cpu_unlocked(int cpu)
 out:
 	trace_sched_isolate(cpu, cpumask_bits(cpu_isolated_mask)[0],
 			    start_time, 0);
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-	update_cpu_isolate_info(cpu, cpu_unisolate);
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
 	return ret_code;
 }
 
@@ -7395,9 +7230,6 @@ void __init sched_init_smp(void)
 	cpumask_copy(&current->cpus_requested, cpu_possible_mask);
 	sched_init_granularity();
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	ux_init_cpu_data();
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 	init_sched_rt_class();
 	init_sched_dl_class();
 
@@ -7439,17 +7271,6 @@ static struct kmem_cache *task_group_cache __read_mostly;
 
 DECLARE_PER_CPU(cpumask_var_t, load_balance_mask);
 DECLARE_PER_CPU(cpumask_var_t, select_idle_mask);
-
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-void set_random_uxchain_v2(void)
-{
-	int rand = 1;
-
-	get_random_bytes(&rand, 1);
-	printk("get_random_bytes %d\n", rand);
-	sysctl_uxchain_v2 = rand % 2;
-}
-#endif
 
 void __init sched_init(void)
 {
@@ -7527,9 +7348,6 @@ void __init sched_init(void)
 		init_cfs_rq(&rq->cfs);
 		init_rt_rq(&rq->rt);
 		init_dl_rq(&rq->dl);
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-		ux_init_rq_data(rq);
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
 #ifdef CONFIG_FAIR_GROUP_SCHED
 		root_task_group.shares = ROOT_TASK_GROUP_LOAD;
 		INIT_LIST_HEAD(&rq->leaf_cfs_rq_list);
@@ -7626,10 +7444,6 @@ void __init sched_init(void)
 
 	init_uclamp();
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	set_random_uxchain_v2();
-#endif
-
 	scheduler_running = 1;
 }
 
@@ -7709,6 +7523,34 @@ void ___might_sleep(const char *file, int line, int preempt_offset)
 	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
 }
 EXPORT_SYMBOL(___might_sleep);
+
+void __cant_sleep(const char *file, int line, int preempt_offset)
+{
+	static unsigned long prev_jiffy;
+
+	if (irqs_disabled())
+		return;
+
+	if (!IS_ENABLED(CONFIG_PREEMPT_COUNT))
+		return;
+
+	if (preempt_count() > preempt_offset)
+		return;
+
+	if (time_before(jiffies, prev_jiffy + HZ) && prev_jiffy)
+		return;
+	prev_jiffy = jiffies;
+
+	printk(KERN_ERR "BUG: assuming atomic context at %s:%d\n", file, line);
+	printk(KERN_ERR "in_atomic(): %d, irqs_disabled(): %d, pid: %d, name: %s\n",
+			in_atomic(), irqs_disabled(),
+			current->pid, current->comm);
+
+	debug_show_held_locks(current);
+	dump_stack();
+	add_taint(TAINT_WARN, LOCKDEP_STILL_OK);
+}
+EXPORT_SYMBOL_GPL(__cant_sleep);
 #endif
 
 #ifdef CONFIG_MAGIC_SYSRQ

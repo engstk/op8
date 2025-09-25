@@ -209,7 +209,7 @@ bool sched_energy_update;
 
 #ifdef CONFIG_PROC_SYSCTL
 int sched_energy_aware_handler(struct ctl_table *table, int write,
-			 void __user *buffer, size_t *lenp, loff_t *ppos)
+		void *buffer, size_t *lenp, loff_t *ppos)
 {
 	int ret, state;
 
@@ -1915,10 +1915,6 @@ next_level:
 	return asym_tl;
 }
 
-
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-extern void update_ux_sched_cputopo(void);
-#endif
 /*
  * Build sched domains for a given set of CPUs and attach the sched domains
  * to the individual CPUs
@@ -2041,9 +2037,6 @@ build_sched_domains(const struct cpumask *cpu_map, struct sched_domain_attr *att
 		static_branch_inc_cpuslocked(&sched_asym_cpucapacity);
 
 	ret = 0;
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	update_ux_sched_cputopo();
-#endif
 error:
 	__free_domain_allocs(&d, alloc_state, cpu_map);
 

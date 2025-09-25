@@ -336,8 +336,8 @@ err_venus_shutdown:
 	venus_shutdown(dev);
 err_runtime_disable:
 	pm_runtime_put_noidle(dev);
-	pm_runtime_set_suspended(dev);
 	pm_runtime_disable(dev);
+	pm_runtime_set_suspended(dev);
 	hfi_destroy(core);
 	return ret;
 }

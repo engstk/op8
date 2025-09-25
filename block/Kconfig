@@ -246,7 +246,3 @@ config BLK_MQ_RDMA
 	default y
 
 source block/Kconfig.iosched
-
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-source block/uxio_first/Kconfig
-#endif

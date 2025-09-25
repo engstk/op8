@@ -16,10 +16,6 @@
 extern bool delay_panic;
 #endif
 
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-#include <soc/qcom/subsystem_restart.h>
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
-
 enum gpio_update_config {
 	GPIO_UPDATE_BOOTING_CONFIG = 1,
 	GPIO_UPDATE_RUNNING_CONFIG,
@@ -373,42 +369,16 @@ static void mdm_status_fn(struct work_struct *work)
 	mdm_update_gpio_configs(mdm, GPIO_UPDATE_RUNNING_CONFIG);
 }
 
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-extern void mdmreason_set(char * buf);
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
-
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-static int strn(const char *p, const char chr)
-{
-	int count = 0;
-	while(*p)
-	{
-		if(*p == chr)
-		++count;
-		++p;
-	}
-	return count;
-}
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
-
 bool modem_force_rst = false;
 
 static void mdm_get_restart_reason(struct work_struct *work)
 {
 	int ret, ntries = 0;
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-	char mdmflag = ':';
-	int mdmnum,mdmret1,mdmret2,mdmret3=0;
-	char sfr_buf2[RD_BUF_SIZE];
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
 
 	char sfr_buf[RD_BUF_SIZE];
 	struct mdm_ctrl *mdm =
 		container_of(work, struct mdm_ctrl, restart_reason_work);
 	struct device *dev = mdm->dev;
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-	const char *name = mdm->esoc->subsys.name;
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
 
 	do {
 		ret = sysmon_get_reason(&mdm->esoc->subsys, sfr_buf,
@@ -416,35 +386,6 @@ static void mdm_get_restart_reason(struct work_struct *work)
 		if (!ret) {
 			esoc_mdm_log("restart reason is %s\n", sfr_buf);
 			dev_err(dev, "mdm restart reason is %s\n", sfr_buf);
-#ifdef OPLUS_FEATURE_MODEM_MINIDUMP
-			mdmnum = strn(sfr_buf,mdmflag);
-			mdmret1=0;
-			mdmret2=0;
-			mdmret3=0;
-			if(mdmnum >= 2)
-			{
-				mdmnum = 2;
-			}
-			while(mdmret3++ < mdmnum)
-			{
-			    while(sfr_buf[mdmret1++] != mdmflag);
-			}
-			while(sfr_buf[mdmret1])
-			{
-			    sfr_buf2[mdmret2++] = sfr_buf[mdmret1++];
-			}
-			sfr_buf2[mdmret2]='\0';
-			if (!strcmp(name , "esoc0")){
-				if (modem_force_rst) {
-					modem_force_rst = false;
-					mdmreason_set("Force modem reset");
-					__subsystem_send_uevent(dev, "Force modem reset");
-				} else {
-					mdmreason_set(sfr_buf2);
-					__subsystem_send_uevent(dev, sfr_buf2);
-				}
-			}
-#endif /*OPLUS_FEATURE_MODEM_MINIDUMP*/
 			break;
 		}
 		msleep(SFR_RETRY_INTERVAL);

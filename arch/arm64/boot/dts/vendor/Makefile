@@ -21,9 +21,4 @@ subdir-y += 19805
 subdir-y += 20809
 # 9R
 subdir-y += 20828
-# SM7250
-# Nord
-subdir-y += 20801
-# Nord CE
-subdir-y += 20813
 #endif

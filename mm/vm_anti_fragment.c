@@ -23,7 +23,6 @@
 #define ohm_err(fmt, ...) \
         printk(KERN_ERR "[OHM_ERR][%s]"fmt, __func__, ##__VA_ARGS__)
 int vm_fra_op_enabled = 1;
-extern void ohm_action_trig_with_msg(int type, char *msg);
 static ssize_t vm_fra_op_read(struct file *filp, char __user *buff, size_t count, loff_t *off)
 {
         char page[256] = {0};
@@ -176,10 +175,6 @@ ignore_reserve_subtree:
 				(fra ? "fra" : "no_fra"),
 				rest, subtree, rest_reserve, subtree_reserve, rvma);
 	svm_oom_msg[len] = '\0';
-
-#ifdef CONFIG_OPLUS_HEALTHINFO
-	ohm_action_trig_with_msg(OHM_MEM_VMA_ALLOC_ERR, svm_oom_msg);
-#endif
 
 	prev_pid = current->pid;
 	rest_size = rest + rest_reserve;

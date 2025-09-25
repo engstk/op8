@@ -545,13 +545,6 @@ config UID_SYS_STATS_DEBUG
 	help
 	  Per TASK based io statistics exported to /proc/uid_io
 
-config OPLUS_FEATURE_UID_PERF
-	bool "Per-TASK perf_event statistics"
-	depends on UID_SYS_STATS
-	default n
-	help
-	  Per TASK based on perf_event
-
 config MEMORY_STATE_TIME
 	tristate "Memory freq/bandwidth time statistics"
 	depends on PROFILING
@@ -654,10 +647,6 @@ config SIM_DETECT
 	default n
 	help
 	  Say Y here to enable sim detect system support
-config HAPTIC_FEEDBACK
-    tristate "Haptic driver feedback for awinic aw8697 series"
-    help
-      This option enables support for aw8697 series Haptic Driver Feedback.
 #endif /* OPLUS_FEATURE_SIM_DETECT */
 
 #ifdef OPLUS_FEATURE_SIM_DETECT

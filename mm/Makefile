@@ -23,9 +23,9 @@ KCOV_INSTRUMENT_vmstat.o := n
 
 mmu-y			:= nommu.o
 mmu-$(CONFIG_MMU)	:= gup.o highmem.o memory.o mincore.o \
-			   mlock.o mmap.o mprotect.o mremap.o msync.o \
-			   page_vma_mapped.o pagewalk.o pgtable-generic.o \
-			   rmap.o vmalloc.o
+			   mlock.o mmap.o mmu_gather.o mprotect.o mremap.o \
+			   msync.o page_vma_mapped.o pagewalk.o \
+			   pgtable-generic.o rmap.o vmalloc.o
 
 
 ifdef CONFIG_MM_EVENT_STAT
@@ -110,14 +110,6 @@ obj-$(CONFIG_HMM) += hmm.o
 obj-$(CONFIG_MEMFD_CREATE) += memfd.o
 obj-$(CONFIG_PROCESS_RECLAIM)	+= process_reclaim.o
 
-#ifdef OPLUS_FEATURE_HEALTHINFO
-obj-y += healthinfo/
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
-#ifdef OPLUS_FEATURE_MEMORY_ISOLATE
-obj-$(CONFIG_OPLUS_MEMORY_ISOLATE) += memory_isolate/
-#endif /*OPLUS_FEATURE_MEMORY_ISOLATE*/
-
 #ifdef OPLUS_FEATURE_MULTI_KSWAPD
 obj-$(CONFIG_OPLUS_MULTI_KSWAPD) += multi_kswapd/
 #endif /*OPLUS_FEATURE_MULTI_KSWAPD*/
@@ -137,9 +129,3 @@ obj-$(CONFIG_VIRTUAL_RESERVE_MEMORY) += reserve_area.o
 #if defined(OPLUS_FEATURE_MULTI_FREEAREA)
 obj-$(CONFIG_PHYSICAL_ANTI_FRAGMENTATION) += multi_freearea.o
 #endif
-
-#if defined(OPLUS_FEATURE_MEMLEAK_DETECT)
-ifeq ($(OPLUS_FEATURE_MEMLEAK_DETECT), yes)
-obj-$(CONFIG_DUMP_TASKS_MEM) += task_mem/
-endif
-#endif /*defined(OPLUS_FEATURE_MEMLEAK_DETECT)

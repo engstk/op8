@@ -43,10 +43,6 @@
 #include <net/netfilter/ipv4/nf_conntrack_ipv4.h>
 #include <linux/netfilter_ipv4/ipt_REJECT.h>
 
-#ifdef OPLUS_FEATURE_APP_MONITOR
-#include <net/oplus/oplus_apps_monitor.h>
-#endif /* OPLUS_FEATURE_APP_MONITOR */
-
 #ifdef OPLUS_FEATURE_WIFI_ROUTERBOOST
 #include <net/oplus/oplus_router_boost.h>
 #endif /* OPLUS_FEATURE_WIFI_ROUTERBOOST */
@@ -2695,10 +2691,6 @@ static void oplus_statistic_dev_rtt(struct sock *sk,long rtt)
 
 	if(-1 != index){
 		calc_rtt_by_dev_index(index, tmp_rtt, sk);
-		#ifdef OPLUS_FEATURE_APP_MONITOR
-		/* Add for apps network monitors */
-		statistics_monitor_apps_rtt_via_uid(index, tmp_rtt, sk);
-		#endif /* OPLUS_FEATURE_APP_MONITOR */
 	}
 }
 

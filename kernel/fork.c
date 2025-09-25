@@ -107,21 +107,6 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/task.h>
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-#include <linux/sched_assist/sched_assist_fork.h>
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
-#include <linux/healthinfo/jank_monitor.h>
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-#ifdef CONFIG_OPLUS_FEATURE_IM
-#include <linux/im/im.h>
-#endif
-
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-#include <linux/tuning/frame_init.h>
-#endif /* CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4 */
 
 /*
  * Minimum number of threads to boot the kernel
@@ -133,10 +118,6 @@
  */
 #define MAX_THREADS FUTEX_TID_MASK
 
-#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
-/* update user tasklist */
-extern void update_user_tasklist(struct task_struct *tsk);
-#endif
 /*
  * Protected counters by write_lock_irq(&tasklist_lock)
  */
@@ -187,10 +168,6 @@ static inline void free_task_struct(struct task_struct *tsk)
 #endif
 
 #ifndef CONFIG_ARCH_THREAD_STACK_ALLOCATOR
-
-#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
-extern void uid_perf_work_add(struct task_struct *task, bool force);
-#endif
 
 /*
  * Allocate pages if THREAD_SIZE is >= PAGE_SIZE, otherwise use a
@@ -357,7 +334,7 @@ struct vm_area_struct *vm_area_dup(struct vm_area_struct *orig)
 
 	if (new) {
 		*new = *orig;
-		INIT_VMA(new);
+		INIT_LIST_HEAD(&new->anon_vma_chain);
 	}
 	return new;
 }
@@ -456,7 +433,7 @@ EXPORT_SYMBOL(free_task);
 static __latent_entropy int dup_mmap(struct mm_struct *mm,
 					struct mm_struct *oldmm)
 {
-	struct vm_area_struct *mpnt, *tmp, *prev, **pprev, *last = NULL;
+	struct vm_area_struct *mpnt, *tmp, *prev, **pprev;
 	struct rb_node **rb_link, *rb_parent;
 	int retval;
 	unsigned long charge;
@@ -575,18 +552,8 @@ static __latent_entropy int dup_mmap(struct mm_struct *mm,
 		rb_parent = &tmp->vm_rb;
 
 		mm->map_count++;
-		if (!(tmp->vm_flags & VM_WIPEONFORK)) {
-			if (IS_ENABLED(CONFIG_SPECULATIVE_PAGE_FAULT)) {
-				/*
-				 * Mark this VMA as changing to prevent the
-				 * speculative page fault hanlder to process
-				 * it until the TLB are flushed below.
-				 */
-				last = mpnt;
-				vm_write_begin(mpnt);
-			}
+		if (!(tmp->vm_flags & VM_WIPEONFORK))
 			retval = copy_page_range(mm, oldmm, mpnt);
-		}
 
 		if (tmp->vm_ops && tmp->vm_ops->open)
 			tmp->vm_ops->open(tmp);
@@ -600,22 +567,6 @@ static __latent_entropy int dup_mmap(struct mm_struct *mm,
 out:
 	up_write(&mm->mmap_sem);
 	flush_tlb_mm(oldmm);
-
-	if (IS_ENABLED(CONFIG_SPECULATIVE_PAGE_FAULT)) {
-		/*
-		 * Since the TLB has been flush, we can safely unmark the
-		 * copied VMAs and allows the speculative page fault handler to
-		 * process them again.
-		 * Walk back the VMA list from the last marked VMA.
-		 */
-		for (; last; last = last->vm_prev) {
-			if (last->vm_flags & VM_DONTCOPY)
-				continue;
-			if (!(last->vm_flags & VM_WIPEONFORK))
-				vm_write_end(last);
-		}
-	}
-
 	up_write(&oldmm->mmap_sem);
 	dup_userfaultfd_complete(&uf);
 fail_uprobe_end:
@@ -951,12 +902,6 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	tsk->active_memcg = NULL;
 #endif
 
-#ifdef CONFIG_OPLUS_FEATURE_TPD
-	tsk->tpd = 0;
-	tsk->dtpd = 0;
-	tsk->dtpdg = -1;
-	tsk->tpd_st = 0; /* for system thread affinity */
-#endif
 	return tsk;
 
 free_stack:
@@ -1023,9 +968,6 @@ static struct mm_struct *mm_init(struct mm_struct *mm, struct task_struct *p,
 	mm->va_feature = 0;
 	mm->va_feature_rnd = 0;
 	mm->zygoteheap_in_MB = 0;
-#endif
-#ifdef CONFIG_SPECULATIVE_PAGE_FAULT
-	rwlock_init(&mm->mm_rb_lock);
 #endif
 	atomic_set(&mm->mm_users, 1);
 	atomic_set(&mm->mm_count, 1);
@@ -1717,6 +1659,10 @@ static inline void rcu_copy_process(struct task_struct *p)
 	INIT_LIST_HEAD(&p->rcu_tasks_holdout_list);
 	p->rcu_tasks_idle_cpu = -1;
 #endif /* #ifdef CONFIG_TASKS_RCU */
+#ifdef CONFIG_TASKS_TRACE_RCU
+	p->trc_reader_nesting = 0;
+	INIT_LIST_HEAD(&p->trc_holdout_list);
+#endif /* #ifdef CONFIG_TASKS_TRACE_RCU */
 }
 
 static void __delayed_free_task(struct rcu_head *rhp)
@@ -2043,25 +1989,6 @@ static __latent_entropy struct task_struct *copy_process(
 	p->sequential_io_avg	= 0;
 #endif
 
-#ifdef OPLUS_FEATURE_SCHED_ASSIST
-	init_task_ux_info(p);
-#endif /* OPLUS_FEATURE_SCHED_ASSIST */
-#ifdef OPLUS_FEATURE_HEALTHINFO
-#ifdef CONFIG_OPLUS_JANK_INFO
-	p->jank_trace = 0;
-	memset(&p->jank_info, 0, sizeof(struct jank_monitor_info));
-#endif
-#endif /* OPLUS_FEATURE_HEALTHINFO */
-
-#if defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED)
-	p->wake_tid = 0;
-	p->running_start_time = 0;
-#endif /* defined(OPLUS_FEATURE_TASK_CPUSTATS) && defined(CONFIG_OPLUS_SCHED) */
-
-#ifdef CONFIG_OPLUS_FEATURE_INPUT_BOOST_V4
-	init_task_frame(p);
-#endif
-
 	/* Perform scheduler related setup. Assign this task to a CPU. */
 	retval = sched_fork(clone_flags, p);
 	if (retval)
@@ -2200,7 +2127,7 @@ static __latent_entropy struct task_struct *copy_process(
 	 */
 
 	p->start_time = ktime_get_ns();
-	p->real_start_time = ktime_get_boot_ns();
+	p->real_start_time = ktime_get_boottime_ns();
 
 	/*
 	 * Make it visible to the rest of the system, but dont wake it up yet.
@@ -2246,17 +2173,6 @@ static __latent_entropy struct task_struct *copy_process(
 		goto bad_fork_cancel_cgroup;
 	}
 
-#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
-	/* should init uid pevents before task added into any link */
-	memset(p->uid_pevents, 0, sizeof(struct perf_event *) * UID_PERF_EVENTS);
-	memset(p->uid_counts, 0, sizeof(long long) * UID_PERF_EVENTS);
-	memset(p->uid_prev_counts, 0, sizeof(long long) * UID_PERF_EVENTS);
-	memset(p->uid_leaving_counts, 0, sizeof(long long) * UID_PERF_EVENTS);
-	memset(p->uid_group, 0, sizeof(long long) * UID_GROUP_SIZE);
-	memset(p->uid_group_prev_counts, 0, sizeof(long long) * UID_GROUP_SIZE);
-	memset(p->uid_group_snapshot_prev_counts, 0, sizeof(long long) * UID_GROUP_SIZE);
-#endif
-
 	init_task_pid_links(p);
 	if (likely(p->pid)) {
 		ptrace_init_task(p, (clone_flags & CLONE_PTRACE) || trace);
@@ -2282,11 +2198,6 @@ static __latent_entropy struct task_struct *copy_process(
 							 p->real_parent->signal->is_child_subreaper;
 			list_add_tail(&p->sibling, &p->real_parent->children);
 			list_add_tail_rcu(&p->tasks, &init_task.tasks);
-#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
-			/* init user tasklist */
-			INIT_LIST_HEAD(&p->user_tasks);
-			update_user_tasklist(p);
-#endif
 			attach_pid(p, PIDTYPE_TGID);
 			attach_pid(p, PIDTYPE_PGID);
 			attach_pid(p, PIDTYPE_SID);
@@ -2322,15 +2233,8 @@ static __latent_entropy struct task_struct *copy_process(
 	uprobe_copy_process(p, clone_flags);
 	copy_oom_score_adj(clone_flags, p);
 	if (!IS_ERR(p)) {
-#ifdef CONFIG_OPLUS_FEATURE_IM
-		im_tsk_init_flag((void *) p);
-#endif
 	}
 
-#ifdef CONFIG_OPLUS_FEATURE_UID_PERF
-	if (!IS_ERR(p))
-		uid_perf_work_add(p, false);
-#endif
 	return p;
 
 bad_fork_cancel_cgroup:
@@ -2475,10 +2379,6 @@ long _do_fork(unsigned long clone_flags,
 
 	pid = get_task_pid(p, PIDTYPE_PID);
 	nr = pid_vnr(pid);
-#if defined(OPLUS_FEATURE_MEMLEAK_DETECT) && defined(CONFIG_ION) && defined(CONFIG_DUMP_TASKS_MEM)
-	//accounts process-real-phymem
-	atomic64_set(&p->ions, 0);
-#endif
 
 	if (clone_flags & CLONE_PARENT_SETTID)
 		put_user(nr, parent_tidptr);

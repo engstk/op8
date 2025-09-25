@@ -43,9 +43,6 @@
 
 #include "haptic_hv.h"
 #include "haptic_hv_reg.h"
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-#include "haptic_feedback.h"
-#endif
 
 #define HAPTIC_HV_DRIVER_VERSION	"v0.0.0.9"
 static uint8_t AW86927_HAPTIC_HIGH_LEVEL_REG_VAL = 0x5E;//max boost 9.408V
@@ -1840,9 +1837,6 @@ static int container_init(int size)
 		aw_rtp = vmalloc(size);
 		if (!aw_rtp) {
 			aw_dev_err("%s: error allocating memory\n", __func__);
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-			(void)oplus_haptic_track_mem_alloc_err(HAPTIC_MEM_ALLOC_TRACK, size, __func__);
-#endif
 			return -ENOMEM;
 		}
 		aw_container_size = size;
@@ -1880,9 +1874,6 @@ int i2c_r_bytes(struct aw_haptic *aw_haptic, uint8_t reg_addr, uint8_t *buf,
 	ret = i2c_transfer(aw_haptic->i2c->adapter, msg, ARRAY_SIZE(msg));
 	if (ret < 0) {
 		aw_dev_err("%s: transfer failed.", __func__);
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-		(void)oplus_haptic_track_dev_err(HAPTIC_I2C_READ_TRACK_ERR, reg_addr, ret);
-#endif
 		return ret;
 	} else if (ret != 2) {
 		aw_dev_err("%s: transfer failed(size error).", __func__);
@@ -1908,9 +1899,6 @@ int i2c_w_bytes(struct aw_haptic *aw_haptic, uint8_t reg_addr, uint8_t *buf,
 	if (ret < 0) {
 		aw_dev_err("%s: i2c master send 0x%02x error\n",
 			   __func__, reg_addr);
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-		(void)oplus_haptic_track_dev_err(HAPTIC_I2C_WRITE_TRACK_ERR, reg_addr, ret);
-#endif
 	}
 	kfree(data);
 	return ret;
@@ -2272,9 +2260,6 @@ static void ram_load(const struct firmware *cont, void *context)
 		release_firmware(cont);
 		aw_dev_err("%s: Error allocating memory\n",
 			   __func__);
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-		(void)oplus_haptic_track_mem_alloc_err(HAPTIC_MEM_ALLOC_TRACK, cont->size + sizeof(int), __func__);
-#endif
 		return;
 	}
 	awinic_fw->len = cont->size;
@@ -2459,9 +2444,6 @@ static int f0_cali(struct aw_haptic *aw_haptic)
 	if (aw_haptic->func->get_f0(aw_haptic)) {
 		aw_dev_err("%s: get f0 error, user defafult f0\n",
 			   __func__);
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-		(void)oplus_haptic_track_fre_cail(HAPTIC_F0_CALI_TRACK, aw_haptic->f0, 0, "aw_haptic->func->get_f0 is null");
-#endif
 	} else {
 		/* max and min limit */
 		f0_limit = aw_haptic->f0;
@@ -2474,9 +2456,6 @@ static int f0_cali(struct aw_haptic *aw_haptic)
 			aw_dev_err("%s: f0 calibration out of range = %d!\n",
 				   __func__, aw_haptic->f0);
 			f0_limit = aw_haptic->info.f0_pre;
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-			(void)oplus_haptic_track_fre_cail(HAPTIC_F0_CALI_TRACK, aw_haptic->f0, -ERANGE, "f0 out of range");
-#endif
 			return -ERANGE;
 		}
 		aw_dev_info("%s: f0_limit = %d\n", __func__,
@@ -2596,9 +2575,6 @@ static int rtp_osc_cali(struct aw_haptic *aw_haptic)
 	if (ret < 0) {
 		aw_dev_err("%s: failed to read %s\n", __func__,
 			   aw_rtp_name[0]);
-#ifdef CONFIG_HAPTIC_FEEDBACK_MODULE
-		(void)oplus_haptic_track_fre_cail(HAPTIC_OSC_CALI_TRACK, aw_haptic->f0, ret, "rtp_osc_cali request_firmware fail");
-#endif
 		return ret;
 	}
 	/*aw_haptic add stop,for irq interrupt during calibrate */

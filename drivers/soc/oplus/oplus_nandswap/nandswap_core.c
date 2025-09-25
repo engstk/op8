@@ -424,11 +424,7 @@ static inline void ns_life_ctrl_init(void)
 
 	memset(&nsi, 0, sizeof(nsi));
 	nsi.life_protect = false;
-#if defined(OPLUS_AGING_TEST)
-	nsi.swap_limit = false;
-#else
 	nsi.swap_limit = true;
-#endif
 	nsi.dev_life_end = false;
 
 	all_vm_events(events);

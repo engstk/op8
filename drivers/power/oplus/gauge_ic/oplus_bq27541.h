@@ -44,6 +44,7 @@
 #define BQ27541_REG_LOGIDX		0x32
 #define BQ27541_REG_LOGBUF		0x34
 #define BQ27541_REG_DOD0		0x36
+#define BQ27541_REG_DCAP		0x3c
 #define BQ27541_FLAG_DSC		BIT(0)
 #define BQ27541_FLAG_FC			BIT(9)
 #define BQ27541_CS_DLOGEN		BIT(15)
@@ -104,6 +105,7 @@
 #define BQ27411_REG_FCU			0x2c
 #define BQ27411_REG_FCF			0x2e
 #define BQ27411_REG_SOU			0x30
+#define BQ27411_REG_DCAP		0x3c
 #define BQ27411_REG_DO0			0x66
 #define BQ27411_REG_DOE			0x68
 #define BQ27411_REG_TRM			0x6a
@@ -328,6 +330,7 @@ struct cmd_address {
 	u8	reg_fcu;
 	u8	reg_fcf;
 	u8	reg_sou;
+	u8	reg_dcap;
 	u8	reg_do0;
 	u8	reg_doe;
 	u8	reg_trm;
@@ -446,6 +449,7 @@ struct chip_bq27541 {
 	int sou_pre;
 	int do0_pre;
 	int doe_pre;
+	int dcap_pre;
 	int trm_pre;
 	int pc_pre;
 	int qs_pre; //add gauge reg print log end

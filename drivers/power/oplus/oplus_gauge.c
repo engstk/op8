@@ -323,6 +323,19 @@ int oplus_gauge_get_sub_current(void)
 	}
 }
 
+int oplus_gauge_get_design_capacity(void)
+{
+	if (!g_gauge_chip) {
+		return 0;
+	} else {
+		if (!g_sub_gauge_chip || !g_sub_gauge_chip->gauge_ops
+			|| !g_sub_gauge_chip->gauge_ops->get_batt_design_capacity) {
+		return g_gauge_chip->gauge_ops->get_batt_design_capacity();
+		} else {
+			return g_gauge_chip->gauge_ops->get_batt_design_capacity() + g_sub_gauge_chip->gauge_ops->get_batt_design_capacity();
+		}
+	}
+}
 
 int oplus_gauge_get_remaining_capacity(void)
 {

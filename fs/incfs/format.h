@@ -339,7 +339,7 @@ struct metadata_handler {
 					struct metadata_handler *handler);
 };
 #define INCFS_MAX_METADATA_RECORD_SIZE \
-	FIELD_SIZEOF(struct metadata_handler, md_buffer)
+	sizeof_field(struct metadata_handler, md_buffer)
 
 /* Backing file context management */
 struct mount_info;

@@ -51,6 +51,7 @@ static inline void early_trace_init(void) { }
 
 struct module;
 struct ftrace_hash;
+struct ftrace_direct_func;
 
 #if defined(CONFIG_FUNCTION_TRACER) && defined(CONFIG_MODULES) && \
 	defined(CONFIG_DYNAMIC_FTRACE)
@@ -253,21 +254,45 @@ static inline void ftrace_free_init_mem(void) { }
 static inline void ftrace_free_mem(struct module *mod, void *start, void *end) { }
 #endif /* CONFIG_FUNCTION_TRACER */
 
+struct ftrace_func_entry {
+	struct hlist_node hlist;
+	unsigned long ip;
+	unsigned long direct; /* for direct lookup only */
+};
+
+struct dyn_ftrace;
+
 #ifdef CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS
 int register_ftrace_direct(unsigned long ip, unsigned long addr);
 int unregister_ftrace_direct(unsigned long ip, unsigned long addr);
 int modify_ftrace_direct(unsigned long ip, unsigned long old_addr, unsigned long new_addr);
+struct ftrace_direct_func *ftrace_find_direct_func(unsigned long addr);
+int ftrace_modify_direct_caller(struct ftrace_func_entry *entry,
+				struct dyn_ftrace *rec,
+				unsigned long old_addr,
+				unsigned long new_addr);
 #else
 static inline int register_ftrace_direct(unsigned long ip, unsigned long addr)
 {
-	return -ENODEV;
+	return -ENOTSUPP;
 }
 static inline int unregister_ftrace_direct(unsigned long ip, unsigned long addr)
 {
-	return -ENODEV;
+	return -ENOTSUPP;
 }
 static inline int modify_ftrace_direct(unsigned long ip,
 				       unsigned long old_addr, unsigned long new_addr)
+{
+	return -ENOTSUPP;
+}
+static inline struct ftrace_direct_func *ftrace_find_direct_func(unsigned long addr)
+{
+	return NULL;
+}
+static inline int ftrace_modify_direct_caller(struct ftrace_func_entry *entry,
+					      struct dyn_ftrace *rec,
+					      unsigned long old_addr,
+					      unsigned long new_addr)
 {
 	return -ENODEV;
 }
@@ -346,8 +371,6 @@ static inline void stack_tracer_enable(void) { }
 
 int ftrace_arch_code_modify_prepare(void);
 int ftrace_arch_code_modify_post_process(void);
-
-struct dyn_ftrace;
 
 enum ftrace_bug_type {
 	FTRACE_BUG_UNKNOWN,

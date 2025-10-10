@@ -15,7 +15,7 @@
 #include <linux/hugetlb.h>
 
 #include <asm/mmu_context.h>
-#include <asm/pgtable.h>
+#include <linux/pgtable.h>
 #include <asm/tlbflush.h>
 
 #include "internal.h"
@@ -916,7 +916,7 @@ retry:
 	}
 
 	if (ret & VM_FAULT_RETRY) {
-		down_read(&mm->mmap_sem);
+		mmap_read_lock(mm);
 		*unlocked = true;
 		fault_flags |= FAULT_FLAG_TRIED;
 		goto retry;
@@ -1012,7 +1012,7 @@ retry:
 			break;
 		}
 
-		ret = down_read_killable(&mm->mmap_sem);
+		ret = mmap_read_lock_killable(mm);
 		if (ret) {
 			BUG_ON(ret > 0);
 			if (!pages_done)
@@ -1046,7 +1046,7 @@ retry:
 		 * We must let the caller know we temporarily dropped the lock
 		 * and so the critical section protected by it was lost.
 		 */
-		up_read(&mm->mmap_sem);
+		mmap_read_unlock(mm);
 		*locked = 0;
 	}
 	return pages_done;
@@ -1105,11 +1105,11 @@ long get_user_pages_unlocked(unsigned long start, unsigned long nr_pages,
 	int locked = 1;
 	long ret;
 
-	down_read(&mm->mmap_sem);
+	mmap_read_lock(mm);
 	ret = __get_user_pages_locked(current, mm, start, nr_pages, pages, NULL,
 				      &locked, gup_flags | FOLL_TOUCH);
 	if (locked)
-		up_read(&mm->mmap_sem);
+		mmap_read_unlock(mm);
 	return ret;
 }
 EXPORT_SYMBOL(get_user_pages_unlocked);
@@ -1344,7 +1344,7 @@ int __mm_populate(unsigned long start, unsigned long len, int ignore_errors)
 		 */
 		if (!locked) {
 			locked = 1;
-			down_read(&mm->mmap_sem);
+			mmap_read_lock(mm);
 			vma = find_vma(mm, nstart);
 		} else if (nstart >= vma->vm_end)
 			vma = vma->vm_next;
@@ -1376,7 +1376,7 @@ int __mm_populate(unsigned long start, unsigned long len, int ignore_errors)
 		ret = 0;
 	}
 	if (locked)
-		up_read(&mm->mmap_sem);
+		mmap_read_unlock(mm);
 	return ret;	/* 0 or negative error code */
 }
 

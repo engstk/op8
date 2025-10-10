@@ -18,7 +18,7 @@
 #include <linux/cma.h>
 #endif
 #include <asm/page.h>
-#include <asm/pgtable.h>
+#include <linux/pgtable.h>
 #include "internal.h"
 
 #include <trace/hooks/vh_vmscan.h>

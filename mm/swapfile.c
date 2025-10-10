@@ -40,7 +40,7 @@
 #include <linux/swap_slots.h>
 #include <linux/sort.h>
 
-#include <asm/pgtable.h>
+#include <linux/pgtable.h>
 #include <asm/tlbflush.h>
 #include <linux/swapops.h>
 #include <linux/swap_cgroup.h>
@@ -2007,7 +2007,7 @@ static int unuse_mm(struct mm_struct *mm,
 	struct vm_area_struct *vma;
 	int ret = 0;
 
-	if (!down_read_trylock(&mm->mmap_sem)) {
+	if (!mmap_read_trylock(mm)) {
 		/*
 		 * Activate page so shrink_inactive_list is unlikely to unmap
 		 * its ptes while lock is dropped, so swapoff can make progress.
@@ -2015,7 +2015,7 @@ static int unuse_mm(struct mm_struct *mm,
 		if (!lru_gen_enabled())
 			activate_page(page);
 		unlock_page(page);
-		down_read(&mm->mmap_sem);
+		mmap_read_lock(mm);
 		lock_page(page);
 	}
 	for (vma = mm->mmap; vma; vma = vma->vm_next) {
@@ -2023,7 +2023,7 @@ static int unuse_mm(struct mm_struct *mm,
 			break;
 		cond_resched();
 	}
-	up_read(&mm->mmap_sem);
+	mmap_read_unlock(mm);
 	return (ret < 0)? ret: 0;
 }
 

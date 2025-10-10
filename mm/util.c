@@ -20,6 +20,9 @@
 #include <linux/uaccess.h>
 
 #include "internal.h"
+#ifndef __GENKSYMS__
+#include <trace/hooks/syscall_check.h>
+#endif
 
 static inline int is_kernel_rodata(unsigned long addr)
 {
@@ -385,15 +388,16 @@ unsigned long vm_mmap_pgoff(struct file *file, unsigned long addr,
 
 	ret = security_mmap_file(file, prot, flag);
 	if (!ret) {
-		if (down_write_killable(&mm->mmap_sem))
+		if (mmap_write_lock_killable(mm))
 			return -EINTR;
 		ret = do_mmap_pgoff(file, addr, len, prot, flag, pgoff,
 				    &populate, &uf);
-		up_write(&mm->mmap_sem);
+		mmap_write_unlock(mm);
 		userfaultfd_unmap_complete(mm, &uf);
 		if (populate)
 			mm_populate(ret, populate);
 	}
+	trace_android_vh_check_mmap_file(file, prot, flag, ret);
 	return ret;
 }
 
@@ -805,12 +809,12 @@ int get_cmdline(struct task_struct *task, char *buffer, int buflen)
 	if (!mm->arg_end)
 		goto out_mm;	/* Shh! No looking before we're done */
 
-	down_read(&mm->mmap_sem);
+	mmap_read_lock(mm);
 	arg_start = mm->arg_start;
 	arg_end = mm->arg_end;
 	env_start = mm->env_start;
 	env_end = mm->env_end;
-	up_read(&mm->mmap_sem);
+	mmap_read_unlock(mm);
 
 	len = arg_end - arg_start;
 

@@ -8,7 +8,6 @@
 #ifndef _DSI_IRIS_PQ_H_
 #define _DSI_IRIS_PQ_H_
 
-
 enum {
 	IRIS_LCE_GRAPHIC = 0x00,
 	IRIS_LCE_VIDEO,
@@ -29,7 +28,7 @@ enum {
 	IRIS_CYAN_GAIN_TYPE,
 };
 
-#define IP_OPT_MAX				20
+#define IP_OPT_MAX 20
 
 void iris_set_skip_dma(bool skip);
 
@@ -103,7 +102,7 @@ void iris_peaking_idle_clk_enable(bool enable);
 
 void iris_cm_6axis_seperate_gain(u8 gain_type, u32 value);
 
-void iris_init_ipopt_ip(struct iris_update_ipopt *ipopt,  int len);
+void iris_init_ipopt_ip(struct iris_update_ipopt *ipopt, int len);
 void iris_hdr_csc_prepare(void);
 void iris_hdr_csc_complete(int step);
 void iris_hdr_csc_frame_ready(void);
@@ -119,9 +118,8 @@ void iris_psf_mif_dyn_addr_set(bool dyn_adrr_enable);
 void iris_ms_pwil_dma_update(struct iris_mspwil_parameter *par);
 void iris_dtg_frame_rate_set(u32 framerate);
 
-int32_t iris_update_ip_opt(
-		struct iris_update_ipopt *popt, int len, uint8_t ip,
-		uint8_t opt_id, uint8_t skip_last);
+int32_t iris_update_ip_opt(struct iris_update_ipopt *popt, int len, uint8_t ip,
+			   uint8_t opt_id, uint8_t skip_last);
 
 int iris_dbgfs_pq_init(struct dsi_display *display);
 
@@ -151,9 +149,11 @@ void iris_dom_set(int mode);
 
 void iris_brightness_level_set(u32 *value);
 
-int32_t iris_parse_color_temp_range(struct device_node *np, struct iris_cfg *pcfg);
+int32_t iris_parse_color_temp_range(struct device_node *np,
+				    struct iris_cfg *pcfg);
 
-int32_t iris_parse_default_pq_param(struct device_node *np, struct iris_cfg *pcfg);
+int32_t iris_parse_default_pq_param(struct device_node *np,
+				    struct iris_cfg *pcfg);
 
 void iris_cm_setting_switch(bool dual);
 #endif // _DSI_IRIS_PQ_H_

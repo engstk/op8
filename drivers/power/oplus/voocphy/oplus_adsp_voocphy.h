@@ -2,14 +2,13 @@
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
  */
- 
- #ifndef _OPLUS_ADSP_VOOCPHY_H_
+
+#ifndef _OPLUS_ADSP_VOOCPHY_H_
 #define _OPLUS_ADSP_VOOCPHY_H_
 
 #include "oplus_voocphy.h"
 
-typedef enum _FASTCHG_STATUS
-{
+typedef enum _FASTCHG_STATUS {
 	ADSP_VPHY_FAST_NOTIFY_UNKNOW,
 	ADSP_VPHY_FAST_NOTIFY_PRESENT,
 	ADSP_VPHY_FAST_NOTIFY_ONGOING,
@@ -27,7 +26,7 @@ typedef enum _FASTCHG_STATUS
 	ADSP_VPHY_FAST_NOTIFY_COMMU_SEND_ERR,
 	ADSP_VPHY_FAST_NOTIFY_HW_VBATT_HIGH,
 	ADSP_VPHY_FAST_NOTIFY_HW_TBATT_HIGH,
-}FASTCHG_STATUS;
+} FASTCHG_STATUS;
 
 void oplus_adsp_voocphy_handle_status(struct power_supply *psy, int intval);
 void adsp_voocphy_exit(void);

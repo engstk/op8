@@ -2041,15 +2041,15 @@ sd_spinup_disk(struct scsi_disk *sdkp)
 #else
 			if (media_not_present(sdkp, &sshdr))
 				return;
-
 #endif
+
 			if (the_result)
 				sense_valid = scsi_sense_valid(&sshdr);
 			retries++;
 #ifdef OPLUS_FEATURE_CHG_BASIC
-			} while (retries < 30 &&
+		} while (retries < 30 &&
 #else
-			} while (retries < 3 &&
+		} while (retries < 3 &&
 #endif
 			 (!scsi_status_is_good(the_result) ||
 			  ((driver_byte(the_result) == DRIVER_SENSE) &&

@@ -12,6 +12,13 @@
 #include "sde_hwio.h"
 #include "sde_hw_lm.h"
 #include "dsi_display.h"
+#ifdef OPLUS_BUG_STABILITY
+/* DC backlight sync */
+#include "sde_connector.h"
+#include "../dsi/dsi_display.h"
+extern struct dc_apollo_pcc_sync dc_apollo;
+extern struct dsi_display *get_main_display(void);
+#endif
 
 /* Reserve space of 128 words for LUT dma payload set-up */
 #define REG_DMA_HEADERS_BUFFER_SZ (sizeof(u32) * 128)
@@ -1090,8 +1097,8 @@ void reg_dmav1_setup_dspp_igcv31(struct sde_hw_dspp *ctx, void *cfg)
 		memcpy(data, addr[i], IGC_TBL_LEN * sizeof(u32));
 		data[IGC_TBL_LEN] = data[IGC_TBL_LEN - 1];
 		REG_DMA_SETUP_OPS(dma_write_cfg, offset, data,
-			(IGC_TBL_LEN + 1) * sizeof(u32),
-			REG_BLK_WRITE_INC, 0, 0, 0);
+				  (IGC_TBL_LEN + 1) * sizeof(u32),
+				  REG_BLK_WRITE_INC, 0, 0, 0);
 #else
 		REG_DMA_SETUP_OPS(dma_write_cfg, offset, addr[i],
 			IGC_TBL_LEN * sizeof(u32),
@@ -1117,16 +1124,18 @@ void reg_dmav1_setup_dspp_igcv31(struct sde_hw_dspp *ctx, void *cfg)
 		DRM_ERROR("write decode select failed ret %d\n", rc);
 		return;
 	}
-	if(oplus_dither_enable) {
+	if (oplus_dither_enable) {
 		if (lut_cfg->flags & IGC_DITHER_ENABLE) {
 			lut_cfg->strength = 4;
 			reg = lut_cfg->strength & IGC_DITHER_DATA_MASK;
-			REG_DMA_SETUP_OPS(dma_write_cfg,
-				ctx->cap->sblk->igc.base + IGC_DITHER_OFF,
-				&reg, sizeof(reg), REG_SINGLE_WRITE, 0, 0, 0);
+			REG_DMA_SETUP_OPS(
+				dma_write_cfg,
+				ctx->cap->sblk->igc.base + IGC_DITHER_OFF, &reg,
+				sizeof(reg), REG_SINGLE_WRITE, 0, 0, 0);
 			rc = dma_ops->setup_payload(&dma_write_cfg);
 			if (rc) {
-				DRM_ERROR("dither strength failed ret %d\n", rc);
+				DRM_ERROR("dither strength failed ret %d\n",
+					  rc);
 				return;
 			}
 		}
@@ -1134,19 +1143,22 @@ void reg_dmav1_setup_dspp_igcv31(struct sde_hw_dspp *ctx, void *cfg)
 	} else {
 		if (lut_cfg->flags & IGC_DITHER_ENABLE) {
 			reg = lut_cfg->strength & IGC_DITHER_DATA_MASK;
-			REG_DMA_SETUP_OPS(dma_write_cfg,
-				ctx->cap->sblk->igc.base + IGC_DITHER_OFF,
-				&reg, sizeof(reg), REG_SINGLE_WRITE, 0, 0, 0);
+			REG_DMA_SETUP_OPS(
+				dma_write_cfg,
+				ctx->cap->sblk->igc.base + IGC_DITHER_OFF, &reg,
+				sizeof(reg), REG_SINGLE_WRITE, 0, 0, 0);
 			rc = dma_ops->setup_payload(&dma_write_cfg);
 			if (rc) {
-				DRM_ERROR("dither strength failed ret %d\n", rc);
+				DRM_ERROR("dither strength failed ret %d\n",
+					  rc);
 				return;
 			}
 		}
-		if ((dsi_display == NULL) || (dsi_display->panel == NULL) || (dsi_display->panel->name == NULL)) {
+		if ((dsi_display == NULL) || (dsi_display->panel == NULL) ||
+		    (dsi_display->panel->name == NULL)) {
 			reg = IGC_EN;
 		} else {
-			reg = IGC_EN|BIT(1);
+			reg = IGC_EN | BIT(1);
 		}
 	}
 
@@ -1313,6 +1325,11 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 	int rc, i = 0;
 	u32 reg = 0;
 	u32 num_of_mixers, blk = 0;
+#ifdef OPLUS_BUG_STABILITY
+	/* DC backlight sync */
+	static struct drm_msm_pcc *pcc_cfg_last;
+	struct dsi_display *display = get_main_display();
+#endif
 
 	rc = reg_dma_dspp_check(ctx, cfg, PCC);
 	if (rc)
@@ -1342,6 +1359,11 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 	pcc_cfg = hw_cfg->payload;
 	dma_ops = sde_reg_dma_get_ops();
 	dma_ops->reset_reg_dma_buf(dspp_buf[PCC][ctx->idx]);
+#ifdef OPLUS_BUG_STABILITY
+	/* DC backlight sync */
+	if (pcc_cfg)
+		dc_apollo.pcc_current = pcc_cfg->r.r;
+#endif
 
 	REG_DMA_INIT_OPS(dma_write_cfg, blk, PCC, dspp_buf[PCC][ctx->idx]);
 
@@ -1390,9 +1412,11 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 		data[i + 18] = coeffs->gb;
 		data[i + 21] = coeffs->rgb;
 #ifdef OPLUS_BUG_STABILITY
-		if(i == 0) {
+		if (i == 0) {
 			g_oplus_save_pcc = coeffs->r;
-			pr_debug("backlight smooth for g_oplus_save_pcc = %d, %d, %d", coeffs->r,coeffs->g,coeffs->b);
+			pr_debug(
+				"backlight smooth for g_oplus_save_pcc = %d, %d, %d",
+				coeffs->r, coeffs->g, coeffs->b);
 		}
 #endif
 	}
@@ -1422,6 +1446,28 @@ void reg_dmav1_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 	rc = dma_ops->kick_off(&kick_off);
 	if (rc)
 		DRM_ERROR("failed to kick off ret %d\n", rc);
+
+#ifdef OPLUS_BUG_STABILITY
+	/* DC backlight sync */
+	if (display != NULL && display->panel != NULL) {
+		if (display->panel->oplus_priv.dc_apollo_sync_enable) {
+			mutex_lock(&dc_apollo.lock);
+			if (pcc_cfg_last && pcc_cfg) {
+				DRM_DEBUG_DRIVER("pcc(%d,%d)\n",
+						 dc_apollo.pcc_current,
+						 dc_apollo.pcc_last);
+				if (dc_apollo.pcc_last !=
+				    dc_apollo.pcc_current) {
+					dc_apollo.pcc_last =
+						dc_apollo.pcc_current;
+					dc_apollo.dc_pcc_updated = 1;
+				}
+			}
+			pcc_cfg_last = pcc_cfg;
+			mutex_unlock(&dc_apollo.lock);
+		}
+	}
+#endif
 
 exit:
 	kfree(data);

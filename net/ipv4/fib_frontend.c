@@ -307,7 +307,7 @@ __be32 fib_compute_spec_dst(struct sk_buff *skb)
 			.flowi4_mark = vmark ? skb->mark : 0,
 		};
 		if (!fib_lookup(net, &fl4, &res, 0))
-			return FIB_RES_PREFSRC(net, res);
+			return fib_result_prefsrc(net, &res);
 	} else {
 		scope = RT_SCOPE_LINK;
 	}
@@ -383,7 +383,7 @@ static int __fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst,
 		dev_match = true;
 #endif
 	if (dev_match) {
-		ret = FIB_RES_NH(res).fib_nh_scope >= RT_SCOPE_HOST;
+		ret = FIB_RES_NHC(res)->nhc_scope >= RT_SCOPE_HOST;
 		return ret;
 	}
 	if (no_addr)
@@ -395,7 +395,7 @@ static int __fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst,
 	ret = 0;
 	if (fib_lookup(net, &fl4, &res, FIB_LOOKUP_IGNORE_LINKSTATE) == 0) {
 		if (res.type == RTN_UNICAST)
-			ret = FIB_RES_NH(res).fib_nh_scope >= RT_SCOPE_HOST;
+			ret = FIB_RES_NHC(res)->nhc_scope >= RT_SCOPE_HOST;
 	}
 	return ret;
 
@@ -802,17 +802,94 @@ errout:
 	return err;
 }
 
+int ip_valid_fib_dump_req(struct net *net, const struct nlmsghdr *nlh,
+			  struct fib_dump_filter *filter,
+			  struct netlink_callback *cb)
+{
+	struct netlink_ext_ack *extack = cb->extack;
+	struct nlattr *tb[RTA_MAX + 1];
+	struct rtmsg *rtm;
+	int err, i;
+
+	ASSERT_RTNL();
+
+	if (nlh->nlmsg_len < nlmsg_msg_size(sizeof(*rtm))) {
+		NL_SET_ERR_MSG(extack, "Invalid header for FIB dump request");
+		return -EINVAL;
+	}
+
+	rtm = nlmsg_data(nlh);
+	if (rtm->rtm_dst_len || rtm->rtm_src_len  || rtm->rtm_tos   ||
+	    rtm->rtm_scope) {
+		NL_SET_ERR_MSG(extack, "Invalid values in header for FIB dump request");
+		return -EINVAL;
+	}
+	if (rtm->rtm_flags & ~(RTM_F_CLONED | RTM_F_PREFIX)) {
+		NL_SET_ERR_MSG(extack, "Invalid flags for FIB dump request");
+		return -EINVAL;
+	}
+
+	filter->flags    = rtm->rtm_flags;
+	filter->protocol = rtm->rtm_protocol;
+	filter->rt_type  = rtm->rtm_type;
+	filter->table_id = rtm->rtm_table;
+
+	err = nlmsg_parse_strict(nlh, sizeof(*rtm), tb, RTA_MAX,
+				 rtm_ipv4_policy, extack);
+	if (err < 0)
+		return err;
+
+	for (i = 0; i <= RTA_MAX; ++i) {
+		int ifindex;
+
+		if (!tb[i])
+			continue;
+
+		switch (i) {
+		case RTA_TABLE:
+			filter->table_id = nla_get_u32(tb[i]);
+			break;
+		case RTA_OIF:
+			ifindex = nla_get_u32(tb[i]);
+			filter->dev = __dev_get_by_index(net, ifindex);
+			if (!filter->dev)
+				return -ENODEV;
+			break;
+		default:
+			NL_SET_ERR_MSG(extack, "Unsupported attribute in dump request");
+			return -EINVAL;
+		}
+	}
+
+	if (filter->flags || filter->protocol || filter->rt_type ||
+	    filter->table_id || filter->dev) {
+		filter->filter_set = 1;
+		cb->answer_flags = NLM_F_DUMP_FILTERED;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(ip_valid_fib_dump_req);
+
 static int inet_dump_fib(struct sk_buff *skb, struct netlink_callback *cb)
 {
+	const struct nlmsghdr *nlh = cb->nlh;
 	struct net *net = sock_net(skb->sk);
+	struct fib_dump_filter filter = {};
 	unsigned int h, s_h;
 	unsigned int e = 0, s_e;
 	struct fib_table *tb;
 	struct hlist_head *head;
 	int dumped = 0, err;
 
-	if (nlmsg_len(cb->nlh) >= sizeof(struct rtmsg) &&
-	    ((struct rtmsg *) nlmsg_data(cb->nlh))->rtm_flags & RTM_F_CLONED)
+	if (cb->strict_check) {
+		err = ip_valid_fib_dump_req(net, nlh, &filter, cb);
+		if (err < 0)
+			return err;
+	}
+
+	if (nlmsg_len(nlh) >= sizeof(struct rtmsg) &&
+	    ((struct rtmsg *)nlmsg_data(nlh))->rtm_flags & RTM_F_CLONED)
 		return skb->len;
 
 	s_h = cb->args[0];

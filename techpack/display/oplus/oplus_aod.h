@@ -13,7 +13,7 @@
 #ifndef _OPLUS_AOD_H_
 #define _OPLUS_AOD_H_
 
-#define RAMLESS_AOD_AREA_NUM		6
+#define RAMLESS_AOD_AREA_NUM 6
 
 #include "dsi_display.h"
 
@@ -68,7 +68,8 @@ int __oplus_display_set_aod_light_mode(int mode);
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 bool is_oplus_ramless_aod(void);
 int oplus_ramless_panel_update_aod_area_unlock(void);
-int oplus_ramless_panel_display_atomic_check(struct drm_crtc *crtc, struct drm_crtc_state *state);
+int oplus_ramless_panel_display_atomic_check(struct drm_crtc *crtc,
+					     struct drm_crtc_state *state);
 int oplus_ramless_panel_get_aod_area(void *buf);
 int oplus_ramless_panel_set_aod_area(void *buf);
 int oplus_ramless_panel_get_video(void *buf);

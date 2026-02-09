@@ -22,7 +22,6 @@
 #include "internal.h"
 
 #define WCD938X_ZDET_SUPPORTED          true
-
 /* Z value defined in milliohm */
 #define WCD938X_ZDET_VAL_32             32000
 #define WCD938X_ZDET_VAL_400            400000
@@ -713,12 +712,12 @@ static void wcd938x_mbhc_hph_pull_down_ctrl(struct snd_soc_component *component,
 		snd_soc_component_update_bits(component, WCD938X_HPH_PA_CTL2,
 				    0x10, 0x10);
 	} else {
-	#ifndef OPLUS_ARCH_EXTENDS
+#ifndef OPLUS_ARCH_EXTENDS
 		snd_soc_component_update_bits(component, WCD938X_HPH_PA_CTL2,
 				    0x40, 0x00);
 		snd_soc_component_update_bits(component, WCD938X_HPH_PA_CTL2,
 				    0x10, 0x00);
-	#endif /* OPLUS_ARCH_EXTENDS */
+#endif /* OPLUS_ARCH_EXTENDS */
 	}
 }
 
@@ -1037,17 +1036,17 @@ int wcd938x_mbhc_post_ssr_init(struct wcd938x_mbhc *mbhc,
 	snd_soc_component_update_bits(component, WCD938X_ANA_MBHC_MECH,
 				0x20, 0x20);
 
-	#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
+#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
 	if (wcd_mbhc->enable_hp_impedance_detect)
 		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb, &intr_ids,
 				    wcd_mbhc_registers, true);
 	else
 		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb, &intr_ids,
-					wcd_mbhc_registers, false);
-	#else /* OPLUS_FEATURE_IMPEDANCE_MATCH */
-		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb, &intr_ids,
+				    wcd_mbhc_registers, false);
+#else /* OPLUS_FEATURE_IMPEDANCE_MATCH */
+	ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb, &intr_ids,
 			    wcd_mbhc_registers, WCD938X_ZDET_SUPPORTED);
-	#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
+#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
 	if (ret) {
 		dev_err(component->dev, "%s: mbhc initialization failed\n",
 			__func__);
@@ -1075,11 +1074,12 @@ int wcd938x_mbhc_init(struct wcd938x_mbhc **mbhc,
 	struct wcd_mbhc *wcd_mbhc = NULL;
 	int ret = 0;
 	struct wcd938x_pdata *pdata;
-	#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
+#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
 	u32 enable_hp_impedance_detect = 0;
 	int rc = 0;
-	const char *mbhc_enable_hp_impedance_detect = "oplus,mbhc_enable_hp_impedance_detect";
-	#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
+	const char *mbhc_enable_hp_impedance_detect =
+		"oplus,mbhc_enable_hp_impedance_detect";
+#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
 
 	if (!component) {
 		pr_err("%s: component is NULL\n", __func__);
@@ -1112,41 +1112,43 @@ int wcd938x_mbhc_init(struct wcd938x_mbhc **mbhc,
 	}
 	wcd_mbhc->micb_mv = pdata->micbias.micb2_mv;
 
-	#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
-	if (of_find_property(component->dev->of_node, mbhc_enable_hp_impedance_detect,
-				    NULL)) {
-		rc = of_property_read_u32(component->dev->of_node, mbhc_enable_hp_impedance_detect, &enable_hp_impedance_detect);
+#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
+	if (of_find_property(component->dev->of_node,
+			     mbhc_enable_hp_impedance_detect, NULL)) {
+		rc = of_property_read_u32(component->dev->of_node,
+					  mbhc_enable_hp_impedance_detect,
+					  &enable_hp_impedance_detect);
 		if (!rc) {
 			if (enable_hp_impedance_detect) {
-				wcd_mbhc->enable_hp_impedance_detect= true;
+				wcd_mbhc->enable_hp_impedance_detect = true;
 			} else {
 				wcd_mbhc->enable_hp_impedance_detect = false;
 			}
 		} else
-			dev_err(component->dev, "%s: Looking up %s property in node %s failed\n",
-				__func__, mbhc_enable_hp_impedance_detect, component->dev->of_node->full_name);
+			dev_err(component->dev,
+				"%s: Looking up %s property in node %s failed\n",
+				__func__, mbhc_enable_hp_impedance_detect,
+				component->dev->of_node->full_name);
 	} else {
-		dev_info(component->dev, "%s: oplus,mbhc_enable_hp_impedance_detect DT property not found\n",
+		dev_info(
+			component->dev,
+			"%s: oplus,mbhc_enable_hp_impedance_detect DT property not found\n",
 			__func__);
 	}
-	dev_err(component->dev, "%s:wcd_mbhc->enable_hp_impedance_detect(%d)\n",__func__, wcd_mbhc->enable_hp_impedance_detect);
-	#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
+#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
 
-	#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
+#ifdef OPLUS_FEATURE_IMPEDANCE_MATCH
 	if (wcd_mbhc->enable_hp_impedance_detect)
-		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb,
-					&intr_ids, wcd_mbhc_registers,
-					true);
+		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb, &intr_ids,
+				    wcd_mbhc_registers, true);
 	else
-		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb,
-					&intr_ids, wcd_mbhc_registers,
-					false);
-	#else /* OPLUS_FEATURE_IMPEDANCE_MATCH */
-		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb,
+		ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb, &intr_ids,
+				    wcd_mbhc_registers, false);
+#else /* OPLUS_FEATURE_IMPEDANCE_MATCH */
+	ret = wcd_mbhc_init(wcd_mbhc, component, &mbhc_cb,
 				&intr_ids, wcd_mbhc_registers,
 				WCD938X_ZDET_SUPPORTED);
-	#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
-
+#endif /* OPLUS_FEATURE_IMPEDANCE_MATCH */
 	if (ret) {
 		dev_err(component->dev, "%s: mbhc initialization failed\n",
 			__func__);

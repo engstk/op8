@@ -130,9 +130,8 @@ int thermal_zone_get_temp_workaround(struct thermal_zone_device *tz, int *temp)
 	if (!tz || IS_ERR(tz) || !tz->ops->get_temp)
 		goto exit;
 
-	while(!mutex_trylock(&tz->lock))
-	{
-		if(--i <= 0)
+	while (!mutex_trylock(&tz->lock)) {
+		if (--i <= 0)
 			goto last_exit;
 		msleep(100);
 	}
@@ -144,7 +143,7 @@ int thermal_zone_get_temp_workaround(struct thermal_zone_device *tz, int *temp)
 			ret = tz->ops->get_trip_type(tz, count, &type);
 			if (!ret && type == THERMAL_TRIP_CRITICAL) {
 				ret = tz->ops->get_trip_temp(tz, count,
-						&crit_temp);
+							     &crit_temp);
 				break;
 			}
 		}
@@ -163,7 +162,8 @@ exit:
 	return ret;
 last_exit:
 	*temp = tz->last_temperature;
-	if (tz->last_temperature == THERMAL_TEMP_INVALID || tz->last_temperature == THERMAL_TEMP_INVALID_LOW)
+	if (tz->last_temperature == THERMAL_TEMP_INVALID ||
+	    tz->last_temperature == THERMAL_TEMP_INVALID_LOW)
 		*temp = 0;
 	printk("QMI arount: Can not get lock, goto last_exit\n");
 	return 0;

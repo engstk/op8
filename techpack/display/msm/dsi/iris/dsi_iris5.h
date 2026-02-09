@@ -10,7 +10,6 @@
 
 #include "dsi_iris5_def.h"
 
-
 void iris_set_cfg_index(int index);
 int iris_parse_param(struct dsi_display *display);
 void iris_init(struct dsi_display *display, struct dsi_panel *panel);

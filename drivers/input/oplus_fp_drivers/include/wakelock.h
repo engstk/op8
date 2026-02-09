@@ -39,7 +39,7 @@ static inline void wake_lock_destroy(struct wake_lock *lock)
 	if (!lock) {
 		return;
 	}
-    __pm_relax(&lock->ws);
+	__pm_relax(&lock->ws);
 }
 
 static inline void wake_lock(struct wake_lock *lock)

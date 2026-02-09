@@ -16,56 +16,64 @@
  * Haptic_HV CHIPID
  *
  *********************************************************/
-#define AW_REG_CHIPID				(0x00) /* AW869X */
-#define AW_REG_CHIPIDH				(0x57) /* AW8692X */
-#define AW_REG_CHIPIDL				(0x58) /* AW8692X */
-#define AW8695_CHIPID				(0x95)
-#define AW8697_CHIPID				(0x97)
-#define AW86925_CHIPID				(0x9250)
-#define AW86926_CHIPID				(0x9260)
-#define AW86927_CHIPID				(0x9270)
-#define AW86928_CHIPID				(0x9280)
+#define AW_REG_CHIPID (0x00) /* AW869X */
+#define AW_REG_CHIPIDH (0x57) /* AW8692X */
+#define AW_REG_CHIPIDL (0x58) /* AW8692X */
+#define AW8695_CHIPID (0x95)
+#define AW8697_CHIPID (0x97)
+#define AW86905_CHIPID (0x05)
+#define AW86907_CHIPID (0x04)
+#define AW86915_CHIPID (0x07)
+#define AW86917_CHIPID (0x06)
+#define AW86925_CHIPID (0x9250)
+#define AW86926_CHIPID (0x9260)
+#define AW86927_CHIPID (0x9270)
+#define AW86928_CHIPID (0x9280)
 
 /*********************************************************
  *
  * Marco
  *
  *********************************************************/
-#define AW_I2C_NAME				"haptic_hv"
-#define HAPTIC_NAME				"awinic_haptic"
-#define AW_I2C_RETRIES				(5)
-#define AW_I2C_RETRY_DELAY			(2)
-#define AW_READ_CHIPID_RETRIES			(5)
-#define AW_READ_CHIPID_RETRY_DELAY		(2)
-#define AW_SEQUENCER_SIZE			(8)
-#define AW_I2C_BYTE_ONE				(1)
-#define AW_I2C_BYTE_TWO				(2)
-#define AW_I2C_BYTE_THREE			(3)
-#define AW_I2C_BYTE_FOUR			(4)
-#define AW_I2C_BYTE_FIVE			(5)
-#define AW_I2C_BYTE_SIX				(6)
-#define AW_I2C_BYTE_SEVEN			(7)
-#define AW_I2C_BYTE_EIGHT			(8)
+#define AW_I2C_NAME "haptic_hv"
+#define HAPTIC_NAME "awinic_haptic"
+#define AW_I2C_RETRIES (5)
+#define AW_I2C_RETRY_DELAY (2)
+#define AW_READ_CHIPID_RETRIES (5)
+#define AW_READ_CHIPID_RETRY_DELAY (2)
+#define AW_SEQUENCER_SIZE (8)
+#define AW_I2C_BYTE_ONE (1)
+#define AW_I2C_BYTE_TWO (2)
+#define AW_I2C_BYTE_THREE (3)
+#define AW_I2C_BYTE_FOUR (4)
+#define AW_I2C_BYTE_FIVE (5)
+#define AW_I2C_BYTE_SIX (6)
+#define AW_I2C_BYTE_SEVEN (7)
+#define AW_I2C_BYTE_EIGHT (8)
 
-#define AW_SEQUENCER_LOOP_SIZE			(4)
-#define AW_RTP_NAME_MAX				(64)
-#define AW_PM_QOS_VALUE_VB			(400)
-#define AW_VBAT_REFER				(4200)
-#define AW_VBAT_MIN				(3000)
-#define AW_RAM_WORK_DELAY_INTERVAL		(8000)
-#define AW_OSC_TRIM_PARAM			(50)
-#define AW_OSC_CALI_ACCURACY			(24)
-#define AW_OSC_CALI_MAX_LENGTH			(5100000)
-#define AW_TRIG_NUM				(3)
-#define AW_RAMDATA_RD_BUFFER_SIZE		(1024)
-#define AW_RAMDATA_WR_BUFFER_SIZE		(2048)
+#define AW_SEQUENCER_LOOP_SIZE (4)
+#define AW_RTP_NAME_MAX (64)
+#define AW_PM_QOS_VALUE_VB (400)
+#define AW_VBAT_REFER (4200)
+#define AW_VBAT_MIN (3000)
+#define AW_VBAT_MAX (4500)
+#define AW_DRV_WIDTH_MIN (0)
+#define AW_DRV_WIDTH_MAX (255)
+#define AW_DRV2_LVL_MAX (0x7F)
+#define AW_RAM_WORK_DELAY_INTERVAL (8000)
+#define AW_OSC_TRIM_PARAM (50)
+#define AW_OSC_CALI_ACCURACY (24)
+#define AW_OSC_CALI_MAX_LENGTH (5100000)
+#define AW_TRIG_NUM (3)
+#define AW_RAMDATA_RD_BUFFER_SIZE (1024)
+#define AW_RAMDATA_WR_BUFFER_SIZE (2048)
 
-#define AW_GLBRD_STATE_MASK			(15<<0)
-#define AW_STATE_STANDBY			(0x00)
-#define AW_STATE_RTP				(0x08)
-#define AW_BIT_RESET				(0xAA)
-#define AW_CONTAINER_DEFAULT_SIZE		(2 * 1024 * 1024)
-#define AW_RTP_NUM				(6)
+#define AW_GLBRD_STATE_MASK (15 << 0)
+#define AW_STATE_STANDBY (0x00)
+#define AW_STATE_RTP (0x08)
+#define AW_BIT_RESET (0xAA)
+#define AW_CONTAINER_DEFAULT_SIZE (2 * 1024 * 1024)
+#define AW_RTP_NUM (6)
 
 /*********************************************************
  *
@@ -92,6 +100,12 @@
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 1)
 #define TIMED_OUTPUT
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+#define KERNEL_VERSION_510
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
+#define KERNEL_VERSION_6P1
+#endif
 
 #ifdef TIMED_OUTPUT
 #include <../../../drivers/staging/android/timed_output.h>
@@ -115,22 +129,47 @@ enum {
 	MMAP_BUF_DATA_FINISHED = 0xAA,
 	MMAP_BUF_DATA_INVALID = 0xFF,
 };
-#define RICHTAP_IOCTL_GROUP		(0x52)
-#define RICHTAP_GET_HWINFO		_IO(RICHTAP_IOCTL_GROUP, 0x03)
-#define RICHTAP_SET_FREQ		_IO(RICHTAP_IOCTL_GROUP, 0x04)
-#define RICHTAP_SETTING_GAIN		_IO(RICHTAP_IOCTL_GROUP, 0x05)
-#define RICHTAP_OFF_MODE		_IO(RICHTAP_IOCTL_GROUP, 0x06)
-#define RICHTAP_TIMEOUT_MODE		_IO(RICHTAP_IOCTL_GROUP, 0x07)
-#define RICHTAP_RAM_MODE		_IO(RICHTAP_IOCTL_GROUP, 0x08)
-#define RICHTAP_RTP_MODE		_IO(RICHTAP_IOCTL_GROUP, 0x09)
-#define RICHTAP_STREAM_MODE		_IO(RICHTAP_IOCTL_GROUP, 0x0A)
-#define RICHTAP_UPDATE_RAM		_IO(RICHTAP_IOCTL_GROUP, 0x10)
-#define RICHTAP_GET_F0			_IO(RICHTAP_IOCTL_GROUP, 0x11)
-#define RICHTAP_STOP_MODE		_IO(RICHTAP_IOCTL_GROUP, 0x12)
+#define RICHTAP_IOCTL_GROUP (0x52)
+#define RICHTAP_GET_HWINFO _IO(RICHTAP_IOCTL_GROUP, 0x03)
+#define RICHTAP_SET_FREQ _IO(RICHTAP_IOCTL_GROUP, 0x04)
+#define RICHTAP_SETTING_GAIN _IO(RICHTAP_IOCTL_GROUP, 0x05)
+#define RICHTAP_OFF_MODE _IO(RICHTAP_IOCTL_GROUP, 0x06)
+#define RICHTAP_TIMEOUT_MODE _IO(RICHTAP_IOCTL_GROUP, 0x07)
+#define RICHTAP_RAM_MODE _IO(RICHTAP_IOCTL_GROUP, 0x08)
+#define RICHTAP_RTP_MODE _IO(RICHTAP_IOCTL_GROUP, 0x09)
+#define RICHTAP_STREAM_MODE _IO(RICHTAP_IOCTL_GROUP, 0x0A)
+#define RICHTAP_UPDATE_RAM _IO(RICHTAP_IOCTL_GROUP, 0x10)
+#define RICHTAP_GET_F0 _IO(RICHTAP_IOCTL_GROUP, 0x11)
+#define RICHTAP_STOP_MODE _IO(RICHTAP_IOCTL_GROUP, 0x12)
 
-#define RICHTAP_MMAP_BUF_SIZE		(1000)
-#define RICHTAP_MMAP_PAGE_ORDER		(2)
-#define RICHTAP_MMAP_BUF_SUM		(16)
+#define RICHTAP_MMAP_BUF_SIZE (1000)
+#define RICHTAP_MMAP_PAGE_ORDER (2)
+#define RICHTAP_MMAP_BUF_SUM (16)
+
+#define DEVICE_ID_0815 815
+#define DEVICE_ID_0832 832
+#define DEVICE_ID_0833 833
+#define DEVICE_ID_81538 81538
+
+#define DEVICE_ID_0815_F0_1630 1630
+#define DEVICE_ID_0815_F0_1670 1670
+#define DEVICE_ID_0815_F0_1710 1710
+#define DEVICE_ID_0815_F0_1750 1750
+#define DEVICE_ID_0815_F0_1780 1780
+
+#define OPLUS_162HZ_F0 1630
+#define OPLUS_166HZ_F0 1670
+#define OPLUS_170HZ_F0 1710
+#define OPLUS_174HZ_F0 1750
+#define OPLUS_178HZ_F0 1780
+
+#define SG_INPUT_DOWN_HIGH 302
+#define SG_INPUT_UP_HIGH 303
+#define SG_INPUT_DOWN_LOW 304
+#define SG_INPUT_UP_LOW 305
+#define INPUT_HIGH 112
+#define INPUT_MEDI 111
+#define INPUT_LOW 110
 
 #pragma pack(4)
 struct mmap_buf_format {
@@ -146,76 +185,82 @@ struct mmap_buf_format {
 #endif
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define F0_VAL_MAX_0815				(1800)
-#define F0_VAL_MIN_0815				(1600)
-#define F0_VAL_MAX_081538			(1600)
-#define F0_VAL_MIN_081538			(1400)
-#define F0_VAL_MAX_0832				(2350)
-#define F0_VAL_MIN_0832				(2250)
-#define F0_VAL_MAX_0833				(2380)
-#define F0_VAL_MIN_0833				(2260)
+#define F0_VAL_MAX_0815 (1800)
+#define F0_VAL_MIN_0815 (1600)
+#define F0_VAL_MAX_081538 (1600)
+#define F0_VAL_MIN_081538 (1400)
+#define F0_VAL_MAX_0832 (2350)
+#define F0_VAL_MIN_0832 (2250)
+#define F0_VAL_MAX_0833 (2380)
+#define F0_VAL_MIN_0833 (2260)
 
-#define AW_HAPTIC_BASE_VOLTAGE			(6000)
-#define AW_HAPTIC_MAX_VOLTAGE			(10000)
-#define AW_HAPTIC_LOW_LEVEL_VOL			(800)
-#define AW_HAPTIC_LOW_LEVEL_REG_VAL		(0)
-#define AW_HAPTIC_MEDIUM_LEVEL_VOL		(1600)
-#define AW_HAPTIC_MEDIUM_LEVEL_REG_VAL		(0)
-#define AW_HAPTIC_HIGH_LEVEL_VOL		(2500)
-#define AW_HAPTIC_HIGH_LEVEL_REG_VAL		(0x5E)//max boost 9.408V
+#define AW_HAPTIC_BASE_VOLTAGE (6000)
+#define AW_HAPTIC_MAX_VOLTAGE (10000)
+#define AW_HAPTIC_LOW_LEVEL_VOL (800)
+#define AW_HAPTIC_LOW_LEVEL_REG_VAL (0)
+#define AW_HAPTIC_MEDIUM_LEVEL_VOL (1600)
+#define AW_HAPTIC_MEDIUM_LEVEL_REG_VAL (0)
+#define AW_HAPTIC_HIGH_LEVEL_VOL (2500)
+#define AW_HAPTIC_HIGH_LEVEL_REG_VAL (0x5E) //max boost 9.408V
 
-#define AW_HAPTIC_RAM_VBAT_COMP_GAIN		(0x80)
+#define AW_HAPTIC_RAM_VBAT_COMP_GAIN (0x80)
 
-#define AW_WAVEFORM_INDEX_TRADITIONAL_1		(1)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_2		(2)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_3		(3)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_4		(4)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_5		(5)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_6		(6)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_7		(7)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_8		(8)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_9		(9)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_10	(10)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_11	(11)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_12	(12)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_13	(13)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_14	(14)
-#define AW_WAVEFORM_INDEX_TRADITIONAL_15	(15)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_1 (1)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_2 (2)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_3 (3)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_4 (4)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_5 (5)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_6 (6)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_7 (7)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_8 (8)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_9 (9)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_10 (10)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_11 (11)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_12 (12)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_13 (13)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_14 (14)
+#define AW_WAVEFORM_INDEX_TRADITIONAL_15 (15)
 
-#define AW_RTP_LONG_SOUND_INDEX			(44)
-#define AUDIO_READY_STATUS			(1024)
-#define RINGTONES_START_INDEX			(1)
-#define RINGTONES_END_INDEX			(40)
-#define RINGTONES_SIMPLE_INDEX			(48)
-#define RINGTONES_PURE_INDEX			(49)
-#define NEW_RING_START				(118)
-#define NEW_RING_END				(160)
-#define OS12_NEW_RING_START			(70)
-#define OS12_NEW_RING_END			(89)
-#define OPLUS_RING_START			(161)
-#define OPLUS_RING_END				(170)
+#define AW_RTP_LONG_SOUND_INDEX (44)
+#define AUDIO_READY_STATUS (1024)
+#define RINGTONES_START_INDEX (1)
+#define RINGTONES_END_INDEX (40)
+#define RINGTONES_SIMPLE_INDEX (48)
+#define RINGTONES_PURE_INDEX (49)
 
+#define OS12_NEW_RING_START (70)
+#define OS12_NEW_RING_END (89)
+#define OPLUS_NEW_RING_1_START (94)
+#define OPLUS_NEW_RING_1_END (99)
+#define NEW_RING_START (118)
+#define NEW_RING_END (160)
+#define OPLUS_RING_START (161)
+#define OPLUS_RING_END (170)
+#define OPLUS_NEW_RING_2_START (201)
+#define OPLUS_NEW_RING_2_END (280)
+#define OPLUS_NEW_RING_3_START (292)
+#define OPLUS_NEW_RING_3_END (293)
+#define OS14_NEW_RING_START (371)
+#define OS14_NEW_RING_END (410)
 
-#define AW_WAVEFORM_INDEX_CS_PRESS		(16)
-#define AW_WAVEFORM_INDEX_TRANSIENT		(8)
-#define AW_WAVEFORM_INDEX_SINE_CYCLE		(9)
-#define AW_WAVEFORM_INDEX_HIGH_TEMP		(51)
-#define AW_WAVEFORM_INDEX_OLD_STEADY		(52)
-#define AW_WAVEFORM_INDEX_LISTEN_POP		(53)
+#define AW_WAVEFORM_INDEX_CS_PRESS (16)
+#define AW_WAVEFORM_INDEX_TRANSIENT (8)
+#define AW_WAVEFORM_INDEX_SINE_CYCLE (9)
+#define AW_WAVEFORM_INDEX_HIGH_TEMP (51)
+#define AW_WAVEFORM_INDEX_OLD_STEADY (52)
+#define AW_WAVEFORM_INDEX_LISTEN_POP (53)
 
 enum aw_haptic_custom_level {
-	HAPTIC_CUSTOM_LEVEL_WEAK = 0,	/* 3V */
-	HAPTIC_CUSTOM_LEVEL_MEDIUM = 1,	/* 6V */
-	HAPTIC_CUSTOM_LEVEL_STRONG = 2,	/* 9V */
+	HAPTIC_CUSTOM_LEVEL_WEAK = 0, /* 3V */
+	HAPTIC_CUSTOM_LEVEL_MEDIUM = 1, /* 6V */
+	HAPTIC_CUSTOM_LEVEL_STRONG = 2, /* 9V */
 };
-
 
 enum aw_haptic_custom_vibration_mode {
 	VIBRATION_MODE_TRADITIONAL = 0,
 	VIBRATION_MODE_RING = 1,
 	VIBRATION_MODE_GAME = 2,
 };
-
 
 enum aw_haptic_motor_old_test_mode {
 	MOTOR_OLD_TEST_TRANSIENT = 1,
@@ -232,280 +277,283 @@ enum aw_haptic_motor_old_test_mode {
  *
  *********************************************************/
 #ifdef LRA_0619
-#define AW_HAPTIC_F0_PRE			(1700)
+#define AW_HAPTIC_F0_PRE (1700)
 #endif
 
 #ifdef LRA_0832
-#define AW_HAPTIC_F0_PRE			(2350)
+#define AW_HAPTIC_F0_PRE (2350)
 #endif
-#define AW_HAPTIC_F0_CALI_PERCEN		(7)
+#define AW_HAPTIC_F0_CALI_PERCEN (7)
 /*********************************************************
  *
  * haptic config (AW8692X)
  *
  *********************************************************/
-#define AW8692X_MAX_BST_VOL			(0x7F)
-#define AW8692X_D2S_GAIN			(0x04)
-#define AW8692X_BST_VOL_DEFAULT		(AW_HAPTIC_HIGH_LEVEL_REG_VAL)
-#define AW8692X_BST_VOL_RAM			(AW_HAPTIC_HIGH_LEVEL_REG_VAL)
-#define AW8692X_BST_VOL_RTP			(AW_HAPTIC_HIGH_LEVEL_REG_VAL)
+#define AW8692X_MAX_BST_VOL (0x7F)
+#define AW8692X_D2S_GAIN (0x04)
+#define AW8692X_BST_VOL_DEFAULT (AW_HAPTIC_HIGH_LEVEL_REG_VAL)
+#define AW8692X_BST_VOL_RAM (AW_HAPTIC_HIGH_LEVEL_REG_VAL)
+#define AW8692X_BST_VOL_RTP (AW_HAPTIC_HIGH_LEVEL_REG_VAL)
 
 /* need to check */
-#ifdef LRA_0619			/* 170HZ */
+#ifdef LRA_0619 /* 170HZ */
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define AW8692X_CONT_DRV1_LVL			(0x7F)
+#define AW8692X_CONT_DRV1_LVL (0x7F)
 #else
-#define AW8692X_CONT_DRV1_LVL			(0x7F)
+#define AW8692X_CONT_DRV1_LVL (0x7F)
 #endif
-#define AW8692X_CONT_DRV2_LVL			(0x50)
-#define AW8692X_CONT_DRV1_TIME			(0x04)
-#define AW8692X_CONT_DRV2_TIME			(0x06)
-#define AW8692X_CONT_DRV_WIDTH			(0x6A)
-#define AW8692X_CONT_WAIT_NUM			(0x06)
-#define AW8692X_CONT_BRK_TIME			(0x08)
-#define AW8692X_CONT_TRACK_MARGIN		(0x0C)
-#define AW8692X_BRK_BST_MD			(0x00)
-#define AW8692X_CONT_TEST			(0x06)
-#define AW8692X_CONT_BEMF_SET			(0x02)
-#define AW8692X_CONT_BST_BRK_GAIN		(0x05)
-#define AW8692X_CONT_BRK_GAIN			(0x08)
+#define AW8692X_CONT_DRV2_LVL (0x50)
+#define AW8692X_CONT_DRV1_TIME (0x04)
+#define AW8692X_CONT_DRV2_TIME (0x06)
+#define AW8692X_CONT_DRV_WIDTH (0x6A)
+#define AW8692X_CONT_WAIT_NUM (0x06)
+#define AW8692X_CONT_BRK_TIME (0x08)
+#define AW8692X_CONT_TRACK_MARGIN (0x0C)
+#define AW8692X_BRK_BST_MD (0x00)
+#define AW8692X_CONT_TEST (0x06)
+#define AW8692X_CONT_BEMF_SET (0x02)
+#define AW8692X_CONT_BST_BRK_GAIN (0x05)
+#define AW8692X_CONT_BRK_GAIN (0x08)
 #endif
 
 /* need to check */
-#ifdef LRA_0832			/* 235HZ */
-#define AW8692X_CONT_DRV1_LVL			(0x7F)
-#define AW8692X_CONT_DRV2_LVL			(0x50)
-#define AW8692X_CONT_DRV1_TIME			(0x04)
-#define AW8692X_CONT_DRV2_TIME			(0x06)
-#define AW8692X_CONT_DRV_WIDTH			(0x6A)
-#define AW8692X_CONT_WAIT_NUM			(0x06)
-#define AW8692X_CONT_BRK_TIME			(0x08)
-#define AW8692X_CONT_TRACK_MARGIN		(0x0C)
-#define AW8692X_CONT_TEST			(0x06)
-#define AW8692X_CONT_BEMF_SET			(0x02)
-#define AW8692X_CONT_BST_BRK_GAIN		(0x05)
-#define AW8692X_CONT_BRK_GAIN			(0x08)
-#define AW8692X_BRK_BST_MD			(0x00)
+#ifdef LRA_0832 /* 235HZ */
+#define AW8692X_CONT_DRV1_LVL (0x7F)
+#define AW8692X_CONT_DRV2_LVL (0x50)
+#define AW8692X_CONT_DRV1_TIME (0x04)
+#define AW8692X_CONT_DRV2_TIME (0x06)
+#define AW8692X_CONT_DRV_WIDTH (0x6A)
+#define AW8692X_CONT_WAIT_NUM (0x06)
+#define AW8692X_CONT_BRK_TIME (0x08)
+#define AW8692X_CONT_TRACK_MARGIN (0x0C)
+#define AW8692X_CONT_TEST (0x06)
+#define AW8692X_CONT_BEMF_SET (0x02)
+#define AW8692X_CONT_BST_BRK_GAIN (0x05)
+#define AW8692X_CONT_BRK_GAIN (0x08)
+#define AW8692X_BRK_BST_MD (0x00)
 #endif
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define AW8692X_0832_F0_PRE			(2350)
-#define AW8692X_0832_F0_CALI_PERCEN		(7)
+#define AW8692X_0832_F0_PRE (2350)
+#define AW8692X_0832_F0_CALI_PERCEN (7)
 /* need to check */
-#define AW8692X_0832_CONT_DRV1_LVL		(0x00)
-#define AW8692X_0832_CONT_DRV2_LVL		(0x00)
-#define AW8692X_0832_CONT_DRV1_TIME		(0x00)
-#define AW8692X_0832_CONT_DRV2_TIME		(0x00)
-#define AW8692X_0832_CONT_DRV_WIDTH		(0x00)
-#define AW8692X_0832_CONT_WAIT_NUM		(0x00)
-#define AW8692X_0832_CONT_BRK_TIME		(0x00)
-#define AW8692X_0832_CONT_TRACK_MARGIN		(0x00)
-#define AW8692X_0832_BRK_BST_MD			(0x00)
-#define AW8692X_0832_CONT_TEST			(0x00)
-#define AW8692X_0832_CONT_BEMF_SET		(0x00)
-#define AW8692X_0832_CONT_BST_BRK_GAIN		(0x00)
-#define AW8692X_0832_CONT_BRK_GAIN		(0x00)
+#define AW8692X_0832_CONT_DRV1_LVL (0x00)
+#define AW8692X_0832_CONT_DRV2_LVL (0x00)
+#define AW8692X_0832_CONT_DRV1_TIME (0x00)
+#define AW8692X_0832_CONT_DRV2_TIME (0x00)
+#define AW8692X_0832_CONT_DRV_WIDTH (0x00)
+#define AW8692X_0832_CONT_WAIT_NUM (0x00)
+#define AW8692X_0832_CONT_BRK_TIME (0x00)
+#define AW8692X_0832_CONT_TRACK_MARGIN (0x00)
+#define AW8692X_0832_BRK_BST_MD (0x00)
+#define AW8692X_0832_CONT_TEST (0x00)
+#define AW8692X_0832_CONT_BEMF_SET (0x00)
+#define AW8692X_0832_CONT_BST_BRK_GAIN (0x00)
+#define AW8692X_0832_CONT_BRK_GAIN (0x00)
 
-#define AW8692X_0815_F0_PRE			(1700)
-#define AW8692X_0815_F0_CALI_PERCEN		(7)
+#define AW8692X_0815_F0_PRE (1700)
+#define AW8692X_0815_F0_CALI_PERCEN (7)
 /* need to check */
-#define AW8692X_0815_CONT_DRV1_LVL		(0x7F)
-#define AW8692X_0815_CONT_DRV2_LVL		(0x29)
-#define AW8692X_0815_CONT_DRV1_TIME		(0x04)
-#define AW8692X_0815_CONT_DRV2_TIME		(0x06)
-#define AW8692X_0815_CONT_DRV_WIDTH		(0x6A)
-#define AW8692X_0815_CONT_WAIT_NUM		(0x06)
-#define AW8692X_0815_CONT_BRK_TIME		(0x08)
-#define AW8692X_0815_CONT_TRACK_MARGIN		(0x0C)
-#define AW8692X_0815_BRK_BST_MD			(0x00)
-#define AW8692X_0815_CONT_TEST			(0x06)
-#define AW8692X_0815_CONT_BEMF_SET		(0x02)
-#define AW8692X_0815_CONT_BST_BRK_GAIN		(0x05)
-#define AW8692X_0815_CONT_BRK_GAIN		(0x08)
+#define AW8692X_0815_CONT_DRV1_LVL (0x7F)
+#define AW8692X_0815_CONT_DRV2_LVL (0x29)
+#define AW8692X_0815_CONT_DRV1_TIME (0x04)
+#define AW8692X_0815_CONT_DRV2_TIME (0x06)
+#define AW8692X_0815_CONT_DRV_WIDTH (0x6A)
+#define AW8692X_0815_CONT_WAIT_NUM (0x06)
+#define AW8692X_0815_CONT_BRK_TIME (0x08)
+#define AW8692X_0815_CONT_TRACK_MARGIN (0x0C)
+#define AW8692X_0815_BRK_BST_MD (0x00)
+#define AW8692X_0815_CONT_TEST (0x06)
+#define AW8692X_0815_CONT_BEMF_SET (0x02)
+#define AW8692X_0815_CONT_BST_BRK_GAIN (0x05)
+#define AW8692X_0815_CONT_BRK_GAIN (0x08)
 
-#define AW8692X_081538_F0_PRE			(1500)
-#define AW8692X_081538_F0_CALI_PERCEN		(7)
+#define AW8692X_081538_F0_PRE (1500)
+#define AW8692X_081538_F0_CALI_PERCEN (7)
 /* need to check */
-#define AW8692X_081538_CONT_DRV1_LVL		(0x00)
-#define AW8692X_081538_CONT_DRV2_LVL		(0x00)
-#define AW8692X_081538_CONT_DRV1_TIME		(0x00)
-#define AW8692X_081538_CONT_DRV2_TIME		(0x00)
-#define AW8692X_081538_CONT_DRV_WIDTH		(0x00)
-#define AW8692X_081538_CONT_WAIT_NUM		(0x00)
-#define AW8692X_081538_CONT_BRK_TIME		(0x00)
-#define AW8692X_081538_CONT_TRACK_MARGIN	(0x00)
-#define AW8692X_081538_BRK_BST_MD		(0x00)
-#define AW8692X_081538_CONT_TEST		(0x00)
-#define AW8692X_081538_CONT_BEMF_SET		(0x00)
-#define AW8692X_081538_CONT_BST_BRK_GAIN	(0x00)
-#define AW8692X_081538_CONT_BRK_GAIN		(0x00)
+#define AW8692X_081538_CONT_DRV1_LVL (0x00)
+#define AW8692X_081538_CONT_DRV2_LVL (0x00)
+#define AW8692X_081538_CONT_DRV1_TIME (0x00)
+#define AW8692X_081538_CONT_DRV2_TIME (0x00)
+#define AW8692X_081538_CONT_DRV_WIDTH (0x00)
+#define AW8692X_081538_CONT_WAIT_NUM (0x00)
+#define AW8692X_081538_CONT_BRK_TIME (0x00)
+#define AW8692X_081538_CONT_TRACK_MARGIN (0x00)
+#define AW8692X_081538_BRK_BST_MD (0x00)
+#define AW8692X_081538_CONT_TEST (0x00)
+#define AW8692X_081538_CONT_BEMF_SET (0x00)
+#define AW8692X_081538_CONT_BST_BRK_GAIN (0x00)
+#define AW8692X_081538_CONT_BRK_GAIN (0x00)
 #endif
 
-#define AW8692X_TRIG1_DUAL_LEVEL		(1)
-#define AW8692X_TRIG2_DUAL_LEVEL		(1)
-#define AW8692X_TRIG3_DUAL_LEVEL		(1)
+#define AW8692X_TRIG1_DUAL_LEVEL (1)
+#define AW8692X_TRIG2_DUAL_LEVEL (1)
+#define AW8692X_TRIG3_DUAL_LEVEL (1)
 
-#define AW8692X_TRIG1_DUAL_POLAR		(0)
-#define AW8692X_TRIG2_DUAL_POLAR		(0)
-#define AW8692X_TRIG3_DUAL_POLAR		(0)
+#define AW8692X_TRIG1_DUAL_POLAR (0)
+#define AW8692X_TRIG2_DUAL_POLAR (0)
+#define AW8692X_TRIG3_DUAL_POLAR (0)
 
-#define AW8692X_TRIG1_POS_ENABLE		(1)
-#define AW8692X_TRIG2_POS_ENABLE		(1)
-#define AW8692X_TRIG3_POS_ENABLE		(1)
-#define AW8692X_TRIG1_POS_DISABLE		(0)
-#define AW8692X_TRIG2_POS_DISABLE		(0)
-#define AW8692X_TRIG3_POS_DISABLE		(0)
+#define AW8692X_TRIG1_POS_ENABLE (1)
+#define AW8692X_TRIG2_POS_ENABLE (1)
+#define AW8692X_TRIG3_POS_ENABLE (1)
+#define AW8692X_TRIG1_POS_DISABLE (0)
+#define AW8692X_TRIG2_POS_DISABLE (0)
+#define AW8692X_TRIG3_POS_DISABLE (0)
 
-#define AW8692X_TRIG1_POS_SEQ			(1)
-#define AW8692X_TRIG2_POS_SEQ			(1)
-#define AW8692X_TRIG3_POS_SEQ			(1)
+#define AW8692X_TRIG1_POS_SEQ (1)
+#define AW8692X_TRIG2_POS_SEQ (1)
+#define AW8692X_TRIG3_POS_SEQ (1)
 
-#define AW8692X_TRIG1_NEG_ENABLE		(1)
-#define AW8692X_TRIG2_NEG_ENABLE		(1)
-#define AW8692X_TRIG3_NEG_ENABLE		(1)
-#define AW8692X_TRIG1_NEG_DISABLE		(0)
-#define AW8692X_TRIG2_NEG_DISABLE		(0)
-#define AW8692X_TRIG3_NEG_DISABLE		(0)
+#define AW8692X_TRIG1_NEG_ENABLE (1)
+#define AW8692X_TRIG2_NEG_ENABLE (1)
+#define AW8692X_TRIG3_NEG_ENABLE (1)
+#define AW8692X_TRIG1_NEG_DISABLE (0)
+#define AW8692X_TRIG2_NEG_DISABLE (0)
+#define AW8692X_TRIG3_NEG_DISABLE (0)
 
-#define AW8692X_TRIG1_NEG_SEQ			(2)
-#define AW8692X_TRIG2_NEG_SEQ			(2)
-#define AW8692X_TRIG3_NEG_SEQ			(2)
+#define AW8692X_TRIG1_NEG_SEQ (2)
+#define AW8692X_TRIG2_NEG_SEQ (2)
+#define AW8692X_TRIG3_NEG_SEQ (2)
 
-#define AW8692X_TRIG1_BRK_ENABLE		(1)
-#define AW8692X_TRIG2_BRK_ENABLE		(1)
-#define AW8692X_TRIG3_BRK_ENABLE		(1)
-#define AW8692X_TRIG1_BRK_DISABLE		(0)
-#define AW8692X_TRIG2_BRK_DISABLE		(0)
-#define AW8692X_TRIG3_BRK_DISABLE		(0)
+#define AW8692X_TRIG1_BRK_ENABLE (1)
+#define AW8692X_TRIG2_BRK_ENABLE (1)
+#define AW8692X_TRIG3_BRK_ENABLE (1)
+#define AW8692X_TRIG1_BRK_DISABLE (0)
+#define AW8692X_TRIG2_BRK_DISABLE (0)
+#define AW8692X_TRIG3_BRK_DISABLE (0)
 
-#define AW8692X_TRIG1_BST_ENABLE		(1)
-#define AW8692X_TRIG2_BST_ENABLE		(1)
-#define AW8692X_TRIG3_BST_ENABLE		(1)
-#define AW8692X_TRIG1_BST_DISABLE		(0)
-#define AW8692X_TRIG2_BST_DISABLE		(0)
-#define AW8692X_TRIG3_BST_DISABLE		(0)
+#define AW8692X_TRIG1_BST_ENABLE (1)
+#define AW8692X_TRIG2_BST_ENABLE (1)
+#define AW8692X_TRIG3_BST_ENABLE (1)
+#define AW8692X_TRIG1_BST_DISABLE (0)
+#define AW8692X_TRIG2_BST_DISABLE (0)
+#define AW8692X_TRIG3_BST_DISABLE (0)
 
 /*********************************************************
  *
  * haptic config (AW869X)
  *
  *********************************************************/
-#define AW869X_MAX_BST_VOL			(0x1F)
-#define AW869X_F0_COEFF				(260)
-#define AW869X_TEST				(0x12)
-#define AW869X_R_SPARE				(0x68)
+#define AW869X_MAX_BST_VOL (0x1F)
+#define AW869X_F0_COEFF (260)
+#define AW869X_TEST (0x12)
+#define AW869X_R_SPARE (0x68)
 
 #ifdef LRA_0619
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define AW869X_CONT_DRV_LVL			(52)
+#define AW869X_CONT_DRV_LVL (52)
 #else
-#define AW869X_CONT_DRV_LVL			(105)
+#define AW869X_CONT_DRV_LVL (105)
 #endif
-#define AW869X_CONT_DRV_LVL_OV			(125)
-#define AW869X_CONT_TD				(0x009A)
-#define AW869X_CONT_ZC_THR			(0x0FF1)
-#define AW869X_CONT_NUM_BRK			(3)
+#define AW869X_CONT_DRV_LVL_OV (125)
+#define AW869X_CONT_TD (0x009A)
+#define AW869X_CONT_ZC_THR (0x0FF1)
+#define AW869X_CONT_NUM_BRK (3)
 #endif
 
 #ifdef LRA_0832
-#define AW869X_CONT_DRV_LVL			(125)
-#define AW869X_CONT_DRV_LVL_OV			(155)
-#define AW869X_CONT_TD				(0x006C)
-#define AW869X_CONT_ZC_THR			(0x0FF1)
-#define AW869X_CONT_NUM_BRK			(3)
+#define AW869X_CONT_DRV_LVL (125)
+#define AW869X_CONT_DRV_LVL_OV (155)
+#define AW869X_CONT_TD (0x006C)
+#define AW869X_CONT_ZC_THR (0x0FF1)
+#define AW869X_CONT_NUM_BRK (3)
 #endif
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define AW869X_0832_F0_PRE			(2350)
-#define AW869X_0832_F0_CALI_PERCEN		(7)
-#define AW869X_0832_CONT_DRV_LVL		(105)
-#define AW869X_0832_CONT_DRV_LVL_OV		(125)
-#define AW869X_0832_CONT_TD			(0x006c)
-#define AW869X_0832_CONT_ZC_THR			(0x0ff1)
-#define AW869X_0832_CONT_NUM_BRK		(3)
+#define AW869X_0832_F0_PRE (2350)
+#define AW869X_0832_F0_CALI_PERCEN (7)
+#define AW869X_0832_CONT_DRV_LVL (105)
+#define AW869X_0832_CONT_DRV_LVL_OV (125)
+#define AW869X_0832_CONT_TD (0x006c)
+#define AW869X_0832_CONT_ZC_THR (0x0ff1)
+#define AW869X_0832_CONT_NUM_BRK (3)
 
-#define AW869X_0815_F0_PRE			(1700)
-#define AW869X_0815_F0_CALI_PERCEN		(7)
-#define AW869X_0815_CONT_DRV_LVL		(60)
-#define AW869X_0815_CONT_DRV_LVL_OV		(125)
-#define AW869X_0815_CONT_TD			(0x009a)
-#define AW869X_0815_CONT_ZC_THR			(0x0ff1)
-#define AW869X_0815_CONT_NUM_BRK		(3)
+#define AW869X_0815_F0_PRE (1700)
+#define AW869X_0815_F0_CALI_PERCEN (7)
+#define AW869X_0815_CONT_DRV_LVL (60)
+#define AW869X_0815_CONT_DRV_LVL_OV (125)
+#define AW869X_0815_CONT_TD (0x009a)
+#define AW869X_0815_CONT_ZC_THR (0x0ff1)
+#define AW869X_0815_CONT_NUM_BRK (3)
 
-#define AW869X_081538_F0_PRE			(1500)
-#define AW869X_081538_F0_CALI_PERCEN		(7)
-#define AW869X_081538_CONT_DRV_LVL		(118)
-#define AW869X_081538_CONT_DRV_LVL_OV		(118)
-#define AW869X_081538_CONT_TD			(0x009a)
-#define AW869X_081538_CONT_ZC_THR		(0x0ff1)
-#define AW869X_081538_CONT_NUM_BRK		(3)
+#define AW869X_081538_F0_PRE (1500)
+#define AW869X_081538_F0_CALI_PERCEN (7)
+#define AW869X_081538_CONT_DRV_LVL (118)
+#define AW869X_081538_CONT_DRV_LVL_OV (118)
+#define AW869X_081538_CONT_TD (0x009a)
+#define AW869X_081538_CONT_ZC_THR (0x0ff1)
+#define AW869X_081538_CONT_NUM_BRK (3)
 #endif
 
+#define AW869X_TRG1_ENABLE (1)
+#define AW869X_TRG2_ENABLE (1)
+#define AW869X_TRG3_ENABLE (1)
 
-#define AW869X_TRG1_ENABLE			(1)
-#define AW869X_TRG2_ENABLE			(1)
-#define AW869X_TRG3_ENABLE			(1)
+#define AW869X_TRG1_DUAL_EDGE (1)
+#define AW869X_TRG2_DUAL_EDGE (1)
+#define AW869X_TRG3_DUAL_EDGE (1)
 
-#define AW869X_TRG1_DUAL_EDGE			(1)
-#define AW869X_TRG2_DUAL_EDGE			(1)
-#define AW869X_TRG3_DUAL_EDGE			(1)
+#define AW869X_TRG1_DEFAULT_LEVEL (1)
+#define AW869X_TRG2_DEFAULT_LEVEL (1)
+#define AW869X_TRG3_DEFAULT_LEVEL (1)
 
-#define AW869X_TRG1_DEFAULT_LEVEL		(1)
-#define AW869X_TRG2_DEFAULT_LEVEL		(1)
-#define AW869X_TRG3_DEFAULT_LEVEL		(1)
-
-#define AW869X_TRG1_FIRST_EDGE_SEQ		(1)
-#define AW869X_TRG1_SECOND_EDGE_SEQ		(2)
-#define AW869X_TRG2_FIRST_EDGE_SEQ		(1)
-#define AW869X_TRG2_SECOND_EDGE_SEQ		(2)
-#define AW869X_TRG3_FIRST_EDGE_SEQ		(1)
-#define AW869X_TRG3_SECOND_EDGE_SEQ		(2)
+#define AW869X_TRG1_FIRST_EDGE_SEQ (1)
+#define AW869X_TRG1_SECOND_EDGE_SEQ (2)
+#define AW869X_TRG2_FIRST_EDGE_SEQ (1)
+#define AW869X_TRG2_SECOND_EDGE_SEQ (2)
+#define AW869X_TRG3_FIRST_EDGE_SEQ (1)
+#define AW869X_TRG3_SECOND_EDGE_SEQ (2)
 /*********************************************************
  *
  * AW869X
  *
  *********************************************************/
-#define AW869X_REG_SUM				(80)
-#define AW869X_VBAT_MAX				(4500)
-#define AW869X_LRA_FORMULA(lra_code)		(298 * (lra_code))
-#define AW869X_VBAT_FORMULA(vbat_code)		(6100 * (vbat_code) / 256)
-#define AW869X_RAM_ADDR_H(base_addr)		((base_addr) >> 8)
-#define AW869X_RAM_ADDR_L(base_addr)		((base_addr) & 0x00FF)
-#define AW869X_FIFO_AE_ADDR_H(base_addr)	(((base_addr) >> 1) >> 8)
-#define AW869X_FIFO_AE_ADDR_L(base_addr)	(((base_addr) >> 1) & 0x00ff)
-#define AW869X_FIFO_AF_ADDR_H(base_addr)	(((base_addr) - (base_addr >> 2)) >> 8)
-#define AW869X_FIFO_AF_ADDR_L(base_addr)	(((base_addr) - ((base_addr) >> 2)) & 0x00ff)
+#define AW869X_REG_SUM (80)
+#define AW869X_VBAT_MAX (4500)
+#define AW869X_LRA_FORMULA(lra_code) (298 * (lra_code))
+#define AW869X_VBAT_FORMULA(vbat_code) (6100 * (vbat_code) / 256)
+#define AW869X_RAM_ADDR_H(base_addr) ((base_addr) >> 8)
+#define AW869X_RAM_ADDR_L(base_addr) ((base_addr) & 0x00FF)
+#define AW869X_FIFO_AE_ADDR_H(base_addr) (((base_addr) >> 1) >> 8)
+#define AW869X_FIFO_AE_ADDR_L(base_addr) (((base_addr) >> 1) & 0x00ff)
+#define AW869X_FIFO_AF_ADDR_H(base_addr) (((base_addr) - (base_addr >> 2)) >> 8)
+#define AW869X_FIFO_AF_ADDR_L(base_addr) \
+	(((base_addr) - ((base_addr) >> 2)) & 0x00ff)
 /*********************************************************
  *
  * AW8692X
  *
  *********************************************************/
-#define AW8692X_REG_SUM				(88)
-#define AW8692X_VBAT_MAX			(5500)
-#define AW8692X_LRA_FORMULA(lra, d2s_gain)	((6075 * 100 * (lra)) / \
-						(1024 * (d2s_gain)))
-#define AW8692X_VBAT_FORMULA(vbat)		(5 * 1215 * (vbat) / 1024)
-#define AW8692X_SET_RAMADDR_H(base_addr)	((base_addr) >> 8)
-#define AW8692X_SET_RAMADDR_L(base_addr)	((base_addr) & 0x00FF)
-#define AW8692X_SET_BASEADDR_H(base_addr)	((base_addr) >> 8)
-#define AW8692X_SET_BASEADDR_L(base_addr)	((base_addr) & 0x00FF)
-#define AW8692X_SET_FIFO_AE_ADDR_H(base_addr)	((((base_addr) >> 1) >> 4) & 0xF0)
-#define AW8692X_SET_FIFO_AE_ADDR_L(base_addr)	(((base_addr) >> 1) & 0x00ff)
-#define AW8692X_SET_FIFO_AF_ADDR_H(base_addr)	((((base_addr) - (base_addr >> 2)) >> 8) & 0x0F)
-#define AW8692X_SET_FIFO_AF_ADDR_L(base_addr)	(((base_addr) - ((base_addr) >> 2)) & 0x00ff)
+#define AW8692X_REG_SUM (88)
+#define AW8692X_VBAT_MAX (5500)
+#define AW8692X_LRA_FORMULA(lra, d2s_gain) \
+	((6075 * 100 * (lra)) / (1024 * (d2s_gain)))
+#define AW8692X_VBAT_FORMULA(vbat) (5 * 1215 * (vbat) / 1024)
+#define AW8692X_SET_RAMADDR_H(base_addr) ((base_addr) >> 8)
+#define AW8692X_SET_RAMADDR_L(base_addr) ((base_addr) & 0x00FF)
+#define AW8692X_SET_BASEADDR_H(base_addr) ((base_addr) >> 8)
+#define AW8692X_SET_BASEADDR_L(base_addr) ((base_addr) & 0x00FF)
+#define AW8692X_SET_FIFO_AE_ADDR_H(base_addr) ((((base_addr) >> 1) >> 4) & 0xF0)
+#define AW8692X_SET_FIFO_AE_ADDR_L(base_addr) (((base_addr) >> 1) & 0x00ff)
+#define AW8692X_SET_FIFO_AF_ADDR_H(base_addr) \
+	((((base_addr) - (base_addr >> 2)) >> 8) & 0x0F)
+#define AW8692X_SET_FIFO_AF_ADDR_L(base_addr) \
+	(((base_addr) - ((base_addr) >> 2)) & 0x00ff)
+
+#define AW_DRV_WIDTH_FARMULA(f0_pre, brk_gain, track_margain) \
+	(240000 / (f0_pre) - 8 - (brk_gain) - (track_margain))
+
 /*********************************************************
  *
  * Log Format
  *
  *********************************************************/
-#define aw_dev_err(format, ...) \
-	pr_err("[haptic_hv]" format, ##__VA_ARGS__)
+#define aw_dev_err(format, ...) pr_err("[haptic_hv]" format, ##__VA_ARGS__)
 
-#define aw_dev_info(format, ...) \
-	pr_info("[haptic_hv]" format, ##__VA_ARGS__)
+#define aw_dev_info(format, ...) pr_info("[haptic_hv]" format, ##__VA_ARGS__)
 
-#define aw_dev_dbg(format, ...) \
-	pr_debug("[haptic_hv]" format, ##__VA_ARGS__)
+#define aw_dev_dbg(format, ...) pr_debug("[haptic_hv]" format, ##__VA_ARGS__)
 
 /*********************************************************
  *
@@ -702,6 +750,7 @@ struct aw_haptic_dts_info {
 	uint8_t f0_cali_percent;
 	uint8_t max_bst_vol;
 	uint32_t f0_pre;
+	uint32_t cont_lra_vrms;
 
 	/* AW869X */
 	uint8_t tset;
@@ -787,7 +836,6 @@ struct aw_haptic {
 	int device_id;
 	int pre_haptic_number;
 
-
 	uint32_t f0;
 	uint32_t lra;
 	uint32_t vbat;
@@ -824,6 +872,7 @@ struct aw_haptic {
 	struct mutex rtp_lock;
 	struct hrtimer timer;
 	struct work_struct rtp_work;
+	struct work_struct rtp_key_work;
 	struct work_struct rtp_single_cycle_work;
 	struct work_struct rtp_regroup_work;
 	struct delayed_work ram_work;
@@ -849,10 +898,10 @@ struct aw_haptic {
 #endif
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-	struct work_struct  motor_old_test_work;
+	struct work_struct motor_old_test_work;
 	unsigned int motor_old_test_mode;
+	bool livetap_support;
 #endif
-
 };
 
 struct aw_haptic_container {
@@ -915,7 +964,6 @@ struct aw_haptic_func {
 	void (*dump_rtp_regs)(struct aw_haptic *);
 	void (*aw_test)(struct aw_haptic *);
 	int (*check_qualify)(struct aw_haptic *aw_haptic);
-
 };
 
 /*********************************************************
@@ -931,16 +979,17 @@ struct aw_que_seq {
 	unsigned char index[AW_SEQUENCER_SIZE];
 };
 
-#define AW_HAPTIC_IOCTL_MAGIC		'h'
+#define AW_HAPTIC_IOCTL_MAGIC 'h'
 
-#define AW_HAPTIC_SET_QUE_SEQ		_IOWR(AW_HAPTIC_IOCTL_MAGIC, 1, struct aw_que_seq*)
-#define AW_HAPTIC_SET_SEQ_LOOP		_IOWR(AW_HAPTIC_IOCTL_MAGIC, 2, struct aw_seq_loop*)
-#define AW_HAPTIC_PLAY_QUE_SEQ		_IOWR(AW_HAPTIC_IOCTL_MAGIC, 3, unsigned int)
-#define AW_HAPTIC_SET_BST_VOL		_IOWR(AW_HAPTIC_IOCTL_MAGIC, 4, unsigned int)
-#define AW_HAPTIC_SET_BST_PEAK_CUR	_IOWR(AW_HAPTIC_IOCTL_MAGIC, 5, unsigned int)
-#define AW_HAPTIC_SET_GAIN		_IOWR(AW_HAPTIC_IOCTL_MAGIC, 6, unsigned int)
-#define AW_HAPTIC_PLAY_REPEAT_SEQ	_IOWR(AW_HAPTIC_IOCTL_MAGIC, 7, unsigned int)
-
+#define AW_HAPTIC_SET_QUE_SEQ \
+	_IOWR(AW_HAPTIC_IOCTL_MAGIC, 1, struct aw_que_seq *)
+#define AW_HAPTIC_SET_SEQ_LOOP \
+	_IOWR(AW_HAPTIC_IOCTL_MAGIC, 2, struct aw_seq_loop *)
+#define AW_HAPTIC_PLAY_QUE_SEQ _IOWR(AW_HAPTIC_IOCTL_MAGIC, 3, unsigned int)
+#define AW_HAPTIC_SET_BST_VOL _IOWR(AW_HAPTIC_IOCTL_MAGIC, 4, unsigned int)
+#define AW_HAPTIC_SET_BST_PEAK_CUR _IOWR(AW_HAPTIC_IOCTL_MAGIC, 5, unsigned int)
+#define AW_HAPTIC_SET_GAIN _IOWR(AW_HAPTIC_IOCTL_MAGIC, 6, unsigned int)
+#define AW_HAPTIC_PLAY_REPEAT_SEQ _IOWR(AW_HAPTIC_IOCTL_MAGIC, 7, unsigned int)
 
 /*********************************************************
  *
@@ -950,7 +999,6 @@ struct aw_que_seq {
 extern struct aw_haptic_func aw869x_func_list;
 extern struct aw_haptic_func aw8692x_func_list;
 extern struct pm_qos_request aw_pm_qos_req_vb;
-
 
 extern int i2c_r_bytes(struct aw_haptic *, uint8_t, uint8_t *, uint32_t);
 extern int i2c_w_bytes(struct aw_haptic *, uint8_t, uint8_t *, uint32_t);

@@ -114,14 +114,13 @@ static struct snd_soc_dai_link_component tfa98xx_tdm_dails[] = {
 	},
 };
 
-
 static int maxim_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
-				  struct snd_pcm_hw_params *params)
+				    struct snd_pcm_hw_params *params)
 {
-	struct snd_interval *rate = hw_param_interval(params,
-					SNDRV_PCM_HW_PARAM_RATE);
-	struct snd_interval *channels = hw_param_interval(params,
-					SNDRV_PCM_HW_PARAM_CHANNELS);
+	struct snd_interval *rate =
+		hw_param_interval(params, SNDRV_PCM_HW_PARAM_RATE);
+	struct snd_interval *channels =
+		hw_param_interval(params, SNDRV_PCM_HW_PARAM_CHANNELS);
 
 	rate->min = rate->max = 48000;
 	channels->min = channels->max = 2;
@@ -139,7 +138,7 @@ static int ak4376_audrx_init(struct snd_soc_pcm_runtime *rtd)
 
 	if (!component) {
 		pr_err("%s: could not find component for bolero_codec\n",
-			__func__);
+		       __func__);
 		return 0;
 	}
 
@@ -156,24 +155,30 @@ static int ak4376_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	return 0;
 }
 
-static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[], struct codec_prop_info *codec_info)
+static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
+				   struct codec_prop_info *codec_info)
 {
 	int ret = 0;
 	u32 tdm_port_id_flag = 0;
 
-	ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR], &codec_info->codec_vendor);
+	ret = of_property_read_string(dev->of_node, codec_prop[CODEC_VENDOR],
+				      &codec_info->codec_vendor);
 	if (ret) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
-			__func__, codec_prop[CODEC_VENDOR], dev->of_node->full_name);
+			__func__, codec_prop[CODEC_VENDOR],
+			dev->of_node->full_name);
 		return -EINVAL;
 	} else {
-		pr_info("%s: codec vendor: %s\n", __func__, codec_info->codec_vendor);
+		pr_info("%s: codec vendor: %s\n", __func__,
+			codec_info->codec_vendor);
 	}
 
-	ret = of_property_read_u32(dev->of_node, codec_prop[CODEC_I2S_ID], &codec_info->i2s_id);
+	ret = of_property_read_u32(dev->of_node, codec_prop[CODEC_I2S_ID],
+				   &codec_info->i2s_id);
 	if (ret) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
-			__func__, codec_prop[CODEC_I2S_ID], dev->of_node->full_name);
+			__func__, codec_prop[CODEC_I2S_ID],
+			dev->of_node->full_name);
 		return -EINVAL;
 	} else {
 		pr_info("%s: i2s id: %d\n", __func__, codec_info->i2s_id);
@@ -181,50 +186,68 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 
 	ret = of_property_count_strings(dev->of_node, codec_prop[CODEC_NAME]);
 	if (ret <= 0) {
-		pr_warn("%s: Invalid number of codecs, ret=%d\n",
-			__func__, dev->of_node->full_name, ret);
+		pr_warn("%s: Invalid number of codecs, ret=%d\n", __func__,
+			dev->of_node->full_name, ret);
 		return -EINVAL;
 	} else {
 		codec_info->dev_cnt = ret;
 		pr_info("%s: dev_cnt %d\n", __func__, codec_info->dev_cnt);
 	}
 
-	codec_info->codec_name = devm_kzalloc(dev, codec_info->dev_cnt * sizeof(char *), GFP_KERNEL);
+	codec_info->codec_name = devm_kzalloc(
+		dev, codec_info->dev_cnt * sizeof(char *), GFP_KERNEL);
 	if (!codec_info->codec_name) {
 		pr_warn("%s: kzalloc fail for codec_name!\n", __func__);
 		return -ENOMEM;
 	}
-	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_NAME], codec_info->codec_name, codec_info->dev_cnt);
+	ret = of_property_read_string_array(dev->of_node,
+					    codec_prop[CODEC_NAME],
+					    codec_info->codec_name,
+					    codec_info->dev_cnt);
 	if (ret < 0) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
-			__func__, codec_prop[CODEC_NAME], dev->of_node->full_name);
+			__func__, codec_prop[CODEC_NAME],
+			dev->of_node->full_name);
 		return -EINVAL;
 	}
 
-	codec_info->codec_dai_name = devm_kzalloc(dev, codec_info->dev_cnt * sizeof(char *), GFP_KERNEL);
+	codec_info->codec_dai_name = devm_kzalloc(
+		dev, codec_info->dev_cnt * sizeof(char *), GFP_KERNEL);
 	if (!codec_info->codec_dai_name) {
 		pr_warn("%s: kzalloc fail for codec_dai_name!\n", __func__);
 		return -ENOMEM;
 	}
-	ret = of_property_read_string_array(dev->of_node, codec_prop[CODEC_DAI_NAME], codec_info->codec_dai_name, codec_info->dev_cnt);
+	ret = of_property_read_string_array(dev->of_node,
+					    codec_prop[CODEC_DAI_NAME],
+					    codec_info->codec_dai_name,
+					    codec_info->dev_cnt);
 	if (ret < 0) {
 		pr_warn("%s: Looking up '%s' property in node %s failed\n",
-			__func__, codec_prop[CODEC_DAI_NAME], dev->of_node->full_name);
+			__func__, codec_prop[CODEC_DAI_NAME],
+			dev->of_node->full_name);
 		return -EINVAL;
 	}
 	/*modified for tfa98xx 4PA tdm audio support*/
-	ret = of_property_read_u32(dev->of_node, "oplus,speaker-tdm-port-id-flag", &tdm_port_id_flag);
+	ret = of_property_read_u32(dev->of_node,
+				   "oplus,speaker-tdm-port-id-flag",
+				   &tdm_port_id_flag);
 	if (ret) {
-		pr_err("%s: No DT match  oplus,speaker-tdm-port-id-flag\n", __func__);
+		pr_err("%s: No DT match  oplus,speaker-tdm-port-id-flag\n",
+		       __func__);
 	} else {
 		pr_err("%s: oplus,speaker-tdm-port-id-flag tdm_port_id_flag = %d i2s id: %d\n",
-			__func__, tdm_port_id_flag, g_extend_pdata->spk_pa_info->i2s_id);
+		       __func__, tdm_port_id_flag,
+		       g_extend_pdata->spk_pa_info->i2s_id);
 		if (tdm_port_id_flag) {
-			extend_set_smartpa_info = symbol_request(set_smartpa_info);
+			extend_set_smartpa_info =
+				symbol_request(set_smartpa_info);
 			if (extend_set_smartpa_info) {
-				extend_set_smartpa_info(tdm_port_id_flag, g_extend_pdata->spk_pa_info->i2s_id);
+				extend_set_smartpa_info(
+					tdm_port_id_flag,
+					g_extend_pdata->spk_pa_info->i2s_id);
 			} else {
-				pr_err("%s: extend_set_smartpa_info is null \n", __func__);
+				pr_err("%s: extend_set_smartpa_info is null \n",
+				       __func__);
 			}
 		}
 	}
@@ -232,7 +255,9 @@ static int extend_codec_prop_parse(struct device *dev, const char *codec_prop[],
 	return 0;
 }
 
-static void extend_codec_be_dailink(struct codec_prop_info *codec_info, struct snd_soc_dai_link *dailink, size_t size)
+static void extend_codec_be_dailink(struct codec_prop_info *codec_info,
+				    struct snd_soc_dai_link *dailink,
+				    size_t size)
 {
 	int i2s_id = 0;
 	int i = 0;
@@ -254,73 +279,116 @@ static void extend_codec_be_dailink(struct codec_prop_info *codec_info, struct s
 		return;
 	}
 
-	pr_info("%s: codec vendor: %s, dev_cnt: %d.\n", __func__, codec_info->codec_vendor, codec_info->dev_cnt);
+	pr_info("%s: codec vendor: %s, dev_cnt: %d.\n", __func__,
+		codec_info->codec_vendor, codec_info->dev_cnt);
 
-	if (!strcmp(codec_info->codec_vendor, extend_codec_vendor[CODEC_VENDOR_NXP])) {
+	if (!strcmp(codec_info->codec_vendor,
+		    extend_codec_vendor[CODEC_VENDOR_NXP])) {
 		if (codec_info->dev_cnt == 1) {
-			if (soc_find_component(NULL, codec_info->codec_name[0])) {
-				pr_info("%s: use %s mono dailink replace\n", __func__, codec_info->codec_vendor);
-				dailink[i2s_id*2].codec_name = codec_info->codec_name[0];
-				dailink[i2s_id*2].codec_dai_name = codec_info->codec_dai_name[0];
+			if (soc_find_component(NULL,
+					       codec_info->codec_name[0])) {
+				pr_info("%s: use %s mono dailink replace\n",
+					__func__, codec_info->codec_vendor);
+				dailink[i2s_id * 2].codec_name =
+					codec_info->codec_name[0];
+				dailink[i2s_id * 2].codec_dai_name =
+					codec_info->codec_dai_name[0];
 			}
 		} else if (codec_info->dev_cnt == 2) {
-			if (soc_find_component(NULL, codec_info->codec_name[0])
-				|| soc_find_component(NULL, codec_info->codec_name[1])) {
-				pr_info("%s: use %s stereo dailink replace\n", __func__, codec_info->codec_vendor);
+			if (soc_find_component(NULL,
+					       codec_info->codec_name[0]) ||
+			    soc_find_component(NULL,
+					       codec_info->codec_name[1])) {
+				pr_info("%s: use %s stereo dailink replace\n",
+					__func__, codec_info->codec_vendor);
 				for (i = 0; i < codec_info->dev_cnt; i++) {
-					tfa98xx_dails[i].name = codec_info->codec_name[i];
-					tfa98xx_dails[i].dai_name = codec_info->codec_dai_name[i];
+					tfa98xx_dails[i].name =
+						codec_info->codec_name[i];
+					tfa98xx_dails[i].dai_name =
+						codec_info->codec_dai_name[i];
 				}
-				pr_info("%s: tfa98xx_dails[0] name:%s, dai_name:%s \n", __func__, tfa98xx_dails[0].name, tfa98xx_dails[0].dai_name);
-				pr_info("%s: tfa98xx_dails[1] name:%s, dai_name:%s \n", __func__, tfa98xx_dails[1].name, tfa98xx_dails[1].dai_name);
-				dailink[i2s_id*2].codec_name = NULL;
-				dailink[i2s_id*2].codec_dai_name = NULL;
-				dailink[i2s_id*2].codecs = tfa98xx_dails;
-				dailink[i2s_id*2].num_codecs = ARRAY_SIZE(tfa98xx_dails);
+				pr_info("%s: tfa98xx_dails[0] name:%s, dai_name:%s \n",
+					__func__, tfa98xx_dails[0].name,
+					tfa98xx_dails[0].dai_name);
+				pr_info("%s: tfa98xx_dails[1] name:%s, dai_name:%s \n",
+					__func__, tfa98xx_dails[1].name,
+					tfa98xx_dails[1].dai_name);
+				dailink[i2s_id * 2].codec_name = NULL;
+				dailink[i2s_id * 2].codec_dai_name = NULL;
+				dailink[i2s_id * 2].codecs = tfa98xx_dails;
+				dailink[i2s_id * 2].num_codecs =
+					ARRAY_SIZE(tfa98xx_dails);
 			}
 		} else if (codec_info->dev_cnt == 4) {
-		    /*modified for tfa98xx 4PA tdm audio support*/
-			if (soc_find_component(NULL, codec_info->codec_name[0])
-				|| soc_find_component(NULL, codec_info->codec_name[1])
-				|| soc_find_component(NULL, codec_info->codec_name[2])
-				|| soc_find_component(NULL, codec_info->codec_name[3])) {
-				pr_info("%s: use %s stereo dailink replace\n", __func__, codec_info->codec_vendor);
+			/*modified for tfa98xx 4PA tdm audio support*/
+			if (soc_find_component(NULL,
+					       codec_info->codec_name[0]) ||
+			    soc_find_component(NULL,
+					       codec_info->codec_name[1]) ||
+			    soc_find_component(NULL,
+					       codec_info->codec_name[2]) ||
+			    soc_find_component(NULL,
+					       codec_info->codec_name[3])) {
+				pr_info("%s: use %s stereo dailink replace\n",
+					__func__, codec_info->codec_vendor);
 				for (i = 0; i < codec_info->dev_cnt; i++) {
-					tfa98xx_tdm_dails[i].name = codec_info->codec_name[i];
-					tfa98xx_tdm_dails[i].dai_name = codec_info->codec_dai_name[i];
+					tfa98xx_tdm_dails[i].name =
+						codec_info->codec_name[i];
+					tfa98xx_tdm_dails[i].dai_name =
+						codec_info->codec_dai_name[i];
 				}
-				pr_info("%s: tfa98xx_tdm_dails[0] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[0].name, tfa98xx_tdm_dails[0].dai_name);
-				pr_info("%s: tfa98xx_tdm_dails[1] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[1].name, tfa98xx_tdm_dails[1].dai_name);
-				pr_info("%s: tfa98xx_tdm_dails[2] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[2].name, tfa98xx_tdm_dails[2].dai_name);
-				pr_info("%s: tfa98xx_tdm_dails[3] name:%s, dai_name:%s \n", __func__, tfa98xx_tdm_dails[3].name, tfa98xx_tdm_dails[3].dai_name);
-				dailink[i2s_id*2].codec_name = NULL;
-				dailink[i2s_id*2].codec_dai_name = NULL;
-				dailink[i2s_id*2].codecs = tfa98xx_tdm_dails;
-				dailink[i2s_id*2].num_codecs = ARRAY_SIZE(tfa98xx_tdm_dails);
+				pr_info("%s: tfa98xx_tdm_dails[0] name:%s, dai_name:%s \n",
+					__func__, tfa98xx_tdm_dails[0].name,
+					tfa98xx_tdm_dails[0].dai_name);
+				pr_info("%s: tfa98xx_tdm_dails[1] name:%s, dai_name:%s \n",
+					__func__, tfa98xx_tdm_dails[1].name,
+					tfa98xx_tdm_dails[1].dai_name);
+				pr_info("%s: tfa98xx_tdm_dails[2] name:%s, dai_name:%s \n",
+					__func__, tfa98xx_tdm_dails[2].name,
+					tfa98xx_tdm_dails[2].dai_name);
+				pr_info("%s: tfa98xx_tdm_dails[3] name:%s, dai_name:%s \n",
+					__func__, tfa98xx_tdm_dails[3].name,
+					tfa98xx_tdm_dails[3].dai_name);
+				dailink[i2s_id * 2].codec_name = NULL;
+				dailink[i2s_id * 2].codec_dai_name = NULL;
+				dailink[i2s_id * 2].codecs = tfa98xx_tdm_dails;
+				dailink[i2s_id * 2].num_codecs =
+					ARRAY_SIZE(tfa98xx_tdm_dails);
 			}
 		}
 	}
 
-	if (!strcmp(codec_info->codec_vendor, extend_codec_vendor[CODEC_VENDOR_MAXIM])) {
+	if (!strcmp(codec_info->codec_vendor,
+		    extend_codec_vendor[CODEC_VENDOR_MAXIM])) {
 		if (soc_find_component(NULL, codec_info->codec_name[0])) {
-			pr_info("%s: use %s dailink replace\n", __func__, codec_info->codec_vendor);
+			pr_info("%s: use %s dailink replace\n", __func__,
+				codec_info->codec_vendor);
 			//RX dailink
-			dailink[i2s_id*2].codec_name = codec_info->codec_name[0];
-			dailink[i2s_id*2].codec_dai_name = codec_info->codec_dai_name[0];
+			dailink[i2s_id * 2].codec_name =
+				codec_info->codec_name[0];
+			dailink[i2s_id * 2].codec_dai_name =
+				codec_info->codec_dai_name[0];
 			//TX dailink
-			dailink[i2s_id*2+1].codec_name = codec_info->codec_name[0];
-			dailink[i2s_id*2+1].codec_dai_name = codec_info->codec_dai_name[0];
-			dailink[i2s_id*2+1].be_hw_params_fixup = maxim_be_hw_params_fixup;
+			dailink[i2s_id * 2 + 1].codec_name =
+				codec_info->codec_name[0];
+			dailink[i2s_id * 2 + 1].codec_dai_name =
+				codec_info->codec_dai_name[0];
+			dailink[i2s_id * 2 + 1].be_hw_params_fixup =
+				maxim_be_hw_params_fixup;
 		}
 	}
 
-	if (!strcmp(codec_info->codec_vendor, extend_codec_vendor[CODEC_VENDOR_AKM])) {
+	if (!strcmp(codec_info->codec_vendor,
+		    extend_codec_vendor[CODEC_VENDOR_AKM])) {
 		if (soc_find_component(NULL, codec_info->codec_name[0])) {
-			pr_info("%s: use %s dailink replace\n", __func__, codec_info->codec_vendor);
+			pr_info("%s: use %s dailink replace\n", __func__,
+				codec_info->codec_vendor);
 			//RX dailink
-			dailink[i2s_id*2].codec_name = codec_info->codec_name[0];
-			dailink[i2s_id*2].codec_dai_name = codec_info->codec_dai_name[0];
-			dailink[i2s_id*2].init = ak4376_audrx_init;
+			dailink[i2s_id * 2].codec_name =
+				codec_info->codec_name[0];
+			dailink[i2s_id * 2].codec_dai_name =
+				codec_info->codec_dai_name[0];
+			dailink[i2s_id * 2].init = ak4376_audrx_init;
 		}
 	}
 }
@@ -332,14 +400,18 @@ void extend_codec_i2s_be_dailinks(struct snd_soc_dai_link *dailink, size_t size)
 		return;
 	}
 
-	pr_info("%s: use_extern_spk %d\n", __func__, g_extend_pdata->use_extern_spk);
+	pr_info("%s: use_extern_spk %d\n", __func__,
+		g_extend_pdata->use_extern_spk);
 	if (g_extend_pdata->use_extern_spk && g_extend_pdata->spk_pa_info) {
-		extend_codec_be_dailink(g_extend_pdata->spk_pa_info, dailink, size);
+		extend_codec_be_dailink(g_extend_pdata->spk_pa_info, dailink,
+					size);
 	}
 
-	pr_info("%s: use_extern_dac %d\n", __func__, g_extend_pdata->use_extern_dac);
+	pr_info("%s: use_extern_dac %d\n", __func__,
+		g_extend_pdata->use_extern_dac);
 	if (g_extend_pdata->use_extern_dac && g_extend_pdata->hp_dac_info) {
-		extend_codec_be_dailink(g_extend_pdata->hp_dac_info, dailink, size);
+		extend_codec_be_dailink(g_extend_pdata->hp_dac_info, dailink,
+					size);
 	}
 }
 EXPORT_SYMBOL_GPL(extend_codec_i2s_be_dailinks);
@@ -349,22 +421,25 @@ static int audio_extend_probe(struct platform_device *pdev)
 	int ret = 0;
 
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__,
-		dev_name(&pdev->dev));
+		 dev_name(&pdev->dev));
 
 	if (!pdev->dev.of_node) {
 		pr_err("%s: No dev node from device tree\n", __func__);
 		return -EINVAL;
 	}
 
-	g_extend_pdata = devm_kzalloc(&pdev->dev, sizeof(struct audio_extend_data), GFP_KERNEL);
+	g_extend_pdata = devm_kzalloc(
+		&pdev->dev, sizeof(struct audio_extend_data), GFP_KERNEL);
 	if (!g_extend_pdata) {
 		pr_err("%s: kzalloc mem fail!\n", __func__);
 		return -ENOMEM;
 	}
 
-	g_extend_pdata->spk_pa_info =  devm_kzalloc(&pdev->dev, sizeof(struct codec_prop_info), GFP_KERNEL);
+	g_extend_pdata->spk_pa_info = devm_kzalloc(
+		&pdev->dev, sizeof(struct codec_prop_info), GFP_KERNEL);
 	if (g_extend_pdata->spk_pa_info) {
-		ret = extend_codec_prop_parse(&pdev->dev, extend_speaker_prop, g_extend_pdata->spk_pa_info);
+		ret = extend_codec_prop_parse(&pdev->dev, extend_speaker_prop,
+					      g_extend_pdata->spk_pa_info);
 		if (ret == 0) {
 			g_extend_pdata->use_extern_spk = true;
 		} else {
@@ -375,9 +450,11 @@ static int audio_extend_probe(struct platform_device *pdev)
 		pr_warn("%s: kzalloc for spk pa info fail!\n", __func__);
 	}
 
-	g_extend_pdata->hp_dac_info =  devm_kzalloc(&pdev->dev, sizeof(struct codec_prop_info), GFP_KERNEL);
+	g_extend_pdata->hp_dac_info = devm_kzalloc(
+		&pdev->dev, sizeof(struct codec_prop_info), GFP_KERNEL);
 	if (g_extend_pdata->hp_dac_info) {
-		ret = extend_codec_prop_parse(&pdev->dev, extend_dac_prop, g_extend_pdata->hp_dac_info);
+		ret = extend_codec_prop_parse(&pdev->dev, extend_dac_prop,
+					      g_extend_pdata->hp_dac_info);
 		if (ret == 0) {
 			g_extend_pdata->use_extern_dac = true;
 		} else {
@@ -394,14 +471,14 @@ static int audio_extend_probe(struct platform_device *pdev)
 static int audio_extend_remove(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__,
-		dev_name(&pdev->dev));
+		 dev_name(&pdev->dev));
 
 	return 0;
 }
 
 static const struct of_device_id audio_extend_of_match[] = {
-	{.compatible = "oplus,asoc-audio"},
-	{ }
+	{ .compatible = "oplus,asoc-audio" },
+	{}
 };
 MODULE_DEVICE_TABLE(of, audio_extend_of_match);
 

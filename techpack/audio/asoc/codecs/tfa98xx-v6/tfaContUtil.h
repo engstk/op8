@@ -13,7 +13,9 @@
 #ifdef __ANDROID__
 #include <utils/Log.h>
 #else
-#define LOGV if (0/*tfa98xx_verbose*/) printf //TODO improve logging
+#define LOGV                       \
+	if (0 /*tfa98xx_verbose*/) \
+	printf //TODO improve logging
 #endif
 
 #include "tfa_dsp_fw.h"
@@ -34,23 +36,24 @@
 extern "C" {
 #endif
 
-#define NXPTFA_MAXLINE		(256)       /* maximum string length */
-#define NXPTFA_MAXBUFFER	(50*1024)   /* maximum buffer size to hold the container */
+#define NXPTFA_MAXLINE (256) /* maximum string length */
+#define NXPTFA_MAXBUFFER \
+	(50 * 1024) /* maximum buffer size to hold the container */
 
 /*
  * buffer types for setting parameters
  */
 typedef enum nxpTfa98xxParamsType {
-    tfa_patch_params,
-    tfa_speaker_params,
-    tfa_preset_params,
-    tfa_config_params,
-    tfa_equalizer_params,
-    tfa_drc_params,
-    tfa_vstep_params,
-    tfa_cnt_params,
-    tfa_msg_params,
-    tfa_no_params,
+	tfa_patch_params,
+	tfa_speaker_params,
+	tfa_preset_params,
+	tfa_config_params,
+	tfa_equalizer_params,
+	tfa_drc_params,
+	tfa_vstep_params,
+	tfa_cnt_params,
+	tfa_msg_params,
+	tfa_no_params,
 	tfa_info_params,
 	tfa_algo_params
 } nxpTfa98xxParamsType_t;
@@ -67,7 +70,8 @@ enum Tfa98xx_Error tfaVersion(char *buffer);
  */
 int tfa98xxSaveFileWrapper(int dev_idx, char *filename);
 
-enum Tfa98xx_Error tfa98xx_verify_speaker_range(int idx, float imp[2], int spkr_count);
+enum Tfa98xx_Error tfa98xx_verify_speaker_range(int idx, float imp[2],
+						int spkr_count);
 
 /* hex dump of cnt */
 void tfa_cnt_hexdump(void);
@@ -89,6 +93,6 @@ enum Tfa98xx_Error tfa_stop();
 
 enum Tfa98xx_Error tfa_system_open(unsigned char *slave_address, int count);
 #if defined(__cplusplus)
-}  /* extern "C" */
+} /* extern "C" */
 #endif
 #endif /* TFACONTUTIL_H_ */

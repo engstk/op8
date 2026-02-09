@@ -16,6 +16,7 @@
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
 #include "iris/dsi_iris5_api.h"
 #endif
+
 #define MMSS_MISC_CLAMP_REG_OFF           0x0014
 #define DSI_CTRL_DYNAMIC_FORCE_ON         (0x23F|BIT(8)|BIT(9)|BIT(11)|BIT(21))
 #define DSI_CTRL_CMD_MISR_ENABLE          BIT(28)

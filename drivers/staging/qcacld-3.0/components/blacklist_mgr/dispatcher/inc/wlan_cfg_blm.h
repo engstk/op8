@@ -113,6 +113,7 @@
 				CFG_VALUE_OR_DEFAULT, \
 				"black list expiry")
 #endif /* OPLUS_BUG_STABILITY */
+
 /*
  * <ini>
  * bad_bssid_reset_time - Config Param to specify time after which AP would be

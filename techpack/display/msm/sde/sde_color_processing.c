@@ -1070,7 +1070,6 @@ static int sde_cp_enable_crtc_property(struct drm_crtc *crtc,
 	return ret;
 }
 
-
 #ifdef OPLUS_BUG_STABILITY
 struct sde_kms *get_kms_(struct drm_crtc *crtc)
 {
@@ -1455,7 +1454,8 @@ static void sde_cp_crtc_setfeature(struct sde_cp_node *prop_node,
 	sde_cp_get_hw_payload(prop_node, &hw_cfg, &feature_enabled);
 
 #ifdef OPLUS_BUG_STABILITY
-	if (prop_node->feature == SDE_CP_CRTC_DSPP_PCC && is_dsi_panel(&sde_crtc->base)) {
+	if (prop_node->feature == SDE_CP_CRTC_DSPP_PCC &&
+	    is_dsi_panel(&sde_crtc->base)) {
 		if (hw_cfg.payload && (hw_cfg.len == sizeof(oplus_save_pcc))) {
 			memcpy(&oplus_save_pcc, hw_cfg.payload, hw_cfg.len);
 			oplus_pcc_enabled = true;
@@ -1788,9 +1788,9 @@ void sde_cp_crtc_apply_properties(struct drm_crtc *crtc)
 	struct sde_cp_node *prop_node = NULL, *n = NULL;
 	struct sde_hw_ctl *ctl;
 	u32 num_mixers = 0, i = 0;
-	#ifdef OPLUS_BUG_STABILITY
+#ifdef OPLUS_BUG_STABILITY
 	bool dirty_pcc = false;
-	#endif /* OPLUS_BUG_STABILITY */
+#endif /* OPLUS_BUG_STABILITY */
 	int rc = 0;
 	bool need_flush = false;
 
@@ -1814,12 +1814,12 @@ void sde_cp_crtc_apply_properties(struct drm_crtc *crtc)
 
 	mutex_lock(&sde_crtc->crtc_cp_lock);
 
-	#ifdef OPLUS_BUG_STABILITY
+#ifdef OPLUS_BUG_STABILITY
 	dirty_pcc = sde_cp_crtc_update_pcc(crtc);
 	if (dirty_pcc) {
 		set_dspp_flush = true;
 	}
-	#endif /* OPLUS_BUG_STABILITY */
+#endif /* OPLUS_BUG_STABILITY */
 
 	/* Check if dirty lists are empty and ad features are disabled for
 	 * early return. If ad properties are active then we need to issue

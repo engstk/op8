@@ -39,7 +39,7 @@ config SCSI_UFSHCD
 	select PM_DEVFREQ
 	select DEVFREQ_GOV_SIMPLE_ONDEMAND
 	select NLS
-	---help---
+	help
 	This selects the support for UFS devices in Linux, say Y and make
 	  sure that you know the name of your UFS host adapter (the card
 	  inside your computer that "speaks" the UFS protocol, also
@@ -54,7 +54,7 @@ config SCSI_UFSHCD
 config SCSI_UFSHCD_PCI
 	tristate "PCI bus based UFS Controller support"
 	depends on SCSI_UFSHCD && PCI
-	---help---
+	help
 	This selects the PCI UFS Host Controller Interface. Select this if
 	you have UFS Host Controller with PCI Interface.
 
@@ -65,7 +65,7 @@ config SCSI_UFSHCD_PCI
 config SCSI_UFS_DWC_TC_PCI
 	tristate "DesignWare pci support using a G210 Test Chip"
 	depends on SCSI_UFSHCD_PCI
-	---help---
+	help
 	  Synopsys Test Chip is a PHY for prototyping purposes.
 
 	  If unsure, say N.
@@ -73,7 +73,7 @@ config SCSI_UFS_DWC_TC_PCI
 config SCSI_UFSHCD_PLATFORM
 	tristate "Platform bus based UFS Controller support"
 	depends on SCSI_UFSHCD
-	---help---
+	help
 	This selects the UFS host controller support. Select this if
 	you have an UFS controller on Platform bus.
 
@@ -84,7 +84,7 @@ config SCSI_UFSHCD_PLATFORM
 config SCSI_UFS_DWC_TC_PLATFORM
 	tristate "DesignWare platform support using a G210 Test Chip"
 	depends on SCSI_UFSHCD_PLATFORM
-	---help---
+	help
 	  Synopsys Test Chip is a PHY for prototyping purposes.
 
 	  If unsure, say N.
@@ -127,7 +127,7 @@ config SCSI_UFSHCD_CMD_LOGGING
 config SCSI_UFS_HISI
 	tristate "Hisilicon specific hooks to UFS controller platform driver"
 	depends on (ARCH_HISI || COMPILE_TEST) && SCSI_UFSHCD_PLATFORM
-	---help---
+	help
 	  This selects the Hisilicon specific additions to UFSHCD platform driver.
 
 	  Select this if you have UFS controller on Hisilicon chipset.
@@ -150,59 +150,45 @@ config SCSI_UFS_CRYPTO_QTI
 	 Enabling this allows kernel to use UFS crypto operations defined
 	 and implemented by QTI.
 
-#ifdef OPLUS_FEATURE_UFSPLUS
 config UFSFEATURE
 	bool "UFS feature activate"
 	depends on SCSI_UFSHCD
-	---help---
-	UFS feature activate such as hpb, tw and etc.
-
-config UFSHPB
-	bool "UFS Host Performance Booster support"
-	depends on SCSI_UFSHCD && UFSFEATURE
-	---help---
-	UFS HPB Feature Enable
-
-config HPB_ERR_INJECTION
-	bool "HPB ERROR INJECTION"
-	depends on SCSI_UFSHCD && UFSFEATURE && UFSHPB
-	---help---
-	error injection for checking HPB entry integrity
+	help
+	  UFS feature activate such as hpb, tw and etc.
 
 config UFSTW
 	bool "UFS Turbo Write support"
 	depends on SCSI_UFSHCD && UFSFEATURE
-	---help---
-	UFS TW Feature Enable
+	help
+	  UFS TW Feature Enable
 
 config UFSTW_IGNORE_GUARANTEE_BIT
 	bool "Ignore UFS Turbo Write Life Time Guarantee bit for POC"
 	default n
 	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
-	---help---
-	ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
+	help
+	  ignore the guarantee bit[31] of dTurboWriteBufferLifeTimeEst for PoC
 
 config UFSTW_BOOT_ENABLED
-        bool "Turbo Write enabled at boot time"
+	bool "Turbo Write enabled at boot time"
 	default y
 	depends on SCSI_UFSHCD && UFSFEATURE && UFSTW
-	---help---
-	fTurboWriteEn and fTurboWriteBufferFlushDuringHibnerEnter flags
-	are enabled at boot time.
+	help
+	  fTurboWriteEn and fTurboWriteBufferFlushDuringHibnerEnter flags
+	  are enabled at boot time.
 
 config UFSHID
 	bool "UFS Host Initiated Defrag support"
 	depends on SCSI_UFSHCD && UFSFEATURE
-	---help---
-	UFS HID Feature Enable
+	help
+	  UFS HID Feature Enable
 
 config UFSHID_POC
 	bool "UFSHID_POC test"
 	depends on SCSI_UFSHCD && UFSFEATURE && UFSHID
-	---help---
-	UFS HID POC test
-	1. block to enter suspend state
-	2. auto_hibern8 enable/disable (HCI)
-	3. set flag bDefragOperation
-	4. debug msg enable (default : disable)
-#endif /*OPLUS_FEATURE_UFSPLUS*/
+	help
+	  UFS HID POC test
+	  1. block to enter suspend state
+	  2. auto_hibern8 enable/disable (HCI)
+	  3. set flag bDefragOperation
+	  4. debug msg enable (default : disable)

@@ -19,7 +19,7 @@
 #include <linux/param.h>
 #include <linux/proc_fs.h>
 #include <linux/time.h>
-#ifdef CONFIG_DRM_MSM
+#if defined(CONFIG_DRM_MSM) || defined(CONFIG_DRM_OPLUS_NOTIFY)
 #include <linux/msm_drm_notify.h>
 #endif
 
@@ -28,11 +28,11 @@
 #include <linux/notifier.h>
 #endif
 
-#define THREAD_WAKEUP  0
-#define THREAD_SLEEP   1
+#define THREAD_WAKEUP 0
+#define THREAD_SLEEP 1
 
-#undef	SUBSYS_COUNTS
-#define	SUBSYS_COUNTS	(3)
+#undef SUBSYS_COUNTS
+#define SUBSYS_COUNTS (3)
 
 struct sensor_fb_conf {
 	uint16_t event_id;
@@ -61,8 +61,8 @@ enum sensor_fb_event_id {
 	PS_OFFSET_DATA_ID = 9,
 	PS_PD_DATA_ID = 10,
 	PS_BOOT_PD_DATA_ID = 11,
-        PS_DYNAMIC_CALI_ID = 12,
-        PS_ZERO_CALI_ID = 13,
+	PS_DYNAMIC_CALI_ID = 12,
+	PS_ZERO_CALI_ID = 13,
 
 	/* 100~199 */
 	ALS_INIT_FAIL_ID = 100,
@@ -85,7 +85,7 @@ enum sensor_fb_event_id {
 	ACCEL_CALI_DATA_ID = 207,
 	ACCEL_DATA_BLOCK_ID = 208,
 	ACCEL_SUB_DATA_BLOCK_ID = 209,
-        ACCEL_DATA_FULL_RANGE_ID = 210,
+	ACCEL_DATA_FULL_RANGE_ID = 210,
 
 	/* 300~399 */
 	GYRO_INIT_FAIL_ID = 300,
@@ -96,6 +96,8 @@ enum sensor_fb_event_id {
 	GYRO_FIRST_REPORT_DELAY_COUNT_ID = 305,
 	GYRO_ORIGIN_DATA_TO_ZERO_ID = 306,
 	GYRO_CALI_DATA_ID = 307,
+	GYRO_DATA_BLOCK_ID = 308,
+	GYRO_SUB_DATA_BLOCK_ID = 358,
 
 	/* 400~499 */
 	MAG_INIT_FAIL_ID = 400,
@@ -108,7 +110,6 @@ enum sensor_fb_event_id {
 	MAG_CALI_DATA_ID = 407,
 	MAG_DATA_BLOCK_ID = 408,
 	MAG_DATA_FULL_RANGE_ID = 409,
-
 
 	/* 500~599 */
 	SAR_INIT_FAIL_ID = 500,
@@ -138,6 +139,9 @@ enum sensor_fb_event_id {
 	DOUBLE_TAP_PREVENTED_BY_FREEFALL_Z_ID = 704,
 	DOUBLE_TAP_PREVENTED_BY_FREEFALL_SLOPE_ID = 705,
 
+	/* 900 */
+	BAROMETER_I2C_ERR_ID = 900,
+
 	/* 1000 */
 	ALAILABLE_SENSOR_LIST_ID = 1000,
 
@@ -151,10 +155,9 @@ enum sensor_fb_event_id {
 	HAL_SENSOR_TIMESTAMP_ERROR = 10002,
 };
 
-
 struct subsystem_desc {
-	u64 subsys_sleep_time_s;  //ts
-	u64 subsys_sleep_time_p;  //ts
+	u64 subsys_sleep_time_s; //ts
+	u64 subsys_sleep_time_p; //ts
 	uint64_t ap_sleep_time_s; //ms
 	uint64_t ap_sleep_time_p; //ms
 	uint64_t subsys_sleep_ratio;
@@ -172,32 +175,21 @@ struct fd_data {
 struct sns_fb_event {
 	unsigned short event_id;
 	unsigned int count;
-        unsigned int name;
+	unsigned int name;
 	union {
 		int buff[EVNET_DATA_LEN];
 		struct fd_data data;
 	};
 };
 
-
 #define EVNET_NUM_MAX 109
 struct fb_event_smem {
 	struct sns_fb_event event[EVNET_NUM_MAX];
 };
 
+enum { WAKE_UP, NO_WAKEUP };
 
-enum {
-	WAKE_UP,
-	NO_WAKEUP
-};
-
-enum {
-	SSC,
-	APSS,
-	ADSP,
-	MDSP,
-	CDSP
-};
+enum { SSC, APSS, ADSP, MDSP, CDSP };
 
 struct delivery_type {
 	char *name;
@@ -209,11 +201,10 @@ struct proc_type {
 	int type;
 };
 
-
 struct sensor_fb_cxt {
 	/*struct miscdevice sensor_fb_dev;*/
 	struct platform_device *sensor_fb_dev;
-	spinlock_t   rw_lock;
+	spinlock_t rw_lock;
 	wait_queue_head_t wq;
 	struct notifier_block fb_notif;
 	struct subsystem_desc subsystem_desc[SUBSYS_COUNTS];
@@ -223,10 +214,8 @@ struct sensor_fb_cxt {
 	uint16_t node_type;
 	unsigned long wakeup_flag;
 	uint32_t sensor_list[2];
-	struct proc_dir_entry  *proc_sns;
+	struct proc_dir_entry *proc_sns;
 };
 #endif /*__SENSOR_FEEDBACK_H__*/
 
 void send_uevent_to_fb(int monitor_info);
-
-

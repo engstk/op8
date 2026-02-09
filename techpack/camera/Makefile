@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+ifneq ($(OPLUS_FEATURE_CAMERA_COMMON), yes)
+
 # auto-detect subdirs
 ifeq ($(CONFIG_ARCH_KONA), y)
 include $(srctree)/techpack/camera/config/konacamera.conf
@@ -30,4 +32,6 @@ LINUXINCLUDE    += \
                 -I$(srctree)/techpack/camera/include/uapi \
                 -I$(srctree)/techpack/camera/include
 obj-y += drivers/
+endif
+
 endif

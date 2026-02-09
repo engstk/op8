@@ -85,6 +85,7 @@ enum {
 
 	WORKER_NOT_RUNNING	= WORKER_PREP | WORKER_CPU_INTENSIVE |
 				  WORKER_UNBOUND | WORKER_REBOUND,
+
 	NR_STD_WORKER_POOLS	= 2,		/* # standard pools per cpu */
 
 	UNBOUND_POOL_HASH_ORDER	= 6,		/* hashed by pool->attrs */
@@ -1339,7 +1340,6 @@ static void insert_work(struct pool_workqueue *pwq, struct work_struct *work,
 	/* we own @work, set data and link */
 	set_work_pwq(work, pwq, extra_flags);
 	list_add_tail(&work->entry, head);
-
 	get_pwq(pwq);
 
 	/*
@@ -2095,7 +2095,6 @@ __acquires(&pool->lock)
 	bool cpu_intensive = pwq->wq->flags & WQ_CPU_INTENSIVE;
 	int work_color;
 	struct worker *collision;
-
 #ifdef CONFIG_LOCKDEP
 	/*
 	 * It is permissible to free the struct work_struct from
@@ -2192,11 +2191,9 @@ __acquires(&pool->lock)
 	 * flush_work() and complete() primitives (except for single-threaded
 	 * workqueues), so hiding them isn't a problem.
 	 */
-
 	lockdep_invariant_state(true);
 	trace_workqueue_execute_start(work);
 	worker->current_func(work);
-
 	/*
 	 * While we must be careful to not use "work" after this, the trace
 	 * point will only record its address.
@@ -4105,6 +4102,7 @@ static int init_rescuer(struct workqueue_struct *wq)
 		kfree(rescuer);
 		return ret;
 	}
+
 	wq->rescuer = rescuer;
 	kthread_bind_mask(rescuer->task, cpu_possible_mask);
 	wake_up_process(rescuer->task);
@@ -4497,11 +4495,11 @@ void print_worker_info(const char *log_lvl, struct task_struct *task)
 	 * Carefully copy the associated workqueue's workfn, name and desc.
 	 * Keep the original last '\0' in case the original is garbage.
 	 */
-	probe_kernel_read(&fn, &worker->current_func, sizeof(fn));
-	probe_kernel_read(&pwq, &worker->current_pwq, sizeof(pwq));
-	probe_kernel_read(&wq, &pwq->wq, sizeof(wq));
-	probe_kernel_read(name, wq->name, sizeof(name) - 1);
-	probe_kernel_read(desc, worker->desc, sizeof(desc) - 1);
+	copy_from_kernel_nofault(&fn, &worker->current_func, sizeof(fn));
+	copy_from_kernel_nofault(&pwq, &worker->current_pwq, sizeof(pwq));
+	copy_from_kernel_nofault(&wq, &pwq->wq, sizeof(wq));
+	copy_from_kernel_nofault(name, wq->name, sizeof(name) - 1);
+	copy_from_kernel_nofault(desc, worker->desc, sizeof(desc) - 1);
 
 	if (fn || name[0] || desc[0]) {
 		printk("%sWorkqueue: %s %pf", log_lvl, name, fn);
@@ -4510,46 +4508,6 @@ void print_worker_info(const char *log_lvl, struct task_struct *task)
 		pr_cont("\n");
 	}
 }
-
-#ifdef CONFIG_OPLUS_FEATURE_MIDAS
-void get_worker_info(struct task_struct *task, char *buf)
-{
-	work_func_t *fn = NULL;
-	char name[WQ_NAME_LEN] = { };
-	char fn_name[WQ_NAME_LEN] = { };
-	char desc[WORKER_DESC_LEN] = { };
-	struct pool_workqueue *pwq = NULL;
-	struct workqueue_struct *wq = NULL;
-	struct worker *worker;
-
-	if (!(task->flags & PF_WQ_WORKER))
-		return;
-
-	/*
-	 * This function is called without any synchronization and @task
-	 * could be in any state.  Be careful with dereferences.
-	 */
-	worker = kthread_probe_data(task);
-
-	/*
-	 * Carefully copy the associated workqueue's workfn and name.  Keep
-	 * the original last '\0' in case the original contains garbage.
-	 */
-	probe_kernel_read(&fn, &worker->current_func, sizeof(fn));
-	probe_kernel_read(&pwq, &worker->current_pwq, sizeof(pwq));
-	probe_kernel_read(&wq, &pwq->wq, sizeof(wq));
-	probe_kernel_read(name, wq->name, sizeof(name) - 1);
-	probe_kernel_read(desc, worker->desc, sizeof(desc) - 1);
-
-	if (name[0]) {
-		strncpy(buf, name, sizeof(name));
-	} else if (fn) {
-		snprintf(fn_name, sizeof(fn_name), "%pf", fn);
-		if (fn_name[0])
-			strncpy(buf, fn_name, sizeof(fn_name));
-	}
-}
-#endif
 
 static void pr_cont_pool_info(struct worker_pool *pool)
 {
@@ -5889,7 +5847,6 @@ int __init workqueue_init_early(void)
 	system_freezable_power_efficient_wq = alloc_workqueue("events_freezable_power_efficient",
 					      WQ_FREEZABLE | WQ_POWER_EFFICIENT,
 					      0);
-
 	BUG_ON(!system_wq || !system_highpri_wq || !system_long_wq ||
 	       !system_unbound_wq || !system_freezable_wq ||
 	       !system_power_efficient_wq ||

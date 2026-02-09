@@ -165,6 +165,7 @@ struct request {
 	int cpu;
 	unsigned int cmd_flags;		/* op and common flags */
 	req_flags_t rq_flags;
+
 	int internal_tag;
 
 	/* the following two fields are internal, NEVER access directly */
@@ -176,6 +177,7 @@ struct request {
 	struct bio *biotail;
 
 	struct list_head queuelist;
+
 	/*
 	 * The hash is used inside the scheduler, and killed once the
 	 * request reaches the dispatch list. The ipi_list is only used
@@ -576,6 +578,7 @@ struct request_queue {
 
 	unsigned int		nr_sorted;
 	unsigned int		in_flight[2];
+
 	/*
 	 * Number of active block driver functions for which blk_drain_queue()
 	 * must wait. Must be incremented around functions that unlock the
@@ -727,17 +730,6 @@ void blk_queue_flag_set(unsigned int flag, struct request_queue *q);
 void blk_queue_flag_clear(unsigned int flag, struct request_queue *q);
 bool blk_queue_flag_test_and_set(unsigned int flag, struct request_queue *q);
 bool blk_queue_flag_test_and_clear(unsigned int flag, struct request_queue *q);
-
-static inline void ohm_ioqueue_add_inflight(struct request_queue *q,
-					     struct request *rq)
-{
-
-}
-static inline void ohm_ioqueue_dec_inflight(struct request_queue *q,
-					     struct request *rq)
-{
-
-}
 
 #define blk_queue_tagged(q)	test_bit(QUEUE_FLAG_QUEUED, &(q)->queue_flags)
 #define blk_queue_stopped(q)	test_bit(QUEUE_FLAG_STOPPED, &(q)->queue_flags)

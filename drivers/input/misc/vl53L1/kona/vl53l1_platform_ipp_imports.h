@@ -29,7 +29,6 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-
 #ifndef _VL53L1_PLATFORM_IPP_IMPORTS_H_
 #define _VL53L1_PLATFORM_IPP_IMPORTS_H_
 

@@ -65,12 +65,6 @@
 #include <wmi_unified_vdev_api.h>
 #include <wmi_unified_vdev_tlv.h>
 
-#ifdef OPLUS_FEATURE_WIFI_OPLUSWFD
-//OPLUS_FEATURE_WIFI_OPLUSWFD
-//pc p2p device don't recognize he, and don't reply it with probe response
-extern int oplus_wfd_get_remove_He_ie_flag(void);
-#endif
-
 /* HTC service ids for WMI for multi-radio */
 static const uint32_t multi_svc_ids[] = {WMI_CONTROL_SVC,
 				WMI_CONTROL_SVC_WMAC1,
@@ -3286,18 +3280,9 @@ static QDF_STATUS send_scan_chan_list_cmd_tlv(wmi_unified_t wmi_handle,
 				WMI_SET_CHANNEL_FLAG(chan_info,
 						     WMI_CHAN_FLAG_DFS_CFREQ2);
 
-			#ifdef OPLUS_FEATURE_WIFI_OPLUSWFD
-			//pc p2p device don't recognize he, and don't reply it with probe response
-			if (oplus_wfd_get_remove_He_ie_flag() != 1) {
-				if (tchan_info->allow_he)
-					WMI_SET_CHANNEL_FLAG(chan_info,
-						     WMI_CHAN_FLAG_ALLOW_HE);
-			}
-			#else
 			if (tchan_info->allow_he)
 				WMI_SET_CHANNEL_FLAG(chan_info,
 						     WMI_CHAN_FLAG_ALLOW_HE);
-			#endif
 
 			if (tchan_info->allow_vht)
 				WMI_SET_CHANNEL_FLAG(chan_info,

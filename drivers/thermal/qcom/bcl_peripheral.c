@@ -633,11 +633,11 @@ static void bcl_probe_soc(struct platform_device *pdev)
 	}
 	thermal_zone_device_update(soc_data->tz_dev, THERMAL_DEVICE_UP);
 #else
-	soc_data->tz_dev = thermal_zone_of_sensor_register(&pdev->dev,
-				BCL_SOC_MONITOR, soc_data, &soc_data->ops);
+	soc_data->tz_dev = thermal_zone_of_sensor_register(
+		&pdev->dev, BCL_SOC_MONITOR, soc_data, &soc_data->ops);
 	if (IS_ERR(soc_data->tz_dev)) {
 		pr_err("vbat register failed. err:%ld\n",
-				PTR_ERR(soc_data->tz_dev));
+		       PTR_ERR(soc_data->tz_dev));
 		return;
 	}
 	thermal_zone_device_update(soc_data->tz_dev, THERMAL_DEVICE_UP);
@@ -763,7 +763,11 @@ static int bcl_probe(struct platform_device *pdev)
 	bcl_configure_lmh_peripheral();
 
 	dev_set_drvdata(&pdev->dev, bcl_perph);
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	ret = bcl_write_register(BCL_MONITOR_EN, 0x0);
+#else
 	ret = bcl_write_register(BCL_MONITOR_EN, BIT(7));
+#endif
 	if (ret) {
 		pr_err("Error accessing BCL peripheral. err:%d\n", ret);
 		goto bcl_probe_exit;

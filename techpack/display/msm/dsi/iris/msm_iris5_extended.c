@@ -8,9 +8,8 @@
 #include "msm_drv.h"
 #include "msm_kms.h"
 
-
 int msm_ioctl_iris_operate_conf(struct drm_device *dev, void *data,
-		struct drm_file *file)
+				struct drm_file *file)
 {
 	int ret = -EINVAL;
 	struct msm_drm_private *priv = dev->dev_private;
@@ -21,7 +20,7 @@ int msm_ioctl_iris_operate_conf(struct drm_device *dev, void *data,
 }
 
 int msm_ioctl_iris_operate_tool(struct drm_device *dev, void *data,
-		struct drm_file *file)
+				struct drm_file *file)
 {
 	int ret = -EINVAL;
 	struct msm_drm_private *priv = dev->dev_private;

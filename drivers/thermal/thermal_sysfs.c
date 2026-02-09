@@ -1078,7 +1078,9 @@ static void cooling_device_stats_setup(struct thermal_cooling_device *cdev)
 	stats = kzalloc(var, GFP_KERNEL);
 #ifdef OPLUS_BUG_STABILITY
 	if (!stats) {
-		dev_err(&cdev->device, "need buffer size=%d, try to the vzalloc() func!\n", var);
+		dev_err(&cdev->device,
+			"need buffer size=%d, try to the vzalloc() func!\n",
+			var);
 		stats = vzalloc(var);
 	}
 #endif

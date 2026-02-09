@@ -6,13 +6,13 @@
 
 #define P9415_STATUS_REG 0x0036
 #define P9415_VOUT_ERR_MASK BIT(3)
-#define P9415_EVENT_MASK    BIT(4)
-#define P9415_LDO_ON_MASK   BIT(6)
+#define P9415_EVENT_MASK BIT(4)
+#define P9415_LDO_ON_MASK BIT(6)
 
 struct op_p9415_ic {
 	struct i2c_client *client;
 	struct device *dev;
-        struct rx_chip *rx_chip;
+	struct rx_chip *rx_chip;
 
 	int idt_en_gpio;
 	int idt_con_gpio;

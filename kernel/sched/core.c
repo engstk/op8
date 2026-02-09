@@ -18,10 +18,6 @@
 #include <asm/tlb.h>
 
 #include <soc/qcom/minidump.h>
-#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_KSWAPD_UNBIND_MAX_CPU)
-/*add multi kswapd support*/
-#include <linux/multi_kswapd.h>
-#endif
 
 #include "../workqueue_internal.h"
 #include "../smpboot.h"
@@ -1727,10 +1723,6 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
 	bool queued, running;
 
 	lockdep_assert_held(&p->pi_lock);
-#if defined(OPLUS_FEATURE_MULTI_KSWAPD) && defined(CONFIG_KSWAPD_UNBIND_MAX_CPU)
-	if (kswapd_affinity_check(p, new_mask))
-		return;
-#endif
 
 	queued = task_on_rq_queued(p);
 	running = task_current(rq, p);
@@ -3642,10 +3634,8 @@ context_switch(struct rq *rq, struct task_struct *prev,
 		next->active_mm = oldmm;
 		mmgrab(oldmm);
 		enter_lazy_tlb(oldmm, next);
-	} else {
+	} else
 		switch_mm_irqs_off(oldmm, mm, next);
-		lru_gen_use_mm(mm);
-	}
 
 	if (!prev->mm) {
 		prev->active_mm = NULL;
@@ -3867,6 +3857,7 @@ unsigned long long task_sched_runtime(struct task_struct *p)
 }
 
 unsigned int capacity_margin_freq = 1280; /* ~20% margin */
+
 /*
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
@@ -6939,7 +6930,6 @@ out:
 	cpu_maps_update_done();
 	trace_sched_isolate(cpu, cpumask_bits(cpu_isolated_mask)[0],
 			    start_time, 1);
-
 	return ret_code;
 }
 
@@ -8792,22 +8782,10 @@ void sched_exit(struct task_struct *p)
 #endif /* CONFIG_SCHED_WALT */
 
 __read_mostly bool sched_predl = 1;
+
 #ifdef VENDOR_EDIT
 struct task_struct *oplus_get_cpu_task(int cpu)
 {
 	return cpu_curr(cpu);
-}
-#endif
-
-#ifdef CONFIG_KSWAPD_UNBIND_MAX_CPU
-void upate_kswapd_unbind_cpu(void)
-{
-    struct root_domain *rd = NULL;
-
-    rcu_read_lock();
-    rd = cpu_rq(smp_processor_id())->rd;
-    if (rd->mid_cap_orig_cpu != -1 && rd->max_cap_orig_cpu != -1)
-        kswapd_unbind_cpu = rd->max_cap_orig_cpu;
-    rcu_read_unlock();
 }
 #endif

@@ -122,19 +122,6 @@ static inline int pmdp_clear_flush_young(struct vm_area_struct *vma,
 #endif /* CONFIG_TRANSPARENT_HUGEPAGE */
 #endif
 
-#ifndef arch_has_hw_pte_young
-/*
- * Return whether the accessed bit is supported on the local CPU.
- *
- * This stub assumes accessing through an old PTE triggers a page fault.
- * Architectures that automatically set the access bit should overwrite it.
- */
-static inline bool arch_has_hw_pte_young(void)
-{
-	return false;
-}
-#endif
-
 #ifndef __HAVE_ARCH_PTEP_GET_AND_CLEAR
 static inline pte_t ptep_get_and_clear(struct mm_struct *mm,
 				       unsigned long address,
@@ -238,6 +225,22 @@ static inline void ptep_set_wrprotect(struct mm_struct *mm, unsigned long addres
 	pte_t old_pte = *ptep;
 	set_pte_at(mm, address, ptep, pte_wrprotect(old_pte));
 }
+#endif
+
+/*
+ * On some architectures hardware does not set page access bit when accessing
+ * memory page, it is responsibilty of software setting this bit. It brings
+ * out extra page fault penalty to track page access bit. For optimization page
+ * access bit can be set during all page fault flow on these arches.
+ * To be differentiate with macro pte_mkyoung, this macro is used on platforms
+ * where software maintains page access bit.
+ */
+#ifndef pte_sw_mkyoung
+static inline pte_t pte_sw_mkyoung(pte_t pte)
+{
+	return pte;
+}
+#define pte_sw_mkyoung	pte_sw_mkyoung
 #endif
 
 #ifndef pte_savedwrite

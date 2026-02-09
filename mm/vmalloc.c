@@ -3508,11 +3508,7 @@ static int s_show(struct seq_file *m, void *p)
 	seq_printf(m, "0x%pK-0x%pK %7ld",
 		v->addr, v->addr + v->size, v->size);
 
-#ifdef OPLUS_FEATURE_PERFORMANCE
-    if (v->caller && (strcmp(current->comm, "android.bg") != 0))
-#else
-    if (v->caller)
-#endif
+	if (v->caller)
 		seq_printf(m, " %pS", v->caller);
 
 	if (v->nr_pages)

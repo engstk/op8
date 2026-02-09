@@ -203,6 +203,7 @@ int iris_sspp_subblk_offset(struct sde_hw_pipe *ctx, int s_id, u32 *idx)
 	return _sspp_subblk_offset(ctx, s_id, idx);
 }
 #endif
+
 static void sde_hw_sspp_setup_multirect(struct sde_hw_pipe *ctx,
 		enum sde_sspp_multirect_index index,
 		enum sde_sspp_multirect_mode mode)
@@ -1205,11 +1206,13 @@ static void sde_hw_sspp_setup_dgm_csc(struct sde_hw_pipe *ctx,
 
 #if defined(PXLW_IRIS_DUAL)
 static void sde_hw_sspp_setup_csc_v2(struct sde_hw_pipe *ctx,
-		const struct sde_format *fmt, struct sde_csc_cfg *data)
+				     const struct sde_format *fmt,
+				     struct sde_csc_cfg *data)
 {
 	return iris_sde_hw_sspp_setup_csc_v2(ctx, fmt, data);
 }
 #endif
+
 static void _setup_layer_ops(struct sde_hw_pipe *c,
 		unsigned long features, unsigned long perf_features,
 		bool is_virtual_pipe)

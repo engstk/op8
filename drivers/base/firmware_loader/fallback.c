@@ -545,8 +545,8 @@ static int fw_load_sysfs_fallback(struct fw_sysfs *fw_sysfs,
 	struct fw_priv *fw_priv = fw_sysfs->fw_priv;
 
 #ifdef OPLUS_FEATURE_TP_BSPFWUPDATE
-	char *envp[2]={"FwUp=compare", NULL};
-#endif/*OPLUS_FEATURE_TP_BSPFWUPDATE*/
+	char *envp[2] = { "FwUp=compare", NULL };
+#endif /*OPLUS_FEATURE_TP_BSPFWUPDATE*/
 
 	/* fall back on userspace loading */
 	if (!fw_priv->data)
@@ -575,13 +575,14 @@ static int fw_load_sysfs_fallback(struct fw_sysfs *fw_sysfs,
 		dev_dbg(f_dev, "firmware: requesting %s\n", fw_priv->fw_name);
 #ifdef OPLUS_FEATURE_TP_BSPFWUPDATE
 		if (opt_flags & FW_OPT_COMPARE) {
-			kobject_uevent_env(&fw_sysfs->dev.kobj, KOBJ_CHANGE,envp);
+			kobject_uevent_env(&fw_sysfs->dev.kobj, KOBJ_CHANGE,
+					   envp);
 		} else {
 			kobject_uevent(&fw_sysfs->dev.kobj, KOBJ_ADD);
 		}
 #else
 		kobject_uevent(&fw_sysfs->dev.kobj, KOBJ_ADD);
-#endif/*OPLUS_FEATURE_TP_BSPFWUPDATE*/
+#endif /*OPLUS_FEATURE_TP_BSPFWUPDATE*/
 	} else {
 		timeout = MAX_JIFFY_OFFSET;
 	}

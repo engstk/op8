@@ -7,11 +7,3 @@ config HORAE_THERMAL_SHELL
 	  default y
 	  help
 	    Provide three thermal zones(front, frame and back) to get real shell temp.
-
-#ifdef OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING
-source "drivers/soc/oplus/thermal/cpufreq_bouncing/Kconfig"
-#endif /* OPLUS_FEATURE_GKI_CPUFREQ_BOUNCING */
-
-#ifdef CONFIG_OPLUS_FEATURE_ATD
-source "drivers/soc/oplus/thermal/detection/Kconfig"
-#endif

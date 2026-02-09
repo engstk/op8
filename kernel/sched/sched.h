@@ -2,9 +2,6 @@
 /*
  * Scheduler internal types and methods:
  */
-#ifndef __KERNEL_SCHED_H__
-#define __KERNEL_SCHED_H__
-
 #include <linux/sched.h>
 
 #include <linux/sched/autogroup.h>
@@ -2153,6 +2150,7 @@ static inline unsigned long capacity_orig_of(int cpu)
 {
 	return cpu_rq(cpu)->cpu_capacity_orig;
 }
+
 static inline unsigned long task_util(struct task_struct *p)
 {
 #ifdef CONFIG_SCHED_WALT
@@ -3285,5 +3283,3 @@ struct sched_avg_stats {
 	int nr_scaled;
 };
 extern void sched_get_nr_running_avg(struct sched_avg_stats *stats);
-
-#endif // __KERNEL_SCHED_H__

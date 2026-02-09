@@ -851,24 +851,6 @@ static int show_smap(struct seq_file *m, void *v)
 
 	smap_gather_stats(vma, &mss);
 
-	#ifdef OPLUS_FEATURE_PERFORMANCE
-	if (strcmp(current->comm, "android.bg") == 0) {
-		if ((unsigned long)(mss.pss >> (10 + PSS_SHIFT)) > 0) {
-			SEQ_PUT_DEC(" kB\nPss:            ", mss.pss >> PSS_SHIFT);
-		}
-		if ((mss.private_clean >> 10) > 0) {
-			SEQ_PUT_DEC(" kB\nPrivate_Clean:  ", mss.private_clean);
-		}
-		if ((mss.private_dirty >> 10) > 0) {
-			SEQ_PUT_DEC(" kB\nPrivate_Dirty:  ", mss.private_dirty);
-		}
-
-		seq_puts(m, " kB\n");
-		m_cache_vma(m, vma);
-		return 0;
-	}
-	#endif /*OPLUS_FEATURE_PERFORMANCE*/
-	
 	show_map_vma(m, vma);
 	if (vma_get_anon_name(vma)) {
 		seq_puts(m, "Name:           ");
@@ -1195,6 +1177,7 @@ static ssize_t clear_refs_write(struct file *file, const char __user *buf,
 		return -ESRCH;
 	mm = get_task_mm(task);
 	if (mm) {
+		struct mmu_notifier_range range;
 		struct clear_refs_private cp = {
 			.type = type,
 		};
@@ -1259,11 +1242,14 @@ static ssize_t clear_refs_write(struct file *file, const char __user *buf,
 				mmap_write_downgrade(mm);
 				break;
 			}
-			mmu_notifier_invalidate_range_start(mm, 0, -1);
+
+			mmu_notifier_range_init(&range, MMU_NOTIFY_UNMAP, 0,
+						NULL, mm, 0, -1UL);
+			mmu_notifier_invalidate_range_start(&range);
 		}
 		walk_page_range(0, mm->highest_vm_end, &clear_refs_walk);
 		if (type == CLEAR_REFS_SOFT_DIRTY)
-			mmu_notifier_invalidate_range_end(mm, 0, -1);
+			mmu_notifier_invalidate_range_end(&range);
 		tlb_finish_mmu(&tlb, 0, -1);
 		mmap_read_unlock(mm);
 out_mm:
@@ -1743,14 +1729,7 @@ int reclaim_address_space(struct address_space *mapping,
 		}
 	}
 	rcu_read_unlock();
-#if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-	/* relciam memory with scan walk info
-	 * while PROCESS_RECLAIM_ENHANCE is enabled.
-	 */
-	reclaimed = reclaimed = reclaim_pages_from_list(&page_list, NULL, NULL);
-#else
-	reclaimed = reclaimed = reclaim_pages_from_list(&page_list, NULL);
-#endif
+	reclaimed = reclaim_pages_from_list(&page_list, NULL);
 	rp->nr_reclaimed += reclaimed;
 
 	if (rp->nr_scanned >= rp->nr_to_reclaim)
@@ -1810,12 +1789,7 @@ cont:
 			break;
 	}
 	pte_unmap_unlock(pte - 1, ptl);
-#if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-	reclaimed = reclaim_pages_from_list(&page_list, vma, NULL);
-#else
 	reclaimed = reclaim_pages_from_list(&page_list, vma);
-#endif
-
 	rp->nr_reclaimed += reclaimed;
 	rp->nr_to_reclaim -= reclaimed;
 	if (rp->nr_to_reclaim < 0)

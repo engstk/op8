@@ -11,7 +11,7 @@ config IPW2100
 	select FW_LOADER
 	select LIB80211
 	select LIBIPW
-	---help---
+	help
           A driver for the Intel PRO/Wireless 2100 Network 
 	  Connection 802.11b wireless network adapter.
 
@@ -40,7 +40,7 @@ config IPW2100
 config IPW2100_MONITOR
         bool "Enable promiscuous mode"
         depends on IPW2100
-        ---help---
+	help
 	  Enables promiscuous/monitor mode support for the ipw2100 driver.
 	  With this feature compiled into the driver, you can switch to 
 	  promiscuous mode via the Wireless Tool's Monitor mode.  While in this
@@ -49,7 +49,7 @@ config IPW2100_MONITOR
 config IPW2100_DEBUG
 	bool "Enable full debugging output in IPW2100 module."
 	depends on IPW2100
-	---help---
+	help
 	  This option will enable debug tracing output for the IPW2100.  
 
 	  This will result in the kernel module being ~60k larger.  You can 
@@ -73,7 +73,7 @@ config IPW2200
 	select FW_LOADER
 	select LIB80211
 	select LIBIPW
-	---help---
+	help
           A driver for the Intel PRO/Wireless 2200BG and 2915ABG Network
 	  Connection adapters. 
 
@@ -102,7 +102,7 @@ config IPW2200
 config IPW2200_MONITOR
         bool "Enable promiscuous mode"
         depends on IPW2200
-        ---help---
+	help
 	  Enables promiscuous/monitor mode support for the ipw2200 driver.
 	  With this feature compiled into the driver, you can switch to 
 	  promiscuous mode via the Wireless Tool's Monitor mode.  While in this
@@ -116,7 +116,7 @@ config IPW2200_PROMISCUOUS
 	bool "Enable creation of a RF radiotap promiscuous interface"
 	depends on IPW2200_MONITOR
 	select IPW2200_RADIOTAP
-	---help---
+	help
           Enables the creation of a second interface prefixed 'rtap'. 
           This second interface will provide every received in radiotap
 	  format.
@@ -143,7 +143,7 @@ config IPW2200_QOS
 config IPW2200_DEBUG
 	bool "Enable full debugging output in IPW2200 module."
 	depends on IPW2200
-	---help---
+	help
 	  This option will enable low level debug tracing output for IPW2200.
 
 	  Note, normal debug code is already compiled in. This low level
@@ -169,7 +169,7 @@ config LIBIPW
 	select LIB80211_CRYPT_WEP
 	select LIB80211_CRYPT_TKIP
 	select LIB80211_CRYPT_CCMP
-	---help---
+	help
 	This option enables the hardware independent IEEE 802.11
 	networking stack.  This component is deprecated in favor of the
 	mac80211 component.
@@ -177,7 +177,7 @@ config LIBIPW
 config LIBIPW_DEBUG
 	bool "Full debugging output for the LIBIPW component"
 	depends on LIBIPW
-	---help---
+	help
 	  This option will enable debug tracing output for the
 	  libipw component.
 

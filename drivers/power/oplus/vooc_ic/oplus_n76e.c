@@ -58,23 +58,23 @@
 #include "oplus_vooc_fw.h"
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
-#define I2C_MASK_FLAG	(0x00ff)
-#define I2C_ENEXT_FLAG	(0x0200)
-#define I2C_DMA_FLAG	(0xdead2000)
+#define I2C_MASK_FLAG (0x00ff)
+#define I2C_ENEXT_FLAG (0x0200)
+#define I2C_DMA_FLAG (0xdead2000)
 #endif
 
-#define ERASE_COUNT			959/*0x0000-0x3BFF*/
+#define ERASE_COUNT 959 /*0x0000-0x3BFF*/
 
-#define BYTE_OFFSET				2
-#define BYTES_TO_WRITE			16
-#define FW_CHECK_FAIL			0
-#define FW_CHECK_SUCCESS		1
+#define BYTE_OFFSET 2
+#define BYTES_TO_WRITE 16
+#define FW_CHECK_FAIL 0
+#define FW_CHECK_SUCCESS 1
 static struct oplus_vooc_chip *the_chip = NULL;
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
-#define GTP_SUPPORT_I2C_DMA   			0
-#define I2C_MASTER_CLOCK				300
-#define GTP_DMA_MAX_TRANSACTION_LENGTH	255		/* for DMA mode */
+#define GTP_SUPPORT_I2C_DMA 0
+#define I2C_MASTER_CLOCK 300
+#define GTP_DMA_MAX_TRANSACTION_LENGTH 255 /* for DMA mode */
 
 DEFINE_MUTEX(dma_wr_access_n76e);
 
@@ -92,23 +92,18 @@ static int i2c_dma_read(struct i2c_client *client, u8 addr, s32 len, u8 *rxbuf)
 	s32 retry = 0;
 	u8 buffer[1];
 
-	struct i2c_msg msg[2] =
-	{
-		{
-			.addr = (client->addr & I2C_MASK_FLAG),
-			.flags = 0,
-			.buf = buffer,
-			.len = 1,
-			.timing = I2C_MASTER_CLOCK
-		},
-		{
-			.addr = (client->addr & I2C_MASK_FLAG),
-			.ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
-			.flags = I2C_M_RD,
-			.buf = (__u8 *)gpDMABuf_pa,   /*modified by PengNan*/
-			.len = len,
-			.timing = I2C_MASTER_CLOCK
-		},
+	struct i2c_msg msg[2] = {
+		{ .addr = (client->addr & I2C_MASK_FLAG),
+		  .flags = 0,
+		  .buf = buffer,
+		  .len = 1,
+		  .timing = I2C_MASTER_CLOCK },
+		{ .addr = (client->addr & I2C_MASK_FLAG),
+		  .ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
+		  .flags = I2C_M_RD,
+		  .buf = (__u8 *)gpDMABuf_pa, /*modified by PengNan*/
+		  .len = len,
+		  .timing = I2C_MASTER_CLOCK },
 	};
 	mutex_lock(&dma_wr_access_n76e);
 	/*buffer[0] = (addr >> 8) & 0xFF;*/
@@ -137,22 +132,19 @@ static int i2c_dma_write(struct i2c_client *client, u8 addr, s32 len, u8 const *
 	int ret = 0;
 	s32 retry = 0;
 	u8 *wr_buf = gpDMABuf_va;
-	struct i2c_msg msg =
-	{
-		.addr = (client->addr & I2C_MASK_FLAG),
-		.ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
-		.flags = 0,
-		.buf = (__u8 *)gpDMABuf_pa,	/*modified by PengNan*/
-		.len = 1 + len,
-		.timing = I2C_MASTER_CLOCK
-	};
+	struct i2c_msg msg = { .addr = (client->addr & I2C_MASK_FLAG),
+			       .ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
+			       .flags = 0,
+			       .buf = (__u8 *)gpDMABuf_pa, /*modified by PengNan*/
+			       .len = 1 + len,
+			       .timing = I2C_MASTER_CLOCK };
 	mutex_lock(&dma_wr_access_n76e);
 	wr_buf[0] = (u8)(addr & 0xFF);
 	if (txbuf == NULL) {
 		mutex_unlock(&dma_wr_access_n76e);
 		return -1;
 	}
-	memcpy(wr_buf+1, txbuf, len);
+	memcpy(wr_buf + 1, txbuf, len);
 	for (retry = 0; retry < 5; ++retry) {
 		ret = i2c_transfer(client->adapter, &msg, 1);
 		if (ret < 0) {
@@ -196,8 +188,8 @@ static int oplus_vooc_i2c_write(struct i2c_client *client, u8 addr, s32 len, u8 
 
 static bool n76e_fw_check_frontline(struct oplus_vooc_chip *chip)
 {
-	unsigned char addr_buf[2] = {0x00, 0x00};
-	unsigned char data_buf[16] = {0x0};
+	unsigned char addr_buf[2] = { 0x00, 0x00 };
+	unsigned char data_buf[16] = { 0x0 };
 	int rc = 0;
 	int j = 0;
 	int fw_line = 0;
@@ -226,15 +218,13 @@ static bool n76e_fw_check_frontline(struct oplus_vooc_chip *chip)
 
 		for (j = 0; j < 16; j++) {
 			if (data_buf[j] != chip->firmware_data[fw_line * 18 + 2 + j]) {
-				chg_err("fail, data_buf[%d]:0x%x != n76e_firmware_data[%d]:0x%x\n",
-						j, data_buf[j], (fw_line * 18 + 2 + j),
-						chip->firmware_data[fw_line * 18 + 2 + j]);
+				chg_err("fail, data_buf[%d]:0x%x != n76e_firmware_data[%d]:0x%x\n", j, data_buf[j],
+					(fw_line * 18 + 2 + j), chip->firmware_data[fw_line * 18 + 2 + j]);
 				chg_err("addr = 0x%x, %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
-						((addr_buf[0] << 8) | addr_buf[1]),
-						data_buf[0], data_buf[1], data_buf[2], data_buf[3],
-						data_buf[4], data_buf[5], data_buf[6], data_buf[7],
-						data_buf[8], data_buf[9], data_buf[10],data_buf[11],
-						data_buf[12], data_buf[13], data_buf[14], data_buf[15]);
+					((addr_buf[0] << 8) | addr_buf[1]), data_buf[0], data_buf[1], data_buf[2],
+					data_buf[3], data_buf[4], data_buf[5], data_buf[6], data_buf[7], data_buf[8],
+					data_buf[9], data_buf[10], data_buf[11], data_buf[12], data_buf[13],
+					data_buf[14], data_buf[15]);
 				return FW_CHECK_FAIL;
 			}
 		}
@@ -244,8 +234,8 @@ static bool n76e_fw_check_frontline(struct oplus_vooc_chip *chip)
 
 static bool n76e_fw_check_lastline(struct oplus_vooc_chip *chip)
 {
-	unsigned char addr_buf[2] = {0x3B, 0xF0};
-	unsigned char data_buf[16] = {0x0};
+	unsigned char addr_buf[2] = { 0x3B, 0xF0 };
+	unsigned char data_buf[16] = { 0x0 };
 	int i = 0;
 	int rc = 0;
 	int total_line = 0;
@@ -256,8 +246,8 @@ static bool n76e_fw_check_lastline(struct oplus_vooc_chip *chip)
 	}
 
 	total_line = chip->fw_data_count / 18;
-	addr_buf[0] = chip->firmware_data[(total_line-1) * 18 + 1];
-	addr_buf[1] = chip->firmware_data[(total_line-1) * 18];
+	addr_buf[0] = chip->firmware_data[(total_line - 1) * 18 + 1];
+	addr_buf[1] = chip->firmware_data[(total_line - 1) * 18];
 	rc = oplus_vooc_i2c_write(chip->client, 0x01, 2, &addr_buf[0]);
 	if (rc < 0) {
 		chg_err("i2c_write 0x01 error\n");
@@ -270,28 +260,28 @@ static bool n76e_fw_check_lastline(struct oplus_vooc_chip *chip)
 	usleep_range(2000, 2100);
 	oplus_vooc_i2c_read(chip->client, 0x03, 16, &data_buf[0]);
 	chip->fw_mcu_version = data_buf[12];
-	
+
 	for (i = 0; i < 16; i++) {
 		if (data_buf[i] != chip->firmware_data[chip->fw_data_count - 16 + i]) {
-			chg_err("fail, data_buf[%d]:0x%x != n76e_firmware_data[]:0x%x\n" ,
-					i, data_buf[i], chip->firmware_data[chip->fw_data_count - 16 + i]);
-			chg_err("data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n" ,
-					data_buf[0], data_buf[1], data_buf[2], data_buf[3], data_buf[4], data_buf[5],
-					data_buf[6], data_buf[7], data_buf[8], data_buf[9], data_buf[10], data_buf[11],
-					data_buf[12], data_buf[13], data_buf[14], data_buf[15]);
+			chg_err("fail, data_buf[%d]:0x%x != n76e_firmware_data[]:0x%x\n", i, data_buf[i],
+				chip->firmware_data[chip->fw_data_count - 16 + i]);
+			chg_err("data %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n", data_buf[0], data_buf[1],
+				data_buf[2], data_buf[3], data_buf[4], data_buf[5], data_buf[6], data_buf[7],
+				data_buf[8], data_buf[9], data_buf[10], data_buf[11], data_buf[12], data_buf[13],
+				data_buf[14], data_buf[15]);
 			return FW_CHECK_FAIL;
 		}
 	}
 	return FW_CHECK_SUCCESS;
 }
 
-static int n76e_fw_write(struct oplus_vooc_chip *chip,
-	const unsigned char *data_buf, unsigned int offset, unsigned int length)
+static int n76e_fw_write(struct oplus_vooc_chip *chip, const unsigned char *data_buf, unsigned int offset,
+			 unsigned int length)
 {
 	unsigned int count = 0;
-	unsigned char zero_buf[1] = {0};
-	unsigned char temp_buf[1] = {0};
-	unsigned char addr_buf[2] = {0x00, 0x00};
+	unsigned char zero_buf[1] = { 0 };
+	unsigned char temp_buf[1] = { 0 };
+	unsigned char addr_buf[2] = { 0x00, 0x00 };
 	int rc = 0;
 
 	if (!chip->firmware_data) {
@@ -314,8 +304,7 @@ static int n76e_fw_write(struct oplus_vooc_chip *chip,
 		/*swap low byte and high byte begin*/
 		/*swap low byte and high byte end*/
 		/*write 16 bytes data to n76e*/
-		oplus_vooc_i2c_write(chip->client, 0x02, BYTES_TO_WRITE,
-			&data_buf[count+BYTE_OFFSET]);
+		oplus_vooc_i2c_write(chip->client, 0x02, BYTES_TO_WRITE, &data_buf[count + BYTE_OFFSET]);
 		oplus_vooc_i2c_write(chip->client, 0x05, 1, &zero_buf[0]);
 		oplus_vooc_i2c_read(chip->client, 0x05, 1, &temp_buf[0]);
 		/*chg_err("lfc read 0x05, temp_buf[0]:0x%x\n", temp_buf[0]);*/
@@ -333,9 +322,9 @@ static int n76e_fw_write(struct oplus_vooc_chip *chip,
 
 static int n76e_fw_update(struct oplus_vooc_chip *chip)
 {
-	unsigned char zero_buf[1] = {0};
-	unsigned char addr_buf[2] = {0x00, 0x00};
-	unsigned char temp_buf[1] = {0};
+	unsigned char zero_buf[1] = { 0 };
+	unsigned char addr_buf[2] = { 0x00, 0x00 };
+	unsigned char temp_buf[1] = { 0 };
 	int i = 0;
 	int rc = 0;
 	unsigned int addr = 0x0000;
@@ -419,20 +408,20 @@ update_fw_err:
 
 static int n76e_get_fw_verion_from_ic(struct oplus_vooc_chip *chip)
 {
-	unsigned char addr_buf[2] = {0x3B, 0xF0};
-	unsigned char data_buf[4] = {0};
+	unsigned char addr_buf[2] = { 0x3B, 0xF0 };
+	unsigned char data_buf[4] = { 0 };
 	int rc = 0;
 	int update_result = 0;
 
-//	if (!chip->firmware_data) {
-//		chg_err("Stm8s_fw_data Null, Return\n");
-//		return FW_CHECK_FAIL;
-//	}
-	if(oplus_is_power_off_charging(chip) == true || oplus_is_charger_reboot(chip)== true) {
+	//	if (!chip->firmware_data) {
+	//		chg_err("Stm8s_fw_data Null, Return\n");
+	//		return FW_CHECK_FAIL;
+	//	}
+	if (oplus_is_power_off_charging(chip) == true || oplus_is_charger_reboot(chip) == true) {
 		chip->mcu_update_ing = true;
 		update_result = n76e_fw_update(chip);
 		chip->mcu_update_ing = false;
-		if(update_result) {
+		if (update_result) {
 			msleep(30);
 			opchg_set_clock_sleep(chip);
 			opchg_set_reset_active(chip);
@@ -447,16 +436,17 @@ static int n76e_get_fw_verion_from_ic(struct oplus_vooc_chip *chip)
 		chip->mcu_boot_by_gpio = false;
 		opchg_set_clock_sleep(chip);
 
-	//first:set address
-	rc = oplus_vooc_i2c_write(chip->client,0x01,2,&addr_buf[0]);
-	if (rc < 0) {
-		chg_err(" i2c_write 0x01 error\n" );
-		return FW_CHECK_FAIL;
-	}
-	msleep(2);
-	oplus_vooc_i2c_read(chip->client,0x03,4,data_buf);
-	//	strcpy(ver,&data_buf[0]);
-	chg_err("data:%x %x %x %x, fw_ver:%x\n",data_buf[0], data_buf[1], data_buf[2], data_buf[3],data_buf[0]);
+		//first:set address
+		rc = oplus_vooc_i2c_write(chip->client, 0x01, 2, &addr_buf[0]);
+		if (rc < 0) {
+			chg_err(" i2c_write 0x01 error\n");
+			return FW_CHECK_FAIL;
+		}
+		msleep(2);
+		oplus_vooc_i2c_read(chip->client, 0x03, 4, data_buf);
+		//	strcpy(ver,&data_buf[0]);
+		chg_err("data:%x %x %x %x, fw_ver:%x\n", data_buf[0], data_buf[1], data_buf[2], data_buf[3],
+			data_buf[0]);
 
 		chip->mcu_update_ing = false;
 		msleep(5);
@@ -477,7 +467,7 @@ static int n76e_fw_check_then_recover(struct oplus_vooc_chip *chip)
 		chg_debug("begin\n");
 	}
 
-	if (oplus_is_power_off_charging(chip) == true || oplus_is_charger_reboot(chip)== true) {
+	if (oplus_is_power_off_charging(chip) == true || oplus_is_charger_reboot(chip) == true) {
 		chip->mcu_update_ing = true;
 		update_result = n76e_fw_update(chip);
 		chip->mcu_update_ing = false;
@@ -507,29 +497,29 @@ static int n76e_fw_check_then_recover(struct oplus_vooc_chip *chip)
 }
 
 struct oplus_vooc_operations oplus_n76e_ops = {
-		.fw_update = n76e_fw_update,
-		.fw_check_then_recover = n76e_fw_check_then_recover,
-		.set_switch_mode = opchg_set_switch_mode,
-		.eint_regist = oplus_vooc_eint_register,
-		.eint_unregist = oplus_vooc_eint_unregister,
-		.set_data_active = opchg_set_data_active,
-		.set_data_sleep = opchg_set_data_sleep,
-		.set_clock_active = opchg_set_clock_active,
-		.set_clock_sleep = opchg_set_clock_sleep,
-		.get_gpio_ap_data = opchg_get_gpio_ap_data,
-		.read_ap_data = opchg_read_ap_data,
-		.reply_mcu_data = opchg_reply_mcu_data,
-		.reply_mcu_data_4bits = opchg_reply_mcu_data_4bits,
-		.reset_fastchg_after_usbout = reset_fastchg_after_usbout,
-		.switch_fast_chg = switch_fast_chg,
-		.reset_mcu = opchg_set_reset_active,
-		.is_power_off_charging = oplus_is_power_off_charging,
-		.get_reset_gpio_val = oplus_vooc_get_reset_gpio_val,
-		.get_switch_gpio_val = oplus_vooc_get_switch_gpio_val,
-		.get_ap_clk_gpio_val = oplus_vooc_get_ap_clk_gpio_val,
-		.get_fw_version = n76e_get_fw_verion_from_ic,
-		.get_clk_gpio_num = opchg_get_clk_gpio_num,
-		.get_data_gpio_num = opchg_get_data_gpio_num,
+	.fw_update = n76e_fw_update,
+	.fw_check_then_recover = n76e_fw_check_then_recover,
+	.set_switch_mode = opchg_set_switch_mode,
+	.eint_regist = oplus_vooc_eint_register,
+	.eint_unregist = oplus_vooc_eint_unregister,
+	.set_data_active = opchg_set_data_active,
+	.set_data_sleep = opchg_set_data_sleep,
+	.set_clock_active = opchg_set_clock_active,
+	.set_clock_sleep = opchg_set_clock_sleep,
+	.get_gpio_ap_data = opchg_get_gpio_ap_data,
+	.read_ap_data = opchg_read_ap_data,
+	.reply_mcu_data = opchg_reply_mcu_data,
+	.reply_mcu_data_4bits = opchg_reply_mcu_data_4bits,
+	.reset_fastchg_after_usbout = reset_fastchg_after_usbout,
+	.switch_fast_chg = switch_fast_chg,
+	.reset_mcu = opchg_set_reset_active,
+	.is_power_off_charging = oplus_is_power_off_charging,
+	.get_reset_gpio_val = oplus_vooc_get_reset_gpio_val,
+	.get_switch_gpio_val = oplus_vooc_get_switch_gpio_val,
+	.get_ap_clk_gpio_val = oplus_vooc_get_ap_clk_gpio_val,
+	.get_fw_version = n76e_get_fw_verion_from_ic,
+	.get_clk_gpio_num = opchg_get_clk_gpio_num,
+	.get_data_gpio_num = opchg_get_data_gpio_num,
 };
 
 static void register_vooc_devinfo(void)
@@ -567,8 +557,8 @@ static void n76e_shutdown(struct i2c_client *client)
 
 static ssize_t vooc_fw_check_read(struct file *filp, char __user *buff, size_t count, loff_t *off)
 {
-	char page[256] = {0};
-	char read_data[32] = {0};
+	char page[256] = { 0 };
+	char read_data[32] = { 0 };
 	int len = 0;
 
 	if (the_chip && the_chip->vooc_fw_check == true) {
@@ -638,21 +628,21 @@ static int n76e_driver_probe(struct i2c_client *client, const struct i2c_device_
 	memset(gpDMABuf_va, 0, GTP_DMA_MAX_TRANSACTION_LENGTH);
 #endif
 #endif
-	if(get_vooc_mcu_type(chip) != OPLUS_VOOC_MCU_HWID_N76E){
+	if (get_vooc_mcu_type(chip) != OPLUS_VOOC_MCU_HWID_N76E) {
 		chg_err("It is not n76e\n");
 		return -ENOMEM;
 	}
 
 	chip->pcb_version = g_hw_version;
 	chip->vooc_fw_check = false;
-		mutex_init(&chip->pinctrl_mutex);
+	mutex_init(&chip->pinctrl_mutex);
 
 	oplus_vooc_fw_type_dt(chip);
 	if (chip->batt_type_4400mv) {
 		chip->firmware_data = n76e_fw_data_4400;
 		chip->fw_data_count = sizeof(n76e_fw_data_4400);
 		chip->fw_data_version = n76e_fw_data_4400[chip->fw_data_count - 4];
-	} else {//default
+	} else { //default
 		chip->firmware_data = n76e_fw_data_4400;
 		chip->fw_data_count = sizeof(n76e_fw_data_4400);
 		chip->fw_data_version = n76e_fw_data_4400[chip->fw_data_count - 4];
@@ -678,8 +668,8 @@ static int n76e_driver_probe(struct i2c_client *client, const struct i2c_device_
 	oplus_vooc_gpio_dt_init(chip);
 	opchg_set_clock_sleep(chip);
 	oplus_vooc_delay_reset_mcu_init(chip);
-	if(chip->vooc_fw_update_newmethod) {
-		if(oplus_is_rf_ftm_mode()){
+	if (chip->vooc_fw_update_newmethod) {
+		if (oplus_is_rf_ftm_mode()) {
 			oplus_vooc_fw_update_work_init(chip);
 		}
 	} else {
@@ -700,12 +690,12 @@ static int n76e_driver_probe(struct i2c_client *client, const struct i2c_device_
   *
   *********************************************************/
 static const struct of_device_id n76e_match[] = {
-	{ .compatible = "oplus,n76e-fastcg"},
-	{ },
+	{ .compatible = "oplus,n76e-fastcg" },
+	{},
 };
 
 static const struct i2c_device_id n76e_id[] = {
-	{ "n76e-fastcg", 0},
+	{ "n76e-fastcg", 0 },
 	{},
 };
 MODULE_DEVICE_TABLE(i2c, n76e_id);
@@ -724,7 +714,7 @@ struct i2c_driver n76e_i2c_driver = {
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
 static int __init n76e_subsys_init(void)
 #else
-void  n76e_subsys_exit(void)
+void n76e_subsys_exit(void)
 {
 	i2c_del_driver(&n76e_i2c_driver);
 }
@@ -755,4 +745,3 @@ subsys_initcall(n76e_subsys_init);
 #endif
 MODULE_DESCRIPTION("Driver for oplus vooc n76e fast mcu");
 MODULE_LICENSE("GPL v2");
-

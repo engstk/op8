@@ -47,33 +47,35 @@
 
 #include "../../../block/blk.h"
 
-#define UFSHID_VER					0x0101
-#define UFSHID_DD_VER					0x010200
-#define UFSHID_DD_VER_POST				""
+#define UFSHID_VER 0x0101
+#define UFSHID_DD_VER 0x010200
+#define UFSHID_DD_VER_POST ""
 
-#define UFS_FEATURE_SUPPORT_HID_BIT			0x400
+#define UFS_FEATURE_SUPPORT_HID_BIT 0x400
 
-#define HID_TRIGGER_WORKER_DELAY_MS_DEFAULT	2000
-#define HID_TRIGGER_WORKER_DELAY_MS_MIN		100
-#define HID_TRIGGER_WORKER_DELAY_MS_MAX		10000
+#define HID_TRIGGER_WORKER_DELAY_MS_DEFAULT 2000
+#define HID_TRIGGER_WORKER_DELAY_MS_MIN 100
+#define HID_TRIGGER_WORKER_DELAY_MS_MAX 10000
 
-#define HID_FRAG_LEVEL_MASK		0xF
-#define HID_FRAG_UPDATE_STAT_SHIFT	30
-#define HID_EXECUTE_REQ_STAT_SHIFT	31
-#define HID_FRAG_UPDATE_STAT(val)	((val >> HID_FRAG_UPDATE_STAT_SHIFT) & 0x1)
-#define HID_EXECUTE_REQ_STAT(val)	((val >> HID_EXECUTE_REQ_STAT_SHIFT) & 0x1)
+#define HID_FRAG_LEVEL_MASK 0xF
+#define HID_FRAG_UPDATE_STAT_SHIFT 30
+#define HID_EXECUTE_REQ_STAT_SHIFT 31
+#define HID_FRAG_UPDATE_STAT(val) ((val >> HID_FRAG_UPDATE_STAT_SHIFT) & 0x1)
+#define HID_EXECUTE_REQ_STAT(val) ((val >> HID_EXECUTE_REQ_STAT_SHIFT) & 0x1)
 
-#define HID_AUTO_HIBERN8_DISABLE  (FIELD_PREP(UFSHCI_AHIBERN8_TIMER_MASK, 0) | \
-				   FIELD_PREP(UFSHCI_AHIBERN8_SCALE_MASK, 3))
+#define HID_AUTO_HIBERN8_DISABLE                     \
+	(FIELD_PREP(UFSHCI_AHIBERN8_TIMER_MASK, 0) | \
+	 FIELD_PREP(UFSHCI_AHIBERN8_SCALE_MASK, 3))
 
-
-#define HID_DEBUG(hid, msg, args...)					\
-	do { if (hid->hid_debug)					\
-		pr_err("%40s:%3d [%01d%02d%02d] " msg "\n",		\
-		       __func__, __LINE__,				\
-		       hid->hid_trigger,				\
-		       atomic_read(&hid->ufsf->hba->dev->power.usage_count), \
-		       hid->ufsf->hba->clk_gating.active_reqs, ##args);	\
+#define HID_DEBUG(hid, msg, args...)                                          \
+	do {                                                                  \
+		if (hid->hid_debug)                                           \
+			pr_err("%40s:%3d [%01d%02d%02d] " msg "\n", __func__, \
+			       __LINE__, hid->hid_trigger,                    \
+			       atomic_read(&hid->ufsf->hba->dev->power        \
+						    .usage_count),            \
+			       hid->ufsf->hba->clk_gating.active_reqs,        \
+			       ##args);                                       \
 	} while (0)
 
 enum UFSHID_STATE {
@@ -83,23 +85,15 @@ enum UFSHID_STATE {
 	HID_RESET = -3,
 };
 
-enum {
-	HID_OP_DISABLE	= 0,
-	HID_OP_ANALYZE	= 1,
-	HID_OP_EXECUTE	= 2,
-	HID_OP_MAX
-};
+enum { HID_OP_DISABLE = 0, HID_OP_ANALYZE = 1, HID_OP_EXECUTE = 2, HID_OP_MAX };
+
+enum { HID_NOT_REQUIRED = 0, HID_REQUIRED = 1 };
 
 enum {
-	HID_NOT_REQUIRED	= 0,
-	HID_REQUIRED		= 1
-};
-
-enum {
-	HID_LEV_GRAY	= 0,
-	HID_LEV_GREEN	= 1,
-	HID_LEV_YELLOW	= 2,
-	HID_LEV_RED	= 3,
+	HID_LEV_GRAY = 0,
+	HID_LEV_GREEN = 1,
+	HID_LEV_YELLOW = 2,
+	HID_LEV_RED = 3,
 };
 
 struct ufshid_dev {
@@ -107,7 +101,7 @@ struct ufshid_dev {
 
 	struct work_struct hid_reset_work;
 
-	unsigned int hid_trigger;   /* default value is false */
+	unsigned int hid_trigger; /* default value is false */
 	struct delayed_work hid_trigger_work;
 	unsigned int hid_trigger_delay;
 

@@ -551,7 +551,11 @@ static int __init msm_minidump_init(void)
 	minidump_table.revision = md_global_toc->md_revision;
 	md_ss_toc = &md_global_toc->md_ss_toc[MD_SS_HLOS_ID];
 
+#ifdef OPLUS_BUG_STABILITY
 	md_ss_toc->encryption_status = MD_SS_ENCR_DONE;
+#else
+	md_ss_toc->encryption_status = MD_SS_ENCR_NONE;
+#endif
 	md_ss_toc->encryption_required = MD_SS_ENCR_REQ;
 
 	minidump_table.md_ss_toc = md_ss_toc;

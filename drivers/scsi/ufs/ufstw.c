@@ -67,18 +67,18 @@ static int ufstw_is_not_present(struct ufsf_feature *ufsf)
 	return 0;
 }
 
-#define FLAG_IDN_NAME(idn)						\
-	(idn == QUERY_FLAG_IDN_WB_EN ? "tw_enable" :			\
-	 idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN ? "flush_enable" :	\
-	 idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8 ?			\
-	 "flush_hibern" : "unknown")
+#define FLAG_IDN_NAME(idn)                                                     \
+	(idn == QUERY_FLAG_IDN_WB_EN			    ? "tw_enable" :    \
+	 idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN		    ? "flush_enable" : \
+	 idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8 ? "flush_hibern" : \
+							      "unknown")
 
-#define ATTR_IDN_NAME(idn)						\
-	(idn == QUERY_ATTR_IDN_WB_FLUSH_STATUS ? "flush_status" :	\
-	 idn == QUERY_ATTR_IDN_AVAIL_WB_BUFF_SIZE ? "avail_buffer_size" :\
-	 idn == QUERY_ATTR_IDN_WB_BUFF_LIFE_TIME_EST ? "lifetime_est" :	\
-	 idn == QUERY_ATTR_IDN_CURR_WB_BUFF_SIZE ? "current_buf_size" :	\
-	 "unknown")
+#define ATTR_IDN_NAME(idn)                                                   \
+	(idn == QUERY_ATTR_IDN_WB_FLUSH_STATUS	     ? "flush_status" :      \
+	 idn == QUERY_ATTR_IDN_AVAIL_WB_BUFF_SIZE    ? "avail_buffer_size" : \
+	 idn == QUERY_ATTR_IDN_WB_BUFF_LIFE_TIME_EST ? "lifetime_est" :      \
+	 idn == QUERY_ATTR_IDN_CURR_WB_BUFF_SIZE     ? "current_buf_size" :  \
+						       "unknown")
 
 static int ufstw_read_lu_attr(struct ufstw_lu *tw, u8 idn, u32 *attr_val)
 {
@@ -97,13 +97,14 @@ static int ufstw_read_lu_attr(struct ufstw_lu *tw, u8 idn, u32 *attr_val)
 
 	*attr_val = val;
 
-	INFO_MSG("read attr LUN(%d) [0x%.2X](%s) success (%u)",
-		 lun, idn, ATTR_IDN_NAME(idn), *attr_val);
+	INFO_MSG("read attr LUN(%d) [0x%.2X](%s) success (%u)", lun, idn,
+		 ATTR_IDN_NAME(idn), *attr_val);
 out:
 	return err;
 }
 
-static int ufstw_set_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn, bool *flag_res)
+static int ufstw_set_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn,
+					bool *flag_res)
 {
 	struct ufs_hba *hba = tw->ufsf->hba;
 	int err = 0, lun;
@@ -121,14 +122,16 @@ static int ufstw_set_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn, bool *flag_
 	*flag_res = true;
 	blk_add_trace_msg(tw->ufsf->sdev_ufs_lu[lun]->request_queue,
 			  "%s:%d IDN %s (%d)", __func__, __LINE__,
-			  idn == QUERY_FLAG_IDN_WB_EN ? "TW_EN" :
+			  idn == QUERY_FLAG_IDN_WB_EN		 ? "TW_EN" :
 			  idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN ? "FLUSH_EN" :
 			  idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8 ?
-			  "HIBERN_EN" : "UNKNOWN", idn);
+								   "HIBERN_EN" :
+								   "UNKNOWN",
+			  idn);
 
 	/*INFO_MSG("tw_flag LUN(%d) [0x%.2X] %u", lun, idn,*flag_res);*/
 
-	switch(idn) {
+	switch (idn) {
 	case QUERY_FLAG_IDN_WB_EN:
 		ufsf_para.tw_enable = true;
 		break;
@@ -141,7 +144,8 @@ static int ufstw_set_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn, bool *flag_
 	return 0;
 }
 
-static int ufstw_clear_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn, bool *flag_res)
+static int ufstw_clear_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn,
+					  bool *flag_res)
 {
 	struct ufs_hba *hba = tw->ufsf->hba;
 	int err = 0, lun;
@@ -160,13 +164,15 @@ static int ufstw_clear_lu_flag_dynamic_tw(struct ufstw_lu *tw, u8 idn, bool *fla
 
 	blk_add_trace_msg(tw->ufsf->sdev_ufs_lu[lun]->request_queue,
 			  "%s:%d IDN %s (%d)", __func__, __LINE__,
-			  idn == QUERY_FLAG_IDN_WB_EN ? "TW_EN" :
+			  idn == QUERY_FLAG_IDN_WB_EN		 ? "TW_EN" :
 			  idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN ? "FLUSH_EN" :
-			  idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8 ? "HIBERN_EN" :
-			  "UNKNOWN", idn);
+			  idn == QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8 ?
+								   "HIBERN_EN" :
+								   "UNKNOWN",
+			  idn);
 	INFO_MSG("tw_flag LUN(%d) [0x%.2X] %u", lun, idn, *flag_res);
 
-	switch(idn) {
+	switch (idn) {
 	case QUERY_FLAG_IDN_WB_EN:
 		ufsf_para.tw_enable = false;
 		break;
@@ -195,8 +201,8 @@ static int ufstw_set_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res)
 
 	*flag_res = true;
 
-	INFO_MSG("set flag LUN(%d) [0x%.2X](%s) success. (%u)",
-		 lun, idn, FLAG_IDN_NAME(idn), *flag_res);
+	INFO_MSG("set flag LUN(%d) [0x%.2X](%s) success. (%u)", lun, idn,
+		 FLAG_IDN_NAME(idn), *flag_res);
 out:
 	return err;
 }
@@ -217,8 +223,8 @@ static int ufstw_clear_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res)
 
 	*flag_res = false;
 
-	INFO_MSG("clear flag LUN(%d) [0x%.2X](%s) success. (%u)",
-		 lun, idn, FLAG_IDN_NAME(idn), *flag_res);
+	INFO_MSG("clear flag LUN(%d) [0x%.2X](%s) success. (%u)", lun, idn,
+		 FLAG_IDN_NAME(idn), *flag_res);
 out:
 	return err;
 }
@@ -240,8 +246,8 @@ static int ufstw_read_lu_flag(struct ufstw_lu *tw, u8 idn, bool *flag_res)
 
 	*flag_res = val;
 
-	INFO_MSG("read flag LUN(%d) [0x%.2X](%s) success. (%u)",
-		 lun, idn, FLAG_IDN_NAME(idn), *flag_res);
+	INFO_MSG("read flag LUN(%d) [0x%.2X](%s) success. (%u)", lun, idn,
+		 FLAG_IDN_NAME(idn), *flag_res);
 out:
 	return err;
 }
@@ -278,17 +284,19 @@ static void ufstw_switch_disable_state(struct ufstw_lu *tw)
 static int ufstw_check_lifetime_not_guarantee(struct ufstw_lu *tw)
 {
 	bool disable_flag = false;
-	unsigned int lifetime_guarantee = MASK_UFSTW_LIFETIME_NOT_GUARANTEE_1_0_1;
+	unsigned int lifetime_guarantee =
+		MASK_UFSTW_LIFETIME_NOT_GUARANTEE_1_0_1;
 
-	if(tw->ufsf->tw_dev_info.tw_ver == UFSTW_VER_1_1_0)
+	if (tw->ufsf->tw_dev_info.tw_ver == UFSTW_VER_1_1_0)
 		lifetime_guarantee = MASK_UFSTW_LIFETIME_NOT_GUARANTEE_1_1_0;
-	WARN_MSG("dTurboWriteBUfferLifeTImeEst (0x%.2X),lifetime_guarantee=0x%x", tw->lifetime_est, lifetime_guarantee);
+	WARN_MSG(
+		"dTurboWriteBUfferLifeTImeEst (0x%.2X),lifetime_guarantee=0x%x",
+		tw->lifetime_est, lifetime_guarantee);
 	if (tw->lifetime_est & lifetime_guarantee) {
 		if (tw->lun == TW_LU_SHARED)
 			WARN_MSG("lun-shared lifetime_est[31] (1)");
 		else
-			WARN_MSG("lun %d lifetime_est[31] (1)",
-				    tw->lun);
+			WARN_MSG("lun %d lifetime_est[31] (1)", tw->lun);
 
 		WARN_MSG("Device not guarantee the lifetime of TW Buffer");
 #if defined(CONFIG_UFSTW_IGNORE_GUARANTEE_BIT)
@@ -298,9 +306,8 @@ static int ufstw_check_lifetime_not_guarantee(struct ufstw_lu *tw)
 #endif
 	}
 
-	if (disable_flag ||
-	    (tw->lifetime_est & ~lifetime_guarantee) >=
-	    UFSTW_MAX_LIFETIME_VALUE) {
+	if (disable_flag || (tw->lifetime_est & ~lifetime_guarantee) >=
+				    UFSTW_MAX_LIFETIME_VALUE) {
 		ufstw_switch_disable_state(tw);
 		return -ENODEV;
 	}
@@ -358,8 +365,8 @@ void ufstw_prep_fn(struct ufsf_feature *ufsf, struct ufshcd_lrb *lrbp)
 	}
 	spin_unlock_bh(&tw->lifetime_lock);
 
-	TMSG(tw->ufsf, lrbp->lun, "%s:%d tw_lifetime_work %u",
-	     __func__, __LINE__, tw->stat_write_sec);
+	TMSG(tw->ufsf, lrbp->lun, "%s:%d tw_lifetime_work %u", __func__,
+	     __LINE__, tw->stat_write_sec);
 }
 
 static inline void ufstw_init_lu_jobs(struct ufstw_lu *tw)
@@ -378,16 +385,15 @@ static inline void ufstw_cancel_lu_jobs(struct ufstw_lu *tw)
 
 static inline int ufstw_version_mismatched(struct ufstw_dev_info *tw_dev_info)
 {
-	INFO_MSG("Support TW Spec : UFSTW_VER_1_0_1 = %.4X, UFSTW_VER_1_1_0 = %.4X, Device = %.4X",
-		 UFSTW_VER_1_0_1 , UFSTW_VER_1_1_0, tw_dev_info->tw_ver);
+	INFO_MSG(
+		"Support TW Spec : UFSTW_VER_1_0_1 = %.4X, UFSTW_VER_1_1_0 = %.4X, Device = %.4X",
+		UFSTW_VER_1_0_1, UFSTW_VER_1_1_0, tw_dev_info->tw_ver);
 
-	INFO_MSG("TW Driver Version : %.6X%s", UFSTW_DD_VER,
-		 UFSTW_DD_VER_POST);
+	INFO_MSG("TW Driver Version : %.6X%s", UFSTW_DD_VER, UFSTW_DD_VER_POST);
 
 	if (tw_dev_info->tw_ver != UFSTW_VER_1_0_1 &&
-		tw_dev_info->tw_ver != UFSTW_VER_1_1_0)
-			return -ENODEV;
-
+	    tw_dev_info->tw_ver != UFSTW_VER_1_1_0)
+		return -ENODEV;
 
 	return 0;
 }
@@ -398,7 +404,7 @@ void ufstw_get_dev_info(struct ufsf_feature *ufsf, u8 *desc_buf)
 	u16 wspecversion;
 	u16 w_manufacturer_id;
 	if (LI_EN_32(&desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP]) &
-		     UFS_FEATURE_SUPPORT_TW_BIT) {
+	    UFS_FEATURE_SUPPORT_TW_BIT) {
 		INFO_MSG("bUFSExFeaturesSupport: TW is set");
 	} else {
 		ERR_MSG("bUFSExFeaturesSupport: TW not support");
@@ -411,21 +417,23 @@ void ufstw_get_dev_info(struct ufsf_feature *ufsf, u8 *desc_buf)
 	tw_dev_info->tw_shared_buf_alloc_units =
 		LI_EN_32(&desc_buf[DEVICE_DESC_PARAM_WB_SHARED_ALLOC_UNITS]);
 	wspecversion = desc_buf[DEVICE_DESC_PARAM_SPEC_VER] << 8 |
-				  desc_buf[DEVICE_DESC_PARAM_SPEC_VER + 1];
+		       desc_buf[DEVICE_DESC_PARAM_SPEC_VER + 1];
 
-	w_manufacturer_id =	desc_buf[DEVICE_DESC_PARAM_MANF_ID] << 8 |
-				desc_buf[DEVICE_DESC_PARAM_MANF_ID + 1];
+	w_manufacturer_id = desc_buf[DEVICE_DESC_PARAM_MANF_ID] << 8 |
+			    desc_buf[DEVICE_DESC_PARAM_MANF_ID + 1];
 	INFO_MSG("dev_desc wspecversion 0x%x\n", wspecversion);
-	if(wspecversion == 0x310 || wspecversion == 0x220)
-		tw_dev_info->tw_ver = LI_EN_16(&desc_buf[DEVICE_DESC_PARAM_TW_VER]);
+	if (wspecversion == 0x310 || wspecversion == 0x220)
+		tw_dev_info->tw_ver =
+			LI_EN_16(&desc_buf[DEVICE_DESC_PARAM_TW_VER]);
 	else
-		tw_dev_info->tw_ver = LI_EN_16(&desc_buf[DEVICE_DESC_PARAM_TW_VER_3_0]);
+		tw_dev_info->tw_ver =
+			LI_EN_16(&desc_buf[DEVICE_DESC_PARAM_TW_VER_3_0]);
 	/*temporary for hynix 2.2 tw function*/
 	if (wspecversion == 0x220 && w_manufacturer_id == 0x1AD)
 		tw_dev_info->tw_ver = UFSTW_VER_1_1_0;
-        /*temporary for micron 3.1 tw function*/
-        if (wspecversion == 0x310 && w_manufacturer_id == 0x12C)
-                tw_dev_info->tw_ver = UFSTW_VER_1_1_0;
+	/*temporary for micron 3.1 tw function*/
+	if (wspecversion == 0x310 && w_manufacturer_id == 0x12C)
+		tw_dev_info->tw_ver = UFSTW_VER_1_1_0;
 
 	if (ufstw_version_mismatched(tw_dev_info)) {
 		ERR_MSG("TW Spec Version mismatch. TW disabled");
@@ -519,8 +527,7 @@ static void ufstw_get_lu_info(struct ufsf_feature *ufsf, int lun, u8 *lu_buf)
 	}
 }
 
-inline void ufstw_alloc_lu(struct ufsf_feature *ufsf,
-				  int lun, u8 *lu_buf)
+inline void ufstw_alloc_lu(struct ufsf_feature *ufsf, int lun, u8 *lu_buf)
 {
 	if (ufsf->tw_dev_info.tw_buf_type == TW_BUF_TYPE_SHARED &&
 	    !ufsf->tw_lup[0])
@@ -538,20 +545,18 @@ static inline void ufstw_print_lu_flag_attr(struct ufstw_lu *tw)
 	else
 		snprintf(lun_str, 2, "%d", tw->lun);
 
-	INFO_MSG("tw_flag ufstw_lu[%s] IDN (0x%.2X) tw_enable (%d)",
-		 lun_str, QUERY_FLAG_IDN_WB_EN, tw->tw_enable);
-	INFO_MSG("tw_flag ufstw_lu[%s] IDN (0x%.2X) flush_enable (%d)",
-		 lun_str, QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN,
-		 tw->flush_enable);
-	INFO_MSG("tw_flag ufstw_lu[%s] IDN (0x%.2X) flush_hibern (%d)",
-		 lun_str, QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8,
+	INFO_MSG("tw_flag ufstw_lu[%s] IDN (0x%.2X) tw_enable (%d)", lun_str,
+		 QUERY_FLAG_IDN_WB_EN, tw->tw_enable);
+	INFO_MSG("tw_flag ufstw_lu[%s] IDN (0x%.2X) flush_enable (%d)", lun_str,
+		 QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN, tw->flush_enable);
+	INFO_MSG("tw_flag ufstw_lu[%s] IDN (0x%.2X) flush_hibern (%d)", lun_str,
+		 QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8,
 		 tw->flush_during_hibern_enter);
 
-	INFO_MSG("tw_attr ufstw_lu[%s] IDN (0x%.2X) flush_status (%u)",
-		 lun_str, QUERY_ATTR_IDN_WB_FLUSH_STATUS, tw->flush_status);
-	INFO_MSG("tw_attr ufstw_lu[%s] IDN (0x%.2X) buffer_size (%u)",
-		 lun_str, QUERY_ATTR_IDN_AVAIL_WB_BUFF_SIZE,
-		 tw->available_buffer_size);
+	INFO_MSG("tw_attr ufstw_lu[%s] IDN (0x%.2X) flush_status (%u)", lun_str,
+		 QUERY_ATTR_IDN_WB_FLUSH_STATUS, tw->flush_status);
+	INFO_MSG("tw_attr ufstw_lu[%s] IDN (0x%.2X) buffer_size (%u)", lun_str,
+		 QUERY_ATTR_IDN_AVAIL_WB_BUFF_SIZE, tw->available_buffer_size);
 	INFO_MSG("tw_attr ufstw_lu[%s] IDN (0x%.2X) buffer_lifetime (0x%.2X)",
 		 lun_str, QUERY_ATTR_IDN_WB_BUFF_LIFE_TIME_EST,
 		 tw->lifetime_est);
@@ -582,7 +587,7 @@ static inline void ufstw_lu_update(struct ufstw_lu *tw)
 		goto error_put;
 
 	ufstw_read_lu_attr(tw, QUERY_ATTR_IDN_WB_BUFF_LIFE_TIME_EST,
-			       &tw->lifetime_est);
+			   &tw->lifetime_est);
 error_put:
 	pm_runtime_put_sync(tw->ufsf->hba->dev);
 }
@@ -598,13 +603,13 @@ int ufstw_enable_tw_lun(struct ufstw_lu *tw, bool enable)
 	/* mutex_lock(&tw->mode_lock); */
 	if (enable) {
 		if (ufstw_set_lu_flag_dynamic_tw(tw, QUERY_FLAG_IDN_WB_EN,
-				      &tw->tw_enable)) {
+						 &tw->tw_enable)) {
 			ret = -EINVAL;
 			goto failed;
 		}
 	} else {
 		if (ufstw_clear_lu_flag_dynamic_tw(tw, QUERY_FLAG_IDN_WB_EN,
-					&tw->tw_enable)) {
+						   &tw->tw_enable)) {
 			ret = -EINVAL;
 			goto failed;
 		}
@@ -626,7 +631,8 @@ void ufstw_enable_tw(struct ufsf_feature *ufsf, bool enable)
 		return;
 	}
 
-	seq_scan_lu(lun) {
+	seq_scan_lu(lun)
+	{
 		if (!ufsf->tw_lup[lun])
 			continue;
 
@@ -637,7 +643,6 @@ void ufstw_enable_tw(struct ufsf_feature *ufsf, bool enable)
 		}
 	}
 }
-
 
 static int ufstw_lu_init(struct ufsf_feature *ufsf, int lun)
 {
@@ -700,7 +705,8 @@ void ufstw_init(struct ufsf_feature *ufsf)
 		INFO_MSG("ufstw_lu[shared] working");
 		tw_enabled_lun++;
 	} else {
-		seq_scan_lu(lun) {
+		seq_scan_lu(lun)
+		{
 			if (!ufsf->tw_lup[lun])
 				continue;
 
@@ -731,7 +737,8 @@ void ufstw_init(struct ufsf_feature *ufsf)
 	create_wbfn_dynamic_tw_enable();
 	return;
 out_free_mem:
-	seq_scan_lu(lun) {
+	seq_scan_lu(lun)
+	{
 		kfree(ufsf->tw_lup[lun]);
 		ufsf->tw_lup[lun] = NULL;
 	}
@@ -768,9 +775,10 @@ void ufstw_remove(struct ufsf_feature *ufsf)
 		ufstw_remove_sysfs(tw);
 		kfree(tw);
 	} else {
-	remove_wbfn_enable();
-	remove_wbfn_dynamic_tw_enable();
-		seq_scan_lu(lun) {
+		remove_wbfn_enable();
+		remove_wbfn_dynamic_tw_enable();
+		seq_scan_lu(lun)
+		{
 			tw = ufsf->tw_lup[lun];
 			INFO_MSG("ufstw_lu[%d] %p", lun, tw);
 
@@ -805,9 +813,9 @@ static void ufstw_reset_query_handling(struct ufstw_lu *tw)
 	}
 
 	if (tw->flush_during_hibern_enter) {
-		ret = ufstw_set_lu_flag(tw,
-					QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8,
-					&tw->flush_during_hibern_enter);
+		ret = ufstw_set_lu_flag(
+			tw, QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8,
+			&tw->flush_during_hibern_enter);
 		if (ret)
 			tw->flush_during_hibern_enter = false;
 	}
@@ -828,7 +836,8 @@ void ufstw_reset_host(struct ufsf_feature *ufsf)
 		INFO_MSG("ufstw_lu[shared] cancel jobs");
 		ufstw_cancel_lu_jobs(tw);
 	} else {
-		seq_scan_lu(lun) {
+		seq_scan_lu(lun)
+		{
 			tw = ufsf->tw_lup[lun];
 			if (!tw)
 				continue;
@@ -844,8 +853,7 @@ void ufstw_reset(struct ufsf_feature *ufsf, bool resume)
 	struct ufstw_lu *tw;
 	int lun;
 
-	INFO_MSG("ufstw reset start. reason: %s",
-		 resume ? "resume" : "reset");
+	INFO_MSG("ufstw reset start. reason: %s", resume ? "resume" : "reset");
 	if (ufstw_get_state(ufsf) != TW_RESET) {
 		ERR_MSG("tw_state error (%d)", ufstw_get_state(ufsf));
 		return;
@@ -857,7 +865,8 @@ void ufstw_reset(struct ufsf_feature *ufsf, bool resume)
 		INFO_MSG("ufstw_lu[shared] reset");
 		ufstw_reset_query_handling(tw);
 	} else {
-		seq_scan_lu(lun) {
+		seq_scan_lu(lun)
+		{
 			tw = ufsf->tw_lup[lun];
 			if (!tw)
 				continue;
@@ -871,75 +880,76 @@ void ufstw_reset(struct ufsf_feature *ufsf, bool resume)
 	INFO_MSG("ufstw reset finish");
 }
 
-#define ufstw_sysfs_attr_show_func(_query, _name, _IDN, hex)		\
-static ssize_t ufstw_sysfs_show_##_name(struct ufstw_lu *tw, char *buf)	\
-{									\
-	int ret;							\
-									\
-	pm_runtime_get_sync(tw->ufsf->hba->dev);			\
-	if (ufstw_is_not_present(tw->ufsf)) {				\
-		pm_runtime_put_sync(tw->ufsf->hba->dev);		\
-		return -ENODEV;						\
-	}								\
-									\
-	ret = ufstw_read_lu_##_query(tw, _IDN, &tw->_name);		\
-	pm_runtime_put_sync(tw->ufsf->hba->dev);			\
-	if (ret)							\
-		return -ENODEV;						\
-									\
-	INFO_MSG("read "#_query" "#_name" %u (0x%X)",			\
-		 tw->_name, tw->_name);					\
-	if (hex)							\
-		return snprintf(buf, PAGE_SIZE, "0x%.2X\n", tw->_name);	\
-	return snprintf(buf, PAGE_SIZE, "%u\n", tw->_name);		\
-}
+#define ufstw_sysfs_attr_show_func(_query, _name, _IDN, hex)                 \
+	static ssize_t ufstw_sysfs_show_##_name(struct ufstw_lu *tw,         \
+						char *buf)                   \
+	{                                                                    \
+		int ret;                                                     \
+                                                                             \
+		pm_runtime_get_sync(tw->ufsf->hba->dev);                     \
+		if (ufstw_is_not_present(tw->ufsf)) {                        \
+			pm_runtime_put_sync(tw->ufsf->hba->dev);             \
+			return -ENODEV;                                      \
+		}                                                            \
+                                                                             \
+		ret = ufstw_read_lu_##_query(tw, _IDN, &tw->_name);          \
+		pm_runtime_put_sync(tw->ufsf->hba->dev);                     \
+		if (ret)                                                     \
+			return -ENODEV;                                      \
+                                                                             \
+		INFO_MSG("read " #_query " " #_name " %u (0x%X)", tw->_name, \
+			 tw->_name);                                         \
+		if (hex)                                                     \
+			return snprintf(buf, PAGE_SIZE, "0x%.2X\n",          \
+					tw->_name);                          \
+		return snprintf(buf, PAGE_SIZE, "%u\n", tw->_name);          \
+	}
 
-#define ufstw_sysfs_attr_store_func(_name, _IDN)			\
-static ssize_t ufstw_sysfs_store_##_name(struct ufstw_lu *tw,		\
-					 const char *buf,		\
-					 size_t count)			\
-{									\
-	unsigned long val;						\
-	ssize_t ret =  count;						\
-									\
-	if (kstrtoul(buf, 0, &val))					\
-		return -EINVAL;						\
-									\
-	if (!(val == 0  || val == 1))					\
-		return -EINVAL;						\
-									\
-	INFO_MSG("val %lu", val);					\
-	pm_runtime_get_sync(tw->ufsf->hba->dev);			\
-	if (ufstw_is_not_present(tw->ufsf)) {				\
-		pm_runtime_put_sync(tw->ufsf->hba->dev);		\
-		return -ENODEV;						\
-	}								\
-									\
-	if (val) {							\
-		if (ufstw_set_lu_flag(tw, _IDN, &tw->_name))		\
-			ret = -ENODEV;					\
-	} else {							\
-		if (ufstw_clear_lu_flag(tw, _IDN, &tw->_name))		\
-			ret = -ENODEV;					\
-	}								\
-	pm_runtime_put_sync(tw->ufsf->hba->dev);			\
-									\
-	INFO_MSG(#_name " query success");				\
-	return ret;							\
-}
+#define ufstw_sysfs_attr_store_func(_name, _IDN)                       \
+	static ssize_t ufstw_sysfs_store_##_name(                      \
+		struct ufstw_lu *tw, const char *buf, size_t count)    \
+	{                                                              \
+		unsigned long val;                                     \
+		ssize_t ret = count;                                   \
+                                                                       \
+		if (kstrtoul(buf, 0, &val))                            \
+			return -EINVAL;                                \
+                                                                       \
+		if (!(val == 0 || val == 1))                           \
+			return -EINVAL;                                \
+                                                                       \
+		INFO_MSG("val %lu", val);                              \
+		pm_runtime_get_sync(tw->ufsf->hba->dev);               \
+		if (ufstw_is_not_present(tw->ufsf)) {                  \
+			pm_runtime_put_sync(tw->ufsf->hba->dev);       \
+			return -ENODEV;                                \
+		}                                                      \
+                                                                       \
+		if (val) {                                             \
+			if (ufstw_set_lu_flag(tw, _IDN, &tw->_name))   \
+				ret = -ENODEV;                         \
+		} else {                                               \
+			if (ufstw_clear_lu_flag(tw, _IDN, &tw->_name)) \
+				ret = -ENODEV;                         \
+		}                                                      \
+		pm_runtime_put_sync(tw->ufsf->hba->dev);               \
+                                                                       \
+		INFO_MSG(#_name " query success");                     \
+		return ret;                                            \
+	}
 
 ufstw_sysfs_attr_show_func(flag, tw_enable, QUERY_FLAG_IDN_WB_EN, 0);
 ufstw_sysfs_attr_store_func(tw_enable, QUERY_FLAG_IDN_WB_EN);
-ufstw_sysfs_attr_show_func(flag, flush_enable,
-			   QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN, 0);
+ufstw_sysfs_attr_show_func(flag, flush_enable, QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN,
+			   0);
 ufstw_sysfs_attr_store_func(flush_enable, QUERY_FLAG_IDN_WB_BUFF_FLUSH_EN);
 ufstw_sysfs_attr_show_func(flag, flush_during_hibern_enter,
 			   QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8, 0);
 ufstw_sysfs_attr_store_func(flush_during_hibern_enter,
 			    QUERY_FLAG_IDN_WB_BUFF_FLUSH_DURING_HIBERN8);
 
-ufstw_sysfs_attr_show_func(attr, flush_status,
-			   QUERY_ATTR_IDN_WB_FLUSH_STATUS, 0);
+ufstw_sysfs_attr_show_func(attr, flush_status, QUERY_ATTR_IDN_WB_FLUSH_STATUS,
+			   0);
 ufstw_sysfs_attr_show_func(attr, available_buffer_size,
 			   QUERY_ATTR_IDN_AVAIL_WB_BUFF_SIZE, 0);
 ufstw_sysfs_attr_show_func(attr, lifetime_est,
@@ -947,23 +957,20 @@ ufstw_sysfs_attr_show_func(attr, lifetime_est,
 ufstw_sysfs_attr_show_func(attr, curr_buffer_size,
 			   QUERY_ATTR_IDN_CURR_WB_BUFF_SIZE, 0);
 
-#define ufstw_sysfs_attr_ro(_name) __ATTR(_name, 0444, \
-				      ufstw_sysfs_show_##_name, NULL)
-#define ufstw_sysfs_attr_rw(_name) __ATTR(_name, 0644, \
-				      ufstw_sysfs_show_##_name, \
-				      ufstw_sysfs_store_##_name)
+#define ufstw_sysfs_attr_ro(_name) \
+	__ATTR(_name, 0444, ufstw_sysfs_show_##_name, NULL)
+#define ufstw_sysfs_attr_rw(_name) \
+	__ATTR(_name, 0644, ufstw_sysfs_show_##_name, ufstw_sysfs_store_##_name)
 
 static struct ufstw_sysfs_entry ufstw_sysfs_entries[] = {
 	/* Flag */
-	ufstw_sysfs_attr_rw(tw_enable),
-	ufstw_sysfs_attr_rw(flush_enable),
+	ufstw_sysfs_attr_rw(tw_enable), ufstw_sysfs_attr_rw(flush_enable),
 	ufstw_sysfs_attr_rw(flush_during_hibern_enter),
 	/* Attribute */
 	ufstw_sysfs_attr_ro(flush_status),
 	ufstw_sysfs_attr_ro(available_buffer_size),
 	ufstw_sysfs_attr_ro(lifetime_est),
-	ufstw_sysfs_attr_ro(curr_buffer_size),
-	__ATTR_NULL
+	ufstw_sysfs_attr_ro(curr_buffer_size), __ATTR_NULL
 };
 
 static ssize_t ufstw_attr_show(struct kobject *kobj, struct attribute *attr,
@@ -1068,12 +1075,10 @@ static inline void wbfn_enable_ctrl(struct ufstw_lu *tw, long val)
 {
 	switch (val) {
 	case 0:
-		ufstw_clear_lu_flag(tw, QUERY_FLAG_IDN_WB_EN,
-				&tw->tw_enable);
+		ufstw_clear_lu_flag(tw, QUERY_FLAG_IDN_WB_EN, &tw->tw_enable);
 		break;
 	case 1:
-		ufstw_set_lu_flag(tw, QUERY_FLAG_IDN_WB_EN,
-				&tw->tw_enable);
+		ufstw_set_lu_flag(tw, QUERY_FLAG_IDN_WB_EN, &tw->tw_enable);
 		break;
 	default:
 		break;
@@ -1084,7 +1089,7 @@ static inline void wbfn_enable_ctrl(struct ufstw_lu *tw, long val)
 static ssize_t wbfn_enable_write(struct file *filp, const char *ubuf,
 				 size_t cnt, loff_t *data)
 {
-	char buf[64] = {0};
+	char buf[64] = { 0 };
 	long val = 64;
 	int lun;
 
@@ -1102,7 +1107,8 @@ static ssize_t wbfn_enable_write(struct file *filp, const char *ubuf,
 	else
 		val = 64;
 
-	seq_scan_lu(lun) {
+	seq_scan_lu(lun)
+	{
 		if (ufsf_para.ufsf->tw_lup[lun])
 			wbfn_enable_ctrl(ufsf_para.ufsf->tw_lup[lun], val);
 	}
@@ -1123,7 +1129,7 @@ static int create_wbfn_enable(void)
 
 	d_entry = proc_create("wbfn_enable", S_IWUGO, ufsf_para.ctrl_dir,
 			      &wbfn_enable_fops);
-	if(!d_entry)
+	if (!d_entry)
 		return -ENOMEM;
 
 	return 0;
@@ -1148,8 +1154,9 @@ static inline void wbfn_dynamic_tw_enable_ctrl(struct ufstw_lu *tw, long val)
 		case 0:
 			tw->dynamic_tw_enable = false;
 			/* mutex_lock(&tw->mode_lock); */
-			ret = ufstw_set_lu_flag(tw, QUERY_FLAG_IDN_WB_EN, &tw->tw_enable);
-			if(ret == 0) {
+			ret = ufstw_set_lu_flag(tw, QUERY_FLAG_IDN_WB_EN,
+						&tw->tw_enable);
+			if (ret == 0) {
 				INFO_MSG("ufstw_set_lu_flag success");
 			}
 			/* utex_unlock(&tw->mode_lock); */
@@ -1161,16 +1168,17 @@ static inline void wbfn_dynamic_tw_enable_ctrl(struct ufstw_lu *tw, long val)
 			break;
 		}
 	} else {
-		INFO_MSG("tw_state != TW_PRESENT (%d)\n", atomic_read(&tw->ufsf->tw_state));
+		INFO_MSG("tw_state != TW_PRESENT (%d)\n",
+			 atomic_read(&tw->ufsf->tw_state));
 	}
 
 	return;
 }
 
 static ssize_t wbfn_dynamic_tw_enable_write(struct file *filp, const char *ubuf,
-				 size_t cnt, loff_t *data)
+					    size_t cnt, loff_t *data)
 {
-	char buf[64] = {0};
+	char buf[64] = { 0 };
 	long val = 64;
 	int lun;
 
@@ -1188,9 +1196,11 @@ static ssize_t wbfn_dynamic_tw_enable_write(struct file *filp, const char *ubuf,
 	else
 		val = 64;
 
-	seq_scan_lu(lun) {
+	seq_scan_lu(lun)
+	{
 		if (ufsf_para.ufsf->tw_lup[lun])
-			wbfn_dynamic_tw_enable_ctrl(ufsf_para.ufsf->tw_lup[lun], val);
+			wbfn_dynamic_tw_enable_ctrl(ufsf_para.ufsf->tw_lup[lun],
+						    val);
 	}
 
 	return cnt;
@@ -1207,9 +1217,9 @@ static int create_wbfn_dynamic_tw_enable(void)
 	if (!ufsf_para.ctrl_dir)
 		return -EFAULT;
 
-	d_entry = proc_create("wbfn_dynamic_tw_enable", S_IWUGO, ufsf_para.ctrl_dir,
-			      &wbfn_dynamic_tw_enable_fops);
-	if(!d_entry)
+	d_entry = proc_create("wbfn_dynamic_tw_enable", S_IWUGO,
+			      ufsf_para.ctrl_dir, &wbfn_dynamic_tw_enable_fops);
+	if (!d_entry)
 		return -ENOMEM;
 
 	return 0;

@@ -23,19 +23,19 @@
 #include "dsi_pwr.h"
 #include "sde_dbg.h"
 
-struct panel_vol_set{
+struct panel_vol_set {
 	uint32_t panel_id;
 	uint32_t panel_vol;
 };
 
-struct panel_vol_get{
+struct panel_vol_get {
 	uint32_t panel_id;
 	uint32_t panel_min;
 	uint32_t panel_cur;
 	uint32_t panel_max;
 };
 
-enum PANEL_VOLTAGE_ENUM{
+enum PANEL_VOLTAGE_ENUM {
 	PANEL_VOLTAGE_ID_VDDI = 0,
 	PANEL_VOLTAGE_ID_VDDR,
 	PANEL_VOLTAGE_ID_VG_BASE,
@@ -50,7 +50,7 @@ typedef struct panel_voltage_bak {
 	u32 voltage_current;
 	u32 voltage_max;
 	char pwr_name[20];
-}PANEL_VOLTAGE_BAK;
+} PANEL_VOLTAGE_BAK;
 
 int oplus_display_panel_set_pwr(void *data);
 int oplus_display_panel_get_pwr(void *data);
@@ -60,4 +60,3 @@ int oplus_display_panel_regulator_control(void *data);
 int __oplus_display_set_power_status(int status);
 
 #endif /*_OPLUS_DISPLAY_PANEL_POWER_H_*/
-

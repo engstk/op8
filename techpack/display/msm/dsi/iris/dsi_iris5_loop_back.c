@@ -32,17 +32,19 @@ int32_t iris_parse_loopback_info(struct device_node *np, struct iris_cfg *pcfg)
 
 	rc = of_property_read_u32(np, "pxlw,loop-back-mode", &loop_back_mode);
 	if (!rc)
-		IRIS_LOGE("get property: pxlw, loop-back-mode: %d", loop_back_mode);
+		IRIS_LOGE("get property: pxlw, loop-back-mode: %d",
+			  loop_back_mode);
 	pcfg->loop_back_mode = loop_back_mode;
 
-	rc = of_property_read_u32(np, "pxlw,loop-back-mode-res", &loop_back_mode_res);
+	rc = of_property_read_u32(np, "pxlw,loop-back-mode-res",
+				  &loop_back_mode_res);
 	if (!rc)
-		IRIS_LOGE("get property: pxlw, loop-back-mode-res: %d", loop_back_mode_res);
+		IRIS_LOGE("get property: pxlw, loop-back-mode-res: %d",
+			  loop_back_mode_res);
 	pcfg->loop_back_mode_res = loop_back_mode_res;
 
 	return 0;
 }
-
 
 int iris_loop_back_reset(void)
 {
@@ -108,7 +110,7 @@ u32 iris_ocp_i3c_read(u32 addr, u32 mode)
 static int iris_i2c_test_verify(void)
 {
 	int rc = 0;
-	uint32_t val[10] = {10};
+	uint32_t val[10] = { 10 };
 
 	val[0] = 0xf001fff8;
 	rc = iris_i2c_conver_ocp_read(val, 1, false);
@@ -122,16 +124,14 @@ static int iris_i2c_test_verify(void)
 	IRIS_LOGD("%s,%d: value = 0x%x", __func__, __LINE__, val[0]);
 
 	return rc;
-
 }
 
 u32 iris_loop_back_verify(void)
 {
-
 	u32 i, r, g, b;
 	struct iris_cfg *pcfg;
 	u32 ret = 0;
-	u32 standard_rgbsum[3] = {0x40d1a890, 0x318c343c, 0x37839da4};
+	u32 standard_rgbsum[3] = { 0x40d1a890, 0x318c343c, 0x37839da4 };
 
 	pcfg = iris_get_cfg();
 
@@ -169,18 +169,17 @@ u32 iris_loop_back_verify(void)
 	b = iris_ocp_i3c_read(0xf12401b0, DSI_CMD_SET_STATE_HS);
 	IRIS_LOGD("r = 0x%08x, g = 0x%08x, b = 0x%08x\n", r, g, b);
 
-	if ((r == standard_rgbsum[0]) && (g == standard_rgbsum[1]) && (b == standard_rgbsum[2]))
+	if ((r == standard_rgbsum[0]) && (g == standard_rgbsum[1]) &&
+	    (b == standard_rgbsum[2]))
 		ret = 0;
 	else
 		ret = 3;
 
 	return ret;
-
 }
 
 int iris_loop_back_validate(void)
 {
-
 	int rc = 0;
 	int temp = 0;
 	struct iris_cfg *pcfg = NULL;
@@ -191,7 +190,8 @@ int iris_loop_back_validate(void)
 
 	rc = iris_loop_back_reset();
 	if (rc) {
-		IRIS_LOGW("[%s:%d] loop back iris reset rc = %d", __func__, __LINE__, rc);
+		IRIS_LOGW("[%s:%d] loop back iris reset rc = %d", __func__,
+			  __LINE__, rc);
 		return rc;
 	}
 
@@ -223,7 +223,8 @@ int iris_loop_back_validate(void)
 
 	rc = iris_loop_back_reset();
 	if (rc) {
-		IRIS_LOGW("[%s:%d] loop back iris reset rc = %d", __func__, __LINE__, rc);
+		IRIS_LOGW("[%s:%d] loop back iris reset rc = %d", __func__,
+			  __LINE__, rc);
 		return rc;
 	}
 
@@ -233,7 +234,8 @@ int iris_loop_back_validate(void)
 }
 
 static ssize_t _iris_dbg_loop_back_ops(struct file *file,
-		const char __user *buff, size_t count, loff_t *ppos)
+				       const char __user *buff, size_t count,
+				       loff_t *ppos)
 {
 	unsigned long val;
 	uint32_t temp, values[2];
@@ -292,7 +294,7 @@ static ssize_t _iris_dbg_loop_back_ops(struct file *file,
 }
 
 static ssize_t _iris_dbg_loop_back_test(struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+					size_t count, loff_t *ppos)
 {
 	int ret = 0;
 	ktime_t ktime0;
@@ -311,10 +313,9 @@ static ssize_t _iris_dbg_loop_back_test(struct file *file, char __user *buff,
 	ktime0 = ktime_get();
 	ret = iris_loop_back_validate();
 	ktime1 = ktime_get();
-	timeus = (u32) ktime_to_us(ktime1) - (u32)ktime_to_us(ktime0);
+	timeus = (u32)ktime_to_us(ktime1) - (u32)ktime_to_us(ktime0);
 	mutex_unlock(&pcfg->panel->panel_lock);
 	IRIS_LOGI("%s(), spend time %d us, return: %d", __func__, timeus, ret);
-
 
 	tot = scnprintf(bp, sizeof(bp), "0x%02x\n", ret);
 	if (copy_to_user(buff, bp, tot))
@@ -322,7 +323,6 @@ static ssize_t _iris_dbg_loop_back_test(struct file *file, char __user *buff,
 	*ppos += tot;
 
 	return tot;
-
 }
 
 static const struct file_operations iris_loop_back_fops = {
@@ -338,16 +338,17 @@ int iris_loop_back_init(struct dsi_display *display)
 	if (pcfg->dbg_root == NULL) {
 		pcfg->dbg_root = debugfs_create_dir("iris", NULL);
 		if (IS_ERR_OR_NULL(pcfg->dbg_root)) {
-			IRIS_LOGE("debugfs_create_dir for iris_debug failed, error %ld",
-					PTR_ERR(pcfg->dbg_root));
+			IRIS_LOGE(
+				"debugfs_create_dir for iris_debug failed, error %ld",
+				PTR_ERR(pcfg->dbg_root));
 			return -ENODEV;
 		}
 	}
 
-	if (debugfs_create_file("iris_loop_back",	0644, pcfg->dbg_root, display,
+	if (debugfs_create_file("iris_loop_back", 0644, pcfg->dbg_root, display,
 				&iris_loop_back_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 

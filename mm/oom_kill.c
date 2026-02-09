@@ -584,8 +584,8 @@ void dump_tasks(struct mem_cgroup *memcg, const nodemask_t *nodemask)
 	struct task_struct *p;
 	struct task_struct *task;
 
-	pr_warn("Tasks state (memory values in pages):\n");
-	pr_warn("[  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name\n");
+	pr_info("Tasks state (memory values in pages):\n");
+	pr_info("[  pid  ]   uid  tgid total_vm      rss pgtables_bytes swapents oom_score_adj name\n");
 	rcu_read_lock();
 	for_each_process(p) {
 		if (oom_unkillable_task(p, memcg, nodemask))
@@ -601,7 +601,7 @@ void dump_tasks(struct mem_cgroup *memcg, const nodemask_t *nodemask)
 			continue;
 		}
 
-		pr_warn("[%7d] %5d %5d %8lu %8lu %8ld %8lu         %5hd %s\n",
+		pr_info("[%7d] %5d %5d %8lu %8lu %8ld %8lu         %5hd %s\n",
 			task->pid, from_kuid(&init_user_ns, task_uid(task)),
 			task->tgid, task->mm->total_vm, get_mm_rss(task->mm),
 			mm_pgtables_bytes(task->mm),
@@ -703,19 +703,21 @@ bool __oom_reap_task_mm(struct mm_struct *mm)
 		 * count elevated without a good reason.
 		 */
 		if (vma_is_anonymous(vma) || !(vma->vm_flags & VM_SHARED)) {
-			const unsigned long start = vma->vm_start;
-			const unsigned long end = vma->vm_end;
+			struct mmu_notifier_range range;
 			struct mmu_gather tlb;
 
-			tlb_gather_mmu(&tlb, mm, start, end);
-			if (mmu_notifier_invalidate_range_start_nonblock(mm, start, end)) {
-				tlb_finish_mmu(&tlb, start, end);
+			mmu_notifier_range_init(&range, MMU_NOTIFY_UNMAP, 0,
+						vma, mm, vma->vm_start,
+						vma->vm_end);
+			tlb_gather_mmu(&tlb, mm, range.start, range.end);
+			if (mmu_notifier_invalidate_range_start_nonblock(&range)) {
+				tlb_finish_mmu(&tlb, range.start, range.end);
 				ret = false;
 				continue;
 			}
-			unmap_page_range(&tlb, vma, start, end, NULL);
-			mmu_notifier_invalidate_range_end(mm, start, end);
-			tlb_finish_mmu(&tlb, start, end);
+			unmap_page_range(&tlb, vma, range.start, range.end, NULL);
+			mmu_notifier_invalidate_range_end(&range);
+			tlb_finish_mmu(&tlb, range.start, range.end);
 		}
 	}
 

@@ -306,6 +306,9 @@ config ARCH_SUPPORTS_UPROBES
 config ARCH_PROC_KCORE_TEXT
 	def_bool y
 
+config BROKEN_GAS_INST
+	def_bool !$(as-instr,1:\n.inst 0\n.rept . - 1b\n\nnop\n.endr\n)
+
 source "arch/arm64/Kconfig.platforms"
 
 menu "Bus support"
@@ -1039,7 +1042,7 @@ config ARCH_ENABLE_SPLIT_PMD_PTLOCK
 
 config SECCOMP
 	bool "Enable seccomp to safely compute untrusted bytecode"
-	---help---
+	help
 	  This kernel feature is useful for number crunching applications
 	  that may need to compute untrusted bytecode during their
 	  execution. By using pipes or other transports made available to
@@ -1073,7 +1076,7 @@ config KEXEC
 	depends on PM_SLEEP_SMP
 	select KEXEC_CORE
 	bool "kexec system call"
-	---help---
+	help
 	  kexec is a system call that implements the ability to shutdown your
 	  current kernel, and to start another kernel.  It is like a reboot
 	  but it is independent of the system firmware.   And like a reboot
@@ -1335,7 +1338,13 @@ config ARM64_PAN
 	 instruction if the cpu does not implement the feature.
 
 config ARM64_LSE_ATOMICS
+	bool
+	default ARM64_USE_LSE_ATOMICS
+	depends on $(as-instr,.arch_extension lse)
+
+config ARM64_USE_LSE_ATOMICS
 	bool "Atomic instructions"
+	depends on JUMP_LABEL
 	default y
 	help
 	  As part of the Large System Extensions, ARMv8.1 introduces new
@@ -1469,7 +1478,6 @@ config RELOCATABLE
 
 config RANDOMIZE_BASE
 	bool "Randomize the address of the kernel image"
-	depends on !KASAN
 	select ARM64_MODULE_PLTS if MODULES
 	select RELOCATABLE
 	help

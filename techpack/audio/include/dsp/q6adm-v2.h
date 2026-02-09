@@ -183,7 +183,7 @@ int adm_get_pp_topo_module_list_v2(int port_id, int copp_idx,
 int adm_set_volume(int port_id, int copp_idx, int volume);
 
 #ifdef OPLUS_FEATURE_KTV
-int adm_set_reverb_param(int port_id, int copp_idx, int32_t* params);
+int adm_set_reverb_param(int port_id, int copp_idx, int32_t *params);
 #endif /* OPLUS_FEATURE_KTV */
 
 int adm_set_softvolume(int port_id, int copp_idx,

@@ -6,7 +6,7 @@ config NET_VENDOR_CADENCE
 	bool "Cadence devices"
 	depends on HAS_IOMEM
 	default y
-	---help---
+	help
 	  If you have a network (Ethernet) card belonging to this class, say Y.
 
 	  If unsure, say Y.
@@ -22,7 +22,7 @@ config MACB
 	tristate "Cadence MACB/GEM support"
 	depends on HAS_DMA
 	select PHYLIB
-	---help---
+	help
 	  The Cadence MACB ethernet interface is found on many Atmel AT32 and
 	  AT91 parts.  This driver also supports the Cadence GEM (Gigabit
 	  Ethernet MAC found in some ARM SoC devices).  Say Y to include
@@ -36,13 +36,13 @@ config MACB_USE_HWSTAMP
 	depends on MACB
 	default y
 	imply PTP_1588_CLOCK
-	---help---
+	help
 	  Enable IEEE 1588 Precision Time Protocol (PTP) support for MACB.
 
 config MACB_PCI
 	tristate "Cadence PCI MACB/GEM support"
 	depends on MACB && PCI && COMMON_CLK
-	---help---
+	help
 	  This is PCI wrapper for MACB driver.
 
 	  To compile this driver as a module, choose M here: the module

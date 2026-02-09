@@ -8,7 +8,7 @@ source "virt/lib/Kconfig"
 
 menuconfig VIRTUALIZATION
 	bool "Virtualization"
-	---help---
+	help
 	  Say Y here to get to see options for using your Linux host to run
 	  other operating systems inside virtual machines (guests).
 	  This option alone does not add any kernel code.
@@ -41,7 +41,7 @@ config KVM
 	select IRQ_BYPASS_MANAGER
 	select HAVE_KVM_IRQ_BYPASS
 	depends on ARM_VIRT_EXT && ARM_LPAE && ARM_ARCH_TIMER
-	---help---
+	help
 	  Support hosting virtualized guest machines.
 
 	  This module provides access to the hardware capabilities through
@@ -51,7 +51,7 @@ config KVM
 
 config KVM_ARM_HOST
 	bool
-	---help---
+	help
 	  Provides host support for ARM processors.
 
 source drivers/vhost/Kconfig

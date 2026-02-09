@@ -8,6 +8,7 @@
 
 #include <linux/i2c.h>
 #include <linux/power_supply.h>
+#include "oplus_chg_symbol.h"
 
 struct oplus_gauge_chip {
 	struct i2c_client *client;
@@ -24,11 +25,22 @@ struct oplus_plat_gauge_operations {
 	int (*get_plat_battery_current)(void);
 };
 
+struct oplus_test_result {
+	int test_count_total;
+	int test_count_now;
+	int test_fail_count;
+	int real_test_count_now;
+	int real_test_fail_count;
+};
+
 struct oplus_external_auth_chip {
 	int (*get_external_auth_hmac)(void);
 	int (*start_test_external_hmac)(int count);
 	int (*get_hmac_test_result)(int *count_total, int *count_now, int *fail_count);
-	int (*get_hmac_status) (int *status, int *fail_count, int *total_count, int *real_fail_count, int *real_total_count);
+	int (*get_hmac_status)(int *status, int *fail_count, int *total_count, int *real_fail_count,
+			       int *real_total_count);
+	struct oplus_test_result test_result;
+	struct delayed_work test_work;
 };
 
 struct oplus_gauge_operations {
@@ -59,26 +71,26 @@ struct oplus_gauge_operations {
 	bool (*get_battery_authenticate)(void);
 	bool (*get_battery_hmac)(void);
 	void (*set_battery_full)(bool);
-	int (*get_prev_battery_mvolts) (void);
-	int (*get_prev_battery_temperature) (void);
-	int (*get_prev_battery_soc) (void);
-	int (*get_prev_average_current) (void);
+	int (*get_prev_battery_mvolts)(void);
+	int (*get_prev_battery_temperature)(void);
+	int (*get_prev_battery_soc)(void);
+	int (*get_prev_average_current)(void);
 	int (*get_prev_batt_remaining_capacity)(void);
-	int (*get_battery_mvolts_2cell_max) (void);
-	int (*get_battery_mvolts_2cell_min) (void);
-	int (*get_prev_battery_mvolts_2cell_max) (void);
-	int (*get_prev_battery_mvolts_2cell_min) (void);
+	int (*get_battery_mvolts_2cell_max)(void);
+	int (*get_battery_mvolts_2cell_min)(void);
+	int (*get_prev_battery_mvolts_2cell_max)(void);
+	int (*get_prev_battery_mvolts_2cell_min)(void);
 	int (*get_prev_batt_fcc)(void);
-	int (*update_battery_dod0) (void);
-	int (*update_soc_smooth_parameter) (void);
-	int (*get_battery_cb_status) (void);
-	int (*get_gauge_i2c_err) (void);
-	void (*clear_gauge_i2c_err) (void);
-	int (*get_passdchg) (int *val);
+	int (*update_battery_dod0)(void);
+	int (*update_soc_smooth_parameter)(void);
+	int (*get_battery_cb_status)(void);
+	int (*get_gauge_i2c_err)(void);
+	void (*clear_gauge_i2c_err)(void);
+	int (*get_passdchg)(int *val);
 	void (*set_float_uv_ma)(int, int);
-	int (*dump_register) (void);
-	int (*protect_check) (void);
-	bool (*afi_update_done) (void);
+	int (*dump_register)(void);
+	int (*protect_check)(void);
+	bool (*afi_update_done)(void);
 	int (*set_allow_reading)(int enable);
 	int (*wlchg_started_status)(bool status);
 	int (*get_bcc_parameters)(char *buf);
@@ -138,8 +150,8 @@ bool oplus_gauge_get_batt_hmac(void);
 bool oplus_gauge_get_batt_external_hmac(void);
 int oplus_gauge_start_test_external_hmac(int count);
 int oplus_gauge_get_external_hmac_test_result(int *count_total, int *count_now, int *fail_count);
-int oplus_gauge_get_external_hmac_status(int *status, int *fail_count, int *total_count,
-		int *real_fail_count, int *real_total_count);
+int oplus_gauge_get_external_hmac_status(int *status, int *fail_count, int *total_count, int *real_fail_count,
+					 int *real_total_count);
 bool oplus_gauge_get_batt_authenticate(void);
 void oplus_gauge_set_batt_full(bool);
 bool oplus_gauge_check_chip_is_null(void);
@@ -160,9 +172,10 @@ int oplus_gauge_get_battery_cb_status(void);
 int oplus_gauge_get_i2c_err(void);
 void oplus_gauge_clear_i2c_err(void);
 int oplus_gauge_get_passedchg(int *val);
-void oplus_gauge_set_float_uv_ma(int iterm_ma,int float_volt_uv);
+void oplus_gauge_set_float_uv_ma(int iterm_ma, int float_volt_uv);
 int oplus_gauge_dump_register(void);
 int oplus_gauge_get_sub_batt_mvolts(void);
+int oplus_gauge_get_sub_prev_batt_mvolts(void);
 int oplus_gauge_get_sub_batt_current(void);
 int oplus_gauge_get_main_batt_soc(void);
 int oplus_gauge_get_sub_batt_soc(void);

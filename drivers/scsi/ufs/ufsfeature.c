@@ -42,15 +42,15 @@
 #include "ufshcd.h"
 #include "ufs_quirks.h"
 
-#define QUERY_REQ_TIMEOUT				1500 /* msec */
+#define QUERY_REQ_TIMEOUT 1500 /* msec */
 
 struct ufsf_feature_para ufsf_para;
 
 static inline void ufsf_init_query(struct ufs_hba *hba,
 				   struct ufs_query_req **request,
 				   struct ufs_query_res **response,
-				   enum query_opcode opcode, u8 idn,
-				   u8 index, u8 selector)
+				   enum query_opcode opcode, u8 idn, u8 index,
+				   u8 selector)
 {
 	*request = &hba->dev_cmd.query.request;
 	*response = &hba->dev_cmd.query.response;
@@ -71,7 +71,7 @@ int ufsf_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
 	struct ufs_query_req *request = NULL;
 	struct ufs_query_res *response = NULL;
 	int err;
-	u8  selector = 0x1;
+	u8 selector = 0x1;
 
 	BUG_ON(!hba);
 
@@ -109,8 +109,9 @@ int ufsf_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
 		request->query_func = UPIU_QUERY_FUNC_STANDARD_READ_REQUEST;
 		if (!flag_res) {
 			/* No dummy reads */
-			dev_err(hba->dev, "%s: Invalid argument for read request\n",
-					__func__);
+			dev_err(hba->dev,
+				"%s: Invalid argument for read request\n",
+				__func__);
 			err = -EINVAL;
 			goto out_unlock;
 		}
@@ -134,7 +135,8 @@ int ufsf_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
 
 	if (flag_res)
 		*flag_res = (be32_to_cpu(response->upiu_res.value) &
-				MASK_QUERY_UPIU_FLAG_LOC) & 0x1;
+			     MASK_QUERY_UPIU_FLAG_LOC) &
+			    0x1;
 
 out_unlock:
 	mutex_unlock(&hba->dev_cmd.lock);
@@ -171,9 +173,10 @@ int ufsf_query_attr_retry(struct ufs_hba *hba, enum query_opcode opcode,
 {
 	int ret;
 	int retries;
-	u8  selector = 0x1;
+	u8 selector = 0x1;
 
-	ERR_MSG("%s: hba->dev_info.w_manufacturer_id %x\n", __func__, hba->dev_info.w_manufacturer_id);
+	ERR_MSG("%s: hba->dev_info.w_manufacturer_id %x\n", __func__,
+		hba->dev_info.w_manufacturer_id);
 	switch (hba->dev_info.w_manufacturer_id) {
 	case UFS_VENDOR_SAMSUNG:
 		selector = 0x1;
@@ -190,8 +193,8 @@ int ufsf_query_attr_retry(struct ufs_hba *hba, enum query_opcode opcode,
 	ERR_MSG("%s:selector %x\n", __func__, selector);
 
 	for (retries = 0; retries < UFSF_QUERY_REQ_RETRIES; retries++) {
-		ret = ufshcd_query_attr(hba, opcode, idn, idx,
-					selector, attr_val);
+		ret = ufshcd_query_attr(hba, opcode, idn, idx, selector,
+					attr_val);
 		if (ret)
 			dev_dbg(hba->dev,
 				"%s: failed with error %d, retries %d\n",
@@ -214,8 +217,7 @@ static int ufsf_read_desc(struct ufs_hba *hba, u8 desc_id, u8 desc_index,
 	pm_runtime_get_sync(hba->dev);
 
 	err = ufshcd_query_descriptor_retry(hba, UPIU_QUERY_OPCODE_READ_DESC,
-					    desc_id, desc_index,
-					    selector,
+					    desc_id, desc_index, selector,
 					    desc_buf, &size);
 	if (err)
 		ERR_MSG("reading Device Desc failed. err = %d", err);
@@ -239,11 +241,11 @@ static int ufsf_read_dev_desc(struct ufsf_feature *ufsf, u8 selector)
 	INFO_MSG("device lu count %d", ufsf->num_lu);
 
 	INFO_MSG("sel=%u length=%u(0x%x) bSupport=0x%.2x, extend=0x%.2x_%.2x",
-		  selector, desc_buf[DEVICE_DESC_PARAM_LEN],
-		  desc_buf[DEVICE_DESC_PARAM_LEN],
-		  desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP],
-		  desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP+2],
-		  desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP+3]);
+		 selector, desc_buf[DEVICE_DESC_PARAM_LEN],
+		 desc_buf[DEVICE_DESC_PARAM_LEN],
+		 desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP],
+		 desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP + 2],
+		 desc_buf[DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP + 3]);
 
 #if defined(CONFIG_UFSHPB)
 	ufshpb_get_dev_info(ufsf, desc_buf);
@@ -314,7 +316,7 @@ void ufsf_device_check(struct ufs_hba *hba)
 {
 	struct ufsf_feature *ufsf = &hba->ufsf;
 	int ret, lun;
-	u8  selector = 0x1;
+	u8 selector = 0x1;
 	/*u32 status;*/
 
 	ufsf->hba = hba;
@@ -324,7 +326,8 @@ void ufsf_device_check(struct ufs_hba *hba)
 	INIT_INFO("UFS FEATURE SELECTOR Dev %d - D/D %d", status,
 		  UFSFEATURE_SELECTOR);*/
 
-	ERR_MSG("%s: hba->dev_info.w_manufacturer_id %x\n", __func__, hba->dev_info.w_manufacturer_id);
+	ERR_MSG("%s: hba->dev_info.w_manufacturer_id %x\n", __func__,
+		hba->dev_info.w_manufacturer_id);
 	switch (hba->dev_info.w_manufacturer_id) {
 	case UFS_VENDOR_SAMSUNG:
 		selector = 0x1;
@@ -348,8 +351,7 @@ void ufsf_device_check(struct ufs_hba *hba)
 	if (ret)
 		return;
 
-	seq_scan_lu(lun)
-		ufsf_read_unit_desc(ufsf, lun, selector);
+	seq_scan_lu(lun) ufsf_read_unit_desc(ufsf, lun, selector);
 
 	create_ufsplus_ctrl_proc(ufsf);
 }
@@ -460,7 +462,8 @@ int ufsf_query_ioctl(struct ufsf_feature *ufsf, int lun, void __user *buffer,
 		 selector, ioctl_data->buf_size, ioctl_data->buf_size);
 
 	buf_len = (ioctl_data->idn == QUERY_DESC_IDN_STRING) ?
-		IOCTL_DEV_CTX_MAX_SIZE : QUERY_DESC_MAX_SIZE;
+			  IOCTL_DEV_CTX_MAX_SIZE :
+			  QUERY_DESC_MAX_SIZE;
 
 	kernel_buf = kzalloc(buf_len, GFP_KERNEL);
 	if (!kernel_buf) {
@@ -470,9 +473,10 @@ int ufsf_query_ioctl(struct ufsf_feature *ufsf, int lun, void __user *buffer,
 
 	switch (opcode) {
 	case UPIU_QUERY_OPCODE_WRITE_DESC:
-		err = copy_from_user(kernel_buf, buffer +
-				     sizeof(struct ufs_ioctl_query_data),
-				     ioctl_data->buf_size);
+		err = copy_from_user(
+			kernel_buf,
+			buffer + sizeof(struct ufs_ioctl_query_data),
+			ioctl_data->buf_size);
 		INFO_MSG("buf size %d", ioctl_data->buf_size);
 		ufsf_print_query_buf(kernel_buf, ioctl_data->buf_size);
 		if (err)
@@ -607,9 +611,7 @@ inline void ufsf_change_read10_debug_lun(struct ufsf_feature *ufsf,
 	}
 }
 
-
-inline void ufsf_prep_fn(struct ufsf_feature *ufsf,
-			 struct ufshcd_lrb *lrbp)
+inline void ufsf_prep_fn(struct ufsf_feature *ufsf, struct ufshcd_lrb *lrbp)
 {
 #if defined(CONFIG_UFSHPB)
 	if (ufshpb_get_state(ufsf) == HPB_PRESENT &&
@@ -687,8 +689,7 @@ inline void ufsf_reset(struct ufsf_feature *ufsf)
 #if defined(CONFIG_UFSTW)
 	if (ufstw_get_state(ufsf) == TW_RESET &&
 	    !ufsf->hba->pm_op_in_progress) {
-		INFO_MSG("reset start.. tw_state %d",
-			 ufstw_get_state(ufsf));
+		INFO_MSG("reset start.. tw_state %d", ufstw_get_state(ufsf));
 		ufstw_reset(ufsf, false);
 	}
 #endif
@@ -744,7 +745,7 @@ inline void ufsf_resume(struct ufsf_feature *ufsf)
 #endif
 
 #if defined(CONFIG_UFSTW)
-	if (ufstw_get_state(ufsf) == HPB_RESET)
+	if (ufstw_get_state(ufsf) == TW_RESET)
 		ufstw_reset(ufsf, true);
 #endif
 }
@@ -777,8 +778,7 @@ inline int ufsf_hpb_prepare_add_lrbp(struct ufsf_feature *ufsf, int add_tag)
 	return -ENODEV;
 }
 
-inline void ufsf_hpb_end_pre_req(struct ufsf_feature *ufsf,
-				 struct request *req)
+inline void ufsf_hpb_end_pre_req(struct ufsf_feature *ufsf, struct request *req)
 {
 	ufshpb_end_pre_req(ufsf, req);
 }
@@ -811,11 +811,15 @@ inline int ufsf_hpb_prepare_add_lrbp(struct ufsf_feature *ufsf, int add_tag)
 	return 0;
 }
 
-inline void ufsf_hpb_end_pre_req(struct ufsf_feature *ufsf,
-				 struct request *req) {}
-inline void ufsf_hpb_noti_rb(struct ufsf_feature *ufsf,
-			     struct ufshcd_lrb *lrbp) {}
-inline void ufsf_hpb_suspend(struct ufsf_feature *ufsf) {}
+inline void ufsf_hpb_end_pre_req(struct ufsf_feature *ufsf, struct request *req)
+{
+}
+inline void ufsf_hpb_noti_rb(struct ufsf_feature *ufsf, struct ufshcd_lrb *lrbp)
+{
+}
+inline void ufsf_hpb_suspend(struct ufsf_feature *ufsf)
+{
+}
 #endif
 
 #if defined(CONFIG_UFSTW)
@@ -824,11 +828,14 @@ inline void ufsf_tw_enable(struct ufsf_feature *ufsf, bool enable)
 	if (atomic_read(&ufsf->tw_state) == TW_PRESENT) {
 		ufstw_enable_tw(ufsf, enable);
 	} else {
-		INFO_MSG("tw_state != TW_PRESENT (%d)\n", atomic_read(&ufsf->tw_state));
+		INFO_MSG("tw_state != TW_PRESENT (%d)\n",
+			 atomic_read(&ufsf->tw_state));
 	}
 }
 #else
-inline void ufsf_tw_enable(struct ufsf_feature *ufsf, bool enable) {}
+inline void ufsf_tw_enable(struct ufsf_feature *ufsf, bool enable)
+{
+}
 #endif
 int create_ufsplus_ctrl_proc(struct ufsf_feature *ufsf)
 {

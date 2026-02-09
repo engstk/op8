@@ -659,13 +659,10 @@ vdd_xtal_fail:
 			bt_vreg_unvote(bt_power_pdata->bt_vdd_rfa2);
 		if (bt_power_pdata->bt_vdd_rfa1)
 			bt_vreg_unvote(bt_power_pdata->bt_vdd_rfa1);
-		/*
-		 * if did't have pm8009 dig power and aon power disable enter Retention mode
 		if (bt_power_pdata->bt_vdd_dig)
 			bt_vreg_unvote(bt_power_pdata->bt_vdd_dig);
 		if (bt_power_pdata->bt_vdd_aon)
 			bt_vreg_unvote(bt_power_pdata->bt_vdd_aon);
-		*/
 	} else {
 		BT_PWR_ERR("Invalid power mode: %d", on);
 		rc = -1;

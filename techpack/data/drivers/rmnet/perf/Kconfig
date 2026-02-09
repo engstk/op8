@@ -6,5 +6,5 @@ config RMNET_PERF
 	tristate "Rmnet Perf driver"
 	default m
 	depends on RMNET
-	---help---
+	help
 	  performance mode of rmnet driver

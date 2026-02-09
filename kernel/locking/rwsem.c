@@ -40,7 +40,6 @@ int __sched down_read_killable(struct rw_semaphore *sem)
 	}
 
 	rwsem_set_reader_owned(sem);
-
 	return 0;
 }
 
@@ -90,7 +89,6 @@ int __sched down_write_killable(struct rw_semaphore *sem)
 	}
 
 	rwsem_set_owner(sem);
-
 	return 0;
 }
 
@@ -210,7 +208,6 @@ int __sched down_write_killable_nested(struct rw_semaphore *sem, int subclass)
 	}
 
 	rwsem_set_owner(sem);
-
 	return 0;
 }
 

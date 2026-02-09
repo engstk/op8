@@ -568,7 +568,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		.probe = fe_dai_probe,
 	},
 	{
-		#ifdef OPLUS_FEATURE_AUDIO_FTM
+#ifdef OPLUS_FEATURE_AUDIO_FTM
 		.playback = {
 			.stream_name = "TX3_CDC_DMA_HOSTLESS Playback",
 			.aif_name = "TX3_CDC_DMA_DL_HL",
@@ -587,7 +587,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 			.rate_min = 8000,
 			.rate_max = 384000,
 		},
-		#endif /* OPLUS_FEATURE_AUDIO_FTM */
+#endif /* OPLUS_FEATURE_AUDIO_FTM */
 		.capture = {
 			.stream_name = "TX3_CDC_DMA_HOSTLESS Capture",
 			.aif_name = "TX3_CDC_DMA_UL_HL",
@@ -610,7 +610,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		.name = "TX3_CDC_DMA_HOSTLESS",
 		.probe = fe_dai_probe,
 	},
-	#ifdef OPLUS_FEATURE_AUDIO_FTM
+#ifdef OPLUS_FEATURE_AUDIO_FTM
 	{
 		.playback = {
 			.stream_name = "TX4_CDC_DMA_HOSTLESS Playback",
@@ -652,7 +652,7 @@ static struct snd_soc_dai_driver msm_fe_dais[] = {
 		.name = "TX4_CDC_DMA_HOSTLESS",
 		.probe = fe_dai_probe,
 	},
-	#endif /* OPLUS_FEATURE_AUDIO_FTM */
+#endif /* OPLUS_FEATURE_AUDIO_FTM */
 	{
 		.playback = {
 			.stream_name = "INT_FM_HOSTLESS Playback",

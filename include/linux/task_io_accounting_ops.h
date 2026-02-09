@@ -25,7 +25,6 @@ static inline unsigned long task_io_get_inblock(const struct task_struct *p)
 static inline void task_io_account_write(size_t bytes)
 {
 	current->ioac.write_bytes += bytes;
-
 }
 
 /*

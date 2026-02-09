@@ -368,8 +368,8 @@ struct sde_hw_sspp_ops {
 	 * @data: Pointer to config structure
 	 */
 	void (*setup_csc_v2)(struct sde_hw_pipe *ctx,
-					const struct sde_format *fmt,
-					struct sde_csc_cfg *data);
+			     const struct sde_format *fmt,
+			     struct sde_csc_cfg *data);
 #endif
 	/**
 	 * setup_solidfill - enable/disable colorfill

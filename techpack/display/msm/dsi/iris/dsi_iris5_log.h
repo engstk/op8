@@ -29,15 +29,15 @@
 #endif
 
 #ifndef IRIS_PR
-#define IRIS_PR(TAG, format, ...)	\
-	pr_err("%s%s " format "\n", IRIS_LOG_PREFIX, TAG, ## __VA_ARGS__)
+#define IRIS_PR(TAG, format, ...) \
+	pr_err("%s%s " format "\n", IRIS_LOG_PREFIX, TAG, ##__VA_ARGS__)
 #endif
 
 #ifndef IRIS_LOG_IF
-#define IRIS_LOG_IF(cond, TAG, ...)	\
-	do {	\
-		if (cond)	\
-			IRIS_PR(TAG, __VA_ARGS__);	\
+#define IRIS_LOG_IF(cond, TAG, ...)                \
+	do {                                       \
+		if (cond)                          \
+			IRIS_PR(TAG, __VA_ARGS__); \
 	} while (0)
 #endif
 
@@ -61,81 +61,75 @@ int iris_get_loglevel(void);
  *    greater.
  */
 #ifndef IRIS_LOGE
-#define IRIS_LOGE(...)	\
-	IRIS_LOG_IF(true, " E", __VA_ARGS__)
+#define IRIS_LOGE(...) IRIS_LOG_IF(true, " E", __VA_ARGS__)
 #endif
 
 #ifndef IRIS_LOGW
-#define IRIS_LOGW(...)	\
-	IRIS_LOG_IF(iris_get_loglevel() > 0, " W", __VA_ARGS__)
+#define IRIS_LOGW(...) IRIS_LOG_IF(iris_get_loglevel() > 0, " W", __VA_ARGS__)
 #endif
 
 #ifndef IRIS_LOGI
-#define IRIS_LOGI(...)	\
-	IRIS_LOG_IF(iris_get_loglevel() > 1, " I", __VA_ARGS__)
+#define IRIS_LOGI(...) IRIS_LOG_IF(iris_get_loglevel() > 1, " I", __VA_ARGS__)
 #endif
 
 #ifndef IRIS_LOGD
-#define IRIS_LOGD(...)	\
-	IRIS_LOG_IF(iris_get_loglevel() > 2, " D",  __VA_ARGS__)
+#define IRIS_LOGD(...) IRIS_LOG_IF(iris_get_loglevel() > 2, " D", __VA_ARGS__)
 #endif
 
 #ifndef IRIS_LOGV
-#define IRIS_LOGV(...)	\
-	IRIS_LOG_IF(iris_get_loglevel() > 3, " V", __VA_ARGS__)
+#define IRIS_LOGV(...) IRIS_LOG_IF(iris_get_loglevel() > 3, " V", __VA_ARGS__)
 #endif
 
 #ifndef IRIS_LOGVV
-#define IRIS_LOGVV(...)	\
-	IRIS_LOG_IF(iris_get_loglevel() > 4, " VV", __VA_ARGS__)
+#define IRIS_LOGVV(...) IRIS_LOG_IF(iris_get_loglevel() > 4, " VV", __VA_ARGS__)
 #endif
 
 #ifndef IRIS_IF_LOGI
-#define IRIS_IF_LOGI()	((iris_get_loglevel() > 1) ? true : false)
+#define IRIS_IF_LOGI() ((iris_get_loglevel() > 1) ? true : false)
 #endif
 
 #ifndef IRIS_IF_LOGD
-#define IRIS_IF_LOGD()	((iris_get_loglevel() > 2) ? true : false)
+#define IRIS_IF_LOGD() ((iris_get_loglevel() > 2) ? true : false)
 #endif
 
 #ifndef IRIS_IF_LOGV
-#define IRIS_IF_LOGV()	((iris_get_loglevel() > 3) ? true : false)
+#define IRIS_IF_LOGV() ((iris_get_loglevel() > 3) ? true : false)
 #endif
 
 #ifndef IRIS_IF_LOGVV
-#define IRIS_IF_LOGVV()	((iris_get_loglevel() > 4) ? true : false)
+#define IRIS_IF_LOGVV() ((iris_get_loglevel() > 4) ? true : false)
 #endif
 
 #ifndef IRIS_IF_NOT_LOGI
-#define IRIS_IF_NOT_LOGI()	((iris_get_loglevel() < 2) ? true : false)
+#define IRIS_IF_NOT_LOGI() ((iris_get_loglevel() < 2) ? true : false)
 #endif
 
 #ifndef IRIS_IF_NOT_LOGD
-#define IRIS_IF_NOT_LOGD()	((iris_get_loglevel() < 3) ? true : false)
+#define IRIS_IF_NOT_LOGD() ((iris_get_loglevel() < 3) ? true : false)
 #endif
 
 #ifndef IRIS_IF_NOT_LOGV
-#define IRIS_IF_NOT_LOGV()	((iris_get_loglevel() < 4) ? true : false)
+#define IRIS_IF_NOT_LOGV() ((iris_get_loglevel() < 4) ? true : false)
 #endif
 
 #ifndef IRIS_IF_NOT_LOGVV
-#define IRIS_IF_NOT_LOGVV()	((iris_get_loglevel() < 5) ? true : false)
+#define IRIS_IF_NOT_LOGVV() ((iris_get_loglevel() < 5) ? true : false)
 #endif
 
 #ifndef IRIS_LOGI_IF
-#define IRIS_LOGI_IF(cond)	(((cond) && iris_get_loglevel() > 1) ? true : false)
+#define IRIS_LOGI_IF(cond) (((cond) && iris_get_loglevel() > 1) ? true : false)
 #endif
 
 #ifndef IRIS_LOGD_IF
-#define IRIS_LOGD_IF(cond)	(((cond) && iris_get_loglevel() > 2) ? true : false)
+#define IRIS_LOGD_IF(cond) (((cond) && iris_get_loglevel() > 2) ? true : false)
 #endif
 
 #ifndef IRIS_LOGV_IF
-#define IRIS_LOGV_IF(cond)	(((cond) && iris_get_loglevel() > 3) ? true : false)
+#define IRIS_LOGV_IF(cond) (((cond) && iris_get_loglevel() > 3) ? true : false)
 #endif
 
 #ifndef IRIS_LOGVV_IF
-#define IRIS_LOGVV_IF(cond)	(((cond) && iris_get_loglevel() > 4) ? true : false)
+#define IRIS_LOGVV_IF(cond) (((cond) && iris_get_loglevel() > 4) ? true : false)
 #endif
 
 #endif /* __DSI_IRIS_LOG_H_ */

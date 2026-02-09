@@ -22,5 +22,5 @@ config VIDEO_SH_MOBILE_CEU
 	depends on ARCH_SHMOBILE || COMPILE_TEST
 	select VIDEOBUF2_DMA_CONTIG
 	select SOC_CAMERA_SCALE_CROP
-	---help---
+	help
 	  This is a v4l2 driver for the SuperH Mobile CEU Interface

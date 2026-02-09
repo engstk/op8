@@ -11,7 +11,7 @@
 #define TFACONTAINER_H_
 
 /* static limits */
-#define TFACONT_MAXDEVS  (4)   /* maximum nr of devices */
+#define TFACONT_MAXDEVS (4) /* maximum nr of devices */
 #define TFACONT_MAXPROFS (16) /* maximum nr of profiles */
 
 #include "tfa98xx_parameters.h"
@@ -60,7 +60,8 @@ int tfa_cnt_get_devid_v6(nxpTfaContainer_t *cnt, int dev_idx);
  * @param slave_addr the index of the device
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaContGetSlave_v6(struct tfa_device *tfa, uint8_t *slave_addr);
+enum Tfa98xx_Error tfaContGetSlave_v6(struct tfa_device *tfa,
+				      uint8_t *slave_addr);
 
 void tfaContSetSlave(uint8_t slave_addr);
 
@@ -84,7 +85,8 @@ enum Tfa98xx_Error tfaContWriteRegsDev_v6_v6(struct tfa_device *tfa);
  * @param prof_idx the profile index
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaContWriteRegsProf_v6(struct tfa_device *tfa, int prof_idx);
+enum Tfa98xx_Error tfaContWriteRegsProf_v6(struct tfa_device *tfa,
+					   int prof_idx);
 
 /**
  * Write a patchfile in the devicelist to the target.
@@ -106,7 +108,8 @@ enum Tfa98xx_Error tfaContWriteFile_v6s(struct tfa_device *tfa);
  * @param prof_idx the index of the profile
  * @return sample rate value
  */
-unsigned int tfa98xx_get_profile_sr_v6(struct tfa_device *tfa, unsigned int prof_idx);
+unsigned int tfa98xx_get_profile_sr_v6(struct tfa_device *tfa,
+				       unsigned int prof_idx);
 
 /**
  * Get the device name string
@@ -156,7 +159,8 @@ char *tfaContProfileName_v6(nxpTfaContainer_t *cnt, int dev_idx, int prof_idx);
  * @param vstep_idx index of the vstep
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaContWriteProfile_v6(struct tfa_device *tfa, int prof_idx, int vstep_idx);
+enum Tfa98xx_Error tfaContWriteProfile_v6(struct tfa_device *tfa, int prof_idx,
+					  int vstep_idx);
 
 /**
  * Specify the speaker configurations (cmd id) (Left, right, both, none)
@@ -165,7 +169,8 @@ enum Tfa98xx_Error tfaContWriteProfile_v6(struct tfa_device *tfa, int prof_idx, 
  */
 void tfa98xx_set_spkr_select(int dev_idx, char *configuration);
 
-enum Tfa98xx_Error tfa_cont_write_filterbank_v6(struct tfa_device *tfa, nxpTfaFilter_t *filter);
+enum Tfa98xx_Error tfa_cont_write_filterbank_v6(struct tfa_device *tfa,
+						nxpTfaFilter_t *filter);
 
 /**
  * Write all  param files in the profilelist to the target
@@ -175,9 +180,12 @@ enum Tfa98xx_Error tfa_cont_write_filterbank_v6(struct tfa_device *tfa, nxpTfaFi
  * @param vstep_idx the index of the vstep
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaContWriteFile_v6sProf_v6(struct tfa_device *tfa, int prof_idx, int vstep_idx);
-enum Tfa98xx_Error tfaContWriteFilesVstep_v6(struct tfa_device *tfa, int prof_idx, int vstep_idx);
-enum Tfa98xx_Error tfaContWriteDrcFile_v6(struct tfa_device *tfa, int size, uint8_t data[]);
+enum Tfa98xx_Error tfaContWriteFile_v6sProf_v6(struct tfa_device *tfa,
+					       int prof_idx, int vstep_idx);
+enum Tfa98xx_Error tfaContWriteFilesVstep_v6(struct tfa_device *tfa,
+					     int prof_idx, int vstep_idx);
+enum Tfa98xx_Error tfaContWriteDrcFile_v6(struct tfa_device *tfa, int size,
+					  uint8_t data[]);
 
 /**
  * Get the device list dsc from the tfaContainer
@@ -194,7 +202,8 @@ nxpTfaDeviceList_t *tfaContGetDevList_v6(nxpTfaContainer_t *cont, int dev_idx);
  * @param prof_idx the index of the profile
  * @return profile list pointer
  */
-nxpTfaProfileList_t *tfaContGetDevProfList_v6(nxpTfaContainer_t *cont, int dev_idx, int prof_idx);
+nxpTfaProfileList_t *tfaContGetDevProfList_v6(nxpTfaContainer_t *cont,
+					      int dev_idx, int prof_idx);
 
 /**
  * Get the number of profiles for device from contaienr
@@ -204,7 +213,6 @@ nxpTfaProfileList_t *tfaContGetDevProfList_v6(nxpTfaContainer_t *cont, int dev_i
  */
 int tfa_cnt_get_dev_nprof(struct tfa_device *tfa);
 
-
 /**
  * Get the Nth livedata for the Nth device
  * @param cont pointer to the tfaContainer
@@ -212,7 +220,9 @@ int tfa_cnt_get_dev_nprof(struct tfa_device *tfa);
  * @param livedata_idx the index of the livedata
  * @return livedata list pointer
  */
-nxpTfaLiveDataList_t *tfaContGetDevLiveDataList_v6(nxpTfaContainer_t *cont, int dev_idx, int livedata_idx);
+nxpTfaLiveDataList_t *tfaContGetDevLiveDataList_v6(nxpTfaContainer_t *cont,
+						   int dev_idx,
+						   int livedata_idx);
 
 /**
  * Check CRC for container
@@ -241,7 +251,7 @@ nxpTfaProfileList_t *tfaContGet1stProfList_v6(nxpTfaContainer_t *cont);
  * @param prof is the pointer to the profile list
  * @return profile list pointer
  */
-nxpTfaProfileList_t* tfaContNextProfile_v6(nxpTfaProfileList_t *prof);
+nxpTfaProfileList_t *tfaContNextProfile_v6(nxpTfaProfileList_t *prof);
 
 /**
  * Return the pointer to the first livedata in a list from the tfaContainer
@@ -255,7 +265,8 @@ nxpTfaLiveDataList_t *tfaContGet1stLiveDataList_v6(nxpTfaContainer_t *cont);
  * @param livedata_idx is the pointer to the livedata list
  * @return livedata list pointer
  */
-nxpTfaLiveDataList_t* tfaContNextLiveData_v6(nxpTfaLiveDataList_t *livedata_idx);
+nxpTfaLiveDataList_t *
+tfaContNextLiveData_v6(nxpTfaLiveDataList_t *livedata_idx);
 
 /**
  * Write a bit field
@@ -263,7 +274,8 @@ nxpTfaLiveDataList_t* tfaContNextLiveData_v6(nxpTfaLiveDataList_t *livedata_idx)
  * @param bf bitfield to write
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaRunWriteBitfield_v6(struct tfa_device *tfa,  nxpTfaBitfield_t bf);
+enum Tfa98xx_Error tfaRunWriteBitfield_v6(struct tfa_device *tfa,
+					  nxpTfaBitfield_t bf);
 
 /**
  * Write a parameter file to the device
@@ -273,7 +285,9 @@ enum Tfa98xx_Error tfaRunWriteBitfield_v6(struct tfa_device *tfa,  nxpTfaBitfiel
  * @param vstep_msg_idx index to vstep message
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaContWriteFile_v6(struct tfa_device *tfa,  nxpTfaFileDsc_t *file, int vstep_idx, int vstep_msg_idx);
+enum Tfa98xx_Error tfaContWriteFile_v6(struct tfa_device *tfa,
+				       nxpTfaFileDsc_t *file, int vstep_idx,
+				       int vstep_msg_idx);
 
 /**
  * Get the max volume step associated with Nth profile for the Nth device
@@ -293,7 +307,8 @@ int tfacont_get_max_vstep_v6(struct tfa_device *tfa, int prof_idx);
  * @return 0 NULL if file type is not found
  * @return 1 file contents
  */
-nxpTfaFileDsc_t *tfacont_getfiledata_v6(struct tfa_device *tfa, int prof_idx, enum nxpTfaHeaderType type);
+nxpTfaFileDsc_t *tfacont_getfiledata_v6(struct tfa_device *tfa, int prof_idx,
+					enum nxpTfaHeaderType type);
 
 /**
  * Dump the contents of the file header
@@ -307,21 +322,24 @@ void tfaContShowHeader_v6(nxpTfaHeader_t *hdr);
  * @param bf bitfield to read out
  * @return Tfa98xx_Error
  */
-enum Tfa98xx_Error tfaRunReadBitfield_v6(struct tfa_device *tfa,  nxpTfaBitfield_t *bf);
+enum Tfa98xx_Error tfaRunReadBitfield_v6(struct tfa_device *tfa,
+					 nxpTfaBitfield_t *bf);
 
 /**
  * Get hw feature bits from container file
  * @param tfa the device struct pointer
  * @param hw_feature_register pointer to where hw features are stored
  */
-void get_hw_features_from_cnt_v6(struct tfa_device *tfa, int *hw_feature_register);
+void get_hw_features_from_cnt_v6(struct tfa_device *tfa,
+				 int *hw_feature_register);
 
 /**
  * Get sw feature bits from container file
  * @param tfa the device struct pointer
  * @param sw_feature_register pointer to where sw features are stored
  */
-void get_sw_features_from_cnt_v6(struct tfa_device *tfa, int sw_feature_register[2]);
+void get_sw_features_from_cnt_v6(struct tfa_device *tfa,
+				 int sw_feature_register[2]);
 
 /**
  * Factory trimming for the Boost converter
@@ -345,6 +363,7 @@ enum Tfa98xx_Error tfa_set_filters_v6(struct tfa_device *tfa, int prof_idx);
  */
 int tfa_cnt_get_patch_version(struct tfa_device *tfa);
 
-int tfa_tib_dsp_msgmulti(struct tfa_device *tfa, int length, const char *buffer);
+int tfa_tib_dsp_msgmulti(struct tfa_device *tfa, int length,
+			 const char *buffer);
 
 #endif /* TFACONTAINER_H_ */

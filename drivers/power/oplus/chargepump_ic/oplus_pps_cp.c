@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (C) 2018-2020 Oplus. All rights reserved.
+ * Copyright (C) 2018-2022 Oplus. All rights reserved.
  */
+
 #include <linux/interrupt.h>
 #include <linux/i2c.h>
 #include <linux/version.h>
@@ -77,31 +78,42 @@ int oplus_cp_master_get_ucp_flag(void)
 {
 	int ucp_fail = false;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		ucp_fail = sc8571_master_get_ucp_flag();
 	else
 		ucp_fail = bq25980_master_get_ucp_flag();
 
-	pps_err("oplus_cp_master_get_ucp_flag--ucp_fail = 0x%x\n", ucp_fail);
+	pps_err(" ucp_fail = 0x%x\n", ucp_fail);
 	return ucp_fail;
 }
 int oplus_cp_slave_get_ucp_flag(void)
 {
 	int ucp_fail = 0;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		ucp_fail = sc8571_slave_get_ucp_flag();
 	else
 		ucp_fail = bq25980_slave_get_ucp_flag();
 
-	pps_err("oplus_cp_slave_get_ucp_flag--ucp_fail = 0x%x\n", ucp_fail);
+	return ucp_fail;
+}
+
+int oplus_cp_slave_b_get_ucp_flag(void)
+{
+	int ucp_fail = 0;
+
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		ucp_fail = sc8571_slave_b_get_ucp_flag();
+	else
+		ucp_fail = bq25980_slave_get_ucp_flag();
+
 	return ucp_fail;
 }
 
 int oplus_cp_master_get_vout(void)
 {
 	int vout = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		vout = sc8571_master_get_vout();
 	else
 		vout = bq25980_master_get_vout();
@@ -111,8 +123,19 @@ int oplus_cp_master_get_vout(void)
 int oplus_cp_slave_get_vout(void)
 {
 	int vout = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		vout = sc8571_slave_get_vout();
+	else
+		vout = bq25980_slave_get_vout();
+
+	return vout;
+}
+
+int oplus_cp_slave_b_get_vout(void)
+{
+	int vout = 0;
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		vout = sc8571_slave_b_get_vout();
 	else
 		vout = bq25980_slave_get_vout();
 
@@ -122,7 +145,7 @@ int oplus_cp_slave_get_vout(void)
 int oplus_cp_master_get_vac(void)
 {
 	int vac = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		vac = sc8571_master_get_vac();
 	else
 		vac = bq25980_master_get_vac();
@@ -133,8 +156,19 @@ int oplus_cp_master_get_vac(void)
 int oplus_cp_slave_get_vac(void)
 {
 	int vac = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		vac = sc8571_slave_get_vac();
+	else
+		vac = bq25980_slave_get_vac();
+
+	return vac;
+}
+
+int oplus_cp_slave_b_get_vac(void)
+{
+	int vac = 0;
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		vac = sc8571_slave_b_get_vac();
 	else
 		vac = bq25980_slave_get_vac();
 
@@ -145,19 +179,19 @@ int oplus_cp_master_get_vbus(void)
 {
 	int vbus = 0;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		vbus = sc8571_master_get_vbus();
 	else
 		vbus = bq25980_master_get_vbus();
 
-	pps_err("oplus_cp_master_get_vbus--vbus = %d\n", vbus);
 	return vbus;
 }
+
 int oplus_cp_slave_get_vbus(void)
 {
 	int vbus = 0;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		vbus = sc8571_slave_get_vbus();
 	else
 		vbus = bq25980_slave_get_vbus();
@@ -168,7 +202,7 @@ int oplus_cp_slave_get_vbus(void)
 int oplus_cp_master_get_tdie(void)
 {
 	int tdie = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		tdie = sc8571_master_get_tdie();
 	else
 		tdie = bq25980_master_get_tdie();
@@ -180,7 +214,7 @@ int oplus_cp_slave_get_tdie(void)
 {
 	int tdie = 0;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		tdie = sc8571_slave_get_tdie();
 	else
 		tdie = bq25980_slave_get_tdie();
@@ -188,11 +222,32 @@ int oplus_cp_slave_get_tdie(void)
 	return tdie;
 }
 
+int oplus_cp_slave_b_get_tdie(void)
+{
+	int tdie = 0;
+
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		tdie = sc8571_slave_b_get_tdie();
+
+	return tdie;
+}
+
+int oplus_cp_slave_b_get_vbus(void)
+{
+	int vbus = 0;
+
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		vbus = sc8571_slave_b_get_vbus();
+	else
+		vbus = bq25980_slave_get_vbus();
+	return vbus;
+}
+
 int oplus_cp_master_get_ibus(void)
 {
 	int ibus = 0;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		ibus = sc8571_master_get_ibus();
 	else
 		ibus = bq25980_master_get_ibus();
@@ -204,8 +259,20 @@ int oplus_cp_slave_get_ibus(void)
 {
 	int ibus = 0;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		ibus = sc8571_slave_get_ibus();
+	else
+		ibus = bq25980_slave_get_ibus();
+
+	return ibus;
+}
+
+int oplus_cp_slave_b_get_ibus(void)
+{
+	int ibus = 0;
+
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		ibus = sc8571_slave_b_get_ibus();
 	else
 		ibus = bq25980_slave_get_ibus();
 
@@ -215,21 +282,33 @@ int oplus_cp_slave_get_ibus(void)
 int oplus_cp_master_cp_enable(int enable)
 {
 	int status = 0;
+	pps_err(", enable = %d\n", enable);
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		status = sc8571_master_cp_enable(enable);
 	else
 		status = bq25980_master_cp_enable(enable);
 	return status;
 }
+
 int oplus_cp_slave_cp_enable(int enable)
 {
 	int status = 0;
+	pps_err(", enable = %d\n", enable);
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		status = sc8571_slave_cp_enable(enable);
 	else
 		status = bq25980_slave_cp_enable(enable);
+	return status;
+}
+
+int oplus_cp_slave_b_cp_enable(int enable)
+{
+	int status = 0;
+
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		status = sc8571_slave_b_cp_enable(enable);
 	return status;
 }
 
@@ -237,11 +316,10 @@ bool oplus_cp_master_get_enable(void)
 {
 	bool cp_enable = false;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		cp_enable = sc8571_master_get_enable();
 	else
 		cp_enable = bq25980_master_get_enable();
-	pps_err("oplus_cp_master_get_enable--cp_enable = %d\n", cp_enable);
 
 	return cp_enable;
 }
@@ -250,20 +328,17 @@ bool oplus_cp_slave_get_enable(void)
 {
 	bool cp_enable = false;
 
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		cp_enable = sc8571_slave_get_enable();
 	else
 		cp_enable = bq25980_slave_get_enable();
-	pps_err("oplus_cp_slave_get_enable--cp_enable = %d\n", cp_enable);
 
 	return cp_enable;
 }
 
 void oplus_cp_master_pmid2vout_enable(bool enable)
 {
-	pps_err("oplus_cp_master_pmid2vout_enable,enable = %d\n", enable);
-
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		sc8571_master_pmid2vout_enable(enable);
 	else
 		bq25980_master_pmid2vout_enable(enable);
@@ -271,17 +346,28 @@ void oplus_cp_master_pmid2vout_enable(bool enable)
 
 void oplus_cp_slave_pmid2vout_enable(bool enable)
 {
-	pps_err("oplus_cp_slave_pmid2vout_enable,enable = %d\n", enable);
-
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		sc8571_slave_pmid2vout_enable(enable);
 	else
 		bq25980_slave_pmid2vout_enable(enable);
 }
 
+bool oplus_cp_slave_b_get_enable(void)
+{
+	bool cp_enable = false;
+
+	if (pps_cp_id == PPS_CP_ID_SC8571)
+		cp_enable = sc8571_slave_b_get_enable();
+	else
+		cp_enable = bq25980_slave_get_enable();
+	pps_err(" enable = %d\n", cp_enable);
+
+	return cp_enable;
+}
+
 void oplus_cp_master_cfg_sc(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		sc8571_master_cfg_sc();
 	else
 		bq25980_master_cfg_sc();
@@ -291,9 +377,10 @@ void oplus_cp_master_cfg_sc(void)
 
 void oplus_cp_slave_cfg_sc(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		sc8571_slave_cfg_sc();
-	else
+		sc8571_slave_b_cfg_sc();
+	} else
 		bq25980_slave_cfg_sc();
 
 	pps_err("oplus_cp_slave_cfg_sc\n");
@@ -301,51 +388,50 @@ void oplus_cp_slave_cfg_sc(void)
 
 void oplus_cp_master_cfg_bypass(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		sc8571_master_cfg_bypass();
 	else
 		bq25980_master_cfg_bypass();
 
-	pps_err("oplus_cp_master_cfg_bypass 5A\n");
+	pps_err("oplus_cp_master_cfg_bypass\n");
 }
 
 void oplus_cp_slave_cfg_bypass(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		sc8571_slave_cfg_bypass();
-	else
+		sc8571_slave_b_cfg_bypass();
+	} else
 		bq25980_slave_cfg_bypass();
 }
-
 
 int oplus_cp_cfg_mode_init(int mode)
 {
 	if (mode == PPS_SC_MODE) {
-		sc8571_master_cfg_sc();
-		sc8571_slave_cfg_sc();
+		oplus_cp_master_cfg_sc();
+		oplus_cp_slave_cfg_sc();
 	} else if (mode == PPS_BYPASS_MODE) {
-		sc8571_master_cfg_bypass();
-		sc8571_slave_cfg_bypass();
+		oplus_cp_master_cfg_bypass();
+		oplus_cp_slave_cfg_bypass();
 	}
 	return 0;
 }
 
 void oplus_cp_master_hardware_init(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		sc8571_master_hardware_init();
 	else
 		bq25980_master_hardware_init();
-
 }
 
 void oplus_cp_slave_hardware_init(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		sc8571_slave_hardware_init();
-	else
+		sc8571_slave_b_hardware_init();
+	} else
 		bq25980_slave_hardware_init();
-
 }
 
 void oplus_cp_hardware_init(void)
@@ -357,22 +443,20 @@ void oplus_cp_hardware_init(void)
 
 void oplus_cp_master_reset(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		sc8571_master_reset();
 	else
 		bq25980_master_reset();
-
 }
 
 void oplus_cp_slave_reset(void)
 {
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		sc8571_slave_reset();
-	else
+		sc8571_slave_b_reset();
+	} else
 		bq25980_slave_reset();
-
 }
-
 
 void oplus_cp_reset(void)
 {
@@ -385,61 +469,55 @@ void oplus_cp_pmid2vout_enable(bool enable)
 {
 	oplus_cp_master_pmid2vout_enable(enable);
 	oplus_cp_slave_pmid2vout_enable(enable);
-	pps_err("oplus_cp_pmid2vout_enable enable = %d\n", enable);
 }
 
 int oplus_cp_master_dump_registers(void)
 {
 	int status = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571)
 		status = sc8571_master_dump_registers();
 	else
 		status = bq25980_master_dump_registers();
-	pps_err("oplus_cp_master_dump_registers\n");
 	return status;
 }
 
 int oplus_cp_slave_dump_registers(void)
 {
 	int status = 0;
-	if(pps_cp_id == PPS_CP_ID_SC8571)
+	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		status = sc8571_slave_dump_registers();
-	else
+		status = sc8571_slave_b_dump_registers();
+	} else
 		status = bq25980_slave_dump_registers();
-	pps_err("oplus_cp_slave_dump_registers\n");
 	return status;
 }
-/*
-extern int oplus_sm8350_pps_get_authentiate(void);
-extern int oplus_sm8350_read_vbat0_voltage(void);
-extern int oplus_sm8350_check_btb_temp(void);
-*/
+
 extern int op10_read_input_voltage(void);
 extern int op10_read_vbat0_voltage(void);
 extern int op10_check_btb_temp(void);
+extern int oplus_chg_pps_get_max_cur(int vbus_mv);
 extern void oplus_op10_set_mcu_pps_mode(bool pps);
 extern int oplus_op10_get_mcu_pps_mode(void);
-extern int oplus_chg_pps_get_max_cur(int vbus_mv);
 
 struct oplus_pps_operations oplus_cp_pps_ops = {
 	.set_mcu_pps_mode = oplus_op10_set_mcu_pps_mode,
 	.get_mcu_pps_mode = oplus_op10_get_mcu_pps_mode,
-	/*.get_input_volt = op10_read_input_voltage,*/
 	.get_vbat0_volt = oplus_sm8350_read_vbat0_voltage,
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 	.check_btb_temp = op10_check_btb_temp,
 #else
 	.check_btb_temp = oplus_sm8350_check_btb_temp,
 #endif
-	/*.pps_check_authentiate = oplus_sm8350_pps_check_authentiate,*/
 	.pps_get_authentiate = oplus_sm8350_pps_get_authentiate,
 	.pps_pdo_select = oplus_chg_set_pps_config,
 	.get_pps_status = oplus_chg_get_pps_status,
 	.get_pps_max_cur = oplus_chg_pps_get_max_cur,
+
 	.pps_cp_hardware_init = oplus_cp_hardware_init,
 	.pps_cp_reset = oplus_cp_reset,
 	.pps_cp_mode_init = oplus_cp_cfg_mode_init,
 	.pps_cp_pmid2vout_enable = oplus_cp_pmid2vout_enable,
+
 	.pps_mos_ctrl = oplus_cp_master_cp_enable,
 	.pps_get_cp_master_vbus = oplus_cp_master_get_vbus,
 	.pps_get_cp_master_ibus = oplus_cp_master_get_ibus,
@@ -454,18 +532,24 @@ struct oplus_pps_operations oplus_cp_pps_ops = {
 	.pps_get_cp_slave_vac = oplus_cp_slave_get_vac,
 	.pps_get_cp_slave_vout = oplus_cp_slave_get_vout,
 	.pps_get_cp_slave_tdie = oplus_cp_slave_get_tdie,
+
+	.pps_get_cp_slave_b_vbus = oplus_cp_slave_b_get_vbus,
+	.pps_get_cp_slave_b_ibus = oplus_cp_slave_b_get_ibus,
+	.pps_mos_slave_b_ctrl = oplus_cp_slave_b_cp_enable,
+	.pps_get_cp_slave_b_vac = oplus_cp_slave_b_get_vac,
+	.pps_get_cp_slave_b_vout = oplus_cp_slave_b_get_vout,
+	.pps_get_cp_slave_b_tdie = oplus_cp_slave_b_get_tdie,
 };
 
 int oplus_pps_cp_init(void)
 {
 	int status = 0;
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 	status = sc8571_master_subsys_init();
 	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		status = sc8571_slave_subsys_init();
-	}
-	else {
+		status = sc8571_slave_b_subsys_init();
+	} else {
 		status = bq25980_master_subsys_init();
 		status = bq25980_slave_subsys_init();
 	}
@@ -479,9 +563,10 @@ int oplus_pps_cp_init(void)
 void oplus_pps_cp_deinit(void)
 {
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
-	if(pps_cp_id == PPS_CP_ID_SC8571) {
+	if (pps_cp_id == PPS_CP_ID_SC8571) {
 		sc8571_master_subsys_exit();
 		sc8571_slave_subsys_exit();
+		sc8571_slave_b_subsys_exit();
 	} else {
 		bq25980_master_subsys_exit();
 		bq25980_slave_subsys_exit();

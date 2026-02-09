@@ -38,33 +38,30 @@
 #include "oplus_wireless.h"
 #endif
 
-#define chg_debug(fmt, ...)                                                    \
-	printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_debug(fmt, ...) printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_err(fmt, ...)                                                      \
-	printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_err(fmt, ...) printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_info(fmt, ...)                                                     \
-	printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_info(fmt, ...) printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define JEITA_VOTER       "JEITA_VOTER"
-#define STEP_VOTER        "STEP_VOTER"
-#define USER_VOTER        "USER_VOTER"
-#define DEF_VOTER         "DEF_VOTER"
-#define MAX_VOTER         "MAX_VOTER"
-#define EXIT_VOTER        "EXIT_VOTER"
-#define FFC_VOTER         "FFC_VOTER"
-#define CEP_VOTER         "CEP_VOTER"
-#define QUIET_VOTER       "QUIET_VOTER"
-#define BATT_VOL_VOTER    "BATT_VOL_VOTER"
-#define BATT_CURR_VOTER   "BATT_CURR_VOTER"
-#define SKIN_VOTER        "SKIN_VOTER"
+#define JEITA_VOTER "JEITA_VOTER"
+#define STEP_VOTER "STEP_VOTER"
+#define USER_VOTER "USER_VOTER"
+#define DEF_VOTER "DEF_VOTER"
+#define MAX_VOTER "MAX_VOTER"
+#define EXIT_VOTER "EXIT_VOTER"
+#define FFC_VOTER "FFC_VOTER"
+#define CEP_VOTER "CEP_VOTER"
+#define QUIET_VOTER "QUIET_VOTER"
+#define BATT_VOL_VOTER "BATT_VOL_VOTER"
+#define BATT_CURR_VOTER "BATT_CURR_VOTER"
+#define SKIN_VOTER "SKIN_VOTER"
 #define STARTUP_CEP_VOTER "STARTUP_CEP_VOTER"
-#define HW_ERR_VOTER      "HW_ERR_VOTER"
-#define CURR_ERR_VOTER    "CURR_ERR_VOTER"
+#define HW_ERR_VOTER "HW_ERR_VOTER"
+#define CURR_ERR_VOTER "CURR_ERR_VOTER"
 
 // pmic fcc vote
-#define WLCH_VOTER      "WLCH_VOTER"
+#define WLCH_VOTER "WLCH_VOTER"
 #define WLCH_SKIN_VOTER "WLCH_SKIN_VOTER"
 
 #define BATT_TEMP_HYST 20
@@ -88,9 +85,7 @@ static bool auto_mode = true;
 static BLOCKING_NOTIFIER_HEAD(reverse_charge_chain);
 
 static bool enable_deviated_check;
-module_param_named(
-	enable_deviated_check, enable_deviated_check, bool, 0600
-);
+module_param_named(enable_deviated_check, enable_deviated_check, bool, 0600);
 
 void op_set_wrx_en_value(int value);
 void op_set_wrx_otg_value(int value);
@@ -119,9 +114,12 @@ void __attribute__((weak)) smblib_bypass_vsafe0_control(struct smb_charger *chg,
 /*----For FCC/jeita----------------------------------------*/
 #define FCC_DEFAULT 200000
 
-static int read_range_data_from_node(struct device_node *node,
-		const char *prop_str, struct op_range_data *ranges,
-		int max_threshold, u32 max_value)
+#define FASTCHG_MODE 0
+#define SILENT_MODE 1
+#define BATTERY_FULL_MODE 2
+
+static int read_range_data_from_node(struct device_node *node, const char *prop_str, struct op_range_data *ranges,
+				     int max_threshold, u32 max_value)
 {
 	int rc = 0, i, length, per_tuple_length, tuples;
 
@@ -139,30 +137,25 @@ static int read_range_data_from_node(struct device_node *node,
 	length = rc;
 	per_tuple_length = sizeof(struct op_range_data) / sizeof(u32);
 	if (length % per_tuple_length) {
-		pr_err("%s length (%d) should be multiple of %d\n",
-				prop_str, length, per_tuple_length);
+		pr_err("%s length (%d) should be multiple of %d\n", prop_str, length, per_tuple_length);
 		return -EINVAL;
 	}
 	tuples = length / per_tuple_length;
 
 	if (tuples > MAX_STEP_CHG_ENTRIES) {
-		pr_err("too many entries(%d), only %d allowed\n",
-				tuples, MAX_STEP_CHG_ENTRIES);
+		pr_err("too many entries(%d), only %d allowed\n", tuples, MAX_STEP_CHG_ENTRIES);
 		return -EINVAL;
 	}
 
-	rc = of_property_read_u32_array(node, prop_str,
-			(u32 *)ranges, length);
+	rc = of_property_read_u32_array(node, prop_str, (u32 *)ranges, length);
 	if (rc) {
 		pr_err("Read %s failed, rc=%d\n", prop_str, rc);
 		return rc;
 	}
 
 	for (i = 0; i < tuples; i++) {
-		if (ranges[i].low_threshold >
-				ranges[i].high_threshold) {
-			pr_err("%s thresholds should be in ascendant ranges\n",
-						prop_str);
+		if (ranges[i].low_threshold > ranges[i].high_threshold) {
+			pr_err("%s thresholds should be in ascendant ranges\n", prop_str);
 			rc = -EINVAL;
 			goto clean;
 		}
@@ -181,8 +174,7 @@ clean:
 	return rc;
 }
 
-static int read_temp_region_data_from_node(struct device_node *node,
-		const char *prop_str, int *addr)
+static int read_temp_region_data_from_node(struct device_node *node, const char *prop_str, int *addr)
 {
 	int rc = 0, length;
 
@@ -200,13 +192,11 @@ static int read_temp_region_data_from_node(struct device_node *node,
 	length = rc;
 
 	if (length > WLCHG_TEMP_REGION_MAX) {
-		pr_err("too many entries(%d), only %d allowed\n",
-				length, WLCHG_TEMP_REGION_MAX);
+		pr_err("too many entries(%d), only %d allowed\n", length, WLCHG_TEMP_REGION_MAX);
 		return -EINVAL;
 	}
 
-	rc = of_property_read_u32_array(node, prop_str,
-			(u32 *)addr, length);
+	rc = of_property_read_u32_array(node, prop_str, (u32 *)addr, length);
 	if (rc) {
 		pr_err("Read %s failed, rc=%d\n", prop_str, rc);
 		return rc;
@@ -215,8 +205,7 @@ static int read_temp_region_data_from_node(struct device_node *node,
 	return rc;
 }
 
-static int read_data_from_node(struct device_node *node,
-		const char *prop_str, int *addr, int len)
+static int read_data_from_node(struct device_node *node, const char *prop_str, int *addr, int len)
 {
 	int rc = 0, length;
 
@@ -238,8 +227,7 @@ static int read_data_from_node(struct device_node *node,
 		length = len;
 	}
 
-	rc = of_property_read_u32_array(node, prop_str,
-			(u32 *)addr, length);
+	rc = of_property_read_u32_array(node, prop_str, (u32 *)addr, length);
 	if (rc) {
 		pr_err("Read %s failed, rc=%d\n", prop_str, rc);
 		return rc;
@@ -378,10 +366,8 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 		chg_param->BATT_TEMP_T6 = 500;
 	}
 
-	chg_info("temp region: %d, %d, %d, %d, %d, %d, %d",
-		 chg_param->BATT_TEMP_T0, chg_param->BATT_TEMP_T1,
-		 chg_param->BATT_TEMP_T2, chg_param->BATT_TEMP_T3,
-		 chg_param->BATT_TEMP_T4, chg_param->BATT_TEMP_T5,
+	chg_info("temp region: %d, %d, %d, %d, %d, %d, %d", chg_param->BATT_TEMP_T0, chg_param->BATT_TEMP_T1,
+		 chg_param->BATT_TEMP_T2, chg_param->BATT_TEMP_T3, chg_param->BATT_TEMP_T4, chg_param->BATT_TEMP_T5,
 		 chg_param->BATT_TEMP_T6);
 
 	rc = read_temp_region_data_from_node(node, "op,epp-ibatmax-ma", chg_param->epp_ibatmax);
@@ -396,15 +382,11 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 		chg_param->epp_ibatmax[WLCHG_BATT_TEMP_WARM] = 1500;
 		chg_param->epp_ibatmax[WLCHG_BATT_TEMP_HOT] = 0;
 	}
-	chg_info("ibatmax-epp: %d, %d, %d, %d, %d, %d, %d, %d",
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_COLD],
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_LITTLE_COLD],
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_COOL],
+	chg_info("ibatmax-epp: %d, %d, %d, %d, %d, %d, %d, %d", chg_param->epp_ibatmax[WLCHG_BATT_TEMP_COLD],
+		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_LITTLE_COLD], chg_param->epp_ibatmax[WLCHG_BATT_TEMP_COOL],
 		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_LITTLE_COOL],
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_PRE_NORMAL],
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_NORMAL],
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_WARM],
-		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_HOT]);
+		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_PRE_NORMAL], chg_param->epp_ibatmax[WLCHG_BATT_TEMP_NORMAL],
+		 chg_param->epp_ibatmax[WLCHG_BATT_TEMP_WARM], chg_param->epp_ibatmax[WLCHG_BATT_TEMP_HOT]);
 
 	rc = read_temp_region_data_from_node(node, "op,bpp-ibatmax-ma", chg_param->bpp_ibatmax);
 	if (rc < 0) {
@@ -418,15 +400,11 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 		chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_WARM] = 1500;
 		chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_HOT] = 0;
 	}
-	chg_info("ibatmax-bpp: %d, %d, %d, %d, %d, %d, %d, %d",
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_COLD],
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_LITTLE_COLD],
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_COOL],
+	chg_info("ibatmax-bpp: %d, %d, %d, %d, %d, %d, %d, %d", chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_COLD],
+		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_LITTLE_COLD], chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_COOL],
 		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_LITTLE_COOL],
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_PRE_NORMAL],
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_NORMAL],
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_WARM],
-		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_HOT]);
+		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_PRE_NORMAL], chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_NORMAL],
+		 chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_WARM], chg_param->bpp_ibatmax[WLCHG_BATT_TEMP_HOT]);
 
 	rc = read_temp_region_data_from_node(node, "op,epp-iclmax-ma", chg_param->epp_iclmax);
 	if (rc < 0) {
@@ -440,14 +418,10 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 		chg_param->epp_iclmax[WLCHG_BATT_TEMP_WARM] = 650;
 		chg_param->epp_iclmax[WLCHG_BATT_TEMP_HOT] = 0;
 	}
-	chg_info("iclmax-epp: %d, %d, %d, %d, %d, %d, %d, %d",
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_COLD],
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_LITTLE_COLD],
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_COOL],
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_LITTLE_COOL],
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_PRE_NORMAL],
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_NORMAL],
-		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_WARM],
+	chg_info("iclmax-epp: %d, %d, %d, %d, %d, %d, %d, %d", chg_param->epp_iclmax[WLCHG_BATT_TEMP_COLD],
+		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_LITTLE_COLD], chg_param->epp_iclmax[WLCHG_BATT_TEMP_COOL],
+		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_LITTLE_COOL], chg_param->epp_iclmax[WLCHG_BATT_TEMP_PRE_NORMAL],
+		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_NORMAL], chg_param->epp_iclmax[WLCHG_BATT_TEMP_WARM],
 		 chg_param->epp_iclmax[WLCHG_BATT_TEMP_HOT]);
 
 	rc = read_temp_region_data_from_node(node, "op,bpp-iclmax-ma", chg_param->bpp_iclmax);
@@ -462,14 +436,10 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 		chg_param->bpp_iclmax[WLCHG_BATT_TEMP_WARM] = 1000;
 		chg_param->bpp_iclmax[WLCHG_BATT_TEMP_HOT] = 0;
 	}
-	chg_info("iclmax-bpp: %d, %d, %d, %d, %d, %d, %d, %d",
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_COLD],
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_LITTLE_COLD],
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_COOL],
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_LITTLE_COOL],
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_PRE_NORMAL],
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_NORMAL],
-		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_WARM],
+	chg_info("iclmax-bpp: %d, %d, %d, %d, %d, %d, %d, %d", chg_param->bpp_iclmax[WLCHG_BATT_TEMP_COLD],
+		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_LITTLE_COLD], chg_param->bpp_iclmax[WLCHG_BATT_TEMP_COOL],
+		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_LITTLE_COOL], chg_param->bpp_iclmax[WLCHG_BATT_TEMP_PRE_NORMAL],
+		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_NORMAL], chg_param->bpp_iclmax[WLCHG_BATT_TEMP_WARM],
 		 chg_param->bpp_iclmax[WLCHG_BATT_TEMP_HOT]);
 
 	rc = read_temp_region_data_from_node(node, "vbatdet-mv", chg_param->vbatdet);
@@ -540,58 +510,49 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 		chg_param->epp_skin_temp_min = 370;
 	}
 
-	rc = read_data_from_node(node, "op,epp-curr-step",
-				chg_param->epp_curr_step, EPP_CURR_STEP_MAX);
+	rc = read_data_from_node(node, "op,epp-curr-step", chg_param->epp_curr_step, EPP_CURR_STEP_MAX);
 	if (rc < 0) {
 		pr_err("Read op,epp-curr-step failed, rc=%d\n", rc);
-		chg_param->epp_curr_step[0] = 1100;  // 10W
-		chg_param->epp_curr_step[1] = 550;   // 5W
+		chg_param->epp_curr_step[0] = 1100; // 10W
+		chg_param->epp_curr_step[1] = 550; // 5W
 	}
 
 	chg_param->fastchg_fod_enable = of_property_read_bool(node, "op,fastchg-fod-enable");
 	if (chg_param->fastchg_fod_enable) {
-		rc = of_property_read_u8(node, "op,fastchg-match-q-new",
-			&chg_param->fastchg_match_q_new);
-		if (rc < 0) {
-			pr_err("op,fastchg-match-q-new reading failed, rc=%d\n", rc);
-			chg_param->fastchg_match_q_new = 0x56;
-		}
-
-		rc = of_property_read_u8(node, "op,fastchg-match-q",
-			&chg_param->fastchg_match_q);
+		rc = of_property_read_u8_array(node, "op,fastchg-match-q", (u8 *)&chg_param->fastchg_match_q,
+					       MATCH_Q_LENGTH);
 		if (rc < 0) {
 			pr_err("op,fastchg-match-q reading failed, rc=%d\n", rc);
-			chg_param->fastchg_match_q = 0x44;
+			chg_param->fastchg_match_q[0] = 0x44;
+			chg_param->fastchg_match_q[1] = 0x56;
+			chg_param->fastchg_match_q[2] = 0x56;
 		}
 
-		rc = of_property_read_u8_array(node, "op,fastchg-fod-parm-new",
-			(u8 *)&chg_param->fastchg_fod_parm_new, FOD_PARM_LENGTH);
+		rc = of_property_read_u8_array(node, "op,fastchg-fod-parm-new", (u8 *)&chg_param->fastchg_fod_parm_new,
+					       FOD_PARM_LENGTH);
 		if (rc < 0) {
 			chg_param->fastchg_fod_enable = false;
 			pr_err("Read op,fastchg-fod-parm-new failed, rc=%d\n", rc);
 		}
 
-		rc = of_property_read_u8_array(node, "op,fastchg-fod-parm",
-			(u8 *)&chg_param->fastchg_fod_parm, FOD_PARM_LENGTH);
+		rc = of_property_read_u8_array(node, "op,fastchg-fod-parm", (u8 *)&chg_param->fastchg_fod_parm,
+					       FOD_PARM_LENGTH);
 		if (rc < 0) {
 			chg_param->fastchg_fod_enable = false;
 			pr_err("Read op,fastchg-fod-parm failed, rc=%d\n", rc);
 		}
 
 		rc = of_property_read_u8_array(node, "op,fastchg-fod-parm-startup",
-			(u8 *)&chg_param->fastchg_fod_parm_startup, FOD_PARM_LENGTH);
+					       (u8 *)&chg_param->fastchg_fod_parm_startup, FOD_PARM_LENGTH);
 		if (rc < 0) {
 			pr_err("Read op,fastchg-fod-parm failed, rc=%d\n", rc);
 			for (i = 0; i < FOD_PARM_LENGTH; i++)
-				chg_param->fastchg_fod_parm_startup[i] =
-					chg_param->fastchg_fod_parm[i];
+				chg_param->fastchg_fod_parm_startup[i] = chg_param->fastchg_fod_parm[i];
 		}
 	}
 
-	rc = read_range_data_from_node(node, "op,fastchg-ffc_step",
-				       chg_param->ffc_chg.ffc_step,
-				       chg_param->BATT_TEMP_T5,
-				       chg_param->fastchg_curr_max * 1000);
+	rc = read_range_data_from_node(node, "op,fastchg-ffc_step", chg_param->ffc_chg.ffc_step,
+				       chg_param->BATT_TEMP_T5, chg_param->fastchg_curr_max * 1000);
 	if (rc < 0) {
 		pr_err("Read op,fastchg-ffc_step failed, rc=%d\n", rc);
 		ffc_chg->ffc_step[0].low_threshold = 0;
@@ -614,14 +575,14 @@ static int wireless_chg_init(struct op_chg_chip *chip)
 
 		ffc_chg->ffc_step[3].low_threshold = 400;
 		ffc_chg->ffc_step[3].high_threshold = 420;
-		ffc_chg->ffc_step[3].curr_ua =625000;
+		ffc_chg->ffc_step[3].curr_ua = 625000;
 		ffc_chg->ffc_step[3].vol_max_mv = 4480;
 		ffc_chg->ffc_step[3].need_wait = 0;
 		ffc_chg->max_step = 4;
 	} else {
 		ffc_chg->max_step = rc;
 	}
-	for(i = 0; i < ffc_chg->max_step; i++) {
+	for (i = 0; i < ffc_chg->max_step; i++) {
 		if (ffc_chg->ffc_step[i].low_threshold > 0)
 			ffc_chg->allow_fallback[i] = true;
 		else
@@ -705,8 +666,7 @@ static int pmic_set_icl_current(int chg_current)
 {
 	if (normal_charger != NULL) {
 		chg_err("set usb_icl vote to %d mA\n", chg_current);
-		vote(normal_charger->usb_icl_votable, WIRED_CONN_VOTER, true,
-		     chg_current * 1000);
+		vote(normal_charger->usb_icl_votable, WIRED_CONN_VOTER, true, chg_current * 1000);
 		return 0;
 	}
 
@@ -723,8 +683,7 @@ void notify_pd_in_to_wireless(void)
 	g_op_chip->pd_charger_online = true;
 }
 
-static int wlchg_set_rx_charge_current(struct op_chg_chip *chip,
-				       int chg_current)
+static int wlchg_set_rx_charge_current(struct op_chg_chip *chip, int chg_current)
 {
 	if (chip != NULL && normal_charger != NULL) {
 		chg_err("<~WPC~> set charge current: %d\n", chg_current);
@@ -738,8 +697,7 @@ static int wlchg_set_rx_charge_current(struct op_chg_chip *chip,
 	}
 }
 
-static int wlchg_set_rx_charge_current_step(struct op_chg_chip *chip,
-					    int chg_current)
+static int wlchg_set_rx_charge_current_step(struct op_chg_chip *chip, int chg_current)
 {
 	if (chip != NULL && normal_charger != NULL) {
 		chg_err("<~WPC~> set charge current: %d\n", chg_current);
@@ -752,8 +710,7 @@ static int wlchg_set_rx_charge_current_step(struct op_chg_chip *chip,
 	}
 }
 
-static int wlch_fcc_vote_callback(struct votable *votable, void *data,
-				  int icl_ua, const char *client)
+static int wlch_fcc_vote_callback(struct votable *votable, void *data, int icl_ua, const char *client)
 {
 	struct op_chg_chip *chip = data;
 	struct wpc_data *chg_status = &chip->wlchg_status;
@@ -776,8 +733,7 @@ static int wlch_fcc_vote_callback(struct votable *votable, void *data,
 	return 0;
 }
 
-static int wlchg_fastchg_disable_vote_callback(struct votable *votable, void *data,
-				int disable, const char *client)
+static int wlchg_fastchg_disable_vote_callback(struct votable *votable, void *data, int disable, const char *client)
 {
 	struct op_chg_chip *chip = data;
 	struct wpc_data *chg_status = &chip->wlchg_status;
@@ -845,7 +801,7 @@ static void wlchg_reset_variables(struct op_chg_chip *chip)
 	chg_status->fastchg_curr_step = 0;
 	chg_status->fastchg_retry_count = 0;
 	chg_status->curr_err_count = 0;
-	chg_status->fastchg_ing  = false;
+	chg_status->fastchg_ing = false;
 	chg_status->wpc_ffc_charge = false;
 	chg_status->rx_adc_test_enable = false;
 	chg_status->rx_adc_test_pass = false;
@@ -950,14 +906,10 @@ static int wlchg_disable_batt_charge(struct op_chg_chip *chip, bool en)
 	return 0;
 }
 
-#define WPC_DISCHG_WAIT_READY_EVENT                                            \
-	round_jiffies_relative(msecs_to_jiffies(200))
-#define WPC_DISCHG_WAIT_DEVICE_EVENT                                           \
-	round_jiffies_relative(msecs_to_jiffies(60 * 1000))
-#define WPC_DISCHG_POLL_STATUS_EVENT                                           \
-		round_jiffies_relative(msecs_to_jiffies(5000))
-#define WPC_DISCHG_WAIT_STATUS_EVENT                                           \
-		round_jiffies_relative(msecs_to_jiffies(500))
+#define WPC_DISCHG_WAIT_READY_EVENT round_jiffies_relative(msecs_to_jiffies(200))
+#define WPC_DISCHG_WAIT_DEVICE_EVENT round_jiffies_relative(msecs_to_jiffies(60 * 1000))
+#define WPC_DISCHG_POLL_STATUS_EVENT round_jiffies_relative(msecs_to_jiffies(5000))
+#define WPC_DISCHG_WAIT_STATUS_EVENT round_jiffies_relative(msecs_to_jiffies(500))
 
 void wlchg_enable_tx_function(bool is_on)
 {
@@ -1001,15 +953,12 @@ void wlchg_enable_tx_function(bool is_on)
 					REVERSE_WIRELESS_CHARGE_VOL_LIMT);
 		msleep(50);
 
-		g_op_chip->wlchg_status.wpc_dischg_status =
-			WPC_DISCHG_STATUS_ON;
+		g_op_chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_STATUS_ON;
 		g_op_chip->wireless_mode = WIRELESS_MODE_TX;
 		cancel_delayed_work_sync(&g_op_chip->dischg_work);
-		schedule_delayed_work(&g_op_chip->dischg_work,
-					  WPC_DISCHG_WAIT_READY_EVENT);
+		schedule_delayed_work(&g_op_chip->dischg_work, WPC_DISCHG_WAIT_READY_EVENT);
 		cancel_delayed_work_sync(&g_op_chip->tx_check_work);
-		schedule_delayed_work(&g_op_chip->tx_check_work,
-					  msecs_to_jiffies(500));
+		schedule_delayed_work(&g_op_chip->tx_check_work, msecs_to_jiffies(500));
 		chg_err("<~WPC~> Enable rtx end!\n");
 	} else {
 		chg_err("<~WPC~> Disable rtx function!\n");
@@ -1022,8 +971,7 @@ void wlchg_enable_tx_function(bool is_on)
 		g_op_chip->wireless_mode = WIRELESS_MODE_NULL;
 		if (g_op_chip->wireless_psy != NULL)
 			power_supply_changed(g_op_chip->wireless_psy);
-		g_op_chip->wlchg_status.wpc_dischg_status =
-			WPC_DISCHG_STATUS_OFF;
+		g_op_chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_STATUS_OFF;
 		g_op_chip->wlchg_status.tx_online = false;
 		//insert the wire charge, disable tp noise mode.
 		if (g_op_chip->wlchg_status.wpc_dischg_status != WPC_DISCHG_IC_TRANSFER) {
@@ -1136,8 +1084,7 @@ bool wlchg_wireless_working(void)
 		chg_err("g_op_chip is null, not ready.");
 		return false;
 	}
-	working = g_op_chip->charger_exist
-			|| g_op_chip->wlchg_status.tx_present;
+	working = g_op_chip->charger_exist || g_op_chip->wlchg_status.tx_present;
 	return working;
 }
 
@@ -1180,7 +1127,9 @@ static void fastchg_curr_control_en(struct op_chg_chip *chip, bool enable)
 
 static bool wlchg_check_charge_done(struct op_chg_chip *chip)
 {
-	union power_supply_propval pval = {0, };
+	union power_supply_propval pval = {
+		0,
+	};
 	int rc;
 
 	if (!chip->batt_psy) {
@@ -1191,8 +1140,7 @@ static bool wlchg_check_charge_done(struct op_chg_chip *chip)
 		}
 	}
 
-	rc = power_supply_get_property(chip->batt_psy,
-		POWER_SUPPLY_PROP_STATUS, &pval);
+	rc = power_supply_get_property(chip->batt_psy, POWER_SUPPLY_PROP_STATUS, &pval);
 	if (rc < 0) {
 		pr_err("Couldn't get batt status, rc=%d\n", rc);
 		return false;
@@ -1217,9 +1165,7 @@ static int wlchg_get_skin_temp(int *temp)
 		return -ENODATA;
 	}
 
-	rc = iio_read_channel_processed(
-				normal_charger->iio.op_skin_therm_chan,
-				&result);
+	rc = iio_read_channel_processed(normal_charger->iio.op_skin_therm_chan, &result);
 	if (rc < 0) {
 		chg_err("Error in reading IIO channel data, rc=%d\n", rc);
 		return rc;
@@ -1229,13 +1175,12 @@ static int wlchg_get_skin_temp(int *temp)
 	return 0;
 }
 
-#define FFC_STEP_UA      100000
+#define FFC_STEP_UA 100000
 #define FFC_STEP_TIME_MS 1000
 static void wlchg_fcc_stepper_work(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, wlchg_fcc_stepper_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, wlchg_fcc_stepper_work);
 	struct wpc_data *chg_status = &chip->wlchg_status;
 	const char *client_str;
 	int ffc_tmp;
@@ -1271,29 +1216,20 @@ static void wlchg_fcc_stepper_work(struct work_struct *work)
 		return;
 	}
 	if (ffc_tmp != target_curr_ua)
-		schedule_delayed_work(&chip->wlchg_fcc_stepper_work,
-				msecs_to_jiffies(FFC_STEP_TIME_MS));
+		schedule_delayed_work(&chip->wlchg_fcc_stepper_work, msecs_to_jiffies(FFC_STEP_TIME_MS));
 }
 
 static enum power_supply_property wlchg_wireless_props[] = {
-	POWER_SUPPLY_PROP_PRESENT,
-	POWER_SUPPLY_PROP_ONLINE,
-	POWER_SUPPLY_PROP_VOLTAGE_NOW,
-	POWER_SUPPLY_PROP_VOLTAGE_MAX,
-	POWER_SUPPLY_PROP_CURRENT_NOW,
-	POWER_SUPPLY_PROP_CURRENT_MAX,
-	POWER_SUPPLY_PROP_TX_VOLTAGE_NOW,
-	POWER_SUPPLY_PROP_TX_CURRENT_NOW,
-	POWER_SUPPLY_PROP_CP_VOLTAGE_NOW,
-	POWER_SUPPLY_PROP_CP_CURRENT_NOW,
-	POWER_SUPPLY_PROP_REAL_TYPE,
-	POWER_SUPPLY_PROP_WIRELESS_MODE,
-	POWER_SUPPLY_PROP_WIRELESS_TYPE,
-	POWER_SUPPLY_PROP_OP_DISABLE_CHARGE,
+	POWER_SUPPLY_PROP_PRESENT,	  POWER_SUPPLY_PROP_ONLINE,
+	POWER_SUPPLY_PROP_VOLTAGE_NOW,	  POWER_SUPPLY_PROP_VOLTAGE_MAX,
+	POWER_SUPPLY_PROP_CURRENT_NOW,	  POWER_SUPPLY_PROP_CURRENT_MAX,
+	POWER_SUPPLY_PROP_TX_VOLTAGE_NOW, POWER_SUPPLY_PROP_TX_CURRENT_NOW,
+	POWER_SUPPLY_PROP_CP_VOLTAGE_NOW, POWER_SUPPLY_PROP_CP_CURRENT_NOW,
+	POWER_SUPPLY_PROP_REAL_TYPE,	  POWER_SUPPLY_PROP_WIRELESS_MODE,
+	POWER_SUPPLY_PROP_WIRELESS_TYPE,  POWER_SUPPLY_PROP_OP_DISABLE_CHARGE,
 };
 
-static int wlchg_wireless_get_prop(struct power_supply *psy,
-				   enum power_supply_property psp,
+static int wlchg_wireless_get_prop(struct power_supply *psy, enum power_supply_property psp,
 				   union power_supply_propval *val)
 {
 	struct op_chg_chip *chip = power_supply_get_drvdata(psy);
@@ -1307,8 +1243,7 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_PRESENT:
-		if (chip->wireless_mode == WIRELESS_MODE_RX &&
-		    normal_charger != NULL)
+		if (chip->wireless_mode == WIRELESS_MODE_RX && normal_charger != NULL)
 			val->intval = normal_charger->wireless_present;
 		else if (chip->wireless_mode == WIRELESS_MODE_TX)
 			val->intval = chip->wlchg_status.tx_present;
@@ -1424,10 +1359,9 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 			val->intval = POWER_SUPPLY_TYPE_USB_DCP;
 			break;
 		case ADAPTER_TYPE_EPP:
-			val->intval = POWER_SUPPLY_TYPE_USB_PD;//PD/QC
+			val->intval = POWER_SUPPLY_TYPE_USB_PD; //PD/QC
 			break;
-		case ADAPTER_TYPE_UNKNOWN:
-		{
+		case ADAPTER_TYPE_UNKNOWN: {
 			enum E_RX_MODE wlchg_run_mode;
 
 			wlchg_run_mode = wlchg_rx_get_run_mode(g_rx_chip);
@@ -1437,8 +1371,7 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 				val->intval = POWER_SUPPLY_TYPE_USB_PD;
 			else
 				val->intval = POWER_SUPPLY_TYPE_UNKNOWN;
-		}
-			break;
+		} break;
 		default:
 			val->intval = POWER_SUPPLY_TYPE_UNKNOWN;
 			break;
@@ -1455,8 +1388,7 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_VBATDET:
 		tmp = chip->wlchg_status.temp_region;
-		if (chip->wireless_mode == WIRELESS_MODE_RX &&
-		    tmp < WLCHG_TEMP_REGION_MAX) {
+		if (chip->wireless_mode == WIRELESS_MODE_RX && tmp < WLCHG_TEMP_REGION_MAX) {
 			val->intval = chip->chg_param.vbatdet[tmp];
 		} else {
 			val->intval = 0;
@@ -1472,8 +1404,7 @@ static int wlchg_wireless_get_prop(struct power_supply *psy,
 	return 0;
 }
 
-static int wlchg_wireless_set_prop(struct power_supply *psy,
-				   enum power_supply_property psp,
+static int wlchg_wireless_set_prop(struct power_supply *psy, enum power_supply_property psp,
 				   const union power_supply_propval *val)
 {
 	struct op_chg_chip *chip = power_supply_get_drvdata(psy);
@@ -1501,8 +1432,7 @@ static int wlchg_wireless_set_prop(struct power_supply *psy,
 	return rc;
 }
 
-static int wlchg_wireless_prop_is_writeable(struct power_supply *psy,
-					    enum power_supply_property psp)
+static int wlchg_wireless_prop_is_writeable(struct power_supply *psy, enum power_supply_property psp)
 {
 	int rc;
 
@@ -1536,8 +1466,7 @@ static int wlchg_init_wireless_psy(struct op_chg_chip *chip)
 
 	wireless_cfg.drv_data = chip;
 	wireless_cfg.of_node = chip->dev->of_node;
-	chip->wireless_psy = devm_power_supply_register(
-		chip->dev, &wireless_psy_desc, &wireless_cfg);
+	chip->wireless_psy = devm_power_supply_register(chip->dev, &wireless_psy_desc, &wireless_cfg);
 	if (IS_ERR(chip->wireless_psy)) {
 		chg_err("Couldn't register wireless power supply\n");
 		return PTR_ERR(chip->wireless_psy);
@@ -1546,8 +1475,67 @@ static int wlchg_init_wireless_psy(struct op_chg_chip *chip)
 	return 0;
 }
 
-static int wlchg_adapter_power_table[] = {0, 12000, 12000, 35000, 50000};
-static int wlchg_base_power_table[] = {30000, 40000, 50000};
+/*static int wlchg_adapter_power_table[] = { 0, 12000, 12000, 35000, 50000 };*/
+static struct wlchg_pwr_table oplus_chg_wlchg_pwr_table[] = {
+	/*(f2_id, r_power, t_power)*/
+	{ 0x00, 12, 15 },   { 0x01, 12, 20 },  { 0x02, 12, 30 },   { 0x03, 35, 50 },   { 0x04, 45, 65 },
+	{ 0x05, 50, 75 },   { 0x06, 60, 85 },  { 0x07, 65, 95 },   { 0x08, 75, 105 },  { 0x09, 80, 115 },
+	{ 0x0A, 90, 125 },  { 0x0B, 20, 20 },  { 0x0C, 100, 140 }, { 0x0D, 115, 160 }, { 0x0E, 130, 180 },
+	{ 0x0F, 145, 200 }, { 0x11, 35, 50 },  { 0x12, 35, 50 },   { 0x13, 12, 20 },   { 0x14, 45, 65 },
+	{ 0x15, 12, 20 },   { 0x16, 12, 20 },  { 0x17, 12, 30 },   { 0x18, 12, 30 },   { 0x19, 12, 30 },
+	{ 0x1A, 12, 33 },   { 0x1B, 12, 33 },  { 0x1C, 12, 44 },   { 0x1D, 12, 44 },   { 0x1E, 12, 44 },
+	{ 0x21, 35, 50 },   { 0x22, 12, 44 },  { 0x23, 35, 50 },   { 0x24, 35, 55 },   { 0x25, 35, 55 },
+	{ 0x26, 35, 55 },   { 0x27, 35, 55 },  { 0x28, 45, 65 },   { 0x29, 12, 30 },   { 0x2A, 45, 65 },
+	{ 0x2B, 45, 66 },   { 0x2C, 45, 67 },  { 0x2D, 45, 67 },   { 0x2E, 45, 67 },   { 0x31, 35, 50 },
+	{ 0x32, 90, 120 },  { 0x33, 35, 50 },  { 0x34, 12, 20 },   { 0x35, 45, 65 },   { 0x36, 45, 66 },
+	{ 0x37, 50, 88 },   { 0x38, 50, 88 },  { 0x39, 50, 88 },   { 0x3A, 50, 88 },   { 0x3B, 75, 100 },
+	{ 0x3C, 75, 100 },  { 0x3D, 75, 100 }, { 0x3E, 75, 100 },  { 0x41, 12, 30 },   { 0x42, 12, 30 },
+	{ 0x43, 12, 30 },   { 0x44, 12, 30 },  { 0x45, 12, 30 },   { 0x46, 12, 30 },   { 0x47, 90, 120 },
+	{ 0x48, 90, 120 },  { 0x49, 12, 33 },  { 0x4A, 12, 33 },   { 0x4B, 50, 80 },   { 0x4C, 50, 80 },
+	{ 0x4D, 50, 80 },   { 0x4E, 50, 80 },  { 0x51, 90, 125 },  { 0x61, 12, 33 },   { 0x62, 35, 50 },
+	{ 0x63, 45, 65 },   { 0x64, 45, 66 },  { 0x65, 50, 80 },   { 0x66, 45, 65 },   { 0x67, 90, 125 },
+	{ 0x68, 90, 125 },  { 0x69, 75, 100 }, { 0x6A, 75, 100 },  { 0x6B, 90, 120 },  { 0x6C, 45, 67 },
+	{ 0x6D, 45, 67 },   { 0x6E, 45, 65 },  { 0x7F, 30, 0 },
+};
+
+static struct wlchg_base_type wlchg_base_table[] = {
+	{ 0x00, 30000 },  { 0x01, 40000 },  { 0x02, 50000 },  { 0x03, 50000 },	{ 0x04, 50000 },  { 0x05, 50000 },
+	{ 0x06, 50000 },  { 0x07, 50000 },  { 0x08, 50000 },  { 0x09, 50000 },	{ 0x0a, 100000 }, { 0x0b, 100000 },
+	{ 0x10, 100000 }, { 0x11, 100000 }, { 0x12, 100000 }, { 0x13, 100000 }, { 0x1f, 50000 },
+};
+
+static int oplus_chg_wlchg_get_base_power_max(u8 id)
+{
+	int i;
+	int pwr = WLCHG_VOOC_PWR_MAX_MW;
+
+	for (i = 0; i < ARRAY_SIZE(wlchg_base_table); i++) {
+		if (wlchg_base_table[i].id == id) {
+			pwr = wlchg_base_table[i].power_max_mw;
+			return pwr;
+		}
+	}
+
+	return pwr;
+}
+
+static int oplus_chg_wlchg_get_r_power(struct op_chg_chip *chip, u8 f2_data)
+{
+	int i = 0;
+	int r_pwr = WLCHG_RECEIVE_POWER_DEFAULT;
+	struct wpc_data *chg_status = &chip->wlchg_status;
+
+	for (i = 0; i < ARRAY_SIZE(oplus_chg_wlchg_pwr_table); i++) {
+		if (oplus_chg_wlchg_pwr_table[i].f2_id == (f2_data & 0x7F)) {
+			r_pwr = oplus_chg_wlchg_pwr_table[i].r_power * 1000;
+			break;
+		}
+	}
+
+	if (chg_status->adapter_type == ADAPTER_TYPE_FASTCHAGE_PD_65W)
+		return WLCHG_RECEIVE_POWER_PD65W;
+	return r_pwr;
+}
 
 int wlchg_send_msg(enum WLCHG_MSG_TYPE type, char data, char remark)
 {
@@ -1561,20 +1549,20 @@ int wlchg_send_msg(enum WLCHG_MSG_TYPE type, char data, char remark)
 	/* set the charging base id */
 	if (remark == WPC_RESPONE_ADAPTER_TYPE) {
 		g_op_chip->chg_base_id = (data & WPC_ADAPTER_ID_MASK) >> 3;
-		if (g_op_chip->chg_base_id >= ARRAY_SIZE(wlchg_base_power_table))
+		if (g_op_chip->chg_base_id >= ARRAY_SIZE(wlchg_base_table))
 			g_op_chip->chg_base_power = 0;
 		else
-			g_op_chip->chg_base_power = wlchg_base_power_table[g_op_chip->chg_base_id];
+			g_op_chip->chg_base_power = oplus_chg_wlchg_get_base_power_max(g_op_chip->chg_base_id);
 		chg_err("get the charging base id = %d", g_op_chip->chg_base_id);
 	}
 
 	/* set the charging adapter id */
 	if (remark == WPC_RESPONE_INTO_FASTCHAGE) {
 		g_op_chip->adapter_id = data;
-		if (g_op_chip->adapter_id >= ARRAY_SIZE(wlchg_adapter_power_table))
+		if (g_op_chip->adapter_id >= ARRAY_SIZE(oplus_chg_wlchg_pwr_table))
 			g_op_chip->adapter_power = 0;
 		else
-			g_op_chip->adapter_power = wlchg_adapter_power_table[g_op_chip->adapter_id];
+			g_op_chip->adapter_power = oplus_chg_wlchg_get_r_power(g_op_chip, g_op_chip->adapter_id);
 		chg_err("get the adapter id = %d", g_op_chip->adapter_id);
 	}
 
@@ -1612,7 +1600,8 @@ static int wlchg_cmd_process(struct op_chg_chip *chip)
 		prop = g_rx_chip->prop;
 		if (cmd_info->cmd != 0) {
 			if (cmd_info->cmd_retry_count != 0) {
-				chg_info("cmd:%d, %d, %d\n", cmd_info->cmd_type, cmd_info->cmd, cmd_info->cmd_retry_count);
+				chg_info("cmd:%d, %d, %d\n", cmd_info->cmd_type, cmd_info->cmd,
+					 cmd_info->cmd_retry_count);
 				prop->send_msg(prop, cmd_info->cmd_type, cmd_info->cmd);
 				if (cmd_info->cmd_retry_count > 0)
 					cmd_info->cmd_retry_count--;
@@ -1629,16 +1618,14 @@ static int wlchg_cmd_process(struct op_chg_chip *chip)
 
 static int wlchg_dev_open(struct inode *inode, struct file *filp)
 {
-	struct op_chg_chip *chip = container_of(filp->private_data,
-		struct op_chg_chip, wlchg_device);
+	struct op_chg_chip *chip = container_of(filp->private_data, struct op_chg_chip, wlchg_device);
 
 	filp->private_data = chip;
 	pr_debug("%d,%d\n", imajor(inode), iminor(inode));
 	return 0;
 }
 
-static ssize_t wlchg_dev_read(struct file *filp, char __user *buf,
-		size_t count, loff_t *offset)
+static ssize_t wlchg_dev_read(struct file *filp, char __user *buf, size_t count, loff_t *offset)
 {
 	struct op_chg_chip *chip = filp->private_data;
 	struct wlchg_msg_t msg;
@@ -1656,8 +1643,7 @@ static ssize_t wlchg_dev_read(struct file *filp, char __user *buf,
 	msg.type = chip->msg_info.type;
 	msg.data = chip->msg_info.data;
 	msg.remark = chip->msg_info.remark;
-	if ((msg.type == WLCHG_MSG_CHG_INFO) &&
-	    (msg.remark == WLCHG_ADAPTER_MSG))
+	if ((msg.type == WLCHG_MSG_CHG_INFO) && (msg.remark == WLCHG_ADAPTER_MSG))
 		chip->wlchg_status.adapter_msg_send = true;
 	mutex_unlock(&chip->msg_lock);
 	if (copy_to_user(buf, &msg, sizeof(struct wlchg_msg_t))) {
@@ -1668,25 +1654,24 @@ static ssize_t wlchg_dev_read(struct file *filp, char __user *buf,
 	return ret;
 }
 
-#define WLCHG_IOC_MAGIC			0xfe
-#define WLCHG_NOTIFY_ADAPTER_TYPE	_IOW(WLCHG_IOC_MAGIC, 1, int)
-#define WLCHG_NOTIFY_ADAPTER_TYPE_ERR	_IO(WLCHG_IOC_MAGIC, 2)
-#define WLCHG_NOTIFY_CHARGE_TYPE	_IOW(WLCHG_IOC_MAGIC, 3, int)
-#define WLCHG_NOTIFY_CHARGE_TYPE_ERR	_IO(WLCHG_IOC_MAGIC, 4)
-#define WLCHG_NOTIFY_TX_ID		_IO(WLCHG_IOC_MAGIC, 5)
-#define WLCHG_NOTIFY_TX_ID_ERR		_IO(WLCHG_IOC_MAGIC, 6)
-#define WLCHG_NOTIFY_QUIET_MODE		_IO(WLCHG_IOC_MAGIC, 7)
-#define WLCHG_NOTIFY_QUIET_MODE_ERR	_IO(WLCHG_IOC_MAGIC, 8)
-#define WLCHG_NOTIFY_NORMAL_MODE	_IO(WLCHG_IOC_MAGIC, 9)
-#define WLCHG_NOTIFY_NORMAL_MODE_ERR	_IO(WLCHG_IOC_MAGIC, 10)
-#define WLCHG_NOTIFY_READY_FOR_EPP	_IO(WLCHG_IOC_MAGIC, 11)
-#define WLCHG_NOTIFY_WORKING_IN_EPP	_IO(WLCHG_IOC_MAGIC, 12)
-#define WLCHG_NOTIFY_HEARTBEAT		_IO(WLCHG_IOC_MAGIC, 13)
-#define WLCHG_NOTIFY_SET_CEP_TIMEOUT     _IO(WLCHG_IOC_MAGIC, 14)
+#define WLCHG_IOC_MAGIC 0xfe
+#define WLCHG_NOTIFY_ADAPTER_TYPE _IOW(WLCHG_IOC_MAGIC, 1, int)
+#define WLCHG_NOTIFY_ADAPTER_TYPE_ERR _IO(WLCHG_IOC_MAGIC, 2)
+#define WLCHG_NOTIFY_CHARGE_TYPE _IOW(WLCHG_IOC_MAGIC, 3, int)
+#define WLCHG_NOTIFY_CHARGE_TYPE_ERR _IO(WLCHG_IOC_MAGIC, 4)
+#define WLCHG_NOTIFY_TX_ID _IO(WLCHG_IOC_MAGIC, 5)
+#define WLCHG_NOTIFY_TX_ID_ERR _IO(WLCHG_IOC_MAGIC, 6)
+#define WLCHG_NOTIFY_QUIET_MODE _IO(WLCHG_IOC_MAGIC, 7)
+#define WLCHG_NOTIFY_QUIET_MODE_ERR _IO(WLCHG_IOC_MAGIC, 8)
+#define WLCHG_NOTIFY_NORMAL_MODE _IO(WLCHG_IOC_MAGIC, 9)
+#define WLCHG_NOTIFY_NORMAL_MODE_ERR _IO(WLCHG_IOC_MAGIC, 10)
+#define WLCHG_NOTIFY_READY_FOR_EPP _IO(WLCHG_IOC_MAGIC, 11)
+#define WLCHG_NOTIFY_WORKING_IN_EPP _IO(WLCHG_IOC_MAGIC, 12)
+#define WLCHG_NOTIFY_HEARTBEAT _IO(WLCHG_IOC_MAGIC, 13)
+#define WLCHG_NOTIFY_SET_CEP_TIMEOUT _IO(WLCHG_IOC_MAGIC, 14)
 #define WLCHG_NOTIFY_SET_CEP_TIMEOUT_ERR _IO(WLCHG_IOC_MAGIC, 15)
 
-static long wlchg_dev_ioctl(struct file *filp, unsigned int cmd,
-		unsigned long arg)
+static long wlchg_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct op_chg_chip *chip = filp->private_data;
 	struct wpc_data *chg_status = &chip->wlchg_status;
@@ -1699,16 +1684,38 @@ static long wlchg_dev_ioctl(struct file *filp, unsigned int cmd,
 			power_supply_changed(chip->wireless_psy);
 		if (chg_status->adapter_type == ADAPTER_TYPE_FASTCHAGE_PD_65W)
 			chg_status->adapter_type = ADAPTER_TYPE_FASTCHAGE_WARP;
-		if (chip->chg_param.fastchg_fod_enable &&
-		    (chg_status->adapter_type == ADAPTER_TYPE_FASTCHAGE_DASH ||
-		     chg_status->adapter_type == ADAPTER_TYPE_FASTCHAGE_WARP)) {
-			if (chg_status->adapter_id == 0x00 || chg_status->adapter_id == 0x01)
-				wlchg_rx_set_match_q_parm(g_rx_chip, chip->chg_param.fastchg_match_q);
-			else
-			 	wlchg_rx_set_match_q_parm(g_rx_chip, chip->chg_param.fastchg_match_q_new);
+		if (chip->chg_param.fastchg_fod_enable && (chg_status->adapter_type == ADAPTER_TYPE_FASTCHAGE_DASH ||
+							   chg_status->adapter_type == ADAPTER_TYPE_FASTCHAGE_WARP)) {
+			switch (chg_status->adapter_id) {
+			case WLCHG_DOCK_OAWV00:
+			case WLCHG_DOCK_OAWV01:
+				wlchg_rx_set_match_q_parm(g_rx_chip, chip->chg_param.fastchg_match_q[0]);
+				break;
+			case WLCHG_DOCK_OAWV02:
+			case WLCHG_DOCK_OAWV03:
+			case WLCHG_DOCK_THIRD:
+				wlchg_rx_set_match_q_parm(g_rx_chip, chip->chg_param.fastchg_match_q[1]);
+				break;
+			case WLCHG_DOCK_OAWV05:
+			case WLCHG_DOCK_OAWV06:
+			case WLCHG_DOCK_OAWV07:
+			case WLCHG_DOCK_OAWV08:
+			case WLCHG_DOCK_OAWV09:
+			case WLCHG_DOCK_OAWV10:
+			case WLCHG_DOCK_OAWV11:
+			case WLCHG_DOCK_OAWV16:
+			case WLCHG_DOCK_OAWV17:
+			case WLCHG_DOCK_OAWV18:
+			case WLCHG_DOCK_OAWV19:
+				wlchg_rx_set_match_q_parm(g_rx_chip, chip->chg_param.fastchg_match_q[2]);
+				break;
+			default:
+				wlchg_rx_set_match_q_parm(g_rx_chip, chip->chg_param.fastchg_match_q[1]);
+				break;
+			}
 		}
-		chg_info("adapter arg is 0x%02x, adapter type is %d, adapter id is %d\n",
-			arg, chg_status->adapter_type, chg_status->adapter_id);
+		chg_info("adapter arg is 0x%02x, adapter type is %d, adapter id is %d\n", arg, chg_status->adapter_type,
+			 chg_status->adapter_id);
 		break;
 	case WLCHG_NOTIFY_ADAPTER_TYPE_ERR:
 		chg_status->get_adapter_err = true;
@@ -1717,8 +1724,7 @@ static long wlchg_dev_ioctl(struct file *filp, unsigned int cmd,
 	case WLCHG_NOTIFY_CHARGE_TYPE:
 		chg_status->charge_type = arg;
 		chg_info("charge type is %d\n", arg);
-		if (chip->chg_param.fastchg_fod_enable &&
-		    chg_status->charge_type == WPC_CHARGE_TYPE_FAST) {
+		if (chip->chg_param.fastchg_fod_enable && chg_status->charge_type == WPC_CHARGE_TYPE_FAST) {
 			if (chg_status->adapter_id == 0x00 || chg_status->adapter_id == 0x01)
 				wlchg_rx_set_fod_parm(g_rx_chip, chip->chg_param.fastchg_fod_parm);
 			else
@@ -1775,8 +1781,7 @@ static long wlchg_dev_ioctl(struct file *filp, unsigned int cmd,
 	return 0;
 }
 
-static ssize_t wlchg_dev_write(struct file *filp, const char __user *buf,
-		size_t count, loff_t *offset)
+static ssize_t wlchg_dev_write(struct file *filp, const char __user *buf, size_t count, loff_t *offset)
 {
 	struct op_chg_chip *chip = filp->private_data;
 	struct cmd_info_t *cmd_info = &chip->cmd_info;
@@ -1795,19 +1800,18 @@ static ssize_t wlchg_dev_write(struct file *filp, const char __user *buf,
 	cmd_info->cmd = temp_buf[0];
 	cmd_info->cmd_type = temp_buf[1];
 	cmd_info->cmd_retry_count = (signed char)temp_buf[2];
-	chg_info("cmd=%d, cmd_info=%d, retry_count=%d\n", cmd_info->cmd,
-		 cmd_info->cmd_type, cmd_info->cmd_retry_count);
+	chg_info("cmd=%d, cmd_info=%d, retry_count=%d\n", cmd_info->cmd, cmd_info->cmd_type, cmd_info->cmd_retry_count);
 
 	return count;
 }
 
 static const struct file_operations wlchg_dev_fops = {
-	.owner			= THIS_MODULE,
-	.llseek			= no_llseek,
-	.write			= wlchg_dev_write,
-	.read			= wlchg_dev_read,
-	.open			= wlchg_dev_open,
-	.unlocked_ioctl	= wlchg_dev_ioctl,
+	.owner = THIS_MODULE,
+	.llseek = no_llseek,
+	.write = wlchg_dev_write,
+	.read = wlchg_dev_read,
+	.open = wlchg_dev_open,
+	.unlocked_ioctl = wlchg_dev_ioctl,
 };
 
 /* Tbatt < -3C */
@@ -1889,10 +1893,8 @@ static int handle_batt_temp_cool(struct op_chg_chip *chip)
 	static int pre_vbat;
 	static bool vbat_exce_thr; //vbat has exceeded the threshold
 
-	if (((pre_vbat <= chg_param->cool_vbat_thr_mv) &&
-	     (chip->batt_volt > chg_param->cool_vbat_thr_mv)) ||
-	    ((pre_vbat > chg_param->cool_vbat_thr_mv) &&
-	     (chip->batt_volt <= chg_param->cool_vbat_thr_mv))) {
+	if (((pre_vbat <= chg_param->cool_vbat_thr_mv) && (chip->batt_volt > chg_param->cool_vbat_thr_mv)) ||
+	    ((pre_vbat > chg_param->cool_vbat_thr_mv) && (chip->batt_volt <= chg_param->cool_vbat_thr_mv))) {
 		chg_info("battery voltage changes%d\n");
 		chg_status->is_power_changed = true;
 	}
@@ -2138,8 +2140,7 @@ static int handle_batt_temp_hot(struct op_chg_chip *chip)
 		chg_param->mBattTempBoundT3 = chg_param->BATT_TEMP_T3;
 		chg_param->mBattTempBoundT4 = chg_param->BATT_TEMP_T4;
 		chg_param->mBattTempBoundT5 = chg_param->BATT_TEMP_T5;
-		chg_param->mBattTempBoundT6 =
-			chg_param->BATT_TEMP_T6 - BATT_TEMP_HYST;
+		chg_param->mBattTempBoundT6 = chg_param->BATT_TEMP_T6 - BATT_TEMP_HYST;
 	}
 
 	return 0;
@@ -2163,29 +2164,28 @@ static int op_check_battery_temp(struct op_chg_chip *chip)
 	pre_temp_region = chg_status->temp_region;
 	if (chip->temperature < chg_param->mBattTempBoundT0) /* COLD */
 		rc = handle_batt_temp_cold(chip);
-	else if (chip->temperature >=  chg_param->mBattTempBoundT0 &&
-			chip->temperature < chg_param->mBattTempBoundT1) /* LITTLE_COLD */
+	else if (chip->temperature >= chg_param->mBattTempBoundT0 &&
+		 chip->temperature < chg_param->mBattTempBoundT1) /* LITTLE_COLD */
 		rc = handle_batt_temp_little_cold(chip);
-	else if (chip->temperature >=  chg_param->mBattTempBoundT1 &&
-			chip->temperature < chg_param->mBattTempBoundT2) /* COOL */
+	else if (chip->temperature >= chg_param->mBattTempBoundT1 &&
+		 chip->temperature < chg_param->mBattTempBoundT2) /* COOL */
 		rc = handle_batt_temp_cool(chip);
 	else if (chip->temperature >= chg_param->mBattTempBoundT2 &&
-			chip->temperature < chg_param->mBattTempBoundT3) /* LITTLE_COOL */
+		 chip->temperature < chg_param->mBattTempBoundT3) /* LITTLE_COOL */
 		rc = handle_batt_temp_little_cool(chip);
 	else if (chip->temperature >= chg_param->mBattTempBoundT3 &&
-			chip->temperature < chg_param->mBattTempBoundT4) /* PRE_NORMAL */
+		 chip->temperature < chg_param->mBattTempBoundT4) /* PRE_NORMAL */
 		rc = handle_batt_temp_prenormal(chip);
 	else if (chip->temperature >= chg_param->mBattTempBoundT4 &&
-			chip->temperature < chg_param->mBattTempBoundT5) /* NORMAL */
+		 chip->temperature < chg_param->mBattTempBoundT5) /* NORMAL */
 		rc = handle_batt_temp_normal(chip);
 	else if (chip->temperature >= chg_param->mBattTempBoundT5 &&
-			chip->temperature <=  chg_param->mBattTempBoundT6) /* WARM */
+		 chip->temperature <= chg_param->mBattTempBoundT6) /* WARM */
 		rc = handle_batt_temp_warm(chip);
 	else if (chip->temperature > chg_param->mBattTempBoundT6) /* HOT */
 		rc = handle_batt_temp_hot(chip);
 
-	if ((pre_temp_region < WLCHG_TEMP_REGION_MAX) &&
-		(pre_temp_region != chg_status->temp_region)) {
+	if ((pre_temp_region < WLCHG_TEMP_REGION_MAX) && (pre_temp_region != chg_status->temp_region)) {
 		chg_info("temp region changed, report event.");
 		if (chip->wireless_psy != NULL)
 			power_supply_changed(chip->wireless_psy);
@@ -2275,8 +2275,7 @@ static int fastchg_check_skin_temp(struct op_chg_chip *chip)
 		return 0;
 
 	if (skin_temp >= chg_param->fastchg_skin_temp_max) {
-		chg_info("skin temp(%d) too high(above %d)\n", skin_temp,
-			chg_param->fastchg_skin_temp_max);
+		chg_info("skin temp(%d) too high(above %d)\n", skin_temp, chg_param->fastchg_skin_temp_max);
 		chg_status->fastchg_curr_step++;
 
 		if (chg_status->fastchg_curr_step <= chg_status->fastchg_level)
@@ -2290,16 +2289,15 @@ static int fastchg_check_skin_temp(struct op_chg_chip *chip)
 		}
 
 		vote(chip->wlcs_fcc_votable, SKIN_VOTER, true,
-			 ffc_chg->ffc_step[chg_status->fastchg_curr_step].curr_ua);
+		     ffc_chg->ffc_step[chg_status->fastchg_curr_step].curr_ua);
 		wait_timeout = jiffies + 30 * HZ;
 	} else if (skin_temp <= chg_param->fastchg_skin_temp_min) {
 		if (chg_status->fastchg_curr_step <= chg_status->fastchg_level)
 			return 0;
 		chg_status->fastchg_curr_step--;
-		chg_info("skin temp(%d) reduce(below %d)\n", skin_temp,
-			chg_param->fastchg_skin_temp_min);
+		chg_info("skin temp(%d) reduce(below %d)\n", skin_temp, chg_param->fastchg_skin_temp_min);
 		vote(chip->wlcs_fcc_votable, SKIN_VOTER, true,
-			 ffc_chg->ffc_step[chg_status->fastchg_curr_step].curr_ua);
+		     ffc_chg->ffc_step[chg_status->fastchg_curr_step].curr_ua);
 		wait_timeout = jiffies + 30 * HZ;
 	}
 
@@ -2311,7 +2309,7 @@ static void fastchg_ffc_param_init(struct op_chg_chip *chip)
 	struct op_fastchg_ffc_step *ffc_chg = &chip->chg_param.ffc_chg;
 	int i;
 
-	for(i = 0; i < ffc_chg->max_step; i++) {
+	for (i = 0; i < ffc_chg->max_step; i++) {
 		if (ffc_chg->ffc_step[i].low_threshold > 0)
 			ffc_chg->allow_fallback[i] = true;
 		else
@@ -2389,11 +2387,9 @@ static int fastchg_curr_filter(struct op_chg_chip *chip)
 	if (iout_pre != 0)
 		iout_shake = iout - iout_pre;
 	bq2597x_wl_get_adc_data(exchgpump_bq, ADC_IBUS, &bq_adc_ibus);
-	if ((iout > WPC_CHARGE_CURRENT_FASTCHG) &&
-	    ((abs(iout * 2 - bq_adc_ibus) > 500) || (abs(iout_shake) > 1000))) {
+	if ((iout > WPC_CHARGE_CURRENT_FASTCHG) && ((abs(iout * 2 - bq_adc_ibus) > 500) || (abs(iout_shake) > 1000))) {
 		iout = bq_adc_ibus / 2;
-		chg_err("Iout exception, Iout=%d, Ibus=%d, Iout_shake=%d\n",
-			iout, bq_adc_ibus, iout_shake);
+		chg_err("Iout exception, Iout=%d, Ibus=%d, Iout_shake=%d\n", iout, bq_adc_ibus, iout_shake);
 		chg_status->curr_err_count++;
 	} else {
 		chg_status->curr_err_count = 0;
@@ -2437,8 +2433,7 @@ static void fastchg_switch_next_step(struct op_chg_chip *chip)
 		}
 	} else {
 		chg_status->wait_cep_stable = true;
-		vote(chip->wlcs_fcc_votable, FFC_VOTER, true,
-		     ffc_chg->ffc_step[chg_status->fastchg_level].curr_ua);
+		vote(chip->wlcs_fcc_votable, FFC_VOTER, true, ffc_chg->ffc_step[chg_status->fastchg_level].curr_ua);
 	}
 	chg_status->fastchg_level_init_temp = chip->temperature;
 	if (chip->batt_volt >= batt_vol_max) {
@@ -2457,8 +2452,7 @@ static void fastchg_switch_prev_step(struct op_chg_chip *chip)
 
 	chg_status->fastchg_level--;
 	chg_info("switch to prev level=%d\n", chg_status->fastchg_level);
-	vote(chip->wlcs_fcc_votable, FFC_VOTER, true,
-	     ffc_chg->ffc_step[chg_status->fastchg_level].curr_ua);
+	vote(chip->wlcs_fcc_votable, FFC_VOTER, true, ffc_chg->ffc_step[chg_status->fastchg_level].curr_ua);
 	chg_status->fastchg_level_init_temp = 0;
 	ffc_chg->ffc_wait_timeout = jiffies;
 }
@@ -2497,8 +2491,8 @@ static void fastchg_temp_check(struct op_chg_chip *chip)
 	else
 		temp_diff = 0;
 
-	pr_debug("battery temp = %d, vol = %d, level = %d, temp_diff = %d\n",
-		 batt_temp, chip->batt_volt, chg_status->fastchg_level, temp_diff);
+	pr_debug("battery temp = %d, vol = %d, level = %d, temp_diff = %d\n", batt_temp, chip->batt_volt,
+		 chg_status->fastchg_level, temp_diff);
 
 	if (chg_status->fastchg_level == 0) {
 		if (def_curr_ua < ffc_curr_ua) {
@@ -2520,7 +2514,7 @@ static void fastchg_temp_check(struct op_chg_chip *chip)
 		    (chip->batt_volt >= batt_vol_max)) {
 			fastchg_switch_next_step(chip);
 		}
-	} else if (chg_status->fastchg_level >= ffc_chg->max_step) {  // switch to pmic
+	} else if (chg_status->fastchg_level >= ffc_chg->max_step) { // switch to pmic
 		vote(chip->fastchg_disable_votable, FFC_VOTER, true, 0);
 		chg_status->charge_status = WPC_CHG_STATUS_FAST_CHARGING_EXIT;
 	} else {
@@ -2598,8 +2592,7 @@ void wlchg_check_term_charge(struct op_chg_chip *chip)
 
 		if (!chg_status->quiet_mode_enabled && skin_temp < CHARGE_FULL_FAN_THREOD_LO)
 			wlchg_send_msg(WLCHG_MSG_CHG_INFO, -1, WLCHG_QUIET_MODE_MSG);
-		if (chg_status->quiet_mode_enabled && !chip->quiet_mode_need
-			&& skin_temp > CHARGE_FULL_FAN_THREOD_HI)
+		if (chg_status->quiet_mode_enabled && !chip->quiet_mode_need && skin_temp > CHARGE_FULL_FAN_THREOD_HI)
 			wlchg_send_msg(WLCHG_MSG_CHG_INFO, -1, WLCHG_NORMAL_MODE_MSG);
 	} else {
 		chg_status->charge_done = false;
@@ -2617,11 +2610,11 @@ void wlchg_check_term_charge(struct op_chg_chip *chip)
 		if (!chip->quiet_mode_need && chg_status->quiet_mode_enabled)
 			wlchg_send_msg(WLCHG_MSG_CHG_INFO, -1, WLCHG_NORMAL_MODE_MSG);
 
-		if (skin_temp < chg_param->fastchg_skin_temp_min
-			&& is_client_vote_enabled(chip->fastchg_disable_votable, SKIN_VOTER)) {
+		if (skin_temp < chg_param->fastchg_skin_temp_min &&
+		    is_client_vote_enabled(chip->fastchg_disable_votable, SKIN_VOTER)) {
 			vote(chip->fastchg_disable_votable, SKIN_VOTER, false, 0);
 			chg_info("skin temp is %d(below %d), restore fastcharge.", skin_temp,
-				chg_param->fastchg_skin_temp_min);
+				 chg_param->fastchg_skin_temp_min);
 		}
 	}
 }
@@ -2640,17 +2633,14 @@ static void wlchg_fastchg_restart_check(struct op_chg_chip *chip)
 		chg_status->fastchg_level = ffc_chg->max_step - 1;
 	}
 
-	if (is_client_vote_enabled(chip->fastchg_disable_votable, BATT_CURR_VOTER) &&
-	    (chip->icharging < 0))
+	if (is_client_vote_enabled(chip->fastchg_disable_votable, BATT_CURR_VOTER) && (chip->icharging < 0))
 		vote(chip->fastchg_disable_votable, BATT_CURR_VOTER, false, 0);
 
-	if (is_client_vote_enabled(chip->fastchg_disable_votable, QUIET_VOTER) &&
-	    !chg_status->quiet_mode_enabled)
+	if (is_client_vote_enabled(chip->fastchg_disable_votable, QUIET_VOTER) && !chg_status->quiet_mode_enabled)
 		vote(chip->fastchg_disable_votable, QUIET_VOTER, false, 0);
 
 	if (is_client_vote_enabled(chip->fastchg_disable_votable, STARTUP_CEP_VOTER) &&
-	    (chg_status->fastchg_retry_count < 10) &&
-	    time_is_before_jiffies(chg_status->fastchg_retry_timer))
+	    (chg_status->fastchg_retry_count < 10) && time_is_before_jiffies(chg_status->fastchg_retry_timer))
 		vote(chip->fastchg_disable_votable, STARTUP_CEP_VOTER, false, 0);
 }
 
@@ -2684,8 +2674,7 @@ static void fastchg_cep_adj(struct op_chg_chip *chip)
 		if (cep < 3) {
 			cep_ok_count++;
 			cep_err_count = 0;
-			if ((cep_ok_count >= CEP_OK_MAX) &&
-			    time_after(jiffies, chg_status->cep_ok_wait_timeout) &&
+			if ((cep_ok_count >= CEP_OK_MAX) && time_after(jiffies, chg_status->cep_ok_wait_timeout) &&
 			    is_client_vote_enabled(chip->wlcs_fcc_votable, CEP_VOTER)) {
 				chg_info("recovery charging current\n");
 				cep_ok_count = 0;
@@ -2708,7 +2697,7 @@ static void fastchg_cep_adj(struct op_chg_chip *chip)
 					cep_curr_ua = get_client_vote(chip->wlcs_fcc_votable, CEP_VOTER);
 				else
 					cep_curr_ua = 0;
-				if ((cep_curr_ua > 0) && (cep_curr_ua <= FASTCHG_CURR_MIN_UA)){
+				if ((cep_curr_ua > 0) && (cep_curr_ua <= FASTCHG_CURR_MIN_UA)) {
 					chg_info("Energy is too low, exit fast charge\n");
 					vote(chip->fastchg_disable_votable, CEP_VOTER, true, 0);
 					chg_status->charge_status = WPC_CHG_STATUS_FAST_CHARGING_EXIT;
@@ -2728,7 +2717,7 @@ static void fastchg_cep_adj(struct op_chg_chip *chip)
 			wait_cep_count++;
 		} else {
 			chg_status->wait_cep_stable = false;
-			wait_cep_count =0;
+			wait_cep_count = 0;
 		}
 	}
 }
@@ -2904,8 +2893,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 			cp1_err_count = 0;
 	}
 
-	if (chg_status->vol_set_ok ||
-	    (chg_status->fastchg_startup_step >= FASTCHG_EN_CHGPUMP2_STEP) ||
+	if (chg_status->vol_set_ok || (chg_status->fastchg_startup_step >= FASTCHG_EN_CHGPUMP2_STEP) ||
 	    (((chg_status->fastchg_startup_step == FASTCHG_WAIT_PMIC_STABLE_STEP) ||
 	      (chg_status->fastchg_startup_step == FASTCHG_SET_CHGPUMP2_VOL_AGAIN_STEP)) &&
 	     (bq_adc_vbus > (bq_adc_vbat * 2 + 150)))) {
@@ -2967,8 +2955,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 				break;
 			}
 		case FASTCHG_SET_CHGPUMP2_VOL_STEP:
-			temp_value = (g_op_chip->batt_volt * 4) +
-				     (g_op_chip->batt_volt * 4 / 10) + 200;
+			temp_value = (g_op_chip->batt_volt * 4) + (g_op_chip->batt_volt * 4 / 10) + 200;
 			wlchg_set_rx_target_voltage(chip, temp_value);
 			curr_err_count = 0;
 			chg_status->fastchg_startup_step = FASTCHG_WAIT_PMIC_STABLE_STEP;
@@ -2996,8 +2983,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 					if (cp2_enabled_count > 1) {
 						cp2_enabled_count = 0;
 						wlchg_set_rx_target_voltage(chip, g_rx_chip->chg_data.vout);
-						chg_status->fastchg_startup_step =
-							FASTCHG_CHECK_CHGPUMP2_AGAIN_STEP;
+						chg_status->fastchg_startup_step = FASTCHG_CHECK_CHGPUMP2_AGAIN_STEP;
 						break;
 					} else {
 						cp2_enabled_count++;
@@ -3009,15 +2995,13 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 			} else {
 				temp_value = chip->batt_volt * 2 + chip->batt_volt * 2 / 10;
 			}
-			if (bq_adc_vbus > (temp_value - 50) &&
-			    bq_adc_vbus < (temp_value + 150)) {
+			if (bq_adc_vbus > (temp_value - 50) && bq_adc_vbus < (temp_value + 150)) {
 				if (chg_status->vol_set_ok)
 					chg_status->fastchg_startup_step = FASTCHG_EN_CHGPUMP2_STEP;
 				else
 					break;
 			} else {
-				if ((bq_adc_vbus > (bq_adc_vbat * 2 + 150)) &&
-				    (bq_adc_vbus < temp_value) &&
+				if ((bq_adc_vbus > (bq_adc_vbat * 2 + 150)) && (bq_adc_vbus < temp_value) &&
 				    (cp2_enabled_count == 0)) {
 					chg_info("try enable cp2\n");
 					bq2597x_wl_enable_charge_pump(true);
@@ -3128,8 +3112,7 @@ static int fastchg_startup_process(struct op_chg_chip *chip)
 		}
 	}
 
-	if (!chg_status->vol_set_ok &&
-	    (chg_status->fastchg_startup_step < FASTCHG_EN_CHGPUMP2_STEP)) {
+	if (!chg_status->vol_set_ok && (chg_status->fastchg_startup_step < FASTCHG_EN_CHGPUMP2_STEP)) {
 		cep_err_count++;
 		if (cep_err_count > 300) { //30s
 			cep_err_count = 0;
@@ -3154,7 +3137,9 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 	bool cp2_is_enabled;
 	//static int wait_cep_count;
 	struct rx_chip *rx_chip = g_rx_chip;
-	union power_supply_propval pval = {0, };
+	union power_supply_propval pval = {
+		0,
+	};
 	struct wpc_data *chg_status = &chip->wlchg_status;
 	struct charge_param *chg_param = &chip->chg_param;
 	struct cmd_info_t *cmd_info = &chip->cmd_info;
@@ -3184,8 +3169,7 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 			return 0;
 		}
 
-		if (chg_status->temp_region == WLCHG_BATT_TEMP_COLD ||
-		    chg_status->temp_region == WLCHG_BATT_TEMP_HOT ||
+		if (chg_status->temp_region == WLCHG_BATT_TEMP_COLD || chg_status->temp_region == WLCHG_BATT_TEMP_HOT ||
 		    chg_status->rx_ovp) {
 			chg_err("<~WPC~> The temperature or voltage is abnormal, stop charge!\n");
 			if (!wlchg_status_abnormal) {
@@ -3235,9 +3219,11 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 				    chg_status->deviation_check_done) {
 					if (chip->chg_param.fastchg_fod_enable && chg_status->startup_fod_parm) {
 						if (chg_status->adapter_id == 0x00 || chg_status->adapter_id == 0x01)
-							wlchg_rx_set_fod_parm(g_rx_chip, chip->chg_param.fastchg_fod_parm);
+							wlchg_rx_set_fod_parm(g_rx_chip,
+									      chip->chg_param.fastchg_fod_parm);
 						else
-							wlchg_rx_set_fod_parm(g_rx_chip, chip->chg_param.fastchg_fod_parm_new);
+							wlchg_rx_set_fod_parm(g_rx_chip,
+									      chip->chg_param.fastchg_fod_parm_new);
 						chg_status->startup_fod_parm = false;
 						chg_info("write fastchg fod parm\n");
 					}
@@ -3298,7 +3284,7 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 				if (chg_status->get_adapter_err || (atomic_read(&chip->hb_count) <= 0)) {
 					wait_fast_chg = true;
 #else
-					wait_fast_chg = false;
+				wait_fast_chg = false;
 #endif
 					chg_err("<~WPC~> RX_RUNNING_MODE_BPP, Change to BPP charge\n");
 					chg_status->fastchg_display_delay = false;
@@ -3315,11 +3301,9 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 #ifdef OP_DEBUG
 			if (force_epp) {
 				chg_status->epp_working = true;
-				chg_status->adapter_type =
-					ADAPTER_TYPE_EPP;
+				chg_status->adapter_type = ADAPTER_TYPE_EPP;
 			} else if (force_bpp) {
-				chg_status->adapter_type =
-					ADAPTER_TYPE_NORMAL_CHARGE;
+				chg_status->adapter_type = ADAPTER_TYPE_NORMAL_CHARGE;
 			}
 #endif
 
@@ -3343,7 +3327,7 @@ static int wlchg_charge_status_process(struct op_chg_chip *chip)
 					chg_status->is_deviation = true;
 					chg_info("work_freq=%d\n", work_freq);
 				}
-freq_check_done:
+			freq_check_done:
 				chg_status->deviation_check_done = true;
 				if (chip->wireless_psy != NULL)
 					power_supply_changed(chip->wireless_psy);
@@ -3355,8 +3339,7 @@ freq_check_done:
 			case ADAPTER_TYPE_FASTCHAGE_DASH:
 			case ADAPTER_TYPE_FASTCHAGE_WARP:
 				if (!chip->quiet_mode_need) {
-					chg_status->charge_status =
-						WPC_CHG_STATUS_READY_FOR_FASTCHG;
+					chg_status->charge_status = WPC_CHG_STATUS_READY_FOR_FASTCHG;
 				} else {
 					chg_status->charge_status = WPC_CHG_STATUS_READY_FOR_QUIET;
 				}
@@ -3365,8 +3348,7 @@ freq_check_done:
 				chg_status->charge_status = WPC_CHG_STATUS_READY_FOR_EPP;
 				break;
 			default:
-				chg_status->charge_status =
-					WPC_CHG_STATUS_READY_FOR_BPP;
+				chg_status->charge_status = WPC_CHG_STATUS_READY_FOR_BPP;
 				break;
 			}
 		}
@@ -3375,8 +3357,7 @@ freq_check_done:
 	case WPC_CHG_STATUS_READY_FOR_BPP:
 		chg_err("<~WPC~> ..........WPC_CHG_STATUS_READY_FOR_BPP..........\n");
 #ifndef IDT_LAB_TEST
-		if ((atomic_read(&chip->hb_count) > 0) &&
-		    (chg_status->adapter_type == ADAPTER_TYPE_UNKNOWN)) {
+		if ((atomic_read(&chip->hb_count) > 0) && (chg_status->adapter_type == ADAPTER_TYPE_UNKNOWN)) {
 			rc = wlchg_send_msg(WLCHG_MSG_CHG_INFO, 5, WLCHG_TX_ID_MSG);
 			if (rc) {
 				chg_err("send tx id msg err, tyr again\n");
@@ -3393,8 +3374,7 @@ freq_check_done:
 	case WPC_CHG_STATUS_BPP:
 		chg_err("<~WPC~> ..........WPC_CHG_STATUS_BPP..........\n");
 #ifndef IDT_LAB_TEST
-		if (!chg_status->geted_tx_id &&
-		    (chg_status->adapter_type == ADAPTER_TYPE_UNKNOWN) &&
+		if (!chg_status->geted_tx_id && (chg_status->adapter_type == ADAPTER_TYPE_UNKNOWN) &&
 		    (atomic_read(&chip->hb_count) > 0))
 			break;
 #endif
@@ -3416,8 +3396,7 @@ freq_check_done:
 #endif
 		}
 
-		chg_status->charge_status =
-			WPC_CHG_STATUS_BPP_WORKING;
+		chg_status->charge_status = WPC_CHG_STATUS_BPP_WORKING;
 		chip->wireless_type = POWER_SUPPLY_WIRELESS_TYPE_BPP;
 		chg_status->startup_fast_chg = false;
 		if (chip->wireless_psy != NULL)
@@ -3428,7 +3407,7 @@ freq_check_done:
 		chg_err("<~WPC~> ..........WPC_CHG_STATUS_BPP_WORKING..........\n");
 #ifndef IDT_LAB_TEST
 		if (wait_fast_chg && ((chg_status->adapter_type != ADAPTER_TYPE_UNKNOWN) &&
-			(chg_status->adapter_type != ADAPTER_TYPE_NORMAL_CHARGE))) {
+				      (chg_status->adapter_type != ADAPTER_TYPE_NORMAL_CHARGE))) {
 			wait_fast_chg = false;
 			chg_status->startup_fast_chg = true;
 			chg_status->charge_status = WPC_CHG_STATUS_DEFAULT;
@@ -3462,8 +3441,7 @@ freq_check_done:
 		if (chg_status->epp_working) {
 			if (chg_status->vol_set_ok) {
 				wlchg_set_rx_charge_current(chip, WPC_CHARGE_CURRENT_EPP);
-				chg_status->charge_status =
-					WPC_CHG_STATUS_EPP_WORKING;
+				chg_status->charge_status = WPC_CHG_STATUS_EPP_WORKING;
 				chip->wireless_type = POWER_SUPPLY_WIRELESS_TYPE_EPP;
 			}
 			chg_status->startup_fast_chg = false;
@@ -3520,14 +3498,12 @@ freq_check_done:
 		chg_status->wpc_ffc_charge = true;
 		chg_status->is_power_changed = true;
 		chg_status->fastchg_ing = true;
-		chg_status->charge_status =
-			WPC_CHG_STATUS_WAITING_FOR_TX_INTO_FASTCHG;
+		chg_status->charge_status = WPC_CHG_STATUS_WAITING_FOR_TX_INTO_FASTCHG;
 		break;
 
 	case WPC_CHG_STATUS_WAITING_FOR_TX_INTO_FASTCHG:
 		chg_err("<~WPC~> ..........WPC_CHG_STATUS_WAITING_FOR_TX_INTO_FASTCHG..........\n");
-		if (chg_status->vol_set_ok &&
-		    (chg_status->charge_type == WPC_CHARGE_TYPE_FAST)) {
+		if (chg_status->vol_set_ok && (chg_status->charge_type == WPC_CHARGE_TYPE_FAST)) {
 			if (chg_status->ftm_mode) {
 				if (!chip->batt_psy) {
 					chip->batt_psy = power_supply_get_by_name("battery");
@@ -3537,8 +3513,7 @@ freq_check_done:
 					}
 				}
 				pval.intval = 0;
-				rc = power_supply_set_property(chip->batt_psy,
-					POWER_SUPPLY_PROP_INPUT_SUSPEND, &pval);
+				rc = power_supply_set_property(chip->batt_psy, POWER_SUPPLY_PROP_INPUT_SUSPEND, &pval);
 				if (rc < 0) {
 					pr_err("Couldn't set input_suspend rc=%d\n", rc);
 					break;
@@ -3552,8 +3527,7 @@ freq_check_done:
 				chargepump_enable();
 				chargepump_set_for_LDO();
 				wlchg_set_rx_target_voltage(chip, WPC_CHARGE_VOLTAGE_FTM);
-				chg_status->charge_status =
-					WPC_CHG_STATUS_READY_FOR_FTM;
+				chg_status->charge_status = WPC_CHG_STATUS_READY_FOR_FTM;
 			} else {
 				if (((chg_status->temp_region == WLCHG_BATT_TEMP_PRE_NORMAL) ||
 				     (chg_status->temp_region == WLCHG_BATT_TEMP_NORMAL)) &&
@@ -3564,15 +3538,16 @@ freq_check_done:
 					chg_status->fastchg_startup_step = FASTCHG_EN_CHGPUMP1_STEP;
 					chg_status->charge_status = WPC_CHG_STATUS_INCREASE_VOLTAGE;
 					if (chip->chg_param.fastchg_fod_enable) {
-						wlchg_rx_set_fod_parm(g_rx_chip, chip->chg_param.fastchg_fod_parm_startup);
+						wlchg_rx_set_fod_parm(g_rx_chip,
+								      chip->chg_param.fastchg_fod_parm_startup);
 						chg_status->startup_fod_parm = true;
 						chg_info("write fastchg startup fod parm\n");
 					}
 				} else {
 					if (chip->batt_volt >= chg_param->fastchg_vol_entry_max)
 						vote(chip->fastchg_disable_votable, BATT_VOL_VOTER, true, 0);
-					chg_err("batt_temp=%d, batt_volt=%d, soc=%d\n",
-						chip->temperature, chip->batt_volt, chip->soc);
+					chg_err("batt_temp=%d, batt_volt=%d, soc=%d\n", chip->temperature,
+						chip->batt_volt, chip->soc);
 					chg_status->vol_not_step = true;
 					chg_status->startup_fast_chg = false;
 					chg_status->charge_status = WPC_CHG_STATUS_FAST_CHARGING_EXIT;
@@ -3625,13 +3600,10 @@ freq_check_done:
 		fastchg_check_ibat(chip);
 
 #ifdef HW_TEST_EDITION
-		if ((chip->icharging > 5600) &&
-		    (chip->w30w_work_started == false)) {
+		if ((chip->icharging > 5600) && (chip->w30w_work_started == false)) {
 			chip->w30w_work_started = true;
-			schedule_delayed_work(
-				&chip->w30w_timeout_work,
-				round_jiffies_relative(msecs_to_jiffies(
-					(chip->w30w_time) * 60 * 1000)));
+			schedule_delayed_work(&chip->w30w_timeout_work,
+					      round_jiffies_relative(msecs_to_jiffies((chip->w30w_time) * 60 * 1000)));
 		}
 #endif
 		break;
@@ -3685,9 +3657,7 @@ freq_check_done:
 			if (((chg_status->temp_region == WLCHG_BATT_TEMP_PRE_NORMAL) ||
 			     (chg_status->temp_region == WLCHG_BATT_TEMP_NORMAL)) &&
 			    (chip->batt_volt < chg_param->fastchg_vol_entry_max) &&
-			    (chip->soc >= chg_param->fastchg_soc_min) &&
-			    (chip->soc <= chg_param->fastchg_soc_max)) {
-
+			    (chip->soc >= chg_param->fastchg_soc_min) && (chip->soc <= chg_param->fastchg_soc_max)) {
 				if (chg_status->quiet_mode_enabled &&
 				    (chg_status->charge_type != WPC_CHARGE_TYPE_FAST)) {
 					chg_err("quiet mode, but dock hasn't into fast type.");
@@ -3784,8 +3754,8 @@ void wlchg_dischg_status(struct op_chg_chip *chip)
 		chg_err("can't get trx status\n");
 		return;
 	}
-	chg_err("<~WPC~>rtx func status:0x%02x, err:0x%02x, wpc_dischg_status[%d]\n",
-		tx_status, err_flag, chip->wlchg_status.wpc_dischg_status);
+	chg_err("<~WPC~>rtx func status:0x%02x, err:0x%02x, wpc_dischg_status[%d]\n", tx_status, err_flag,
+		chip->wlchg_status.wpc_dischg_status);
 	if (err_flag != 0) {
 		if (TRX_ERR_TX_RXAC & err_flag) {
 			chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_IC_ERR_TX_RXAC;
@@ -3810,8 +3780,7 @@ void wlchg_dischg_status(struct op_chg_chip *chip)
 		}
 
 		if (chip->wlchg_status.wpc_dischg_status >= WPC_DISCHG_IC_ERR_TX_RXAC) {
-			chg_err("There is error-%d occurred, disable Trx func.",
-					chip->wlchg_status.wpc_dischg_status);
+			chg_err("There is error-%d occurred, disable Trx func.", chip->wlchg_status.wpc_dischg_status);
 			chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_STATUS_OFF;
 			return;
 		}
@@ -3820,16 +3789,13 @@ void wlchg_dischg_status(struct op_chg_chip *chip)
 	if (tx_status != 0) {
 		if (TRX_READY & tx_status) {
 			chip->wlchg_status.tx_online = false;
-			chip->wlchg_status.wpc_dischg_status =
-				WPC_DISCHG_IC_READY;
+			chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_IC_READY;
 			wlchg_rx_trx_enbale(g_rx_chip, true);
 			schedule_delayed_work(&chip->dischg_work, WPC_DISCHG_WAIT_READY_EVENT);
 			trycount = 0;
-		} else if (TRX_DIGITALPING & tx_status ||
-			   TRX_ANALOGPING & tx_status) {
+		} else if (TRX_DIGITALPING & tx_status || TRX_ANALOGPING & tx_status) {
 			chip->wlchg_status.tx_online = false;
-			if (WPC_DISCHG_IC_PING_DEVICE ==
-			    chip->wlchg_status.wpc_dischg_status) {
+			if (WPC_DISCHG_IC_PING_DEVICE == chip->wlchg_status.wpc_dischg_status) {
 				chg_err("<~WPC~>rtx func no device to be charged, 60s timeout, disable TRX!\n");
 				chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_STATUS_OFF;
 			} else {
@@ -3868,8 +3834,7 @@ void wlchg_dischg_status(struct op_chg_chip *chip)
 		// try again 5 times.
 		if (trycount++ >= 5) {
 			trycount = 0;
-			chip->wlchg_status.wpc_dischg_status =
-				WPC_DISCHG_STATUS_OFF;
+			chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_STATUS_OFF;
 		}
 		schedule_delayed_work(&chip->dischg_work, WPC_DISCHG_WAIT_STATUS_EVENT);
 	}
@@ -3880,11 +3845,9 @@ void wlchg_dischg_status(struct op_chg_chip *chip)
 static void wlchg_dischg_work(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, dischg_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, dischg_work);
 
-	chg_err("<~WPC~>rtx func wpc_dischg_status[%d]\n",
-		chip->wlchg_status.wpc_dischg_status);
+	chg_err("<~WPC~>rtx func wpc_dischg_status[%d]\n", chip->wlchg_status.wpc_dischg_status);
 	wlchg_dischg_status(chip);
 	return;
 }
@@ -3896,14 +3859,11 @@ int wlchg_tx_callback(void)
 		chg_err("g_op_chip not exist, return\n");
 		return -ENODEV;
 	}
-	chg_err("rtx func chip->chg_data.wpc_dischg_status[%d]\n",
-		chip->wlchg_status.wpc_dischg_status);
+	chg_err("rtx func chip->chg_data.wpc_dischg_status[%d]\n", chip->wlchg_status.wpc_dischg_status);
 	if (chip->wlchg_status.wpc_dischg_status == WPC_DISCHG_STATUS_ON ||
 	    chip->wlchg_status.wpc_dischg_status == WPC_DISCHG_IC_READY ||
-	    chip->wlchg_status.wpc_dischg_status ==
-		    WPC_DISCHG_IC_PING_DEVICE ||
-	    chip->wlchg_status.wpc_dischg_status ==
-		    WPC_DISCHG_IC_TRANSFER) {
+	    chip->wlchg_status.wpc_dischg_status == WPC_DISCHG_IC_PING_DEVICE ||
+	    chip->wlchg_status.wpc_dischg_status == WPC_DISCHG_IC_TRANSFER) {
 		cancel_delayed_work_sync(&chip->dischg_work);
 		wlchg_dischg_status(chip);
 	}
@@ -3916,7 +3876,6 @@ int switch_to_otg_mode(bool enable)
 		chg_err("op_wireless_ic not exist, return\n");
 		return -ENODEV;
 	}
-
 
 	if (enable) {
 		op_set_wrx_en_value(2);
@@ -3968,12 +3927,9 @@ static void wlchg_connect_func(struct op_chg_chip *chip)
 
 		chip->wireless_mode = WIRELESS_MODE_RX;
 		if (normal_charger != NULL) {
-			normal_charger->real_charger_type =
-				POWER_SUPPLY_TYPE_WIRELESS;
-			normal_charger->usb_psy_desc.type =
-				POWER_SUPPLY_TYPE_WIRELESS;
-			vote(normal_charger->usb_icl_votable,
-				SW_ICL_MAX_VOTER, true, PMIC_ICL_MAX);
+			normal_charger->real_charger_type = POWER_SUPPLY_TYPE_WIRELESS;
+			normal_charger->usb_psy_desc.type = POWER_SUPPLY_TYPE_WIRELESS;
+			vote(normal_charger->usb_icl_votable, SW_ICL_MAX_VOTER, true, PMIC_ICL_MAX);
 		}
 		wlchg_init_connected_task(chip);
 		op_set_wrx_en_value(2);
@@ -3993,7 +3949,9 @@ static void wlchg_connect_func(struct op_chg_chip *chip)
 
 static void wlchg_disconnect_func(struct op_chg_chip *chip)
 {
-	union power_supply_propval pval = {0, };
+	union power_supply_propval pval = {
+		0,
+	};
 	unsigned long delay_time;
 	int rc;
 
@@ -4091,8 +4049,7 @@ static void wlchg_disconnect_func(struct op_chg_chip *chip)
 			}
 		}
 		pval.intval = 1;
-		rc = power_supply_set_property(chip->batt_psy,
-			POWER_SUPPLY_PROP_INPUT_SUSPEND, &pval);
+		rc = power_supply_set_property(chip->batt_psy, POWER_SUPPLY_PROP_INPUT_SUSPEND, &pval);
 		if (rc < 0) {
 			pr_err("Couldn't set input_suspend rc=%d\n", rc);
 		}
@@ -4101,7 +4058,7 @@ static void wlchg_disconnect_func(struct op_chg_chip *chip)
 
 int wlchg_connect_callback_func(bool ldo_on)
 {
-  	struct op_chg_chip *chip = g_op_chip;
+	struct op_chg_chip *chip = g_op_chip;
 
 	if (chip == NULL) {
 		chg_err("g_op_chip not exist, return\n");
@@ -4148,8 +4105,7 @@ static void wlchg_connect_check_work(struct work_struct *work)
 static void wlchg_usbin_int_func(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, usbin_int_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, usbin_int_work);
 	int level;
 
 	if (!chip) {
@@ -4167,9 +4123,8 @@ static void wlchg_usbin_int_func(struct work_struct *work)
 	if (normal_charger != NULL)
 		vote(normal_charger->awake_votable, WIRED_CONN_VOTER, true, 0);
 
-	printk(KERN_ERR
-	       "[OP_CHG][%s]: op-wlchg test level[%d], chip->otg_switch[%d]\n",
-	       __func__, level, g_op_chip->otg_switch);
+	printk(KERN_ERR "[OP_CHG][%s]: op-wlchg test level[%d], chip->otg_switch[%d]\n", __func__, level,
+	       g_op_chip->otg_switch);
 	if (level == 1) {
 		if (normal_charger != NULL && normal_charger->wireless_present) {
 			normal_charger->wireless_present = false;
@@ -4177,8 +4132,7 @@ static void wlchg_usbin_int_func(struct work_struct *work)
 		}
 		wpc_chg_quit_max_cnt = 0;
 		wlchg_rx_set_chip_sleep(1);
-		if ((chip->wireless_mode == WIRELESS_MODE_NULL) &&
-		    !chip->wlchg_status.dock_on &&
+		if ((chip->wireless_mode == WIRELESS_MODE_NULL) && !chip->wlchg_status.dock_on &&
 		    !chip->wlchg_status.tx_present) {
 			normal_charger->apsd_delayed = false;
 			vote(normal_charger->awake_votable, WIRED_CONN_VOTER, false, 0);
@@ -4202,7 +4156,7 @@ static void wlchg_usbin_int_func(struct work_struct *work)
 	}
 
 	if (normal_charger != NULL) {
-/*		if (get_prop_fast_chg_started(normal_charger)) {
+		/*		if (get_prop_fast_chg_started(normal_charger)) {
 			chg_err("wkcs: is dash on, exit\n");
 			normal_charger->apsd_delayed = false;
 			vote(normal_charger->awake_votable, WIRED_CONN_VOTER, false, 0);
@@ -4268,8 +4222,7 @@ static void wlchg_usbin_int_irq_init(struct op_chg_chip *chip)
 {
 	chip->usbin_int_irq = gpio_to_irq(chip->usbin_int_gpio);
 
-	chg_err("op-wlchg test %s chip->usbin_int_irq[%d]\n", __func__,
-	       chip->usbin_int_irq);
+	chg_err("op-wlchg test %s chip->usbin_int_irq[%d]\n", __func__, chip->usbin_int_irq);
 }
 
 static int wlchg_usbin_int_eint_register(struct op_chg_chip *chip)
@@ -4277,11 +4230,8 @@ static int wlchg_usbin_int_eint_register(struct op_chg_chip *chip)
 	int retval = 0;
 
 	wlchg_set_usbin_int_active(chip);
-	retval = devm_request_irq(chip->dev, chip->usbin_int_irq,
-				  irq_usbin_event_int_handler,
-				  IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING |
-				  IRQF_ONESHOT,
-				  "wlchg_usbin_int", chip);
+	retval = devm_request_irq(chip->dev, chip->usbin_int_irq, irq_usbin_event_int_handler,
+				  IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING | IRQF_ONESHOT, "wlchg_usbin_int", chip);
 	if (retval < 0) {
 		chg_err("%s request usbin_int irq failed.\n", __func__);
 	}
@@ -4297,22 +4247,19 @@ static int wlchg_usbin_int_gpio_init(struct op_chg_chip *chip)
 	}
 
 	//usbin_int
-	chip->usbin_int_active =
-		pinctrl_lookup_state(chip->pinctrl, "usbin_int_active");
+	chip->usbin_int_active = pinctrl_lookup_state(chip->pinctrl, "usbin_int_active");
 	if (IS_ERR_OR_NULL(chip->usbin_int_active)) {
 		chg_err("get usbin_int_active fail\n");
 		return -EINVAL;
 	}
 
-	chip->usbin_int_sleep =
-		pinctrl_lookup_state(chip->pinctrl, "usbin_int_sleep");
+	chip->usbin_int_sleep = pinctrl_lookup_state(chip->pinctrl, "usbin_int_sleep");
 	if (IS_ERR_OR_NULL(chip->usbin_int_sleep)) {
 		chg_err("get usbin_int_sleep fail\n");
 		return -EINVAL;
 	}
 
-	chip->usbin_int_default =
-		pinctrl_lookup_state(chip->pinctrl, "usbin_int_default");
+	chip->usbin_int_default = pinctrl_lookup_state(chip->pinctrl, "usbin_int_default");
 	if (IS_ERR_OR_NULL(chip->usbin_int_default)) {
 		chg_err("get usbin_int_default fail\n");
 		return -EINVAL;
@@ -4341,8 +4288,7 @@ int wlchg_get_usbin_val(void)
 		return -EINVAL;
 	}
 
-	if (IS_ERR_OR_NULL(chip->pinctrl) ||
-	    IS_ERR_OR_NULL(chip->usbin_int_active) ||
+	if (IS_ERR_OR_NULL(chip->pinctrl) || IS_ERR_OR_NULL(chip->usbin_int_active) ||
 	    IS_ERR_OR_NULL(chip->usbin_int_sleep)) {
 		chg_err("pinctrl null, return\n");
 		return -EINVAL;
@@ -4362,22 +4308,19 @@ static int wlchg_wrx_en_gpio_init(struct op_chg_chip *chip)
 	}
 
 	//wrx_en
-	chip->wrx_en_active =
-		pinctrl_lookup_state(chip->pinctrl, "wrx_en_active");
+	chip->wrx_en_active = pinctrl_lookup_state(chip->pinctrl, "wrx_en_active");
 	if (IS_ERR_OR_NULL(chip->wrx_en_active)) {
 		chg_err("get wrx_en_active fail\n");
 		return -EINVAL;
 	}
 
-	chip->wrx_en_sleep =
-		pinctrl_lookup_state(chip->pinctrl, "wrx_en_sleep");
+	chip->wrx_en_sleep = pinctrl_lookup_state(chip->pinctrl, "wrx_en_sleep");
 	if (IS_ERR_OR_NULL(chip->wrx_en_sleep)) {
 		chg_err("get wrx_en_sleep fail\n");
 		return -EINVAL;
 	}
 
-	chip->wrx_en_default =
-		pinctrl_lookup_state(chip->pinctrl, "wrx_en_default");
+	chip->wrx_en_default = pinctrl_lookup_state(chip->pinctrl, "wrx_en_default");
 	if (IS_ERR_OR_NULL(chip->wrx_en_default)) {
 		chg_err("get wrx_en_default fail\n");
 		return -EINVAL;
@@ -4405,8 +4348,7 @@ void op_set_wrx_en_value(int value)
 		return;
 	}
 
-	if (IS_ERR_OR_NULL(chip->pinctrl) ||
-	    IS_ERR_OR_NULL(chip->wrx_en_active) ||
+	if (IS_ERR_OR_NULL(chip->pinctrl) || IS_ERR_OR_NULL(chip->wrx_en_active) ||
 	    IS_ERR_OR_NULL(chip->wrx_en_sleep)) {
 		chg_err("pinctrl null, return\n");
 		return;
@@ -4419,8 +4361,7 @@ void op_set_wrx_en_value(int value)
 		//gpio_direction_output(chip->wrx_en_gpio, 0);
 		pinctrl_select_state(chip->pinctrl, chip->wrx_en_sleep);
 	}
-	chg_err("set value:%d, gpio_val:%d\n", value,
-		gpio_get_value(chip->wrx_en_gpio));
+	chg_err("set value:%d, gpio_val:%d\n", value, gpio_get_value(chip->wrx_en_gpio));
 }
 
 static int wlchg_wrx_otg_gpio_init(struct op_chg_chip *chip)
@@ -4432,15 +4373,13 @@ static int wlchg_wrx_otg_gpio_init(struct op_chg_chip *chip)
 	}
 
 	//wrx_otg
-	chip->wrx_otg_active =
-		pinctrl_lookup_state(chip->pinctrl, "wrx_otg_active");
+	chip->wrx_otg_active = pinctrl_lookup_state(chip->pinctrl, "wrx_otg_active");
 	if (IS_ERR_OR_NULL(chip->wrx_otg_active)) {
 		chg_err("get wrx_otg_active fail\n");
 		return -EINVAL;
 	}
 
-	chip->wrx_otg_sleep =
-		pinctrl_lookup_state(chip->pinctrl, "wrx_otg_sleep");
+	chip->wrx_otg_sleep = pinctrl_lookup_state(chip->pinctrl, "wrx_otg_sleep");
 	if (IS_ERR_OR_NULL(chip->wrx_otg_sleep)) {
 		chg_err("get wrx_otg_sleep fail\n");
 		return -EINVAL;
@@ -4468,8 +4407,7 @@ void op_set_wrx_otg_value(int value)
 		return;
 	}
 
-	if (IS_ERR_OR_NULL(chip->pinctrl) ||
-	    IS_ERR_OR_NULL(chip->wrx_otg_active) ||
+	if (IS_ERR_OR_NULL(chip->pinctrl) || IS_ERR_OR_NULL(chip->wrx_otg_active) ||
 	    IS_ERR_OR_NULL(chip->wrx_otg_sleep)) {
 		chg_err("pinctrl null, return\n");
 		return;
@@ -4482,8 +4420,7 @@ void op_set_wrx_otg_value(int value)
 		gpio_direction_output(chip->wrx_otg_gpio, 0);
 		pinctrl_select_state(chip->pinctrl, chip->wrx_otg_sleep);
 	}
-	chg_err("set value:%d, gpio_val:%d\n", value,
-		gpio_get_value(chip->wrx_otg_gpio));
+	chg_err("set value:%d, gpio_val:%d\n", value, gpio_get_value(chip->wrx_otg_gpio));
 }
 
 static int wlchg_dcdc_en_gpio_init(struct op_chg_chip *chip)
@@ -4494,22 +4431,19 @@ static int wlchg_dcdc_en_gpio_init(struct op_chg_chip *chip)
 		return -EINVAL;
 	}
 
-	chip->dcdc_en_active =
-		pinctrl_lookup_state(chip->pinctrl, "dcdc_en_active");
+	chip->dcdc_en_active = pinctrl_lookup_state(chip->pinctrl, "dcdc_en_active");
 	if (IS_ERR_OR_NULL(chip->dcdc_en_active)) {
 		chg_err("get dcdc_en_active fail\n");
 		return -EINVAL;
 	}
 
-	chip->dcdc_en_sleep =
-		pinctrl_lookup_state(chip->pinctrl, "dcdc_en_sleep");
+	chip->dcdc_en_sleep = pinctrl_lookup_state(chip->pinctrl, "dcdc_en_sleep");
 	if (IS_ERR_OR_NULL(chip->dcdc_en_sleep)) {
 		chg_err("get dcdc_en_sleep fail\n");
 		return -EINVAL;
 	}
 
-	chip->dcdc_en_default =
-		pinctrl_lookup_state(chip->pinctrl, "dcdc_en_default");
+	chip->dcdc_en_default = pinctrl_lookup_state(chip->pinctrl, "dcdc_en_default");
 	if (IS_ERR_OR_NULL(chip->dcdc_en_default)) {
 		chg_err("get dcdc_en_default fail\n");
 		return -EINVAL;
@@ -4537,8 +4471,7 @@ void op_set_dcdc_en_value(int value)
 		return;
 	}
 
-	if (IS_ERR_OR_NULL(chip->pinctrl) ||
-	    IS_ERR_OR_NULL(chip->dcdc_en_active) ||
+	if (IS_ERR_OR_NULL(chip->pinctrl) || IS_ERR_OR_NULL(chip->dcdc_en_active) ||
 	    IS_ERR_OR_NULL(chip->dcdc_en_sleep)) {
 		chg_err("pinctrl null, return\n");
 		return;
@@ -4691,8 +4624,7 @@ free_gpio_1:
 static void op_wait_wpc_chg_quit_work(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, wait_wpc_chg_quit);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, wait_wpc_chg_quit);
 
 	int level;
 	int wpc_con_level = 0;
@@ -4701,14 +4633,11 @@ static void op_wait_wpc_chg_quit_work(struct work_struct *work)
 	//printk(KERN_ERR "[OP_CHG][%s]: op-wlchg test wired_connect level[%d]\n", __func__, level);
 	if (level == 1) {
 		wpc_con_level = wlchg_rx_get_chip_con();
-		printk(KERN_ERR
-		       "[OP_CHG][%s]: op-wlchg test wpc_connect level[%d]\n",
-		       __func__, wpc_con_level);
+		printk(KERN_ERR "[OP_CHG][%s]: op-wlchg test wpc_connect level[%d]\n", __func__, wpc_con_level);
 		if (wpc_con_level == 0 || wpc_chg_quit_max_cnt >= 5) {
 			chargepump_disable();
 		} else {
-			schedule_delayed_work(&chip->wait_wpc_chg_quit,
-					      msecs_to_jiffies(500));
+			schedule_delayed_work(&chip->wait_wpc_chg_quit, msecs_to_jiffies(500));
 			wpc_chg_quit_max_cnt++;
 		}
 	}
@@ -4763,8 +4692,7 @@ static void op_check_wireless_ovp(struct op_chg_chip *chip)
 static void wlchg_task_work_process(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, wlchg_task_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, wlchg_task_work);
 	struct wpc_data *chg_status = &chip->wlchg_status;
 
 	if (g_rx_chip == NULL) {
@@ -4780,7 +4708,7 @@ static void wlchg_task_work_process(struct work_struct *work)
 #else
 		if (wlchg_rx_get_run_mode(g_rx_chip) != RX_RUNNING_MODE_EPP)
 #endif
-			wlchg_cmd_process(chip);  // func *
+			wlchg_cmd_process(chip); // func *
 
 		/* wlchg server watchdog*/
 		if (atomic_read(&chip->hb_count) > 0) {
@@ -4807,16 +4735,14 @@ static void wlchg_task_work_process(struct work_struct *work)
 		if (chg_status->charge_online) {
 			/* run again after interval */
 			if ((chg_status->temp_region == WLCHG_BATT_TEMP_COLD ||
-			chg_status->temp_region == WLCHG_BATT_TEMP_HOT) &&
-				chg_status->charge_current == 0) {
+			     chg_status->temp_region == WLCHG_BATT_TEMP_HOT) &&
+			    chg_status->charge_current == 0) {
 				schedule_delayed_work(&chip->wlchg_task_work, msecs_to_jiffies(5000));
 			} else {
 				if (chg_status->startup_fast_chg)
-					schedule_delayed_work(&chip->wlchg_task_work,
-							msecs_to_jiffies(100));
+					schedule_delayed_work(&chip->wlchg_task_work, msecs_to_jiffies(100));
 				else
-					schedule_delayed_work(&chip->wlchg_task_work,
-							WLCHG_TASK_INTERVAL);
+					schedule_delayed_work(&chip->wlchg_task_work, WLCHG_TASK_INTERVAL);
 			}
 		}
 	}
@@ -4828,8 +4754,7 @@ static void wlchg_task_work_process(struct work_struct *work)
 static void curr_vol_check_process(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, fastchg_curr_vol_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, fastchg_curr_vol_work);
 	struct wpc_data *chg_status = &chip->wlchg_status;
 	struct charge_param *chg_param = &chip->chg_param;
 	static bool wait_cep;
@@ -4855,9 +4780,8 @@ static void curr_vol_check_process(struct work_struct *work)
 		else
 			ibat_max = chg_param->fastchg_ibatmax[0];
 
-		chg_info("Iout: target=%d, out=%d, ibat_max=%d, ibat=%d\n",
-			chg_status->target_curr, g_rx_chip->chg_data.iout,
-			ibat_max, chip->icharging);
+		chg_info("Iout: target=%d, out=%d, ibat_max=%d, ibat=%d\n", chg_status->target_curr,
+			 g_rx_chip->chg_data.iout, ibat_max, chip->icharging);
 
 		tmp_val = chg_status->target_curr - g_rx_chip->chg_data.iout;
 		ibat_err = ((ibat_max - abs(chip->icharging)) / 4) - (CURR_ERR_MIN / 2);
@@ -4920,8 +4844,8 @@ static void curr_vol_check_process(struct work_struct *work)
 		}
 	} else {
 		if (!chg_status->vol_set_ok) {
-			chg_err("Vout: target=%d, set=%d, out=%d\n", chg_status->target_vol,
-				chg_status->vol_set, g_rx_chip->chg_data.vout);
+			chg_err("Vout: target=%d, set=%d, out=%d\n", chg_status->target_vol, chg_status->vol_set,
+				g_rx_chip->chg_data.vout);
 			if (chg_status->vol_set_start) {
 				if (!chg_status->vol_set_fast)
 					chg_status->vol_set = g_rx_chip->chg_data.vout;
@@ -4978,27 +4902,23 @@ static void curr_vol_check_process(struct work_struct *work)
 
 	if (chg_status->charge_online) {
 		if (chg_status->curr_limit_mode)
-			schedule_delayed_work(&chip->fastchg_curr_vol_work,
-				msecs_to_jiffies(500));
+			schedule_delayed_work(&chip->fastchg_curr_vol_work, msecs_to_jiffies(500));
 		else
-			schedule_delayed_work(&chip->fastchg_curr_vol_work,
-				msecs_to_jiffies(100));
+			schedule_delayed_work(&chip->fastchg_curr_vol_work, msecs_to_jiffies(100));
 	}
 }
 
 static void wlchg_tx_check_process(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, tx_check_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, tx_check_work);
 
 	if (chip->wireless_mode == WIRELESS_MODE_TX) {
 		if (chip->wlchg_status.dock_on) {
 			chg_err("wireless charger dock detected, exit reverse charge\n");
 			chip->wlchg_status.wpc_dischg_status = WPC_DISCHG_STATUS_OFF;
 		}
-		chg_info("<~WPC~>rtx func wpc_dischg_status[%d]\n",
-			chip->wlchg_status.wpc_dischg_status);
+		chg_info("<~WPC~>rtx func wpc_dischg_status[%d]\n", chip->wlchg_status.wpc_dischg_status);
 
 		if (chip->wlchg_status.wpc_dischg_status == WPC_DISCHG_STATUS_OFF) {
 			g_op_chip->otg_switch = false;
@@ -5048,15 +4968,11 @@ static void wlchg_check_charge_timeout(struct op_chg_chip *chip)
 static void exfg_update_batinfo(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, update_bat_info_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, update_bat_info_work);
 
-	if (chip->wlchg_status.charge_online && g_op_chip &&
-	    exfg_instance) {
-		g_op_chip->batt_volt =
-			exfg_instance->get_battery_mvolts();
-		g_op_chip->icharging =
-			exfg_instance->get_average_current();
+	if (chip->wlchg_status.charge_online && g_op_chip && exfg_instance) {
+		g_op_chip->batt_volt = exfg_instance->get_battery_mvolts();
+		g_op_chip->icharging = exfg_instance->get_average_current();
 #ifdef HW_TEST_EDITION
 		if (chip->w30w_timeout) {
 			g_op_chip->temperature = 320; //for test.
@@ -5064,31 +4980,27 @@ static void exfg_update_batinfo(struct work_struct *work)
 			g_op_chip->temperature = 280; //for test.
 		}
 #else
-		g_op_chip->temperature =
-			exfg_instance->get_battery_temperature();
+		g_op_chip->temperature = exfg_instance->get_battery_temperature();
 #endif
 		g_op_chip->soc = exfg_instance->get_battery_soc();
 		g_op_chip->batt_missing = !exfg_instance->is_battery_present();
-		chg_err("battery info: v=%d, i=%d, t=%d, soc=%d.",
-			g_op_chip->batt_volt, g_op_chip->icharging,
+		chg_err("battery info: v=%d, i=%d, t=%d, soc=%d.", g_op_chip->batt_volt, g_op_chip->icharging,
 			g_op_chip->temperature, g_op_chip->soc);
 		wlchg_check_charge_timeout(chip);
 	}
 	/* run again after interval */
 	if (chip && chip->wlchg_status.charge_online) {
-		schedule_delayed_work(&chip->update_bat_info_work,
-				      WLCHG_BATINFO_UPDATE_INTERVAL);
+		schedule_delayed_work(&chip->update_bat_info_work, WLCHG_BATINFO_UPDATE_INTERVAL);
 	}
 }
 int register_reverse_charge_notifier(struct notifier_block *nb)
 {
 	if (!nb)
-	return -EINVAL;
+		return -EINVAL;
 
 	return blocking_notifier_chain_register(&reverse_charge_chain, nb);
 }
 EXPORT_SYMBOL(register_reverse_charge_notifier);
-
 
 int unregister_reverse_charge_notifier(struct notifier_block *nb)
 {
@@ -5099,7 +5011,6 @@ int unregister_reverse_charge_notifier(struct notifier_block *nb)
 }
 EXPORT_SYMBOL(unregister_reverse_charge_notifier);
 
-
 static int reverse_charge_notifier_call_chain(unsigned long val)
 {
 	return blocking_notifier_call_chain(&reverse_charge_chain, val, NULL);
@@ -5109,8 +5020,7 @@ static int reverse_charge_notifier_call_chain(unsigned long val)
 static void w30w_timeout_work_process(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, w30w_timeout_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, w30w_timeout_work);
 	chip->w30w_timeout = true;
 }
 #endif
@@ -5118,15 +5028,13 @@ static void w30w_timeout_work_process(struct work_struct *work)
 static void wlchg_charger_offline(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct op_chg_chip *chip =
-		container_of(dwork, struct op_chg_chip, charger_exit_work);
+	struct op_chg_chip *chip = container_of(dwork, struct op_chg_chip, charger_exit_work);
 	if (wlchg_rx_get_chip_con() == 0) {
 		chg_err("report wlchg offline.");
 		chip->wlchg_status.fastchg_display_delay = false;
 		chip->charger_exist = false;
 		if (chip->wireless_psy != NULL)
 			power_supply_changed(chip->wireless_psy);
-
 
 		/* Waiting for frameworks liting on display. To avoid*/
 		/* enter deep sleep(can't lit on) once relax wake_lock.*/
@@ -5145,9 +5053,7 @@ static void wlchg_charger_offline(struct work_struct *work)
 }
 
 #ifdef OP_DEBUG
-static ssize_t proc_wireless_voltage_rect_read(struct file *file,
-					       char __user *buf, size_t count,
-					       loff_t *ppos)
+static ssize_t proc_wireless_voltage_rect_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[10];
@@ -5172,9 +5078,7 @@ static ssize_t proc_wireless_voltage_rect_read(struct file *file,
 	return ret;
 }
 
-static ssize_t proc_wireless_voltage_rect_write(struct file *file,
-						const char __user *buf,
-						size_t count, loff_t *lo)
+static ssize_t proc_wireless_voltage_rect_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	return count;
 }
@@ -5186,22 +5090,17 @@ static const struct file_operations proc_wireless_voltage_rect_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_wireless_rx_voltage_read(struct file *file,
-					     char __user *buf, size_t count,
-					     loff_t *ppos)
+static ssize_t proc_wireless_rx_voltage_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	char vol_string[8];
 	int len = 0;
-	snprintf(vol_string, 8, "%d\n",
-		     g_op_chip->wlchg_status.charge_voltage);
+	snprintf(vol_string, 8, "%d\n", g_op_chip->wlchg_status.charge_voltage);
 	len = simple_read_from_buffer(buf, count, ppos, vol_string, strlen(vol_string));
 	return len;
 }
-static ssize_t proc_wireless_rx_voltage_write(struct file *file,
-					      const char __user *buf,
-					      size_t count, loff_t *lo)
+static ssize_t proc_wireless_rx_voltage_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
-	char vol_string[8] = {0};
+	char vol_string[8] = { 0 };
 	int vol = 0;
 	int len = count < 8 ? count : 8;
 
@@ -5224,9 +5123,7 @@ static const struct file_operations proc_wireless_rx_voltage = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_wireless_current_out_read(struct file *file,
-					      char __user *buf, size_t count,
-					      loff_t *ppos)
+static ssize_t proc_wireless_current_out_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[10];
@@ -5250,11 +5147,9 @@ static ssize_t proc_wireless_current_out_read(struct file *file,
 	return ret;
 }
 
-static ssize_t proc_wireless_current_out_write(struct file *file,
-					       const char __user *buf,
-					       size_t count, loff_t *lo)
+static ssize_t proc_wireless_current_out_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
-	char curr_string[8] = {0};
+	char curr_string[8] = { 0 };
 	int curr = 0;
 	int len = count < 8 ? count : 8;
 
@@ -5284,8 +5179,7 @@ static const struct file_operations proc_wireless_current_out_ops = {
 };
 #endif
 
-static ssize_t proc_wireless_ftm_mode_read(struct file *file, char __user *buf,
-					   size_t count, loff_t *ppos)
+static ssize_t proc_wireless_ftm_mode_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[8];
@@ -5310,9 +5204,7 @@ static ssize_t proc_wireless_ftm_mode_read(struct file *file, char __user *buf,
 	return ret;
 }
 
-static ssize_t proc_wireless_ftm_mode_write(struct file *file,
-					    const char __user *buf, size_t len,
-					    loff_t *lo)
+static ssize_t proc_wireless_ftm_mode_write(struct file *file, const char __user *buf, size_t len, loff_t *lo)
 {
 	char buffer[5] = { 0 };
 	int val;
@@ -5350,8 +5242,7 @@ static const struct file_operations proc_wireless_ftm_mode_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_wireless_tx_read(struct file *file, char __user *buf,
-				     size_t count, loff_t *ppos)
+static ssize_t proc_wireless_tx_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[10];
@@ -5375,8 +5266,7 @@ static ssize_t proc_wireless_tx_read(struct file *file, char __user *buf,
 	return ret;
 }
 
-static ssize_t proc_wireless_tx_write(struct file *file, const char __user *buf,
-				      size_t count, loff_t *lo)
+static ssize_t proc_wireless_tx_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[5] = { 0 };
 	struct op_chg_chip *chip = g_op_chip;
@@ -5439,8 +5329,7 @@ static const struct file_operations proc_wireless_tx_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_wireless_quiet_mode_read(struct file *file, char __user *buf,
-				     size_t count, loff_t *ppos)
+static ssize_t proc_wireless_quiet_mode_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[7];
@@ -5454,14 +5343,12 @@ static ssize_t proc_wireless_quiet_mode_read(struct file *file, char __user *buf
 	}
 
 	chg_status = &chip->wlchg_status;
-	len = snprintf(page, 7, "%s\n",
-		(chg_status->quiet_mode_enabled && chip->quiet_mode_need) ? "true" : "false");
+	len = snprintf(page, 7, "%s\n", (chg_status->quiet_mode_enabled && chip->quiet_mode_need) ? "true" : "false");
 	ret = simple_read_from_buffer(buf, count, ppos, page, len);
 	return ret;
 }
 
-static ssize_t proc_wireless_quiet_mode_write(struct file *file, const char __user *buf,
-				      size_t count, loff_t *lo)
+static ssize_t proc_wireless_quiet_mode_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[3] = { 0 };
 	struct op_chg_chip *chip = g_op_chip;
@@ -5495,9 +5382,64 @@ static const struct file_operations proc_wireless_quiet_mode_ops = {
 	.owner = THIS_MODULE,
 };
 
+static ssize_t proc_wireless_user_sleep_mode_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
+{
+	uint8_t ret = 0;
+	char page[7];
+	int len = 0;
+	struct op_chg_chip *chip = g_op_chip;
+	struct wpc_data *chg_status;
+
+	if (chip == NULL) {
+		chg_err("%s: wlchg driver is not ready\n", __func__);
+		return -ENODEV;
+	}
+
+	chg_status = &chip->wlchg_status;
+	len = sprintf(page, "%d\n", (chg_status->quiet_mode_enabled && chip->quiet_mode_need) ? 1 : 0);
+	ret = simple_read_from_buffer(buf, count, ppos, page, len);
+	return ret;
+}
+
+static ssize_t proc_wireless_user_sleep_mode_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
+{
+	char buffer[3] = { 0 };
+	struct op_chg_chip *chip = g_op_chip;
+	int val;
+
+	if (chip == NULL) {
+		chg_err("%s: wlchg driver is not ready\n", __func__);
+		return -ENODEV;
+	}
+
+	if (count > 3) {
+		return -EFAULT;
+	}
+
+	if (copy_from_user(buffer, buf, count)) {
+		chg_err("%s: error.\n", __func__);
+		return -EFAULT;
+	}
+
+	chg_err("buffer=%s", buffer);
+	kstrtoint(buffer, 0, &val);
+	chg_err("val = %d", val);
+	if (val == SILENT_MODE || val == BATTERY_FULL_MODE)
+		chip->quiet_mode_need = true;
+	else
+		chip->quiet_mode_need = false;
+	return count;
+}
+
+static const struct file_operations proc_wireless_user_sleep_mode_ops = {
+	.read = proc_wireless_user_sleep_mode_read,
+	.write = proc_wireless_user_sleep_mode_write,
+	.open = simple_open,
+	.owner = THIS_MODULE,
+};
+
 #ifdef OP_DEBUG
-static ssize_t proc_wireless_epp_read(struct file *file, char __user *buf,
-				      size_t count, loff_t *ppos)
+static ssize_t proc_wireless_epp_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[6];
@@ -5524,9 +5466,7 @@ static ssize_t proc_wireless_epp_read(struct file *file, char __user *buf,
 	return ret;
 }
 
-static ssize_t proc_wireless_epp_write(struct file *file,
-				       const char __user *buf, size_t count,
-				       loff_t *lo)
+static ssize_t proc_wireless_epp_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[5] = { 0 };
 	int val = 0;
@@ -5570,8 +5510,7 @@ static const struct file_operations proc_wireless_epp_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_wireless_charge_pump_read(struct file *file, char __user *buf,
-					   size_t count, loff_t *ppos)
+static ssize_t proc_wireless_charge_pump_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[6];
@@ -5589,9 +5528,7 @@ static ssize_t proc_wireless_charge_pump_read(struct file *file, char __user *bu
 	return ret;
 }
 
-static ssize_t proc_wireless_charge_pump_write(struct file *file,
-					       const char __user *buf,
-					       size_t count, loff_t *lo)
+static ssize_t proc_wireless_charge_pump_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[2] = { 0 };
 	int val = 0;
@@ -5659,8 +5596,7 @@ static const struct file_operations proc_wireless_charge_pump_ops = {
 };
 #endif
 
-static ssize_t proc_wireless_deviated_read(struct file *file, char __user *buf,
-					   size_t count, loff_t *ppos)
+static ssize_t proc_wireless_deviated_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[7];
@@ -5690,8 +5626,7 @@ static const struct file_operations proc_wireless_deviated_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_wireless_rx_read(struct file *file, char __user *buf,
-					    size_t count, loff_t *ppos)
+static ssize_t proc_wireless_rx_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[3];
@@ -5701,7 +5636,6 @@ static ssize_t proc_wireless_rx_read(struct file *file, char __user *buf,
 		return -ENODEV;
 	}
 
-
 	memset(page, 0, 3);
 	snprintf(page, 3, "%c\n", !g_op_chip->disable_charge ? '1' : '0');
 	ret = simple_read_from_buffer(buf, count, ppos, page, 3);
@@ -5709,8 +5643,7 @@ static ssize_t proc_wireless_rx_read(struct file *file, char __user *buf,
 	return ret;
 }
 
-static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf,
-				      size_t count, loff_t *lo)
+static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[5] = { 0 };
 	struct op_chg_chip *chip = g_op_chip;
@@ -5745,9 +5678,7 @@ static ssize_t proc_wireless_rx_write(struct file *file, const char __user *buf,
 	return count;
 }
 
-static ssize_t oplus_chg_wlchg_proc_idt_adc_test_read(struct file *file,
-						    char __user *buf,
-						    size_t count, loff_t *ppos)
+static ssize_t oplus_chg_wlchg_proc_idt_adc_test_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[10];
@@ -5772,9 +5703,8 @@ static ssize_t oplus_chg_wlchg_proc_idt_adc_test_read(struct file *file,
 	return (ssize_t)ret;
 }
 
-static ssize_t oplus_chg_wlchg_proc_idt_adc_test_write(struct file *file,
-						     const char __user *buf,
-						     size_t len, loff_t *lo)
+static ssize_t oplus_chg_wlchg_proc_idt_adc_test_write(struct file *file, const char __user *buf, size_t len,
+						       loff_t *lo)
 {
 	char buffer[4] = { 0 };
 	int rx_adc_cmd = 0;
@@ -5823,8 +5753,7 @@ static const struct file_operations proc_wireless_rx_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_fast_skin_threld_read(struct file *file, char __user *buf,
-					    size_t count, loff_t *ppos)
+static ssize_t proc_fast_skin_threld_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[16];
@@ -5835,18 +5764,15 @@ static ssize_t proc_fast_skin_threld_read(struct file *file, char __user *buf,
 		return -ENODEV;
 	}
 
-
 	memset(page, 0, len);
-	len = snprintf(page, len, "Hi:%d,Lo:%d\n",
-		g_op_chip->chg_param.fastchg_skin_temp_max,
-		g_op_chip->chg_param.fastchg_skin_temp_min);
+	len = snprintf(page, len, "Hi:%d,Lo:%d\n", g_op_chip->chg_param.fastchg_skin_temp_max,
+		       g_op_chip->chg_param.fastchg_skin_temp_min);
 	ret = simple_read_from_buffer(buf, count, ppos, page, len);
 
 	return ret;
 }
 
-static ssize_t proc_fast_skin_threld_write(struct file *file, const char __user *buf,
-				      size_t count, loff_t *lo)
+static ssize_t proc_fast_skin_threld_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[16] = { 0 };
 	struct op_chg_chip *chip = g_op_chip;
@@ -5896,9 +5822,7 @@ static const struct file_operations proc_fast_skin_threld_ops = {
 };
 
 #ifdef OP_DEBUG
-static ssize_t proc_wireless_rx_freq_read(struct file *file,
-					  char __user *buf, size_t count,
-					  loff_t *ppos)
+static ssize_t proc_wireless_rx_freq_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	char string[8];
 	int len = 0;
@@ -5917,9 +5841,7 @@ static ssize_t proc_wireless_rx_freq_read(struct file *file,
 	rc = simple_read_from_buffer(buf, count, ppos, string, len);
 	return rc;
 }
-static ssize_t proc_wireless_rx_freq_write(struct file *file,
-					   const char __user *buf,
-					   size_t count, loff_t *lo)
+static ssize_t proc_wireless_rx_freq_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char string[16];
 	int freq = 0;
@@ -5947,9 +5869,7 @@ static const struct file_operations proc_wireless_rx_freq_ops = {
 	.owner = THIS_MODULE,
 };
 
-static ssize_t proc_match_q_read(struct file *file,
-				 char __user *buf, size_t count,
-				 loff_t *ppos)
+static ssize_t proc_match_q_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	char string[8];
 	int len = 0;
@@ -5968,9 +5888,7 @@ static ssize_t proc_match_q_read(struct file *file,
 	rc = simple_read_from_buffer(buf, count, ppos, string, len);
 	return rc;
 }
-static ssize_t proc_match_q_write(struct file *file,
-				  const char __user *buf,
-				  size_t count, loff_t *lo)
+static ssize_t proc_match_q_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char string[16];
 	int match_q = 0;
@@ -5999,11 +5917,9 @@ static const struct file_operations proc_match_q_ops = {
 };
 #endif
 
-static ssize_t proc_wireless_ftm_test_read(struct file *file,
-					  char __user *buf, size_t count,
-					  loff_t *ppos)
+static ssize_t proc_wireless_ftm_test_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
-	char string[2] = {0, 0};
+	char string[2] = { 0, 0 };
 	int rc;
 	int err_no = 0;
 
@@ -6041,8 +5957,7 @@ static const struct file_operations proc_wireless_ftm_test_ops = {
 };
 
 #ifdef HW_TEST_EDITION
-static ssize_t proc_wireless_w30w_time_read(struct file *file, char __user *buf,
-					    size_t count, loff_t *ppos)
+static ssize_t proc_wireless_w30w_time_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
 	uint8_t ret = 0;
 	char page[32];
@@ -6059,9 +5974,7 @@ static ssize_t proc_wireless_w30w_time_read(struct file *file, char __user *buf,
 	return ret;
 }
 
-static ssize_t proc_wireless_w30w_time_write(struct file *file,
-					     const char __user *buf,
-					     size_t count, loff_t *lo)
+static ssize_t proc_wireless_w30w_time_write(struct file *file, const char __user *buf, size_t count, loff_t *lo)
 {
 	char buffer[4] = { 0 };
 	int timeminutes = 0;
@@ -6108,155 +6021,129 @@ static int init_wireless_charge_proc(struct op_chg_chip *chip)
 
 	prEntry_da = proc_mkdir("wireless", NULL);
 	if (prEntry_da == NULL) {
-		chg_err("%s: Couldn't create wireless proc entry\n",
-			  __func__);
+		chg_err("%s: Couldn't create wireless proc entry\n", __func__);
 		return -ENOMEM;
 	}
 
-	prEntry_tmp = proc_create_data("ftm_mode", 0664, prEntry_da,
-				       &proc_wireless_ftm_mode_ops, chip);
+	prEntry_tmp = proc_create_data("ftm_mode", 0664, prEntry_da, &proc_wireless_ftm_mode_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("enable_tx", 0664, prEntry_da,
-				       &proc_wireless_tx_ops, chip);
+	prEntry_tmp = proc_create_data("enable_tx", 0664, prEntry_da, &proc_wireless_tx_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("quiet_mode", 0664, prEntry_da,
-					   &proc_wireless_quiet_mode_ops, chip);
+	prEntry_tmp = proc_create_data("quiet_mode", 0664, prEntry_da, &proc_wireless_quiet_mode_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("deviated", 0664, prEntry_da,
-				       &proc_wireless_deviated_ops, chip);
+	prEntry_tmp = proc_create_data("deviated", 0664, prEntry_da, &proc_wireless_deviated_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp =
-		proc_create_data("idt_adc_test", 0664, prEntry_da,
-				 &oplus_chg_wlchg_proc_idt_adc_test_ops, chip);
+	prEntry_tmp = proc_create_data("idt_adc_test", 0664, prEntry_da, &oplus_chg_wlchg_proc_idt_adc_test_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
 		pr_err("Couldn't create idt_adc_test proc entry\n");
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("enable_rx", 0664, prEntry_da,
-				       &proc_wireless_rx_ops, chip);
+	prEntry_tmp = proc_create_data("enable_rx", 0664, prEntry_da, &proc_wireless_rx_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("fast_skin_threld", 0664, prEntry_da,
-					   &proc_fast_skin_threld_ops, chip);
+	prEntry_tmp = proc_create_data("fast_skin_threld", 0664, prEntry_da, &proc_fast_skin_threld_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc fast_skin_threld, %d\n",
-				__func__, __LINE__);
+		chg_err("%s: Couldn't create proc fast_skin_threld, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("ftm_test", 0664, prEntry_da,
-				       &proc_wireless_ftm_test_ops, chip);
+	prEntry_tmp = proc_create_data("ftm_test", 0664, prEntry_da, &proc_wireless_ftm_test_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
+		goto fail;
+	}
+
+	prEntry_tmp = proc_create_data("user_sleep_mode", 0664, prEntry_da, &proc_wireless_user_sleep_mode_ops, chip);
+	if (prEntry_tmp == NULL) {
+		ret = -ENOMEM;
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
 #ifdef OP_DEBUG
-	prEntry_tmp = proc_create_data("voltage_rect", 0664, prEntry_da,
-				       &proc_wireless_voltage_rect_ops, chip);
+	prEntry_tmp = proc_create_data("voltage_rect", 0664, prEntry_da, &proc_wireless_voltage_rect_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("rx_voltage", 0664, prEntry_da,
-				       &proc_wireless_rx_voltage, chip);
+	prEntry_tmp = proc_create_data("rx_voltage", 0664, prEntry_da, &proc_wireless_rx_voltage, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("current_out", 0664, prEntry_da,
-				       &proc_wireless_current_out_ops, chip);
+	prEntry_tmp = proc_create_data("current_out", 0664, prEntry_da, &proc_wireless_current_out_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("epp_or_bpp", 0664, prEntry_da,
-				       &proc_wireless_epp_ops, chip);
+	prEntry_tmp = proc_create_data("epp_or_bpp", 0664, prEntry_da, &proc_wireless_epp_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("charge_pump_en", 0664, prEntry_da,
-				       &proc_wireless_charge_pump_ops, chip);
+	prEntry_tmp = proc_create_data("charge_pump_en", 0664, prEntry_da, &proc_wireless_charge_pump_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("rx_freq", 0664, prEntry_da,
-				       &proc_wireless_rx_freq_ops, chip);
+	prEntry_tmp = proc_create_data("rx_freq", 0664, prEntry_da, &proc_wireless_rx_freq_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 
-	prEntry_tmp = proc_create_data("match_q", 0664, prEntry_da,
-				       &proc_match_q_ops, chip);
+	prEntry_tmp = proc_create_data("match_q", 0664, prEntry_da, &proc_match_q_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 #endif
 
 #ifdef HW_TEST_EDITION
-	prEntry_tmp = proc_create_data("w30w_time", 0664, prEntry_da,
-				       &proc_wireless_w30w_time_ops, chip);
+	prEntry_tmp = proc_create_data("w30w_time", 0664, prEntry_da, &proc_wireless_w30w_time_ops, chip);
 	if (prEntry_tmp == NULL) {
 		ret = -ENOMEM;
-		chg_err("%s: Couldn't create proc entry, %d\n", __func__,
-			  __LINE__);
+		chg_err("%s: Couldn't create proc entry, %d\n", __func__, __LINE__);
 		goto fail;
 	}
 #endif
@@ -6281,7 +6168,6 @@ void oplus_get_wpc_chip_handle(struct oplus_wpc_chip **chip)
 
 bool oplus_wpc_get_wireless_charge_start(void)
 {
-
 	return wlchg_wireless_charge_start();
 }
 
@@ -6292,8 +6178,8 @@ bool oplus_wpc_get_fast_charging(void)
 		return 0;
 	}
 
-	if(g_op_chip->wireless_mode == WIRELESS_MODE_RX) {
-		if(g_op_chip->wlchg_status.fastchg_ing) {
+	if (g_op_chip->wireless_mode == WIRELESS_MODE_RX) {
+		if (g_op_chip->wlchg_status.fastchg_ing) {
 			return true;
 		} else {
 			return false;
@@ -6301,7 +6187,6 @@ bool oplus_wpc_get_fast_charging(void)
 	} else {
 		return false;
 	}
-
 }
 
 bool oplus_wpc_get_otg_charging(void)
@@ -6310,13 +6195,12 @@ bool oplus_wpc_get_otg_charging(void)
 		chg_err("wlchg driver is not ready\n");
 		return 0;
 	}
-	
-	if(g_op_chip->wireless_mode == WIRELESS_MODE_TX) {
+
+	if (g_op_chip->wireless_mode == WIRELESS_MODE_TX) {
 		return true;
 	} else {
 		return false;
 	}
-
 }
 
 bool oplus_wpc_get_ffc_charging(void)
@@ -6350,7 +6234,7 @@ bool oplus_wpc_get_fw_updating(void)
 int oplus_wpc_get_adapter_type(void)
 {
 	if (!g_op_chip) {
-        	return false;
+		return false;
 	} else {
 		return g_op_chip->wlchg_status.adapter_type;
 	}
@@ -6378,12 +6262,12 @@ bool oplus_wpc_get_verity(void)
 
 void oplus_wpc_set_vbat_en_val(int value)
 {
-	 wlchg_rx_set_chip_sleep(value);
+	wlchg_rx_set_chip_sleep(value);
 }
 
 void oplus_wpc_set_booster_en_val(int value)
 {
-	return;    
+	return;
 }
 
 void oplus_wpc_set_ext1_wired_otg_en_val(int value)
@@ -6414,10 +6298,9 @@ int oplus_wpc_get_max_wireless_power(void)
 		return -1;
 	}
 
-	max_wls_power = g_op_chip->adapter_power > g_op_chip->wls_prj_power ?
-						g_op_chip->wls_prj_power : g_op_chip->adapter_power;
-	max_wls_power = max_wls_power > g_op_chip->chg_base_power ?
-						g_op_chip->chg_base_power : max_wls_power;
+	max_wls_power = g_op_chip->adapter_power > g_op_chip->wls_prj_power ? g_op_chip->wls_prj_power :
+									      g_op_chip->adapter_power;
+	max_wls_power = max_wls_power > g_op_chip->chg_base_power ? g_op_chip->chg_base_power : max_wls_power;
 	chg_info("wlchg support max_power is %d\n", max_wls_power);
 
 	return max_wls_power;
@@ -6430,7 +6313,7 @@ void oplus_wpc_set_rtx_function_prepare(void)
 		return;
 	}
 
-	wlchg_reset_variables(g_op_chip);	
+	wlchg_reset_variables(g_op_chip);
 }
 
 bool oplus_wpc_check_chip_is_null(void)
@@ -6452,17 +6335,17 @@ bool __attribute__((weak)) oplus_wpc_get_normal_charging(void)
 	return false;
 }
 
-void  __attribute__((weak)) oplus_wpc_set_wrx_en_value(int value)
+void __attribute__((weak)) oplus_wpc_set_wrx_en_value(int value)
 {
 	return;
 }
 
-void  __attribute__((weak)) oplus_wpc_dis_wireless_chg(int value)
+void __attribute__((weak)) oplus_wpc_dis_wireless_chg(int value)
 {
 	return;
 }
 
-void  __attribute__((weak)) oplus_wpc_set_wrx_otg_en_value (int value)
+void __attribute__((weak)) oplus_wpc_set_wrx_otg_en_value(int value)
 {
 	return;
 }
@@ -6474,27 +6357,27 @@ int oplus_wpc_get_real_type(void)
 
 void __attribute__((weak)) oplus_set_wrx_otg_value(void)
 {
-       return;
+	return;
 }
 int __attribute__((weak)) oplus_get_idt_en_val(void)
 {
-       return -1;
+	return -1;
 }
 int __attribute__((weak)) oplus_get_wrx_en_val(void)
 {
-       return -1;
+	return -1;
 }
 int __attribute__((weak)) oplus_get_wrx_otg_val(void)
 {
-       return 0;
+	return 0;
 }
 void __attribute__((weak)) oplus_wireless_set_otg_en_val(void)
 {
-       return;
+	return;
 }
 void __attribute__((weak)) oplus_dcin_irq_enable(void)
 {
-       return;
+	return;
 }
 
 struct oplus_wpc_operations p922x_ops = {
@@ -6523,8 +6406,7 @@ static int wlchg_driver_probe(struct platform_device *pdev)
 
 	chg_debug(" call \n");
 
-	chip = devm_kzalloc(&pdev->dev, sizeof(struct op_chg_chip),
-				 GFP_KERNEL);
+	chip = devm_kzalloc(&pdev->dev, sizeof(struct op_chg_chip), GFP_KERNEL);
 	if (!chip) {
 		chg_err(" g_op_chg chip is null, probe again \n");
 		return -ENOMEM;
@@ -6549,7 +6431,7 @@ static int wlchg_driver_probe(struct platform_device *pdev)
 
 	g_op_chip = chip;
 
-/*--------------------For OPLUG Interface------------------*/
+	/*--------------------For OPLUG Interface------------------*/
 	wpc_chip = devm_kzalloc(&pdev->dev, sizeof(struct oplus_wpc_chip), GFP_KERNEL);
 	if (!wpc_chip) {
 		dev_err(&pdev->dev, "Couldn't allocate memory\n");
@@ -6559,7 +6441,7 @@ static int wlchg_driver_probe(struct platform_device *pdev)
 	wpc_chip->dev = &pdev->dev;
 	wpc_chip->wpc_ops = &p922x_ops;
 	oplus_wpc_init(wpc_chip);
-/*--------------------For OPLUG Interface------------------*/
+	/*--------------------For OPLUG Interface------------------*/
 
 	wlchg_reset_variables(chip);
 	chip->wlchg_status.dock_on = false;
@@ -6601,18 +6483,15 @@ static int wlchg_driver_probe(struct platform_device *pdev)
 	}
 	platform_set_drvdata(pdev, chip);
 
-	chip->wlcs_fcc_votable = create_votable("WLCH_FCC", VOTE_MIN,
-						wlch_fcc_vote_callback,
-						chip);
+	chip->wlcs_fcc_votable = create_votable("WLCH_FCC", VOTE_MIN, wlch_fcc_vote_callback, chip);
 	if (IS_ERR(chip->wlcs_fcc_votable)) {
 		ret = PTR_ERR(chip->wlcs_fcc_votable);
 		chip->wlcs_fcc_votable = NULL;
 		goto free_proc;
 	}
 
-	chip->fastchg_disable_votable = create_votable("WLCHG_FASTCHG_DISABLE", VOTE_SET_ANY,
-						wlchg_fastchg_disable_vote_callback,
-						chip);
+	chip->fastchg_disable_votable =
+		create_votable("WLCHG_FASTCHG_DISABLE", VOTE_SET_ANY, wlchg_fastchg_disable_vote_callback, chip);
 	if (IS_ERR(chip->fastchg_disable_votable)) {
 		ret = PTR_ERR(chip->fastchg_disable_votable);
 		chip->fastchg_disable_votable = NULL;
@@ -6707,4 +6586,3 @@ static struct platform_driver wlchg_driver = {
 module_platform_driver(wlchg_driver);
 MODULE_DESCRIPTION("Driver for wireless charger");
 MODULE_LICENSE("GPL v2");
-

@@ -47,9 +47,6 @@ extern unsigned int sysctl_sched_walt_rotate_big_tasks;
 extern unsigned int sysctl_sched_min_task_util_for_boost;
 extern unsigned int sysctl_sched_min_task_util_for_colocation;
 extern unsigned int sysctl_sched_asym_cap_sibling_freq_match_pct;
-#ifdef CONFIG_SCHED_WALT_COBUCK
-extern unsigned int __weak sysctl_sched_asym_cap_sibling_freq_match_en;
-#endif
 extern unsigned int sysctl_sched_coloc_downmigrate_ns;
 extern unsigned int sysctl_sched_task_unfilter_period;
 extern unsigned int sysctl_sched_busy_hyst_enable_cpus;

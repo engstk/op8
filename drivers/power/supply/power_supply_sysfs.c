@@ -40,13 +40,16 @@
 
 static struct device_attribute power_supply_attrs[];
 
-static const char * const power_supply_type_text[] = {
+static const char *const power_supply_type_text[] = {
 	"Unknown", "Battery", "UPS", "Mains", "USB",
 	"USB_DCP", "USB_CDP", "USB_ACA", "USB_C",
 	"USB_PD", "USB_PD_DRP", "BrickID",
 	"USB_HVDCP", "USB_HVDCP_3", "USB_HVDCP_3P5", "Wireless", "USB_FLOAT",
 	"BMS", "Parallel", "Main", "USB_C_UFP", "USB_C_DFP",
-	"Charge_Pump","DASH","BPP", "EPP", "FAST"
+	"Charge_Pump",
+#ifdef OPLUS_FEATURE_CHG_BASIC
+	"DASH", "BPP", "EPP", "FAST"
+#endif
 };
 
 static const char * const power_supply_usb_type_text[] = {
@@ -311,7 +314,7 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(usbtemp_volt_r),
 	POWER_SUPPLY_ATTR(battery_info),
 	POWER_SUPPLY_ATTR(battery_info_id),
-#endif  /* OPLUS_FEATURE_CHG_BASIC */
+#endif /* OPLUS_FEATURE_CHG_BASIC */
 	POWER_SUPPLY_ATTR(status),
 	POWER_SUPPLY_ATTR(charge_type),
 	POWER_SUPPLY_ATTR(health),
@@ -405,7 +408,9 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(temp_cold),
 	POWER_SUPPLY_ATTR(temp_hot),
 	POWER_SUPPLY_ATTR(system_temp_level),
+#ifdef OPLUS_FEATURE_CHG_BASIC
 	POWER_SUPPLY_ATTR(op_disable_charge),
+#endif /* OPLUS_FEATURE_CHG_BASIC */
 	POWER_SUPPLY_ATTR(resistance),
 	POWER_SUPPLY_ATTR(resistance_capacitive),
 	POWER_SUPPLY_ATTR(resistance_id),
@@ -526,31 +531,25 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(call_mode),
 #ifdef CONFIG_OPLUS_CHIP_SOC_NODE
 	POWER_SUPPLY_ATTR(chip_soc),
-#endif
+#endif /* CONFIG_OPLUS_CHIP_SOC_NODE */
 #ifdef CONFIG_OPLUS_SMOOTH_SOC
 	POWER_SUPPLY_ATTR(smooth_soc),
 	POWER_SUPPLY_ATTR(smooth_switch),
-#endif
-
+#endif /* CONFIG_OPLUS_SMOOTH_SOC */
 #ifdef CONFIG_OPLUS_SHORT_USERSPACE
 	POWER_SUPPLY_ATTR(short_c_batt_limit_chg),
 	POWER_SUPPLY_ATTR(short_c_batt_limit_rechg),
-#else
-	POWER_SUPPLY_ATTR(short_c_batt_update_change),
-	POWER_SUPPLY_ATTR(short_c_batt_in_idle),
-	POWER_SUPPLY_ATTR(short_c_batt_cv_status),
-#endif /*CONFIG_OPLUS_SHORT_USERSPACE*/
+#endif /* CONFIG_OPLUS_SHORT_USERSPACE */
 #ifdef CONFIG_OPLUS_SHORT_HW_CHECK
 	POWER_SUPPLY_ATTR(short_c_hw_feature),
 	POWER_SUPPLY_ATTR(short_c_hw_status),
-#endif
+#endif /* CONFIG_OPLUS_SHORT_HW_CHECK */
 #ifdef CONFIG_OPLUS_SHORT_IC_CHECK
 	POWER_SUPPLY_ATTR(short_ic_otp_status),
 	POWER_SUPPLY_ATTR(short_ic_volt_thresh),
 	POWER_SUPPLY_ATTR(short_ic_otp_value),
-#endif
+#endif /* CONFIG_OPLUS_SHORT_IC_CHECK */
 	POWER_SUPPLY_ATTR(cp_disable_cur_sens),
-// add by huangtongfeng  for wireless file
 	POWER_SUPPLY_ATTR(tx_voltage_now),
 	POWER_SUPPLY_ATTR(tx_current_now),
 	POWER_SUPPLY_ATTR(cp_voltage_now),
@@ -558,18 +557,19 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(wireless_mode),
 	POWER_SUPPLY_ATTR(wireless_type),
 	POWER_SUPPLY_ATTR(cep_info),
-// wireless file  end
-#endif /*OPLUS_FEATURE_CHG_BASIC*/
+#endif /* OPLUS_FEATURE_CHG_BASIC */
 	/* Properties of type `const char *' */
 	POWER_SUPPLY_ATTR(model_name),
 	POWER_SUPPLY_ATTR(manufacturer),
 	POWER_SUPPLY_ATTR(battery_type),
 	POWER_SUPPLY_ATTR(cycle_counts),
 	POWER_SUPPLY_ATTR(serial_number),
+#ifdef OPLUS_CUSTOM_OP_DEF
+	POWER_SUPPLY_ATTR(reset_rd),
+#endif /* OPLUS_CUSTOM_OP_DEF */
 #ifdef OPLUS_FEATURE_CHG_BASIC
 	POWER_SUPPLY_ATTR(parallel_current_now),
-	POWER_SUPPLY_ATTR(smb1355_test),
-#endif
+#endif /* OPLUS_FEATURE_CHG_BASIC */
 };
 
 static struct attribute *
@@ -594,11 +594,6 @@ static umode_t power_supply_attr_is_visible(struct kobject *kobj,
 			if (psy->desc->property_is_writeable &&
 			    psy->desc->property_is_writeable(psy, property) > 0)
 				mode |= S_IWUSR;
-#ifdef OPLUS_FEATURE_CHG_BASIC
-			if (property == POWER_SUPPLY_PROP_SMB1355_TEST)
-				mode |= S_IWGRP;
-#endif
-
 
 			return mode;
 		}
@@ -669,8 +664,12 @@ int power_supply_uevent(struct device *dev, struct kobj_uevent_env *env)
 		char *line;
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-		if (((psy->desc->properties[j] == POWER_SUPPLY_PROP_VOLTAGE_NOW) && (psy->desc->type == POWER_SUPPLY_TYPE_USB))
-			|| ((psy->desc->properties[j] == POWER_SUPPLY_PROP_CHARGE_NOW) && (psy->desc->type == POWER_SUPPLY_TYPE_BATTERY)))
+		if (((psy->desc->properties[j] ==
+		      POWER_SUPPLY_PROP_VOLTAGE_NOW) &&
+		     (psy->desc->type == POWER_SUPPLY_TYPE_USB)) ||
+		    ((psy->desc->properties[j] ==
+		      POWER_SUPPLY_PROP_CHARGE_NOW) &&
+		     (psy->desc->type == POWER_SUPPLY_TYPE_BATTERY)))
 			continue;
 #endif
 		attr = &power_supply_attrs[psy->desc->properties[j]];

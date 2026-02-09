@@ -1697,7 +1697,6 @@ futex_wake(u32 __user *uaddr, unsigned int flags, int nr_wake, u32 bitset)
 				continue;
 
 			mark_wake_futex(&wake_q, this);
-
 			if (++ret >= nr_wake)
 				break;
 		}
@@ -2719,9 +2718,8 @@ static void futex_wait_queue_me(struct futex_hash_bucket *hb, struct futex_q *q,
 		 * flagged for rescheduling. Only call schedule if there
 		 * is no timeout, or if it has yet to expire.
 		 */
-		if (!timeout || timeout->task) {
+		if (!timeout || timeout->task)
 			freezable_schedule();
-		}
 	}
 	__set_current_state(TASK_RUNNING);
 }
@@ -3888,7 +3886,7 @@ long do_futex(u32 __user *uaddr, int op, u32 val, ktime_t *timeout,
 		val3 = FUTEX_BITSET_MATCH_ANY;
 		/* fall through */
 	case FUTEX_WAIT_BITSET:
-	return futex_wait(uaddr, flags, val, timeout, val3);
+		return futex_wait(uaddr, flags, val, timeout, val3);
 	case FUTEX_WAKE:
 		val3 = FUTEX_BITSET_MATCH_ANY;
 		/* fall through */

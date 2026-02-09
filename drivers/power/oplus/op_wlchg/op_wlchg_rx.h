@@ -85,7 +85,7 @@ struct rx_chip_prop {
 	int (*set_prop)(struct rx_chip_prop *, enum rx_prop_type, union rx_chip_propval *);
 	int (*send_msg)(struct rx_chip_prop *, enum rx_msg_type, unsigned char);
 	int (*send_match_q_parm)(struct rx_chip_prop *, unsigned char);
-	int (*set_fod_parm)(struct rx_chip_prop *, const char []);
+	int (*set_fod_parm)(struct rx_chip_prop *, const char[]);
 	void (*rx_reset)(struct rx_chip_prop *);
 };
 

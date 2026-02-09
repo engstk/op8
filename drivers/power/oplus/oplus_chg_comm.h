@@ -12,25 +12,25 @@
 #include "oplus_chg_core.h"
 #endif
 
-#define CHG_TIMEOUT_COUNT		6000 /* 10hr */
-#define BATT_SOFT_OVP_MV		4500
-#define FFC_CHG_STEP_MAX		4
-#define BATT_NON_TEMP			(-400)
-#define BATT_TEMP_HYST			20
-#define HEARTBEAT_INTERVAL_MS		5000
-#define CHG_CMD_DATA_LEN		256
-#define CHG_CMD_TIME_MS			3000
+#define CHG_TIMEOUT_COUNT 6000 /* 10hr */
+#define BATT_SOFT_OVP_MV 4500
+#define FFC_CHG_STEP_MAX 4
+#define BATT_NON_TEMP (-400)
+#define BATT_TEMP_HYST 20
+#define HEARTBEAT_INTERVAL_MS 5000
+#define CHG_CMD_DATA_LEN 256
+#define CHG_CMD_TIME_MS 3000
 
 enum oplus_chg_temp_region {
-	BATT_TEMP_UNKNOWN = 0,	/*< -10*/
-	BATT_TEMP_COLD,		/*-10-0*/
-	BATT_TEMP_LITTLE_COLD,	/*0-5*/
-	BATT_TEMP_COOL,		/*5-12*/
-	BATT_TEMP_LITTLE_COOL,	/*12-16*/
-	BATT_TEMP_NORMAL,	/*16-40*/
-	BATT_TEMP_LITTLE_WARM,	/*40-44*/
-	BATT_TEMP_WARM,		/*44-53*/
-	BATT_TEMP_HOT,		/*>53*/
+	BATT_TEMP_UNKNOWN = 0, /*< -10*/
+	BATT_TEMP_COLD, /*-10-0*/
+	BATT_TEMP_LITTLE_COLD, /*0-5*/
+	BATT_TEMP_COOL, /*5-12*/
+	BATT_TEMP_LITTLE_COOL, /*12-16*/
+	BATT_TEMP_NORMAL, /*16-40*/
+	BATT_TEMP_LITTLE_WARM, /*40-44*/
+	BATT_TEMP_WARM, /*44-53*/
+	BATT_TEMP_HOT, /*>53*/
 	BATT_TEMP_INVALID,
 };
 
@@ -83,7 +83,7 @@ enum oplus_chg_cmd_type {
 	CMD_INIT_UI_SOH,
 };
 
-enum oplus_chg_cmd_error{
+enum oplus_chg_cmd_error {
 	CMD_ACK_OK,
 	CMD_ERROR_CHIP_NULL,
 	CMD_ERROR_DATA_NULL,
@@ -102,7 +102,7 @@ struct oplus_chg_comm_config {
 	int32_t batt_uv_mv;
 	int32_t batt_ov_mv;
 	int32_t batt_oc_ma;
-	int32_t batt_ovd_mv;  //Double cell pressure difference is too large;
+	int32_t batt_ovd_mv; /* Double cell pressure difference is too large */
 	int32_t batt_temp_thr[BATT_TEMP_INVALID - 1];
 	int32_t vbatmax_mv[BATT_TEMP_INVALID];
 	int32_t ffc_temp_thr[FFC_TEMP_INVALID - 1];
@@ -125,7 +125,7 @@ struct oplus_chg_comm_config {
 	int32_t fast_vchg_min_mv;
 	int32_t fast_vchg_max_mv;
 	int32_t batt_curr_limit_thr_mv;
-} __attribute__ ((packed));
+} __attribute__((packed));
 
 void oplus_chg_comm_status_init(struct oplus_chg_mod *comm_ocm);
 enum oplus_chg_temp_region oplus_chg_comm_get_temp_region(struct oplus_chg_mod *comm_ocm);
@@ -140,22 +140,10 @@ void oplus_chg_comm_update_config(struct oplus_chg_mod *comm_ocm);
 bool oplus_chg_comm_batt_vol_over_cl_thr(struct oplus_chg_mod *comm_ocm);
 int oplus_chg_comm_get_batt_health(struct oplus_chg_mod *comm_ocm);
 int oplus_chg_comm_get_batt_status(struct oplus_chg_mod *comm_ocm);
-#ifdef CONFIG_OPLUS_CHG_DYNAMIC_CONFIG
-ssize_t oplus_chg_comm_charge_parameter_show(struct device *dev,
-					struct device_attribute *attr,
-					char *buf);
-ssize_t oplus_chg_comm_charge_parameter_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count);
-#endif
 
 int oplus_chg_comm_reg_mutual_notifier(struct notifier_block *nb);
 int oplus_chg_comm_unreg_mutual_notifier(struct notifier_block *nb);
-ssize_t oplus_chg_comm_send_mutual_cmd(
-			struct oplus_chg_mod *comm_ocm, char *buf);
-ssize_t oplus_chg_comm_response_mutual_cmd(
-			struct oplus_chg_mod *comm_ocm, const char *buf, size_t count);
-int oplus_chg_common_set_mutual_cmd(
-			struct oplus_chg_mod *comm_ocm,
-			u32 cmd, u32 data_size, const void *data_buf);
+ssize_t oplus_chg_comm_send_mutual_cmd(struct oplus_chg_mod *comm_ocm, char *buf);
+ssize_t oplus_chg_comm_response_mutual_cmd(struct oplus_chg_mod *comm_ocm, const char *buf, size_t count);
+int oplus_chg_common_set_mutual_cmd(struct oplus_chg_mod *comm_ocm, u32 cmd, u32 data_size, const void *data_buf);
 #endif

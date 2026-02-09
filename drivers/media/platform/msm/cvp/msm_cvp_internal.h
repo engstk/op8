@@ -396,6 +396,7 @@ enum msm_cvp_flags {
 	MSM_CVP_FLAG_QUEUED              = BIT(2),
 };
 #endif
+
 struct msm_cvp_internal_buffer {
 	struct list_head list;
 	struct msm_cvp_smem smem;

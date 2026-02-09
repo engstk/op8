@@ -37,7 +37,7 @@
 #include "qg-battery-profile.h"
 #include "qg-defs.h"
 
-static int qg_debug_mask = 0x7ff;
+static int qg_debug_mask;
 
 static int qg_esr_mod_count = 30;
 static ssize_t esr_mod_count_show(struct device *dev, struct device_attribute
@@ -4738,7 +4738,7 @@ static int qpnp_qg_probe(struct platform_device *pdev)
 	chip->batt_age_level = -EINVAL;
 	chip->qg_charge_counter = -EINVAL;
 
-	chip->qg_version = (u8)of_device_get_match_data(&pdev->dev);
+	chip->qg_version = (enum qg_version)of_device_get_match_data(&pdev->dev);
 
 	switch (chip->qg_version) {
 	case QG_LITE:

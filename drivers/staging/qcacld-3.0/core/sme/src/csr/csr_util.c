@@ -3188,11 +3188,6 @@ uint8_t csr_retrieve_wapi_ie(struct mac_context *mac, uint32_t sessionId,
 		if (!csr_is_profile_wapi(pProfile))
 			break;
 		if (pProfile->nWAPIReqIELength && pProfile->pWAPIReqIE) {
-			sme_debug("pProfile->nWAPIReqIELength %d", pProfile->nWAPIReqIELength);
-			QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_SME,
-				QDF_TRACE_LEVEL_DEBUG,
-				pProfile->pWAPIReqIE,
-				(uint8_t) pProfile->nWAPIReqIELength);
 			if (DOT11F_IE_WAPI_MAX_LEN >=
 			    pProfile->nWAPIReqIELength) {
 				cbWapiIe = (uint8_t) pProfile->nWAPIReqIELength;

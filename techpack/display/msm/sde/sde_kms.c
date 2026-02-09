@@ -996,9 +996,6 @@ static void sde_kms_prepare_commit(struct msm_kms *kms,
 	rc = pm_runtime_get_sync(sde_kms->dev->dev);
 	if (rc < 0) {
 		SDE_ERROR("failed to enable power resources %d\n", rc);
-		#ifdef OPLUS_BUG_STABILITY
-		SDE_MM_ERROR("DisplayDriverID@@407$$failed to enable power resources %d\n", rc);
-		#endif /* OPLUS_BUG_STABILITY */
 		SDE_EVT32(rc, SDE_EVTLOG_ERROR);
 		goto end;
 	}
@@ -1228,13 +1225,16 @@ static void sde_kms_complete_commit(struct msm_kms *kms,
 	if (oplus_adfr_is_support()) {
 		if (oplus_adfr_get_vsync_mode() == OPLUS_DOUBLE_TE_VSYNC) {
 			SDE_ATRACE_BEGIN("sde_kms_adfr_vsync_source_switch");
-			for_each_old_crtc_in_state(old_state, crtc, old_crtc_state, i) {
+			for_each_old_crtc_in_state(old_state, crtc,
+						   old_crtc_state, i) {
 				sde_kms_adfr_vsync_source_switch(kms, crtc);
 			}
 			SDE_ATRACE_END("sde_kms_adfr_vsync_source_switch");
-		} else if (oplus_adfr_get_vsync_mode() == OPLUS_EXTERNAL_TE_TP_VSYNC) {
+		} else if (oplus_adfr_get_vsync_mode() ==
+			   OPLUS_EXTERNAL_TE_TP_VSYNC) {
 			SDE_ATRACE_BEGIN("sde_kms_adfr_vsync_switch");
-			for_each_old_crtc_in_state(old_state, crtc, old_crtc_state, i) {
+			for_each_old_crtc_in_state(old_state, crtc,
+						   old_crtc_state, i) {
 				sde_kms_adfr_vsync_switch(kms, crtc);
 			}
 			SDE_ATRACE_END("sde_kms_adfr_vsync_switch");
@@ -1472,10 +1472,8 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 		.get_default_lms = dsi_display_get_default_lms,
 		.get_qsync_min_fps = dsi_display_get_qsync_min_fps,
 #ifdef OPLUS_FEATURE_ADFR
-		// enable qsync on/off cmds
 		.prepare_commit = dsi_display_pre_commit,
 #endif
-		.get_qsync_min_fps = dsi_display_get_qsync_min_fps,
 	};
 	static const struct sde_connector_ops wb_ops = {
 		.post_init =    sde_wb_connector_post_init,

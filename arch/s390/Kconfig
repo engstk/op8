@@ -382,7 +382,7 @@ config SYSVIPC_COMPAT
 config SMP
 	def_bool y
 	prompt "Symmetric multi-processing support"
-	---help---
+	help
 	  This enables support for systems with more than one CPU. If you have
 	  a system with only one CPU, like most personal computers, say N. If
 	  you have a system with more than one CPU, say Y.
@@ -691,7 +691,7 @@ menu "I/O subsystem"
 config QDIO
 	def_tristate y
 	prompt "QDIO support"
-	---help---
+	help
 	  This driver provides the Queued Direct I/O base support for
 	  IBM System z.
 

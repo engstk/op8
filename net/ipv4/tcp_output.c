@@ -41,16 +41,9 @@
 #include <linux/compiler.h>
 #include <linux/gfp.h>
 #include <linux/module.h>
-//#ifdef OPLUS_FEATURE_DATA_EVAL
-#include <net/oplus/oplus_kernel2user.h>
-//#endif /* OPLUS_FEATURE_DATA_EVAL */
 #include <linux/static_key.h>
 
 #include <trace/events/tcp.h>
-
-//#ifdef OPLUS_FEATURE_NWPOWER
-#include <net/oplus_nwpower.h>
-//#endif /* OPLUS_FEATURE_NWPOWER */
 
 /* Refresh clocks of a TCP socket,
  * ensuring monotically increasing values.
@@ -1328,10 +1321,6 @@ static int __tcp_transmit_skb(struct sock *sk, struct sk_buff *skb,
 			       sizeof(struct inet6_skb_parm)));
 
 	err = icsk->icsk_af_ops->queue_xmit(sk, skb, &inet->cork.fl);
-
-	//#ifdef OPLUS_FEATURE_NWPOWER
-	oplus_match_tcp_output(sk);
-	//#endif /* OPLUS_FEATURE_NWPOWER */
 
 	if (unlikely(err > 0)) {
 		tcp_enter_cwr(sk);
@@ -3179,11 +3168,6 @@ start:
 
 	if (likely(!err)) {
 		TCP_SKB_CB(skb)->sacked |= TCPCB_EVER_RETRANS;
-
-		//#ifdef OPLUS_FEATURE_NWPOWER
-		oplus_match_tcp_output_retrans(sk);
-		//#endif /* OPLUS_FEATURE_NWPOWER */
-
 		trace_tcp_retransmit_skb(sk, skb);
 	} else if (err != -EBUSY) {
 		NET_ADD_STATS(sock_net(sk), LINUX_MIB_TCPRETRANSFAIL, segs);

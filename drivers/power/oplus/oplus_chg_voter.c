@@ -16,8 +16,8 @@
 #include "oplus_chg_voter.h"
 #endif
 
-#define NUM_MAX_CLIENTS		32
-#define DEBUG_FORCE_CLIENT	"DEBUG_FORCE_CLIENT"
+#define NUM_MAX_CLIENTS 32
+#define DEBUG_FORCE_CLIENT "DEBUG_FORCE_CLIENT"
 
 static DEFINE_SPINLOCK(votable_list_slock);
 static LIST_HEAD(votable_list);
@@ -25,35 +25,32 @@ static LIST_HEAD(votable_list);
 static struct dentry *debug_root;
 
 struct client_vote {
-	bool	enabled;
-	int	value;
+	bool enabled;
+	int value;
 };
 
 struct votable {
-	const char		*name;
-	const char		*override_client;
-	struct list_head	list;
-	struct client_vote	votes[NUM_MAX_CLIENTS];
-	int			num_clients;
-	int			type;
-	int			effective_client_id;
-	int			effective_result;
-	int			override_result;
-	struct mutex		vote_lock;
-	void			*data;
-	int			(*callback)(struct votable *votable,
-						void *data,
-						int effective_result,
-						const char *effective_client,
-						bool step);
-	char			*client_strs[NUM_MAX_CLIENTS];
-	bool			voted_on;
-	struct dentry		*root;
-	struct dentry		*status_ent;
-	u32			force_val;
-	struct dentry		*force_val_ent;
-	bool			force_active;
-	struct dentry		*force_active_ent;
+	const char *name;
+	const char *override_client;
+	struct list_head list;
+	struct client_vote votes[NUM_MAX_CLIENTS];
+	int num_clients;
+	int type;
+	int effective_client_id;
+	int effective_result;
+	int override_result;
+	struct mutex vote_lock;
+	void *data;
+	int (*callback)(struct votable *votable, void *data, int effective_result, const char *effective_client,
+			bool step);
+	char *client_strs[NUM_MAX_CLIENTS];
+	bool voted_on;
+	struct dentry *root;
+	struct dentry *status_ent;
+	u32 force_val;
+	struct dentry *force_val_ent;
+	bool force_active;
+	struct dentry *force_active_ent;
 };
 
 /**
@@ -70,8 +67,7 @@ struct votable {
  * Context:
  *	Must be called with the votable->lock held
  */
-static void vote_set_any(struct votable *votable, int client_id,
-				int *eff_res, int *eff_id)
+static void vote_set_any(struct votable *votable, int client_id, int *eff_res, int *eff_id)
 {
 	int i;
 
@@ -96,16 +92,14 @@ static void vote_set_any(struct votable *votable, int client_id,
  * Context:
  *	Must be called with the votable->lock held
  */
-static void vote_min(struct votable *votable, int client_id,
-				int *eff_res, int *eff_id)
+static void vote_min(struct votable *votable, int client_id, int *eff_res, int *eff_id)
 {
 	int i;
 
 	*eff_res = INT_MAX;
 	*eff_id = -EINVAL;
 	for (i = 0; i < votable->num_clients && votable->client_strs[i]; i++) {
-		if (votable->votes[i].enabled
-			&& *eff_res > votable->votes[i].value) {
+		if (votable->votes[i].enabled && *eff_res > votable->votes[i].value) {
 			*eff_res = votable->votes[i].value;
 			*eff_id = i;
 		}
@@ -127,16 +121,14 @@ static void vote_min(struct votable *votable, int client_id,
  * Context:
  *	Must be called with the votable->lock held
  */
-static void vote_max(struct votable *votable, int client_id,
-				int *eff_res, int *eff_id)
+static void vote_max(struct votable *votable, int client_id, int *eff_res, int *eff_id)
 {
 	int i;
 
 	*eff_res = INT_MIN;
 	*eff_id = -EINVAL;
 	for (i = 0; i < votable->num_clients && votable->client_strs[i]; i++) {
-		if (votable->votes[i].enabled &&
-				*eff_res < votable->votes[i].value) {
+		if (votable->votes[i].enabled && *eff_res < votable->votes[i].value) {
 			*eff_res = votable->votes[i].value;
 			*eff_id = i;
 		}
@@ -150,16 +142,14 @@ static int get_client_id(struct votable *votable, const char *client_str)
 	int i;
 
 	for (i = 0; i < votable->num_clients; i++) {
-		if (votable->client_strs[i]
-		 && (strcmp(votable->client_strs[i], client_str) == 0))
+		if (votable->client_strs[i] && (strcmp(votable->client_strs[i], client_str) == 0))
 			return i;
 	}
 
 	/* new client */
 	for (i = 0; i < votable->num_clients; i++) {
 		if (!votable->client_strs[i]) {
-			votable->client_strs[i]
-				= kstrdup(client_str, GFP_KERNEL);
+			votable->client_strs[i] = kstrdup(client_str, GFP_KERNEL);
 			if (!votable->client_strs[i])
 				return -ENOMEM;
 			return i;
@@ -229,10 +219,8 @@ bool oplus_is_override_vote_enabled(struct votable *votable)
  * Returns:
  *	True if the client's vote is enabled; false otherwise.
  */
-bool oplus_is_client_vote_enabled_locked(struct votable *votable,
-							const char *client_str)
+bool oplus_is_client_vote_enabled_locked(struct votable *votable, const char *client_str)
 {
-
 	int client_id;
 
 	if (!votable || !client_str)
@@ -281,8 +269,7 @@ int oplus_get_client_vote_locked(struct votable *votable, const char *client_str
 	if (client_id < 0)
 		return -EINVAL;
 
-	if ((votable->type != VOTE_SET_ANY)
-		&& !votable->votes[client_id].enabled)
+	if ((votable->type != VOTE_SET_ANY) && !votable->votes[client_id].enabled)
 		return -EINVAL;
 
 	return votable->votes[client_id].value;
@@ -440,13 +427,9 @@ int oplus_vote(struct votable *votable, const char *client_str, bool enabled, in
 	if (votable->type == VOTE_SET_ANY)
 		val = enabled;
 
-	if ((votable->votes[client_id].enabled == enabled) &&
-		(votable->votes[client_id].value == val)) {
-		pr_debug("%s: %s,%d same vote %s of val=%d\n",
-				votable->name,
-				client_str, client_id,
-				enabled ? "on" : "off",
-				val);
+	if ((votable->votes[client_id].enabled == enabled) && (votable->votes[client_id].value == val)) {
+		pr_debug("%s: %s,%d same vote %s of val=%d\n", votable->name, client_str, client_id,
+			 enabled ? "on" : "off", val);
 		similar_vote = true;
 	}
 
@@ -454,15 +437,12 @@ int oplus_vote(struct votable *votable, const char *client_str, bool enabled, in
 	votable->votes[client_id].value = val;
 
 	if (similar_vote && votable->voted_on) {
-		pr_debug("%s: %s,%d Ignoring similar vote %s of val=%d\n",
-			votable->name,
-			client_str, client_id, enabled ? "on" : "off", val);
+		pr_debug("%s: %s,%d Ignoring similar vote %s of val=%d\n", votable->name, client_str, client_id,
+			 enabled ? "on" : "off", val);
 		goto out;
 	}
 
-	pr_debug("%s: %s,%d voting %s of val=%d\n",
-		votable->name,
-		client_str, client_id, enabled ? "on" : "off", val);
+	pr_debug("%s: %s,%d voting %s of val=%d\n", votable->name, client_str, client_id, enabled ? "on" : "off", val);
 	switch (votable->type) {
 	case VOTE_MIN:
 		vote_min(votable, client_id, &effective_result, &effective_id);
@@ -471,8 +451,7 @@ int oplus_vote(struct votable *votable, const char *client_str, bool enabled, in
 		vote_max(votable, client_id, &effective_result, &effective_id);
 		break;
 	case VOTE_SET_ANY:
-		vote_set_any(votable, client_id,
-				&effective_result, &effective_id);
+		vote_set_any(votable, client_id, &effective_result, &effective_id);
 		break;
 	default:
 		return -EINVAL;
@@ -482,19 +461,14 @@ int oplus_vote(struct votable *votable, const char *client_str, bool enabled, in
 	 * Note that the callback is called with a NULL string and -EINVAL
 	 * result when there are no enabled votes
 	 */
-	if (!votable->voted_on
-			|| (effective_result != votable->effective_result)) {
+	if (!votable->voted_on || (effective_result != votable->effective_result)) {
 		votable->effective_client_id = effective_id;
 		votable->effective_result = effective_result;
-		pr_err("%s: effective vote is now %d voted by %s,%d\n",
-			votable->name, effective_result,
-			get_client_str(votable, effective_id),
-			effective_id);
-		if (votable->callback && !votable->force_active
-				&& (votable->override_result == -EINVAL))
-			rc = votable->callback(votable, votable->data,
-					effective_result,
-					get_client_str(votable, effective_id), step);
+		pr_err("%s: effective vote is now %d voted by %s,%d\n", votable->name, effective_result,
+		       get_client_str(votable, effective_id), effective_id);
+		if (votable->callback && !votable->force_active && (votable->override_result == -EINVAL))
+			rc = votable->callback(votable, votable->data, effective_result,
+					       get_client_str(votable, effective_id), step);
 	}
 
 	votable->voted_on = true;
@@ -524,8 +498,7 @@ out:
  *	The result of vote. 0 is returned if the vote
  *	is successfully set by the overriding client, when enabled is set.
  */
-int oplus_vote_override(struct votable *votable, const char *override_client,
-		  bool enabled, int val, bool step)
+int oplus_vote_override(struct votable *votable, const char *override_client, bool enabled, int val, bool step)
 {
 	int rc = 0;
 
@@ -539,16 +512,14 @@ int oplus_vote_override(struct votable *votable, const char *override_client,
 	}
 
 	if (enabled) {
-		rc = votable->callback(votable, votable->data,
-					val, override_client, step);
+		rc = votable->callback(votable, votable->data, val, override_client, step);
 		if (!rc) {
 			votable->override_client = override_client;
 			votable->override_result = val;
 		}
 	} else {
-		rc = votable->callback(votable, votable->data,
-			votable->effective_result,
-			get_client_str(votable, votable->effective_client_id), step);
+		rc = votable->callback(votable, votable->data, votable->effective_result,
+				       get_client_str(votable, votable->effective_client_id), step);
 		votable->override_result = -EINVAL;
 	}
 
@@ -568,10 +539,8 @@ int oplus_rerun_election(struct votable *votable, bool step)
 	oplus_lock_votable(votable);
 	effective_result = oplus_get_effective_result_locked(votable);
 	if (votable->callback)
-		rc = votable->callback(votable,
-			votable->data,
-			effective_result,
-			get_client_str(votable, votable->effective_client_id), step);
+		rc = votable->callback(votable, votable->data, effective_result,
+				       get_client_str(votable, votable->effective_client_id), step);
 	oplus_unlock_votable(votable);
 	return rc;
 }
@@ -589,7 +558,7 @@ struct votable *oplus_find_votable(const char *name)
 	if (list_empty(&votable_list))
 		goto out;
 
-	list_for_each_entry(v, &votable_list, list) {
+	list_for_each_entry (v, &votable_list, list) {
 		if (strcmp(v->name, name) == 0) {
 			found = true;
 			break;
@@ -627,27 +596,22 @@ static int force_active_set(void *data, u64 val)
 		goto out;
 
 	if (votable->force_active) {
-		rc = votable->callback(votable, votable->data,
-			votable->force_val,
-			DEBUG_FORCE_CLIENT, false);
+		rc = votable->callback(votable, votable->data, votable->force_val, DEBUG_FORCE_CLIENT, false);
 	} else {
 		if (votable->override_result != -EINVAL) {
 			effective_result = votable->override_result;
 			client = votable->override_client;
 		} else {
 			effective_result = votable->effective_result;
-			client = get_client_str(votable,
-					votable->effective_client_id);
+			client = get_client_str(votable, votable->effective_client_id);
 		}
-		rc = votable->callback(votable, votable->data, effective_result,
-					client, false);
+		rc = votable->callback(votable, votable->data, effective_result, client, false);
 	}
 out:
 	oplus_unlock_votable(votable);
 	return rc;
 }
-DEFINE_DEBUGFS_ATTRIBUTE(votable_force_ops, force_active_get, force_active_set,
-		"%lld\n");
+DEFINE_DEBUGFS_ATTRIBUTE(votable_force_ops, force_active_get, force_active_set, "%lld\n");
 
 static int show_votable_clients(struct seq_file *m, void *data)
 {
@@ -660,11 +624,8 @@ static int show_votable_clients(struct seq_file *m, void *data)
 
 	for (i = 0; i < votable->num_clients; i++) {
 		if (votable->client_strs[i]) {
-			seq_printf(m, "%s: %s:\t\t\ten=%d v=%d\n",
-					votable->name,
-					votable->client_strs[i],
-					votable->votes[i].enabled,
-					votable->votes[i].value);
+			seq_printf(m, "%s: %s:\t\t\ten=%d v=%d\n", votable->name, votable->client_strs[i],
+				   votable->votes[i].enabled, votable->votes[i].value);
 		}
 	}
 
@@ -681,11 +642,9 @@ static int show_votable_clients(struct seq_file *m, void *data)
 	}
 
 	effective_client_str = oplus_get_effective_client_locked(votable);
-	seq_printf(m, "%s: effective=%s type=%s v=%d\n",
-			votable->name,
-			effective_client_str ? effective_client_str : "none",
-			type_str,
-			oplus_get_effective_result_locked(votable));
+	seq_printf(m, "%s: effective=%s type=%s v=%d\n", votable->name,
+		   effective_client_str ? effective_client_str : "none", type_str,
+		   oplus_get_effective_result_locked(votable));
 	oplus_unlock_votable(votable);
 
 	return 0;
@@ -699,20 +658,17 @@ static int votable_status_open(struct inode *inode, struct file *file)
 }
 
 static const struct file_operations votable_status_ops = {
-	.owner		= THIS_MODULE,
-	.open		= votable_status_open,
-	.read		= seq_read,
-	.llseek		= seq_lseek,
-	.release	= single_release,
+	.owner = THIS_MODULE,
+	.open = votable_status_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
 };
 
-struct votable *oplus_create_votable(const char *name,
-				int votable_type,
-				int (*callback)(struct votable *votable,
-					void *data,
-					int effective_result,
-					const char *effective_client, bool step),
-				void *data)
+struct votable *oplus_create_votable(const char *name, int votable_type,
+				     int (*callback)(struct votable *votable, void *data, int effective_result,
+						     const char *effective_client, bool step),
+				     void *data)
 {
 	struct votable *votable;
 	unsigned long flags;
@@ -775,9 +731,8 @@ struct votable *oplus_create_votable(const char *name,
 		return ERR_PTR(-ENOMEM);
 	}
 
-	votable->status_ent = debugfs_create_file("status", S_IFREG | 0444,
-				  votable->root, votable,
-				  &votable_status_ops);
+	votable->status_ent =
+		debugfs_create_file("status", S_IFREG | 0444, votable->root, votable, &votable_status_ops);
 	if (!votable->status_ent) {
 		pr_err("Couldn't create status dbg file for %s\n", name);
 		debugfs_remove_recursive(votable->root);
@@ -786,13 +741,10 @@ struct votable *oplus_create_votable(const char *name,
 		return ERR_PTR(-EEXIST);
 	}
 
-	debugfs_create_u32("force_val", S_IFREG | 0644,
-			votable->root, &(votable->force_val));
+	debugfs_create_u32("force_val", S_IFREG | 0644, votable->root, &(votable->force_val));
 
-	votable->force_active_ent = debugfs_create_file("force_active",
-					S_IFREG | 0444,
-					votable->root, votable,
-					&votable_force_ops);
+	votable->force_active_ent =
+		debugfs_create_file("force_active", S_IFREG | 0444, votable->root, votable, &votable_force_ops);
 	if (!votable->force_active_ent) {
 		pr_err("Couldn't create force_active dbg file for %s\n", name);
 		debugfs_remove_recursive(votable->root);

@@ -86,7 +86,7 @@ config ATMEL_TCB_CLKSRC_BLOCK
 config DUMMY_IRQ
 	tristate "Dummy IRQ handler"
 	default n
-	---help---
+	help
 	  This module accepts a single 'irq' parameter, which it should register for.
 	  The sole purpose of this module is to help with debugging of systems on
 	  which spurious IRQs would happen on disabled IRQ vector.
@@ -95,7 +95,7 @@ config IBM_ASM
 	tristate "Device driver for IBM RSA service processor"
 	depends on X86 && PCI && INPUT
 	depends on SERIAL_8250 || SERIAL_8250=n
-	---help---
+	help
 	  This option enables device driver support for in-band access to the
 	  IBM RSA (Condor) service processor in eServer xSeries systems.
 	  The ibmasm device driver allows user space application to access
@@ -155,7 +155,7 @@ config INTEL_MID_PTI
 config SGI_IOC4
 	tristate "SGI IOC4 Base IO support"
 	depends on PCI
-	---help---
+	help
 	  This option enables basic support for the IOC4 chip on certain
 	  SGI IO controller cards (IO9, IO10, and PCI-RT).  This option
 	  does not enable any specific functions on such a card, but provides
@@ -206,7 +206,7 @@ config ICS932S401
 config ATMEL_SSC
 	tristate "Device driver for Atmel SSC peripheral"
 	depends on HAS_IOMEM && (ARCH_AT91 || COMPILE_TEST)
-	---help---
+	help
 	  This option enables device driver support for Atmel Synchronized
 	  Serial Communication peripheral (SSC).
 
@@ -231,7 +231,7 @@ config SGI_XP
 	select IA64_UNCACHED_ALLOCATOR if IA64_GENERIC || IA64_SGI_SN2
 	select GENERIC_ALLOCATOR if IA64_GENERIC || IA64_SGI_SN2
 	select SGI_GRU if X86_64 && SMP
-	---help---
+	help
 	  An SGI machine can be divided into multiple Single System
 	  Images which act independently of each other and have
 	  hardware based memory protection from the others.  Enabling
@@ -300,7 +300,7 @@ config SGI_GRU
 	depends on X86_UV && SMP
 	default n
 	select MMU_NOTIFIER
-	---help---
+	help
 	The GRU is a hardware resource located in the system chipset. The GRU
 	contains memory that can be mmapped into the user address space. This memory is
 	used to communicate with the GRU to perform functions such as load/store,
@@ -314,7 +314,7 @@ config SGI_GRU_DEBUG
 	bool  "SGI GRU driver debug"
 	depends on SGI_GRU
 	default n
-	---help---
+	help
 	This option enables additional debugging code for the SGI GRU driver.
 	If you are unsure, say N.
 
@@ -361,7 +361,7 @@ config SENSORS_TSL2550
 config SENSORS_BH1770
          tristate "BH1770GLC / SFH7770 combined ALS - Proximity sensor"
          depends on I2C
-         ---help---
+	help
            Say Y here if you want to build a driver for BH1770GLC (ROHM) or
 	   SFH7770 (Osram) combined ambient light and proximity sensor chip.
 
@@ -372,7 +372,7 @@ config SENSORS_APDS990X
 	 tristate "APDS990X combined als and proximity sensors"
 	 depends on I2C
 	 default n
-	 ---help---
+	help
 	   Say Y here if you want to build a driver for Avago APDS990x
 	   combined ambient light and proximity sensor chip.
 
@@ -505,7 +505,7 @@ config VEXPRESS_SYSCFG
 config ASPEED_LPC_CTRL
 	depends on (ARCH_ASPEED || COMPILE_TEST) && REGMAP && MFD_SYSCON
 	tristate "Aspeed ast2400/2500 HOST LPC to BMC bridge control"
-	---help---
+	help
 	  Control Aspeed ast2400/2500 HOST LPC to BMC mappings through
 	  ioctl()s, the driver also provides a read/write interface to a BMC ram
 	  region where the host LPC read/write region can be buffered.
@@ -522,7 +522,7 @@ config PCI_ENDPOINT_TEST
 	depends on PCI
 	select CRC32
 	tristate "PCI Endpoint Test driver"
-	---help---
+	help
            Enable this configuration option to enable the host side test driver
            for PCI Endpoint.
 
@@ -631,7 +631,6 @@ config KINECTICS_XR_NORDIC
 	  this also parses the gpios and interrupts from device tree and sets
 	  the gpios and interrupt handler for handling the interrupt.
 
-#ifdef OPLUS_FEATURE_TP_BASIC
 config OPLUS_RF_CABLE_MONITOR
 	bool "OPLUS rf cable monitor system"
 	depends on OF
@@ -639,23 +638,18 @@ config OPLUS_RF_CABLE_MONITOR
 	default n
 	help
 	  Say Y here to enable OPLUS rf cable monitor system support
-#endif /* OPLUS_FEATURE_TP_BASIC */
 
-#ifdef OPLUS_FEATURE_SIM_DETECT
 config SIM_DETECT
 	tristate "SIM_DETECT system"
 	default n
 	help
 	  Say Y here to enable sim detect system support
-#endif /* OPLUS_FEATURE_SIM_DETECT */
 
-#ifdef OPLUS_FEATURE_SIM_DETECT
 config OEM_QMI
 	tristate "oem qmi feature"
 	default n
 	help
 	  Say Y here to enable oem qmi support
-#endif /* OPLUS_FEATURE_SIM_DETECT */
 
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
@@ -671,19 +665,11 @@ source "drivers/misc/echo/Kconfig"
 source "drivers/misc/cxl/Kconfig"
 source "drivers/misc/ocxl/Kconfig"
 source "drivers/misc/cardreader/Kconfig"
-source "drivers/misc/tri_state_key/Kconfig"
-#ifdef OPLUS_FEATURE_TP_BASIC
-source "drivers/misc/cs_press/Kconfig"
-#endif
-#ifdef OPLUS_FEATURE_TP_BASIC
-source "drivers/misc/colorctrl/Kconfig"
-source "drivers/misc/colorctrl_v2/Kconfig"
-#endif /* OPLUS_FEATURE_TP_BASIC */
-#ifdef OPLUS_FEATURE_TP_BASIC//Qingjun.Wang@BSP.Haptic,add 2020/03/17 for vib aw8697
-source "drivers/misc/aw8697_haptic/Kconfig"
-#endif
 source "drivers/misc/fpr_FingerprintCard/Kconfig"
 source "drivers/misc/qrc/Kconfig"
+
+source "drivers/misc/aw8697_haptic/Kconfig"
+source "drivers/misc/tri_state_key/Kconfig"
 endmenu
 
 config OKL4_USER_VIPC

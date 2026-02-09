@@ -206,8 +206,8 @@ static void blk_set_cmd_filter_defaults(struct blk_cmd_filter *filter)
 	__set_bit(GPCMD_SET_STREAMING, filter->write_ok);
 	__set_bit(GPCMD_SET_READ_AHEAD, filter->write_ok);
 #ifdef OPLUS_FEATURE_STORAGE_TOOL
-// add write buffer command for common user
-// add vendor command for common user
+	// add write buffer command for common user
+	// add vendor command for common user
 	__set_bit(WRITE_BUFFER, filter->write_ok);
 	__set_bit(VENDOR_SPECIFIC_CDB, filter->write_ok);
 #endif
@@ -431,8 +431,8 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 	unsigned int in_len, out_len, bytes, opcode, cmdlen;
 	char *buffer = NULL;
 #ifdef OPLUS_FEATURE_STORAGE_TOOL
-// vendor cmd len is 16 and not 10 in spec.
-// in current application ,only samsung health will use this cmd.
+	// vendor cmd len is 16 and not 10 in spec.
+	// in current application, only samsung health will use this cmd.
 	struct scsi_device *sdev = NULL;
 #endif
 
@@ -468,12 +468,11 @@ int sg_scsi_ioctl(struct request_queue *q, struct gendisk *disk, fmode_t mode,
 
 	cmdlen = COMMAND_SIZE(opcode);
 #ifdef OPLUS_FEATURE_STORAGE_TOOL
-// vendor cmd len is 16 and not 10 in spec.
-// in current application ,only samsung health will use this cmd.
-	sdev = (struct scsi_device*)(q->queuedata);
-	if ((VENDOR_SPECIFIC_CDB == opcode)
-		&&(0 == strncmp(sdev->vendor, "SAMSUNG ", 8))
-	){
+	// vendor cmd len is 16 and not 10 in spec.
+	// in current application, only samsung health will use this cmd.
+	sdev = (struct scsi_device *)(q->queuedata);
+	if ((opcode == VENDOR_SPECIFIC_CDB) &&
+	    (strncmp(sdev->vendor, "SAMSUNG ", 8) == 0)) {
 		cmdlen = 16;
 	}
 #endif

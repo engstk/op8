@@ -1,7 +1,7 @@
 menuconfig STAGING
 	bool "Staging drivers"
 	default n
-	---help---
+	help
 	  This option allows you to select a number of drivers that are
 	  not of the "normal" Linux kernel quality level.  These drivers
 	  are placed here in order to get a wider audience to make use of

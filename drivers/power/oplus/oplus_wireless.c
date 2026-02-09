@@ -106,10 +106,8 @@ int oplus_wpc_get_break_sub_crux_info(char *sub_crux_info)
 	if (!g_wpc_chip)
 		return -EINVAL;
 
-	if (g_wpc_chip->wpc_ops &&
-	    g_wpc_chip->wpc_ops->wpc_get_break_sub_crux_info)
-		return g_wpc_chip->wpc_ops->wpc_get_break_sub_crux_info(
-			sub_crux_info);
+	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_break_sub_crux_info)
+		return g_wpc_chip->wpc_ops->wpc_get_break_sub_crux_info(sub_crux_info);
 
 	return 0;
 }
@@ -332,8 +330,7 @@ int oplus_wpc_get_skewing_curr(void)
 	if (!g_wpc_chip)
 		return 0;
 
-	if (g_wpc_chip->wpc_ops &&
-	    g_wpc_chip->wpc_ops->wpc_get_skewing_curr)
+	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_skewing_curr)
 		return g_wpc_chip->wpc_ops->wpc_get_skewing_curr();
 
 	return 0;
@@ -344,8 +341,7 @@ bool oplus_wpc_get_verity(void)
 	if (!g_wpc_chip)
 		return false;
 
-	if (g_wpc_chip->wpc_ops &&
-	    g_wpc_chip->wpc_ops->wpc_get_verity)
+	if (g_wpc_chip->wpc_ops && g_wpc_chip->wpc_ops->wpc_get_verity)
 		return g_wpc_chip->wpc_ops->wpc_get_verity();
 
 	return false;
@@ -412,9 +408,8 @@ int oplus_wpc_get_wrx_en_val(void)
 		chg_err("wrx_en_gpio not exist, return\n");
 		return 0;
 	}
-	if (IS_ERR_OR_NULL(chip->wpc_gpios.pinctrl)
-		|| IS_ERR_OR_NULL(chip->wpc_gpios.wrx_en_active)
-		|| IS_ERR_OR_NULL(chip->wpc_gpios.wrx_en_sleep)) {
+	if (IS_ERR_OR_NULL(chip->wpc_gpios.pinctrl) || IS_ERR_OR_NULL(chip->wpc_gpios.wrx_en_active) ||
+	    IS_ERR_OR_NULL(chip->wpc_gpios.wrx_en_sleep)) {
 		chg_err("pinctrl null, return\n");
 		return 0;
 	}
@@ -431,9 +426,8 @@ int oplus_wpc_get_wrx_otg_en_val(void)
 		chg_err("wrx_otg_en_gpio not exist, return\n");
 		return 0;
 	}
-	if (IS_ERR_OR_NULL(chip->wpc_gpios.pinctrl)
-		|| IS_ERR_OR_NULL(chip->wpc_gpios.wrx_otg_en_active)
-		|| IS_ERR_OR_NULL(chip->wpc_gpios.wrx_otg_en_sleep)) {
+	if (IS_ERR_OR_NULL(chip->wpc_gpios.pinctrl) || IS_ERR_OR_NULL(chip->wpc_gpios.wrx_otg_en_active) ||
+	    IS_ERR_OR_NULL(chip->wpc_gpios.wrx_otg_en_sleep)) {
 		chg_err("pinctrl null, return\n");
 		return 0;
 	}

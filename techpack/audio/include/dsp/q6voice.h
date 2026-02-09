@@ -483,7 +483,6 @@ struct vss_icommon_cmd_get_param {
 
 	/* Valid ID of the parameter. */
 	uint32_t param_id;
-
 } __packed;
 #endif /* OPLUS_FEATURE_AUDIODETECT */
 

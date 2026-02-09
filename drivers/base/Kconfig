@@ -151,10 +151,6 @@ config DEBUG_TEST_DRIVER_REMOVE
 
 source "drivers/base/test/Kconfig"
 
-#ifdef OPLUS_FEATURE_TP_BASIC
-source "drivers/base/kernelFwUpdate/Kconfig"
-#endif /*OPLUS_FEATURE_TP_BASIC*/
-
 config SYS_HYPERVISOR
 	bool
 	default n
@@ -278,5 +274,9 @@ config GENERIC_ARCH_TOPOLOGY
 	  CPU capacity information from DT, usage of such information for
 	  appropriate scaling, sysfs interface for changing capacity values at
 	  runtime.
+
+#ifdef OPLUS_FEATURE_TP_BASIC
+source "drivers/base/kernelFwUpdate/Kconfig"
+#endif /*OPLUS_FEATURE_TP_BASIC*/
 
 endmenu

@@ -1,7 +1,7 @@
 config WLAN_VENDOR_CISCO
 	bool "Cisco devices"
 	default y
-	---help---
+	help
 	  If you have a wireless card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
@@ -18,7 +18,7 @@ config AIRO
 	select CRYPTO
 	select WEXT_SPY
 	select WEXT_PRIV
-	---help---
+	help
 	  This is the standard Linux driver to support Cisco/Aironet ISA and
 	  PCI 802.11 wireless cards.
 	  It supports the new 802.11b cards from Cisco (Cisco 34X, Cisco 35X
@@ -39,7 +39,7 @@ config AIRO_CS
 	select WEXT_PRIV
 	select CRYPTO
 	select CRYPTO_AES
-	---help---
+	help
 	  This is the standard Linux driver to support Cisco/Aironet PCMCIA
 	  802.11 wireless cards.  This driver is the same as the Aironet
 	  driver part of the Linux Pcmcia package.

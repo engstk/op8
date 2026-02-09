@@ -527,6 +527,7 @@ static struct queue_sysfs_entry queue_ra_entry = {
 	.show = queue_ra_show,
 	.store = queue_ra_store,
 };
+
 static struct queue_sysfs_entry queue_max_sectors_entry = {
 	.attr = {.name = "max_sectors_kb", .mode = 0644 },
 	.show = queue_max_sectors_show,

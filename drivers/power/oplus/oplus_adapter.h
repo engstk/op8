@@ -19,27 +19,25 @@
 #include <linux/firmware.h>
 
 enum {
-        ADAPTER_FW_UPDATE_NONE,
-        ADAPTER_FW_NEED_UPDATE,
-        ADAPTER_FW_UPDATE_SUCCESS,
-        ADAPTER_FW_UPDATE_FAIL,
+	ADAPTER_FW_UPDATE_NONE,
+	ADAPTER_FW_NEED_UPDATE,
+	ADAPTER_FW_UPDATE_SUCCESS,
+	ADAPTER_FW_UPDATE_FAIL,
 };
 
-
 struct oplus_adapter_chip {
-		struct delayed_work              adapter_update_work;
-        const struct    oplus_adapter_operations    *vops;
+	struct delayed_work adapter_update_work;
+	const struct oplus_adapter_operations *vops;
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0))
-        struct wake_lock                 adapter_wake_lock;
+	struct wake_lock adapter_wake_lock;
 #else
-        struct wakeup_source			*adapter_ws;
+	struct wakeup_source *adapter_ws;
 #endif
 };
 
 struct oplus_adapter_operations {
-        bool (*adapter_update)(unsigned long tx_pin, unsigned long rx_pin);
+	bool (*adapter_update)(unsigned long tx_pin, unsigned long rx_pin);
 };
-
 
 void oplus_adapter_fw_update(void);
 void oplus_vooc_reset_mcu(void);

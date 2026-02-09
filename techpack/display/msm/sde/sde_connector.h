@@ -498,6 +498,19 @@ struct sde_connector {
 	bool hdr_capable;
 };
 
+#ifdef OPLUS_BUG_STABILITY
+/* DC backlight sync */
+struct dc_apollo_pcc_sync {
+	wait_queue_head_t bk_wait;
+	int dc_pcc_updated;
+	__u32 pcc;
+	__u32 pcc_last;
+	__u32 pcc_current;
+	struct mutex lock;
+	int backlight_pending;
+};
+#endif
+
 /**
  * to_sde_connector - convert drm_connector pointer to sde connector pointer
  * @X: Pointer to drm_connector structure

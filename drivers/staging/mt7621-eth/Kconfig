@@ -1,7 +1,7 @@
 config NET_VENDOR_MEDIATEK_STAGING
 	bool "MediaTek ethernet driver - staging version"
 	depends on RALINK
-	---help---
+	help
 	  If you have an MT7621 Mediatek SoC with ethernet, say Y.
 
 if NET_VENDOR_MEDIATEK_STAGING
@@ -18,7 +18,7 @@ config NET_MEDIATEK_SOC_STAGING
 	tristate "MediaTek SoC Gigabit Ethernet support"
 	depends on NET_VENDOR_MEDIATEK_STAGING
 	select PHYLIB
-	---help---
+	help
 	  This driver supports the gigabit ethernet MACs in the
 	  MediaTek SoC family.
 

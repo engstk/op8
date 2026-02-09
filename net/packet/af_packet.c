@@ -241,10 +241,6 @@ struct packet_skb_cb {
 static void __fanout_unlink(struct sock *sk, struct packet_sock *po);
 static void __fanout_link(struct sock *sk, struct packet_sock *po);
 
-//#ifdef OPLUS_FEATURE_DHCP
-int (*handle_dhcp)(struct sock *sk, struct sk_buff *skb, struct net_device *dev, struct packet_type *pt) = NULL;
-EXPORT_SYMBOL(handle_dhcp);
-//#endif /* OPLUS_FEATURE_DHCP */
 static int packet_direct_xmit(struct sk_buff *skb)
 {
 	return dev_direct_xmit(skb, packet_pick_tx_queue(skb));
@@ -2181,13 +2177,6 @@ static int packet_rcv(struct sk_buff *skb, struct net_device *dev,
 
 	/* drop conntrack reference */
 	nf_reset(skb);
-
-//#ifdef OPLUS_FEATURE_DHCP
-    if (handle_dhcp != NULL && handle_dhcp(sk, skb, dev, pt)) {
-        printk("drop dhcp offer packet");
-        goto drop;
-    }
-//#endif /* OPLUS_FEATURE_DHCP */
 
 	spin_lock(&sk->sk_receive_queue.lock);
 	po->stats.stats1.tp_packets++;

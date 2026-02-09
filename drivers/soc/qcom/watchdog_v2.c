@@ -31,10 +31,10 @@
 #include <linux/sched/clock.h>
 #include <linux/cpumask.h>
 #include <uapi/linux/sched/types.h>
-
+#ifdef OPLUS_BUG_STABILITY
 /*use self-defined utils*/
 #include "oplus_watchdog_util.h"
-
+#endif
 #ifdef CONFIG_QCOM_INITIAL_LOGBUF
 #include <linux/kallsyms.h>
 #include <linux/math64.h>
@@ -62,7 +62,9 @@
 #define COMPARE_RET		-1
 
 typedef int (*compare_t) (const void *lhs, const void *rhs);
+#ifdef OPLUS_BUG_STABILITY
 extern void oplus_show_utc_time(void);
+#endif
 
 #ifdef CONFIG_QCOM_INITIAL_LOGBUF
 #define LOGBUF_TIMEOUT		100000U
@@ -74,6 +76,7 @@ static dma_addr_t log_buf_paddr;
 #endif
 
 static struct msm_watchdog_data *wdog_data;
+
 #ifndef OPLUS_BUG_STABILITY
 /*use self-defined utils*/
 static int cpu_idle_pc_state[NR_CPUS];
@@ -426,19 +429,20 @@ static int wdog_cpu = 0;
 static void ping_other_cpus(struct msm_watchdog_data *wdog_dd)
 {
 #ifndef OPLUS_BUG_STABILITY
-/* add for debug cpu hang */
+	/* add for debug cpu hang */
 	int cpu;
 #endif /* OPLUS_BUG_STABILITY */
 #ifdef OPLUS_BUG_STABILITY
-/* print more info on pet watchdog */
+	/* print more info on pet watchdog */
 	cpumask_t mask;
 	get_cpu_ping_mask(&mask);
 #endif /*OPLUS_BUG_STABILITY*/
+
 	cpumask_clear(&wdog_dd->alive_mask);
 	/* Make sure alive mask is cleared and set in order */
 	smp_mb();
 #ifndef OPLUS_BUG_STABILITY
-/* only ping cpu need ping */
+	/* only ping cpu need ping */
 	for_each_cpu(cpu, cpu_online_mask) {
 		if (!cpu_idle_pc_state[cpu] && !cpu_isolated(cpu)) {
 			wdog_dd->ping_start[cpu] = sched_clock();
@@ -797,12 +801,12 @@ static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
 	if (wdog_dd->do_ipi_ping) {
 		dump_cpu_alive_mask(wdog_dd);
 #ifdef OPLUS_BUG_STABILITY
-/* print online cpu */
+		/* print online cpu */
 		dump_cpu_online_mask();
 #endif
 	}
 #ifdef OPLUS_BUG_STABILITY
-/*print more info about cpu the wdog on */
+	/*print more info about cpu the wdog on */
 	if (try_to_recover_pending(wdog_dd->watchdog_task)) {
 		pet_watchdog(wdog_dd);
 		return IRQ_HANDLED;
@@ -811,8 +815,9 @@ static irqreturn_t wdog_bark_handler(int irq, void *dev_id)
 	print_smp_call_cpu();
 	dump_wdog_cpu(wdog_dd->watchdog_task);
 #endif
+
 #ifdef OPLUS_BUG_STABILITY
-/*delete trigger wdog bite, panic will trigger wdog if in dload mode*/
+	/*delete trigger wdog bite, panic will trigger wdog if in dload mode*/
 	panic("Handle a watchdog bite! - Falling back to kernel panic!");
 #else
 	msm_trigger_wdog_bite();
@@ -1107,11 +1112,11 @@ static int msm_watchdog_probe(struct platform_device *pdev)
 		pr_info("Failed to add Watchdog data in Minidump\n");
 
 #ifdef OPLUS_BUG_STABILITY
-        /* Add for init oplus watch dog log, checklist 64*/
+	/* Add for init oplus watch dog log, checklist 64*/
 	ret = init_oplus_watchlog();
-    if (ret < 0) {
-    	pr_info("Failed to init oplus watchlog");
-    }
+	if (ret < 0) {
+		pr_info("Failed to init oplus watchlog");
+	}
 #endif
 
 	return 0;

@@ -1046,7 +1046,6 @@ static void setup_64bit_pagetable(struct kgsl_mmu *mmu,
 		pt->compat_va_end = KGSL_IOMMU_SECURE_BASE(mmu);
 		pt->va_start = KGSL_IOMMU_VA_BASE64;
 		pt->va_end = KGSL_IOMMU_VA_END64;
-
 	}
 
 	if (pagetable->name != KGSL_MMU_GLOBAL_PT &&

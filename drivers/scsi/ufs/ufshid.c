@@ -79,8 +79,10 @@ static int ufshid_read_attr(struct ufshid_dev *hid, u8 idn, u32 *attr_val)
 	HID_DEBUG(hid, "hid_attr read [0x%.2X] %u (0x%X)", idn, *attr_val,
 		  *attr_val);
 	TMSG(hid->ufsf, 0, "[ufshid] read_attr IDN %s (%d)",
-	     idn == QUERY_ATTR_IDN_HID_OPERATION ? "HID_OP" :
-	     idn == QUERY_ATTR_IDN_HID_FRAG_LEVEL ? "HID_LEV" : "UNKNOWN", idn);
+	     idn == QUERY_ATTR_IDN_HID_OPERATION  ? "HID_OP" :
+	     idn == QUERY_ATTR_IDN_HID_FRAG_LEVEL ? "HID_LEV" :
+						    "UNKNOWN",
+	     idn);
 err_out:
 	pm_runtime_put_sync(hba->dev);
 	return ret;
@@ -102,8 +104,10 @@ static int ufshid_write_attr(struct ufshid_dev *hid, u8 idn, u32 val)
 
 	HID_DEBUG(hid, "hid_attr write [0x%.2X] %u (0x%X)", idn, val, val);
 	TMSG(hid->ufsf, 0, "[ufshid] write_attr IDN %s (%d)",
-	     idn == QUERY_ATTR_IDN_HID_OPERATION ? "HID_OP" :
-	     idn == QUERY_ATTR_IDN_HID_FRAG_LEVEL ? "HID_LEV" : "UNKNOWN", idn);
+	     idn == QUERY_ATTR_IDN_HID_OPERATION  ? "HID_OP" :
+	     idn == QUERY_ATTR_IDN_HID_FRAG_LEVEL ? "HID_LEV" :
+						    "UNKNOWN",
+	     idn);
 err_out:
 	pm_runtime_put_sync(hba->dev);
 	return ret;
@@ -113,8 +117,8 @@ static inline int ufshid_version_check(int spec_version)
 {
 	INFO_MSG("Support HID Spec : Driver = (%.4x), Device = (%.4x)",
 		 UFSHID_VER, spec_version);
-	INFO_MSG("HID Driver version (%.6X%s)",
-		 UFSHID_DD_VER, UFSHID_DD_VER_POST);
+	INFO_MSG("HID Driver version (%.6X%s)", UFSHID_DD_VER,
+		 UFSHID_DD_VER_POST);
 
 	if (spec_version != UFSHID_VER) {
 		ERR_MSG("UFS HID version mismatched");
@@ -136,8 +140,7 @@ void ufshid_get_dev_info(struct ufsf_feature *ufsf, u8 *desc_buf)
 	}
 
 	INFO_MSG("bUFSExFeaturesSupport: HID support");
-	spec_version =
-		LI_EN_16(&desc_buf[DEVICE_DESC_PARAM_HID_VER]);
+	spec_version = LI_EN_16(&desc_buf[DEVICE_DESC_PARAM_HID_VER]);
 	ret = ufshid_version_check(spec_version);
 	if (ret)
 		goto err_out;
@@ -166,15 +169,15 @@ static int ufshid_get_analyze_and_issue_execute(struct ufshid_dev *hid)
 		return -EINVAL;
 
 	frag_level = attr_val & HID_FRAG_LEVEL_MASK;
-	HID_DEBUG(hid, "Frag_lv %d Freg_stat %d HID_need_exec %d",
-		  frag_level, HID_FRAG_UPDATE_STAT(attr_val),
+	HID_DEBUG(hid, "Frag_lv %d Freg_stat %d HID_need_exec %d", frag_level,
+		  HID_FRAG_UPDATE_STAT(attr_val),
 		  HID_EXECUTE_REQ_STAT(attr_val));
 
 	if (frag_level == HID_LEV_GRAY)
 		return -EAGAIN;
 
-	return (HID_EXECUTE_REQ_STAT(attr_val)) ?
-		HID_REQUIRED : HID_NOT_REQUIRED;
+	return (HID_EXECUTE_REQ_STAT(attr_val)) ? HID_REQUIRED :
+						  HID_NOT_REQUIRED;
 }
 
 static int ufshid_issue_disable(struct ufshid_dev *hid)
@@ -198,8 +201,7 @@ static int ufshid_issue_disable(struct ufshid_dev *hid)
 /*
  * Lock status: hid_sysfs lock was held when called.
  */
-static void ufshid_auto_hibern8_enable(struct ufshid_dev *hid,
-				       unsigned int val)
+static void ufshid_auto_hibern8_enable(struct ufshid_dev *hid, unsigned int val)
 {
 	struct ufs_hba *hba = hid->ufsf->hba;
 	unsigned long flags;
@@ -344,8 +346,7 @@ static void ufshid_trigger_work_fn(struct work_struct *dwork)
 		HID_DEBUG(hid, "HID_REQUIRED, so sched (%d ms)",
 			  hid->hid_trigger_delay);
 	} else {
-		HID_DEBUG(hid, "issue_HID ERR(%X), so resched for retry",
-			  ret);
+		HID_DEBUG(hid, "issue_HID ERR(%X), so resched for retry", ret);
 	}
 	mutex_unlock(&hid->sysfs_lock);
 
@@ -470,12 +471,12 @@ void ufshid_on_idle(struct ufsf_feature *ufsf)
 /* sysfs function */
 static ssize_t ufshid_sysfs_show_version(struct ufshid_dev *hid, char *buf)
 {
-	INFO_MSG("HID version (%.4X) D/D version (%.6X%s)",
-		 UFSHID_VER, UFSHID_DD_VER, UFSHID_DD_VER_POST);
+	INFO_MSG("HID version (%.4X) D/D version (%.6X%s)", UFSHID_VER,
+		 UFSHID_DD_VER, UFSHID_DD_VER_POST);
 
 	return snprintf(buf, PAGE_SIZE,
-			"HID version (%.4X) D/D version (%.6X%s)\n",
-			UFSHID_VER, UFSHID_DD_VER, UFSHID_DD_VER_POST);
+			"HID version (%.4X) D/D version (%.6X%s)\n", UFSHID_VER,
+			UFSHID_DD_VER, UFSHID_DD_VER_POST);
 }
 
 static ssize_t ufshid_sysfs_show_trigger(struct ufshid_dev *hid, char *buf)
@@ -590,10 +591,11 @@ static ssize_t ufshid_sysfs_show_color(struct ufshid_dev *hid, char *buf)
 		 HID_EXECUTE_REQ_STAT(attr_val));
 
 	return snprintf(buf, PAGE_SIZE, "%s\n",
-			frag_level == HID_LEV_RED ? "RED" :
+			frag_level == HID_LEV_RED    ? "RED" :
 			frag_level == HID_LEV_YELLOW ? "YELLOW" :
-			frag_level == HID_LEV_GREEN ? "GREEN" :
-			frag_level == HID_LEV_GRAY ? "GRAY" : "UNKNOWN");
+			frag_level == HID_LEV_GREEN  ? "GREEN" :
+			frag_level == HID_LEV_GRAY   ? "GRAY" :
+						       "UNKNOWN");
 }
 
 #if defined(CONFIG_UFSHID_POC)
@@ -698,25 +700,22 @@ static ssize_t ufshid_sysfs_store_auto_hibern8_enable(struct ufshid_dev *hid,
 #endif
 
 /* SYSFS DEFINE */
-#define define_sysfs_ro(_name) __ATTR(_name, 0444,			\
-				      ufshid_sysfs_show_##_name, NULL)
-#define define_sysfs_rw(_name) __ATTR(_name, 0644,			\
-				      ufshid_sysfs_show_##_name,	\
-				      ufshid_sysfs_store_##_name)
+#define define_sysfs_ro(_name) \
+	__ATTR(_name, 0444, ufshid_sysfs_show_##_name, NULL)
+#define define_sysfs_rw(_name)                         \
+	__ATTR(_name, 0644, ufshid_sysfs_show_##_name, \
+	       ufshid_sysfs_store_##_name)
 
 static struct ufshid_sysfs_entry ufshid_sysfs_entries[] = {
-	define_sysfs_ro(version),
-	define_sysfs_ro(color),
+	define_sysfs_ro(version), define_sysfs_ro(color),
 
-	define_sysfs_rw(trigger),
-	define_sysfs_rw(trigger_interval),
+	define_sysfs_rw(trigger), define_sysfs_rw(trigger_interval),
 
 	/* debug */
 	define_sysfs_rw(debug),
 #if defined(CONFIG_UFSHID_POC)
 	/* Attribute (RAW) */
-	define_sysfs_rw(debug_op),
-	define_sysfs_rw(block_suspend),
+	define_sysfs_rw(debug_op), define_sysfs_rw(block_suspend),
 	define_sysfs_rw(auto_hibern8_enable),
 #endif
 	__ATTR_NULL
@@ -787,8 +786,8 @@ static int ufshid_create_sysfs(struct ufshid_dev *hid)
 	kobject_init(&hid->kobj, &ufshid_ktype);
 	mutex_init(&hid->sysfs_lock);
 
-	INFO_MSG("ufshid creates sysfs ufshid %p dev->kobj %p",
-		 &hid->kobj, &dev->kobj);
+	INFO_MSG("ufshid creates sysfs ufshid %p dev->kobj %p", &hid->kobj,
+		 &dev->kobj);
 
 	err = kobject_add(&hid->kobj, kobject_get(&dev->kobj), "ufshid");
 	if (!err) {

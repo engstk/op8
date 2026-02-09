@@ -19,6 +19,7 @@
 #include <linux/linkage.h>
 
 	.text
+	.arch_extension virt
 
 /********************************************************************
  *  Call function in Hyp mode

@@ -12,6 +12,9 @@
 
 /* structs from net/ip6_fib.h */
 struct fib6_info;
+struct fib6_nh;
+struct fib6_config;
+struct fib6_result;
 
 /* A stub used by vxlan module. This is ugly, ideally these
  * symbols should be built into the core kernel.
@@ -27,20 +30,21 @@ struct ipv6_stub {
 						  const struct in6_addr *final_dst);
 
 	struct fib6_table *(*fib6_get_table)(struct net *net, u32 id);
-	struct fib6_info *(*fib6_lookup)(struct net *net, int oif,
-					 struct flowi6 *fl6, int flags);
-	struct fib6_info *(*fib6_table_lookup)(struct net *net,
-					      struct fib6_table *table,
-					      int oif, struct flowi6 *fl6,
-					      int flags);
-	struct fib6_info *(*fib6_multipath_select)(const struct net *net,
-						   struct fib6_info *f6i,
-						   struct flowi6 *fl6, int oif,
-						   const struct sk_buff *skb,
-						   int strict);
+	int (*fib6_lookup)(struct net *net, int oif, struct flowi6 *fl6,
+			   struct fib6_result *res, int flags);
+	int (*fib6_table_lookup)(struct net *net, struct fib6_table *table,
+				 int oif, struct flowi6 *fl6,
+				 struct fib6_result *res, int flags);
+	void (*fib6_select_path)(const struct net *net, struct fib6_result *res,
+				 struct flowi6 *fl6, int oif, bool oif_match,
+				 const struct sk_buff *skb, int strict);
 	u32 (*ip6_mtu_from_fib6)(struct fib6_info *f6i, struct in6_addr *daddr,
 				 struct in6_addr *saddr);
 
+	int (*fib6_nh_init)(struct net *net, struct fib6_nh *fib6_nh,
+			    struct fib6_config *cfg, gfp_t gfp_flags,
+			    struct netlink_ext_ack *extack);
+	void (*fib6_nh_release)(struct fib6_nh *fib6_nh);
 	void (*udpv6_encap_enable)(void);
 	void (*ndisc_send_na)(struct net_device *dev, const struct in6_addr *daddr,
 			      const struct in6_addr *solicited_addr,

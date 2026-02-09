@@ -1,15 +1,16 @@
 #ifndef __BQ2597X_CHARGER_H__
 #define __BQ2597X_CHARGER_H__
-enum { ADC_IBUS,
-       ADC_VBUS,
-       ADC_VAC,
-       ADC_VOUT,
-       ADC_VBAT,
-       ADC_IBAT,
-       ADC_TBUS,
-       ADC_TBAT,
-       ADC_TDIE,
-       ADC_MAX_NUM,
+enum {
+	ADC_IBUS,
+	ADC_VBUS,
+	ADC_VAC,
+	ADC_VOUT,
+	ADC_VBAT,
+	ADC_IBAT,
+	ADC_TBUS,
+	ADC_TBAT,
+	ADC_TDIE,
+	ADC_MAX_NUM,
 };
 
 struct bq2597x_wl {

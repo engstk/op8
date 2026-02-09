@@ -42,8 +42,7 @@ static const struct of_device_id horae_shell_of_match[] = {
 	{},
 };
 
-static int horae_get_shell_temp(struct thermal_zone_device *tz,
-					int *temp)
+static int horae_get_shell_temp(struct thermal_zone_device *tz, int *temp)
 {
 	struct horae_shell_temp *hst;
 
@@ -88,8 +87,8 @@ static int horae_shell_probe(struct platform_device *pdev)
 
 	hst->shell_id = result;
 
-	tz_dev = thermal_zone_device_register(dev_node->name,
-			0, 0, hst, &shell_thermal_zone_ops, NULL, 0, 0);
+	tz_dev = thermal_zone_device_register(
+		dev_node->name, 0, 0, hst, &shell_thermal_zone_ops, NULL, 0, 0);
 	if (IS_ERR_OR_NULL(tz_dev)) {
 		pr_err("register thermal zone for shell failed\n");
 		ret = -ENODEV;
@@ -131,7 +130,7 @@ static struct platform_driver horae_shell_platdrv = {
 	.remove = horae_shell_remove,
 };
 
-#define BUF_LEN		256
+#define BUF_LEN 256
 static ssize_t proc_shell_write(struct file *filp, const char __user *buf,
 				size_t count, loff_t *pos)
 {
@@ -139,7 +138,6 @@ static ssize_t proc_shell_write(struct file *filp, const char __user *buf,
 	unsigned int index = 0;
 	char tmp[BUF_LEN + 1];
 	unsigned long flags;
-
 
 	if (count == 0)
 		return 0;
@@ -195,7 +193,6 @@ static int proc_shell_open(struct inode *inode, struct file *file)
 	return single_open(file, proc_shell_show, NULL);
 }
 
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 static const struct proc_ops proc_shell_fops = {
 	.proc_open = proc_shell_open,
@@ -216,7 +213,8 @@ static int __init horae_shell_init(void)
 {
 	struct proc_dir_entry *shell_proc_entry;
 
-	shell_proc_entry = proc_create("shell-temp", 0666, NULL, &proc_shell_fops);
+	shell_proc_entry =
+		proc_create("shell-temp", 0666, NULL, &proc_shell_fops);
 	if (!shell_proc_entry) {
 		pr_err("shell-temp proc create failed\n");
 		return -EINVAL;
@@ -231,7 +229,6 @@ static void __exit horae_shell_exit(void)
 {
 	platform_driver_unregister(&horae_shell_platdrv);
 }
-
 
 module_init(horae_shell_init);
 module_exit(horae_shell_exit);

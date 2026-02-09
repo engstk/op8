@@ -357,7 +357,6 @@ void put_fs_context(struct fs_context *fc)
 	put_net(fc->net_ns);
 	put_user_ns(fc->user_ns);
 	put_cred(fc->cred);
-	kfree(fc->subtype);
 	put_filesystem(fc->fs_type);
 	kfree(fc->source);
 	kfree(fc);
@@ -398,17 +397,6 @@ static int legacy_parse_param(struct fs_context *fc, struct fs_parameter *param)
 		return 0;
 	}
 
-	if ((fc->fs_type->fs_flags & FS_HAS_SUBTYPE) &&
-	    strcmp(param->key, "subtype") == 0) {
-		if (param->type != fs_value_is_string)
-			return invalf(fc, "VFS: Legacy: Non-string subtype");
-		if (fc->subtype)
-			return invalf(fc, "VFS: Legacy: Multiple subtype");
-		fc->subtype = param->string;
-		param->string = NULL;
-		return 0;
-	}
-
 	if (ctx->param_type == LEGACY_FS_MONOLITHIC_PARAMS)
 		return invalf(fc, "VFS: Legacy: Can't mix monolithic and individual options");
 
@@ -424,7 +412,7 @@ static int legacy_parse_param(struct fs_context *fc, struct fs_parameter *param)
 			      param->key);
 	}
 
-	if (len > PAGE_SIZE - 2 - size)
+	if (size + len + 2 > PAGE_SIZE)
 		return invalf(fc, "VFS: Legacy: Cumulative options too large");
 	if (strchr(param->key, ',') ||
 	    (param->type == fs_value_is_string &&

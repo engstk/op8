@@ -30,9 +30,6 @@
 #include <linux/random.h>
 
 #include <asm/cputype.h>
-#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
-#include "arch_mmap.h"
-#endif
 
 /*
  * Leave enough space between the mmap area and the stack to honour ulimit in

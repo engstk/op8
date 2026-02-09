@@ -801,9 +801,6 @@ static struct pil_reset_ops pil_ops_trusted = {
 	.proxy_unvote = pil_remove_proxy_vote,
 	.deinit_image = pil_deinit_image_trusted,
 };
-//#ifdef OPLUS_FEATURE_SENSOR
-extern void set_subsys_crash_cause(char *reason);
-//#endif
 
 static void log_failure_reason(const struct pil_tz_data *d)
 {
@@ -820,28 +817,12 @@ static void log_failure_reason(const struct pil_tz_data *d)
 									name);
 		return;
 	}
-
-	strlcpy(reason, smem_reason, min(size, (size_t)MAX_SSR_REASON_LEN));
 	if (!smem_reason[0]) {
 		pr_err("%s SFR: (unknown, empty string found).\n", name);
-        #ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
-		if (subsys_get_crash_status(d->subsys) == CRASH_STATUS_ERR_FATAL) {
-			pr_info("log_failure_reason wlan send uevent");
-			wlan_subsystem_send_uevent(d->subsys, reason, name);
-		}
-		#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
 		return;
 	}
 
-	pr_info("Restart sequence requested  test");
-
-	#ifdef OPLUS_FEATURE_WIFI_DCS_SWITCH
-	if (subsys_get_crash_status(d->subsys) == CRASH_STATUS_ERR_FATAL) {
-		pr_info("log_failure_reason wlan send uevent");
-		wlan_subsystem_send_uevent(d->subsys, reason, name);
-	}
-	#endif /* OPLUS_FEATURE_WIFI_DCS_SWITCH */
-
+	strlcpy(reason, smem_reason, min(size, (size_t)MAX_SSR_REASON_LEN));
 	pr_err("%s subsystem failure reason: %s.\n", name, reason);
 }
 

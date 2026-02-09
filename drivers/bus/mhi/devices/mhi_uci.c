@@ -68,9 +68,8 @@ enum MHI_DEBUG_LEVEL msg_lvl = MHI_MSG_LVL_ERROR;
 #ifdef OPLUS_BUG_STABILITY
 #define MHI_UCI_IPC_LOG_PAGES (100)
 #else
-#define MHI_UCI_IPC_LOG_PAGES (25) 
+#define MHI_UCI_IPC_LOG_PAGES (25)
 #endif /* OPLUS_BUG_STABILITY */
-
 #define MSG_VERB(fmt, ...) do { \
 		if (msg_lvl <= MHI_MSG_LVL_VERBOSE) \
 			pr_err("[D][%s] " fmt, __func__, ##__VA_ARGS__); \

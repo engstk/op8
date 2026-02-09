@@ -23,14 +23,11 @@
 #include "../oplus_wlchg_policy.h"
 #include "../charger_ic/oplus_battery_msm8250.h"
 
-#define chg_debug(fmt, ...)                                                    \
-	printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_debug(fmt, ...) printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_err(fmt, ...)                                                      \
-	printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_err(fmt, ...) printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_info(fmt, ...)                                                     \
-	printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_info(fmt, ...) printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
 static struct rx_chip *g_rx_chip;
 static struct op_chg_chip *g_op_chip;
@@ -40,7 +37,9 @@ extern void exrx_information_register(struct rx_chip *chip);
 int wlchg_rx_set_vout(struct rx_chip *chip, int val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	pr_info("set rx chip vout to %d\n", val);
@@ -58,7 +57,9 @@ int wlchg_rx_set_vout(struct rx_chip *chip, int val)
 int wlchg_rx_get_vout(struct rx_chip *chip, int *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_VOUT, &pval);
@@ -109,7 +110,9 @@ int wlchg_rx_set_fod_parm(struct rx_chip *chip, const char data[])
 int wlchg_rx_ftm_test(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_FTM_TEST, &pval);
@@ -121,7 +124,9 @@ int wlchg_rx_ftm_test(struct rx_chip *chip)
 int wlchg_rx_get_vrect_iout(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_VOUT, &pval);
@@ -145,8 +150,7 @@ int wlchg_rx_get_vrect_iout(struct rx_chip *chip)
 	}
 	chip->chg_data.iout = pval.intval;
 
-	pr_info("vout:%d, vrect=%d, iout=%d\n", chip->chg_data.vout,
-		chip->chg_data.vrect, chip->chg_data.iout);
+	pr_info("vout:%d, vrect=%d, iout=%d\n", chip->chg_data.vout, chip->chg_data.vrect, chip->chg_data.iout);
 
 	return 0;
 }
@@ -154,7 +158,9 @@ int wlchg_rx_get_vrect_iout(struct rx_chip *chip)
 int wlchg_rx_get_tx_vol(struct rx_chip *chip, int *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_TRX_VOL, &pval);
@@ -170,7 +176,9 @@ int wlchg_rx_get_tx_vol(struct rx_chip *chip, int *val)
 int wlchg_rx_get_tx_curr(struct rx_chip *chip, int *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_TRX_CURR, &pval);
@@ -186,7 +194,9 @@ int wlchg_rx_get_tx_curr(struct rx_chip *chip, int *val)
 int wlchg_rx_trx_enbale(struct rx_chip *chip, bool enable)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	pval.intval = enable;
@@ -202,7 +212,9 @@ int wlchg_rx_trx_enbale(struct rx_chip *chip, bool enable)
 int wlchg_rx_get_cep(struct rx_chip *chip, signed char *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_CEP, &pval);
@@ -218,7 +230,9 @@ int wlchg_rx_get_cep(struct rx_chip *chip, signed char *val)
 int wlchg_rx_get_cep_skip_check_update(struct rx_chip *chip, signed char *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_CEP_SKIP_CHECK_UPDATE, &pval);
@@ -234,7 +248,9 @@ int wlchg_rx_get_cep_skip_check_update(struct rx_chip *chip, signed char *val)
 int wlchg_rx_get_cep_flag(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_CEP, &pval);
@@ -253,7 +269,9 @@ int wlchg_rx_get_cep_flag(struct rx_chip *chip)
 int wlchg_rx_get_cep_flag_skip_check_update(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_CEP_SKIP_CHECK_UPDATE, &pval);
@@ -272,7 +290,9 @@ int wlchg_rx_get_cep_flag_skip_check_update(struct rx_chip *chip)
 void wlchg_rx_get_run_flag(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_RUN_MODE, &pval);
@@ -287,7 +307,9 @@ void wlchg_rx_get_run_flag(struct rx_chip *chip)
 int wlchg_rx_enable_dcdc(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	pval.intval = 1;
@@ -303,7 +325,9 @@ int wlchg_rx_enable_dcdc(struct rx_chip *chip)
 int wlchg_rx_get_headroom(struct rx_chip *chip, int *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_HEADROOM, &pval);
@@ -319,7 +343,9 @@ int wlchg_rx_get_headroom(struct rx_chip *chip, int *val)
 int wlchg_rx_set_headroom(struct rx_chip *chip, int val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	pval.intval = val;
@@ -345,7 +371,9 @@ enum E_RX_MODE wlchg_rx_get_run_mode(struct rx_chip *chip)
 int wlchg_rx_get_work_freq(struct rx_chip *chip, int *val)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_WORK_FREQ, &pval);
@@ -361,7 +389,9 @@ int wlchg_rx_get_work_freq(struct rx_chip *chip, int *val)
 int wlchg_rx_set_chip_sleep(int val)
 {
 	struct rx_chip_prop *prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	if (g_rx_chip == NULL) {
@@ -383,7 +413,9 @@ int wlchg_rx_set_chip_sleep(int val)
 int wlchg_rx_get_chip_sleep(void)
 {
 	struct rx_chip_prop *prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	if (g_rx_chip == NULL) {
@@ -404,7 +436,9 @@ int wlchg_rx_get_chip_sleep(void)
 int wlchg_rx_set_chip_en(int val)
 {
 	struct rx_chip_prop *prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	if (g_rx_chip == NULL) {
@@ -426,7 +460,9 @@ int wlchg_rx_set_chip_en(int val)
 int wlchg_rx_get_chip_en(void)
 {
 	struct rx_chip_prop *prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	if (g_rx_chip == NULL) {
@@ -447,7 +483,9 @@ int wlchg_rx_get_chip_en(void)
 int wlchg_rx_get_chip_con(void)
 {
 	struct rx_chip_prop *prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	if (g_rx_chip == NULL) {
@@ -468,7 +506,9 @@ int wlchg_rx_get_chip_con(void)
 bool wlchg_rx_fw_updating(struct rx_chip *chip)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_FW_UPDATING, &pval);
@@ -483,7 +523,9 @@ bool wlchg_rx_fw_updating(struct rx_chip *chip)
 int wlchg_rx_get_idt_rtx_status(struct rx_chip *chip, char *status, char *err)
 {
 	struct rx_chip_prop *prop = chip->prop;
-	union rx_chip_propval pval = {0,};
+	union rx_chip_propval pval = {
+		0,
+	};
 	int rc;
 
 	rc = prop->get_prop(prop, RX_PROP_TRX_STATUS, &pval);
@@ -542,13 +584,12 @@ static int wlchg_rx_parse_dt(struct rx_chip *chip)
 }
 
 static struct regmap_config wlchg_rx_regmap_config = {
-	.reg_bits	= 16,
-	.val_bits	= 8,
-	.max_register	= 0xFFFF,
+	.reg_bits = 16,
+	.val_bits = 8,
+	.max_register = 0xFFFF,
 };
 
-static int wlchg_rx_probe(struct i2c_client *client,
-			  const struct i2c_device_id *id)
+static int wlchg_rx_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct rx_chip *chip;
 	int rc = 0;
@@ -614,19 +655,21 @@ static void wlchg_rx_reset(struct i2c_client *client)
 }
 
 static const struct dev_pm_ops wlchg_rx_pm_ops = {
-	.suspend	= wlchg_rx_suspend,
-	.suspend_noirq	= wlchg_rx_suspend_noirq,
-	.resume		= wlchg_rx_resume,
+	.suspend = wlchg_rx_suspend,
+	.suspend_noirq = wlchg_rx_suspend_noirq,
+	.resume = wlchg_rx_resume,
 };
 
 static const struct of_device_id wlchg_rx_match_table[] = {
-	{ .compatible = "op,wlchg-rx-chip", },
-	{ },
+	{
+		.compatible = "op,wlchg-rx-chip",
+	},
+	{},
 };
 
 static const struct i2c_device_id wlchg_rx_id[] = {
 	{ "i2c-wlchg-rx", 0 },
-	{ },
+	{},
 };
 MODULE_DEVICE_TABLE(i2c, wlchg_rx_id);
 

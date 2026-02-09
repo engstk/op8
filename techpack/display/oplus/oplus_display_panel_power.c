@@ -18,7 +18,9 @@
 #include "iris/dsi_iris5_loop_back.h"
 #endif
 
-PANEL_VOLTAGE_BAK panel_vol_bak[PANEL_VOLTAGE_ID_MAX] = {{0}, {0}, {2, 0, 1, 2, ""}};
+PANEL_VOLTAGE_BAK panel_vol_bak[PANEL_VOLTAGE_ID_MAX] = { { 0 },
+							  { 0 },
+							  { 2, 0, 1, 2, "" } };
 u32 panel_pwr_vg_base = 0;
 int oplus_request_power_status = OPLUS_DISPLAY_POWER_OFF;
 DEFINE_MUTEX(oplus_power_status_lock);
@@ -39,7 +41,7 @@ static int oplus_panel_find_vreg_by_name(const char *name)
 	}
 
 	dsi_reg = &display->panel->power_info;
-        count = dsi_reg->count;
+	count = dsi_reg->count;
 	for (i = 0; i < count; i++) {
 		vreg = &dsi_reg->vregs[i];
 		pr_err("%s : find  %s", __func__, vreg->vreg_name);
@@ -55,7 +57,6 @@ static int oplus_panel_find_vreg_by_name(const char *name)
 	return -EINVAL;
 }
 
-
 int dsi_panel_parse_panel_power_cfg(struct dsi_panel *panel)
 {
 	int rc = 0, i = 0;
@@ -68,51 +69,64 @@ int dsi_panel_parse_panel_power_cfg(struct dsi_panel *panel)
 
 	if (!strcmp(panel->type, "primary")) {
 		panel_vol = &panel_vol_bak[PANEL_VOLTAGE_ID_VDDI].voltage_id;
-		rc = utils->read_u32_array(utils->data, "qcom,panel_voltage_vddi",
-					panel_vol, PANEL_VOLTAGE_VALUE_COUNT);
+		rc = utils->read_u32_array(utils->data,
+					   "qcom,panel_voltage_vddi", panel_vol,
+					   PANEL_VOLTAGE_VALUE_COUNT);
 		if (rc) {
-			pr_err("[%s] failed to parse panel_voltage vddi\n", panel->name);
+			pr_err("[%s] failed to parse panel_voltage vddi\n",
+			       panel->name);
 			goto error;
 		}
 
-		rc = utils->read_string(utils->data, "qcom,panel_voltage_vddi_name",
+		rc = utils->read_string(utils->data,
+					"qcom,panel_voltage_vddi_name",
 					&name_vddi);
 		if (rc) {
 			pr_err("[%s] failed to parse vddi name\n", panel->name);
 			goto error;
 		} else {
-			pr_err("[%s] surccess to parse vddi name %s\n", panel->name, name_vddi);
-			strcpy(panel_vol_bak[PANEL_VOLTAGE_ID_VDDI].pwr_name, name_vddi);
+			pr_err("[%s] surccess to parse vddi name %s\n",
+			       panel->name, name_vddi);
+			strcpy(panel_vol_bak[PANEL_VOLTAGE_ID_VDDI].pwr_name,
+			       name_vddi);
 		}
 
 		panel_vol = &panel_vol_bak[PANEL_VOLTAGE_ID_VDDR].voltage_id;
-		rc = utils->read_u32_array(utils->data, "qcom,panel_voltage_vddr",
-					panel_vol, PANEL_VOLTAGE_VALUE_COUNT);
+		rc = utils->read_u32_array(utils->data,
+					   "qcom,panel_voltage_vddr", panel_vol,
+					   PANEL_VOLTAGE_VALUE_COUNT);
 		if (rc) {
-			pr_err("[%s] failed to parse panel_voltage vddr\n", panel->name);
+			pr_err("[%s] failed to parse panel_voltage vddr\n",
+			       panel->name);
 			goto error;
 		}
 
-		rc = utils->read_string(utils->data, "qcom,panel_voltage_vddr_name",
+		rc = utils->read_string(utils->data,
+					"qcom,panel_voltage_vddr_name",
 					&name_vddr);
 		if (rc) {
 			pr_err("[%s] failed to parse vddr name\n", panel->name);
 			goto error;
 		} else {
-			pr_err("[%s] surccess to parse vddr name %s\n", panel->name, name_vddr);
-			strcpy(panel_vol_bak[PANEL_VOLTAGE_ID_VDDR].pwr_name, name_vddr);
+			pr_err("[%s] surccess to parse vddr name %s\n",
+			       panel->name, name_vddr);
+			strcpy(panel_vol_bak[PANEL_VOLTAGE_ID_VDDR].pwr_name,
+			       name_vddr);
 		}
 
 		/*add for debug*/
-		for(i; i < PANEL_VOLTAGE_ID_MAX; i++) {
-			pr_err("[%s] panel_voltage[%d] = %d,%d,%d,%d,%s\n", __func__, i, panel_vol_bak[i].voltage_id,
-				panel_vol_bak[i].voltage_min, panel_vol_bak[i].voltage_current,
-				panel_vol_bak[i].voltage_max, panel_vol_bak[i].pwr_name);
+		for (i; i < PANEL_VOLTAGE_ID_MAX; i++) {
+			pr_err("[%s] panel_voltage[%d] = %d,%d,%d,%d,%s\n",
+			       __func__, i, panel_vol_bak[i].voltage_id,
+			       panel_vol_bak[i].voltage_min,
+			       panel_vol_bak[i].voltage_current,
+			       panel_vol_bak[i].voltage_max,
+			       panel_vol_bak[i].pwr_name);
 		}
 	}
 
-	error:
-		return rc;
+error:
+	return rc;
 }
 
 static u32 oplus_panel_update_current_voltage(u32 id)
@@ -132,7 +146,8 @@ static u32 oplus_panel_update_current_voltage(u32 id)
 	dsi_reg_info = &display->panel->power_info;
 	pwr_id = oplus_panel_find_vreg_by_name(panel_vol_bak[id].pwr_name);
 	if (pwr_id < 0) {
-		pr_err("%s: can't find the pwr_id, please check the vreg name\n", __func__);
+		pr_err("%s: can't find the pwr_id, please check the vreg name\n",
+		       __func__);
 		return pwr_id;
 	}
 
@@ -160,16 +175,17 @@ int oplus_display_panel_get_pwr(void *data)
 	panel_vol->panel_cur = panel_vol_bak[vol_id].voltage_current;
 
 	if (vol_id < PANEL_VOLTAGE_ID_VG_BASE &&
-		vol_id >= PANEL_VOLTAGE_ID_VDDI) {
+	    vol_id >= PANEL_VOLTAGE_ID_VDDI) {
 		ret = oplus_panel_update_current_voltage(vol_id);
 		if (ret < 0) {
-			pr_err("%s : update_current_voltage error = %d\n", __func__, ret);
+			pr_err("%s : update_current_voltage error = %d\n",
+			       __func__, ret);
 			return ret;
 		} else {
 			panel_vol->panel_cur = ret;
-			pr_err("%s : [id min cur max] = [%u32, %u32, %u32, %u32]\n", __func__,
-				vol_id, panel_vol->panel_min,
-				panel_vol->panel_cur, panel_vol->panel_max);
+			pr_err("%s : [id min cur max] = [%u32, %u32, %u32, %u32]\n",
+			       __func__, vol_id, panel_vol->panel_min,
+			       panel_vol->panel_cur, panel_vol->panel_max);
 			return 0;
 		}
 	}
@@ -185,18 +201,18 @@ int oplus_display_panel_set_pwr(void *data)
 	struct dsi_regulator_info *dsi_reg_info = NULL;
 	struct dsi_display *display = get_main_display();
 
-	panel_vol_id = ((panel_vol->panel_id & 0x0F)-1);
+	panel_vol_id = ((panel_vol->panel_id & 0x0F) - 1);
 	panel_vol_value = panel_vol->panel_vol;
 
-	pr_err("debug for %s, id = %d value = %d\n",
-		__func__, panel_vol_id, panel_vol_value);
+	pr_err("debug for %s, id = %d value = %d\n", __func__, panel_vol_id,
+	       panel_vol_value);
 
 	if (panel_vol_id < 0 || panel_vol_id > PANEL_VOLTAGE_ID_MAX) {
 		return -EINVAL;
 	}
 
 	if (panel_vol_value < panel_vol_bak[panel_vol_id].voltage_min ||
-		panel_vol_id > panel_vol_bak[panel_vol_id].voltage_max)
+	    panel_vol_id > panel_vol_bak[panel_vol_id].voltage_max)
 		return -EINVAL;
 
 	if (!display) {
@@ -207,51 +223,58 @@ int oplus_display_panel_set_pwr(void *data)
 	}
 
 	if (panel_vol_id == PANEL_VOLTAGE_ID_VG_BASE) {
-		pr_err("%s: set the VGH_L pwr = %d \n", __func__, panel_vol_value);
+		pr_err("%s: set the VGH_L pwr = %d \n", __func__,
+		       panel_vol_value);
 		panel_pwr_vg_base = panel_vol_value;
 		return rc;
 	}
 
 	dsi_reg_info = &display->panel->power_info;
 
-	pwr_id = oplus_panel_find_vreg_by_name(panel_vol_bak[panel_vol_id].pwr_name);
+	pwr_id = oplus_panel_find_vreg_by_name(
+		panel_vol_bak[panel_vol_id].pwr_name);
 	if (pwr_id < 0) {
 		pr_err("%s: can't find the vreg name, please re-check vreg name: %s \n",
-			__func__, panel_vol_bak[panel_vol_id].pwr_name);
+		       __func__, panel_vol_bak[panel_vol_id].pwr_name);
 		return pwr_id;
 	}
 	dsi_reg = &dsi_reg_info->vregs[pwr_id];
 
-	rc = regulator_set_voltage(dsi_reg->vreg, panel_vol_value, panel_vol_value);
+	rc = regulator_set_voltage(dsi_reg->vreg, panel_vol_value,
+				   panel_vol_value);
 	if (rc) {
-		pr_err("Set voltage(%s) fail, rc=%d\n",
-			 dsi_reg->vreg_name, rc);
+		pr_err("Set voltage(%s) fail, rc=%d\n", dsi_reg->vreg_name, rc);
 		return -EINVAL;
 	}
 
 	return rc;
 }
 
-int __oplus_display_set_power_status(int status) {
+int __oplus_display_set_power_status(int status)
+{
 	mutex_lock(&oplus_power_status_lock);
-	if(status != oplus_request_power_status) {
+	if (status != oplus_request_power_status) {
 		oplus_request_power_status = status;
-		printk(KERN_INFO "%s oplus_display_set_power_status = %d\n", __func__, status);
+		printk(KERN_INFO "%s oplus_display_set_power_status = %d\n",
+		       __func__, status);
 	}
 	mutex_unlock(&oplus_power_status_lock);
 	return 0;
 }
 
-int oplus_display_panel_get_power_status(void *data) {
+int oplus_display_panel_get_power_status(void *data)
+{
 	uint32_t *power_status = data;
 
-	printk(KERN_DEBUG "oplus_display_get_power_status = %d\n", get_oplus_display_power_status());
+	printk(KERN_DEBUG "oplus_display_get_power_status = %d\n",
+	       get_oplus_display_power_status());
 	(*power_status) = get_oplus_display_power_status();
 
 	return 0;
 }
 
-int oplus_display_panel_set_power_status(void *data) {
+int oplus_display_panel_set_power_status(void *data)
+{
 	uint32_t *temp_save = data;
 
 	__oplus_display_set_power_status((*temp_save));
@@ -259,31 +282,35 @@ int oplus_display_panel_set_power_status(void *data) {
 	return 0;
 }
 
-int oplus_display_panel_regulator_control(void *data) {
+int oplus_display_panel_regulator_control(void *data)
+{
 	uint32_t *temp_save_user = data;
 	uint32_t temp_save = (*temp_save_user);
 	struct dsi_display *temp_display;
 
-	printk(KERN_INFO "%s oplus_display_regulator_control = %d\n", __func__, temp_save);
-	if(get_main_display() == NULL) {
-		printk(KERN_INFO "oplus_display_regulator_control and main display is null");
+	printk(KERN_INFO "%s oplus_display_regulator_control = %d\n", __func__,
+	       temp_save);
+	if (get_main_display() == NULL) {
+		printk(KERN_INFO
+		       "oplus_display_regulator_control and main display is null");
 		return -1;
 	}
 	temp_display = get_main_display();
-	if(temp_save == 0) {
+	if (temp_save == 0) {
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
 		if (iris_is_chip_supported())
 			iris_control_pwr_regulator(false);
 #endif
-		dsi_pwr_enable_regulator(&temp_display->panel->power_info, false);
+		dsi_pwr_enable_regulator(&temp_display->panel->power_info,
+					 false);
 	} else if (temp_save == 1) {
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
 		if (iris_is_chip_supported())
 			iris_control_pwr_regulator(true);
 #endif
-		dsi_pwr_enable_regulator(&temp_display->panel->power_info, true);
+		dsi_pwr_enable_regulator(&temp_display->panel->power_info,
+					 true);
 	}
 
 	return 0;
 }
-

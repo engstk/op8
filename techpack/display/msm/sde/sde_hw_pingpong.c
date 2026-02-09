@@ -40,11 +40,13 @@
 static u32 dither_depth_map[DITHER_DEPTH_MAP_INDEX] = {
 	0, 0, 0, 0, 0, 1, 2, 3, 3
 };
+
 #define MERGE_3D_MODE 0x004
 #define MERGE_3D_MUX  0x000
 
 #ifdef OPLUS_BUG_STABILITY
 extern int oplus_dither_enable;
+extern int dc_apollo_enable;
 #endif
 
 static struct sde_merge_3d_cfg *_merge_3d_offset(enum sde_merge_3d idx,
@@ -328,7 +330,8 @@ static int sde_hw_pp_setup_dither_v1(struct sde_hw_pingpong *pp,
 	bool is_oplus_project = false;
 
 	if (!display) {
-		DRM_ERROR("%s: failed to get dsi dsilay! LINE:%d\n",__func__, __LINE__);
+		DRM_ERROR("%s: failed to get dsi dsilay! LINE:%d\n", __func__,
+			  __LINE__);
 		return -EINVAL;
 	}
 	is_oplus_project = display->panel->oplus_priv.is_oplus_project;
@@ -389,11 +392,11 @@ static int sde_hw_pp_setup_dither_v1(struct sde_hw_pingpong *pp,
 		SDE_REG_WRITE(c, base + offset, data);
 	}
 #ifdef OPLUS_BUG_STABILITY
-	if(is_oplus_project) {
-		if(oplus_dither_enable) {
+	if (is_oplus_project || (!strcmp(display->panel->name,
+					 "samsung ams662zs01 dsc cmd 21623"))) {
+		if (oplus_dither_enable || dc_apollo_enable) {
 			SDE_REG_WRITE(c, base, 1);
-		}
-		else {
+		} else {
 			SDE_REG_WRITE(c, base, 0);
 		}
 	} else
@@ -401,7 +404,6 @@ static int sde_hw_pp_setup_dither_v1(struct sde_hw_pingpong *pp,
 	{
 		SDE_REG_WRITE(c, base, 1);
 	}
-
 
 	return 0;
 }

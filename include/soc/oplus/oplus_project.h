@@ -4,7 +4,7 @@
 #define MAX_OCP 6
 #define MAX_LEN 8
 #define FEATURE_COUNT 10
-#define ALIGN4(s) ((sizeof(s) + 3)&(~0x3))
+#define ALIGN4(s) ((sizeof(s) + 3) & (~0x3))
 
 #define FEATURE1_OPEARTOR_OPEN_MASK 0000
 #define FEATURE1_FOREIGN_MASK 0001
@@ -14,11 +14,11 @@
 #define FEATURE1_OPEARTOR_MAX_MASK 1111
 
 enum {
-        OPLUS_UNKNOWN,
+	OPLUS_UNKNOWN,
 };
 
-enum OPLUS_OPERATOR{
-        OPERATOR_UNKOWN,
+enum OPLUS_OPERATOR {
+	OPERATOR_UNKOWN,
 };
 
 enum f_index {
@@ -61,19 +61,19 @@ enum PCB_VERSION {
 };
 
 enum OPLUS_ENG_VERSION {
-    RELEASE                 = 0x00,
-    AGING                   = 0x01,
-    CTA                     = 0x02,
-    PERFORMANCE             = 0x03,
-    PREVERSION              = 0x04,
-    ALL_NET_CMCC_TEST       = 0x05,
-    ALL_NET_CMCC_FIELD      = 0x06,
-    ALL_NET_CU_TEST         = 0x07,
-    ALL_NET_CU_FIELD        = 0x08,
-    ALL_NET_CT_TEST         = 0x09,
-    ALL_NET_CT_FIELD        = 0x0A,
-    HIGH_TEMP_AGING         = 0x0B,
-    FACTORY                 = 0x0C
+	RELEASE = 0x00,
+	AGING = 0x01,
+	CTA = 0x02,
+	PERFORMANCE = 0x03,
+	PREVERSION = 0x04,
+	ALL_NET_CMCC_TEST = 0x05,
+	ALL_NET_CMCC_FIELD = 0x06,
+	ALL_NET_CU_TEST = 0x07,
+	ALL_NET_CU_FIELD = 0x08,
+	ALL_NET_CT_TEST = 0x09,
+	ALL_NET_CT_FIELD = 0x0A,
+	HIGH_TEMP_AGING = 0x0B,
+	FACTORY = 0x0C
 };
 
 struct pcb_match {
@@ -81,24 +81,23 @@ struct pcb_match {
 	char *str;
 };
 
-typedef struct
-{
-	uint32_t	nVerison;
-	uint32_t	nProject;
-	uint32_t	nDtsi;
-	uint32_t	nAudio;
-	uint32_t	nRF;
-	uint32_t	nFeature[FEATURE_COUNT];
-	uint32_t	nOplusBootMode;
-	uint32_t 	nPCB;
-	uint8_t		nPmicOcp[MAX_OCP];
-	uint8_t		reserved[16]; /*reseved[0] & reserved[1] used for compability of upgrade P->Q*/
+typedef struct {
+	uint32_t nVerison;
+	uint32_t nProject;
+	uint32_t nDtsi;
+	uint32_t nAudio;
+	uint32_t nRF;
+	uint32_t nFeature[FEATURE_COUNT];
+	uint32_t nOppoBootMode;
+	uint32_t nPCB;
+	uint8_t nPmicOcp[MAX_OCP];
+	/* reserved[0] & reserved[1] used for compability of upgrade P->Q */
+	uint8_t reserved[16];
 } ProjectInfoCDTType;
 
-typedef struct
-{
-  uint32_t   version;
-  uint32_t   is_confidential;
+typedef struct {
+	uint32_t version;
+	uint32_t is_confidential;
 } EngInfoType;
 
 unsigned int get_project(void);

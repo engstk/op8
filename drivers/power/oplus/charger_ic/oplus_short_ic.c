@@ -60,7 +60,7 @@
 
 static struct oplus_short_ic *short_ic_chip = NULL;
 
-#define I2C_ERROR_RETRY_CNT			5
+#define I2C_ERROR_RETRY_CNT 5
 
 static void oplus_short_ic_init_work_func(struct work_struct *work)
 {
@@ -72,7 +72,7 @@ static void oplus_short_ic_init_work_func(struct work_struct *work)
 
 	chg_err("oplus_short_ic init work start\n");
 
-        if (!chip) {
+	if (!chip) {
 		chg_err("ERROR: oplus_short_ic is NULL, return\n");
 		return;
 	}
@@ -122,11 +122,13 @@ static void oplus_short_ic_init_work_func(struct work_struct *work)
 	chg_err("oplus_short_ic, 0x02_reg, volt_threshold [0x%02X]\n", volt_threshold);
 	if (volt_threshold != OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL) {
 		retry_cnt = 3;
-		rc = i2c_smbus_write_byte_data(chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL);
+		rc = i2c_smbus_write_byte_data(chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG,
+					       OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL);
 		if (rc < 0) {
 			while (retry_cnt > 0) {
 				usleep_range(5000, 5000);
-				rc = i2c_smbus_write_byte_data(chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL);
+				rc = i2c_smbus_write_byte_data(chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG,
+							       OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL);
 				if (rc < 0) {
 					retry_cnt--;
 				} else {
@@ -146,7 +148,7 @@ static void oplus_short_ic_init_work_func(struct work_struct *work)
 			rc = i2c_smbus_read_byte_data(chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG);
 			retry_cnt++;
 		}
-		if (rc != OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL){
+		if (rc != OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_VAL) {
 			chip->b_volt_drop_set = false;
 			chg_err("ERROR: oplus_short_ic can not set threshold to 0x43, return\n");
 			return;
@@ -194,7 +196,7 @@ static void oplus_short_ic_init_work_func(struct work_struct *work)
 	retry_cnt = 3;
 	rc = i2c_smbus_read_byte_data(chip->client, OPLUS_SHORT_IC_OTP_REG);
 	if (rc < 0) {
-		while(retry_cnt > 0) {
+		while (retry_cnt > 0) {
 			usleep_range(5000, 5000);
 			rc = i2c_smbus_read_byte_data(chip->client, OPLUS_SHORT_IC_OTP_REG);
 			if (rc < 0) {
@@ -207,7 +209,7 @@ static void oplus_short_ic_init_work_func(struct work_struct *work)
 
 	if (rc < 0) {
 		chg_err("ERROR: oplus_short_ic can not get OTP state, return false\n");
-		return ;
+		return;
 	}
 	chg_err("oplus_short_ic end OTP state rc[0x%02X]\n", rc);
 }
@@ -235,11 +237,13 @@ int oplus_short_ic_set_volt_threshold(struct oplus_chg_chip *chip)
 	}
 
 	new_threshold = chip->short_c_batt.ic_volt_threshold;
-	rc = i2c_smbus_write_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG, new_threshold);
+	rc = i2c_smbus_write_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG,
+				       new_threshold);
 	if (rc < 0) {
-		while(retry_cnt > 0) {
+		while (retry_cnt > 0) {
 			usleep_range(5000, 5000);
-			rc = i2c_smbus_write_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG, new_threshold);
+			rc = i2c_smbus_write_byte_data(oplus_short_chip->client,
+						       OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG, new_threshold);
 			if (rc < 0) {
 				retry_cnt--;
 			} else {
@@ -257,9 +261,10 @@ int oplus_short_ic_set_volt_threshold(struct oplus_chg_chip *chip)
 	retry_cnt = 3;
 	rc = i2c_smbus_read_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG);
 	if (rc < 0) {
-		while(retry_cnt > 0) {
+		while (retry_cnt > 0) {
 			usleep_range(5000, 5000);
-			rc = i2c_smbus_read_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG);
+			rc = i2c_smbus_read_byte_data(oplus_short_chip->client,
+						      OPLUS_SHORT_IC_TEMP_VOLT_DROP_THRESH_REG);
 			if (rc < 0) {
 				retry_cnt--;
 			} else {
@@ -289,7 +294,7 @@ int oplus_short_ic_get_otp_error_value(struct oplus_chg_chip *chip)
 {
 	int rc = 0;
 	struct oplus_short_ic *oplus_short_chip = NULL;
-	int	retry_cnt = 3;
+	int retry_cnt = 3;
 
 	oplus_short_chip = short_ic_chip;
 	if (oplus_short_chip == NULL) {
@@ -308,7 +313,7 @@ int oplus_short_ic_get_otp_error_value(struct oplus_chg_chip *chip)
 
 	rc = i2c_smbus_read_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_OTP_REG);
 	if (rc < 0) {
-		while(retry_cnt > 0) {
+		while (retry_cnt > 0) {
 			usleep_range(5000, 5000);
 			rc = i2c_smbus_read_byte_data(oplus_short_chip->client, OPLUS_SHORT_IC_OTP_REG);
 			if (rc < 0) {
@@ -323,7 +328,7 @@ int oplus_short_ic_get_otp_error_value(struct oplus_chg_chip *chip)
 		chg_err("ERROR: oplus_short_ic can not get OTP state, return 0\n");
 		return 0;
 	}
-	oplus_short_chip->otp_error_value= rc;
+	oplus_short_chip->otp_error_value = rc;
 	///chg_err("oplus_short_ic OTP state rc[0x%02X]\n", rc);
 
 	return oplus_short_chip->otp_error_value;
@@ -348,11 +353,9 @@ bool oplus_short_ic_otp_check(void)
 	if (atomic_read(&short_ic_chip->suspended) == 1) {
 		//chg_err("ERROR: oplus_short_ic is suspended, return true\n");
 		return pre_otp_st;
-        }
+	}
 
-	if (chip->b_factory_id_get == false
-		|| chip->b_volt_drop_set == false
-		|| chip->b_work_mode_set == false) {
+	if (chip->b_factory_id_get == false || chip->b_volt_drop_set == false || chip->b_work_mode_set == false) {
 		chg_err("ERROR: oplus_short_ic some information is ERROR, return false\n");
 		pre_otp_st = false;
 		return false;
@@ -364,7 +367,7 @@ bool oplus_short_ic_otp_check(void)
 
 	rc = i2c_smbus_read_byte_data(chip->client, OPLUS_SHORT_IC_OTP_REG);
 	if (rc < 0) {
-		chip->otp_error_cnt ++;
+		chip->otp_error_cnt++;
 		if (chip->otp_error_cnt >= 3) {
 			chg_err("ERROR: oplus_short_ic can not get OTP state, return false\n");
 			pre_otp_st = false;
@@ -373,10 +376,10 @@ bool oplus_short_ic_otp_check(void)
 	} else {
 		//chg_err("oplus_short_ic OTP state rc[0x%02X]\n", rc);
 		otp_st = rc & 0xF0;
-		if(otp_st != 0x00){
-			if(chip->otp_error_cnt < 3) {
+		if (otp_st != 0x00) {
+			if (chip->otp_error_cnt < 3) {
 				chip->otp_error_cnt++;
-			} else{
+			} else {
 				chip->otp_error_value = rc;
 				pre_otp_st = false;
 				return false;
@@ -392,7 +395,7 @@ bool oplus_short_ic_otp_check(void)
 
 static void oplus_short_ic_shutdown(struct i2c_client *client)
 {
-        //msleep(80);
+	//msleep(80);
 	return;
 }
 
@@ -463,13 +466,12 @@ static int short_ic_resume(struct i2c_client *client)
 static int short_ic_suspend(struct i2c_client *client, pm_message_t mesg)
 {
 	if (!short_ic_chip) {
-	return 0;
+		return 0;
 	}
 	atomic_set(&short_ic_chip->suspended, 1);
 	return 0;
 }
 #endif /*(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))*/
-
 
 /**********************************************************
   *
@@ -477,12 +479,12 @@ static int short_ic_suspend(struct i2c_client *client, pm_message_t mesg)
   *
   *********************************************************/
 static const struct of_device_id oplus_short_ic_match[] = {
-	{ .compatible = "oplus,oplus_short-ic"},
-	{ },
+	{ .compatible = "oplus,oplus_short-ic" },
+	{},
 };
 
 static const struct i2c_device_id oplus_short_ic_id[] = {
-	{ "oplus_short-ic", 0},
+	{ "oplus_short-ic", 0 },
 	{},
 };
 MODULE_DEVICE_TABLE(i2c, oplus_short_ic_id);
@@ -547,4 +549,3 @@ int oplus_short_ic_get_otp_error_value(struct oplus_chg_chip *chip)
 	return 0;
 }
 #endif
-

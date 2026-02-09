@@ -13,10 +13,10 @@
 #include "dsi_iris5_lp.h"
 #include "dsi_iris5_log.h"
 
-#define IRIS_TX_HV_PAYLOAD_LEN   120
+#define IRIS_TX_HV_PAYLOAD_LEN 120
 #define IRIS_TX_PAYLOAD_LEN 124
-#define IRIS_RD_PACKET_DATA  0xF189C018
-#define IRIS_RD_PACKET_DATA_I3  0xF0C1C018
+#define IRIS_RD_PACKET_DATA 0xF189C018
+#define IRIS_RD_PACKET_DATA_I3 0xF0C1C018
 
 extern int iris_w_path_select;
 extern int iris_r_path_select;
@@ -25,8 +25,7 @@ static struct iris_ocp_cmd ocp_cmd;
 static struct iris_ocp_cmd ocp_test_cmd[DSI_CMD_CNT];
 static struct dsi_cmd_desc iris_test_cmd[DSI_CMD_CNT];
 
-static void _iris_add_cmd_addr_val(
-		struct iris_ocp_cmd *pcmd, u32 addr, u32 val)
+static void _iris_add_cmd_addr_val(struct iris_ocp_cmd *pcmd, u32 addr, u32 val)
 {
 	*(u32 *)(pcmd->cmd + pcmd->cmd_len) = cpu_to_le32(addr);
 	*(u32 *)(pcmd->cmd + pcmd->cmd_len + 4) = cpu_to_le32(val);
@@ -44,15 +43,19 @@ void iris_ocp_write_val(u32 address, u32 value)
 	struct iris_ocp_cmd ocp_cmd;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	struct dsi_cmd_desc iris_ocp_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			 CMD_PKT_SIZE, ocp_cmd.cmd, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0, CMD_PKT_SIZE,
+		    ocp_cmd.cmd, 0, NULL },
+		  1,
+		  0 }
+	};
 
 	memset(&ocp_cmd, 0, sizeof(ocp_cmd));
 
 	_iris_add_cmd_payload(&ocp_cmd, 0xFFFFFFF0 | OCP_SINGLE_WRITE_BYTEMASK);
 	_iris_add_cmd_addr_val(&ocp_cmd, address, value);
 	iris_ocp_cmd[0].msg.tx_len = ocp_cmd.cmd_len;
-	IRIS_LOGD("%s(), addr: 0x%08x, value: 0x%08x", __func__, address, value);
+	IRIS_LOGD("%s(), addr: 0x%08x, value: 0x%08x", __func__, address,
+		  value);
 
 	iris_dsi_send_cmds(pcfg->panel, iris_ocp_cmd, 1, DSI_CMD_SET_STATE_HS);
 }
@@ -64,8 +67,11 @@ void iris_ocp_write_vals(u32 header, u32 address, u32 size, u32 *pvalues)
 	struct iris_ocp_cmd ocp_cmd;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	struct dsi_cmd_desc iris_ocp_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			 CMD_PKT_SIZE, ocp_cmd.cmd, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0, CMD_PKT_SIZE,
+		    ocp_cmd.cmd, 0, NULL },
+		  1,
+		  0 }
+	};
 
 	while (size > 0) {
 		memset(&ocp_cmd, 0, sizeof(ocp_cmd));
@@ -87,11 +93,11 @@ void iris_ocp_write_vals(u32 header, u32 address, u32 size, u32 *pvalues)
 		}
 		iris_ocp_cmd[0].msg.tx_len = ocp_cmd.cmd_len;
 		IRIS_LOGD("%s(), header: 0x%08x, addr: 0x%08x, len: %zu",
-				__func__,
-				header, address, iris_ocp_cmd[0].msg.tx_len);
+			  __func__, header, address,
+			  iris_ocp_cmd[0].msg.tx_len);
 
-		iris_dsi_send_cmds(pcfg->panel, iris_ocp_cmd,
-				1, DSI_CMD_SET_STATE_HS);
+		iris_dsi_send_cmds(pcfg->panel, iris_ocp_cmd, 1,
+				   DSI_CMD_SET_STATE_HS);
 	}
 }
 
@@ -105,11 +111,15 @@ static void _iris_dsi_write_mult_vals(u32 size, u32 *pvalues)
 	struct iris_ocp_cmd ocp_cmd;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	struct dsi_cmd_desc iris_ocp_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			 CMD_PKT_SIZE, ocp_cmd.cmd, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0, CMD_PKT_SIZE,
+		    ocp_cmd.cmd, 0, NULL },
+		  1,
+		  0 }
+	};
 
 	if (size % 2 != 0) {
-		IRIS_LOGE("%s(), need to be mult pair of address and value", __func__);
+		IRIS_LOGE("%s(), need to be mult pair of address and value",
+			  __func__);
 		return;
 	}
 
@@ -130,12 +140,11 @@ static void _iris_dsi_write_mult_vals(u32 size, u32 *pvalues)
 			size -= max_size;
 		}
 		iris_ocp_cmd[0].msg.tx_len = ocp_cmd.cmd_len;
-		IRIS_LOGD("%s(), header: 0x%08x, len: %zu",
-				__func__,
-				header, iris_ocp_cmd[0].msg.tx_len);
+		IRIS_LOGD("%s(), header: 0x%08x, len: %zu", __func__, header,
+			  iris_ocp_cmd[0].msg.tx_len);
 
-		iris_dsi_send_cmds(pcfg->panel, iris_ocp_cmd,
-				1, DSI_CMD_SET_STATE_HS);
+		iris_dsi_send_cmds(pcfg->panel, iris_ocp_cmd, 1,
+				   DSI_CMD_SET_STATE_HS);
 	}
 }
 
@@ -146,7 +155,8 @@ static void _iris_i2c_write_mult_vals(u32 size, u32 *pvalues)
 	bool is_ulps_enable = 0;
 
 	if (size % 2 != 0) {
-		IRIS_LOGE("%s(), need to be mult pair of address and value", __func__);
+		IRIS_LOGE("%s(), need to be mult pair of address and value",
+			  __func__);
 		return;
 	}
 
@@ -155,8 +165,8 @@ static void _iris_i2c_write_mult_vals(u32 size, u32 *pvalues)
 	iris_enable_ulps(PATH_I2C, is_ulps_enable);
 
 	if (ret)
-		IRIS_LOGE("%s(%d), i2c send fail, return: %d",
-				__func__, __LINE__, ret);
+		IRIS_LOGE("%s(%d), i2c send fail, return: %d", __func__,
+			  __LINE__, ret);
 }
 
 /*pvalues need to be one address and one value*/
@@ -171,8 +181,8 @@ void iris_ocp_write_mult_vals(u32 size, u32 *pvalues)
 		IRIS_LOGD("%s(%d), path select dsi", __func__, __LINE__);
 		_iris_dsi_write_mult_vals(size, pvalues);
 	} else {
-		IRIS_LOGE("%s(%d), path not i2c or dsi, path = %d",
-				__func__, __LINE__, path);
+		IRIS_LOGE("%s(%d), path not i2c or dsi, path = %d", __func__,
+			  __LINE__, path);
 	}
 }
 
@@ -181,8 +191,11 @@ static void _iris_ocp_write_addr(u32 address, u32 mode)
 	struct iris_ocp_cmd ocp_cmd;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	struct dsi_cmd_desc iris_ocp_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			 CMD_PKT_SIZE, ocp_cmd.cmd, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0, CMD_PKT_SIZE,
+		    ocp_cmd.cmd, 0, NULL },
+		  1,
+		  0 }
+	};
 
 	/* Send OCP command.*/
 	memset(&ocp_cmd, 0, sizeof(ocp_cmd));
@@ -197,10 +210,14 @@ static u32 _iris_ocp_read_value(u32 mode)
 {
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 
-	char pi_read[1] = {0x00};
+	char pi_read[1] = { 0x00 };
 	struct dsi_cmd_desc pi_read_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM, MIPI_DSI_MSG_REQ_ACK,
-			 0, 0, sizeof(pi_read), pi_read, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM,
+		    MIPI_DSI_MSG_REQ_ACK, 0, 0, sizeof(pi_read), pi_read, 0,
+		    NULL },
+		  1,
+		  0 }
+	};
 	u32 response_value;
 
 	/* Read response.*/
@@ -208,19 +225,20 @@ static u32 _iris_ocp_read_value(u32 mode)
 	pi_read_cmd[0].msg.rx_len = 4;
 	pi_read_cmd[0].msg.rx_buf = iris_read_cmd_rbuf;
 	iris_dsi_send_cmds(pcfg->panel, pi_read_cmd, 1, mode);
-	IRIS_LOGD("read register %02x %02x %02x %02x",
-			iris_read_cmd_rbuf[0], iris_read_cmd_rbuf[1],
-			iris_read_cmd_rbuf[2], iris_read_cmd_rbuf[3]);
+	IRIS_LOGD("read register %02x %02x %02x %02x", iris_read_cmd_rbuf[0],
+		  iris_read_cmd_rbuf[1], iris_read_cmd_rbuf[2],
+		  iris_read_cmd_rbuf[3]);
 
 	response_value = iris_read_cmd_rbuf[0] | (iris_read_cmd_rbuf[1] << 8) |
-		(iris_read_cmd_rbuf[2] << 16) | (iris_read_cmd_rbuf[3] << 24);
+			 (iris_read_cmd_rbuf[2] << 16) |
+			 (iris_read_cmd_rbuf[3] << 24);
 
 	return response_value;
 }
 
 static u32 _iris_i2c_single_read(u32 address)
 {
-	u32 arr[2] = {0};
+	u32 arr[2] = { 0 };
 	bool is_burst = 0;
 	int ret = 0;
 	bool is_ulps_enable = 0;
@@ -231,7 +249,7 @@ static u32 _iris_i2c_single_read(u32 address)
 	iris_enable_ulps(PATH_I2C, is_ulps_enable);
 	if (ret) {
 		IRIS_LOGE("%s(%d), i2c ocp single read fail, return: %d",
-				__func__, __LINE__, ret);
+			  __func__, __LINE__, ret);
 		return 0;
 	}
 	IRIS_LOGD("%s(), addr: %#x, value: %#x", __func__, address, arr[0]);
@@ -263,8 +281,8 @@ u32 iris_ocp_read(u32 address, u32 mode)
 		IRIS_LOGD("%s(%d), path select dsi", __func__, __LINE__);
 		value = _iris_dsi_ocp_read(address, mode);
 	} else {
-		IRIS_LOGE("%s(%d), path not i2c or dsi, path = %d",
-				__func__, __LINE__, path);
+		IRIS_LOGE("%s(%d), path not i2c or dsi, path = %d", __func__,
+			  __LINE__, path);
 	}
 
 	return value;
@@ -272,16 +290,19 @@ u32 iris_ocp_read(u32 address, u32 mode)
 
 static void _iris_dump_packet(u8 *data, int size)
 {
-	print_hex_dump(KERN_ERR, "", DUMP_PREFIX_NONE, 16, 4, data, size, false);
+	print_hex_dump(KERN_ERR, "", DUMP_PREFIX_NONE, 16, 4, data, size,
+		       false);
 }
 
-void iris_write_test(struct dsi_panel *panel, u32 iris_addr,
-		int ocp_type, u32 pkt_size)
+void iris_write_test(struct dsi_panel *panel, u32 iris_addr, int ocp_type,
+		     u32 pkt_size)
 {
 	union iris_ocp_cmd_header ocp_header;
-	struct dsi_cmd_desc iris_cmd = {
-		{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			CMD_PKT_SIZE, ocp_cmd.cmd, 0, NULL}, 1, 0};
+	struct dsi_cmd_desc iris_cmd = { { 0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0,
+					   0, CMD_PKT_SIZE, ocp_cmd.cmd, 0,
+					   NULL },
+					 1,
+					 0 };
 
 	u32 test_value = 0xFFFF0000;
 
@@ -295,7 +316,7 @@ void iris_write_test(struct dsi_panel *panel, u32 iris_addr,
 	switch (ocp_type) {
 	case OCP_SINGLE_WRITE_BYTEMASK:
 	case OCP_SINGLE_WRITE_BITMASK:
-		for (; ocp_cmd.cmd_len <= (pkt_size - 8); ) {
+		for (; ocp_cmd.cmd_len <= (pkt_size - 8);) {
 			_iris_add_cmd_addr_val(&ocp_cmd, iris_addr, test_value);
 			test_value++;
 		}
@@ -315,9 +336,8 @@ void iris_write_test(struct dsi_panel *panel, u32 iris_addr,
 		break;
 	}
 
-	IRIS_LOGI("%s(), len: %d, iris addr: %#x, test value: %#x",
-			__func__,
-			ocp_cmd.cmd_len, iris_addr, test_value);
+	IRIS_LOGI("%s(), len: %d, iris addr: %#x, test value: %#x", __func__,
+		  ocp_cmd.cmd_len, iris_addr, test_value);
 	iris_cmd.msg.tx_len = ocp_cmd.cmd_len;
 
 	iris_dsi_send_cmds(panel, &iris_cmd, 1, DSI_CMD_SET_STATE_HS);
@@ -327,7 +347,7 @@ void iris_write_test(struct dsi_panel *panel, u32 iris_addr,
 }
 
 void iris_write_test_muti_pkt(struct dsi_panel *panel,
-		struct iris_ocp_dsi_tool_input *ocp_input)
+			      struct iris_ocp_dsi_tool_input *ocp_input)
 {
 	union iris_ocp_cmd_header ocp_header;
 	u32 test_value = 0xFF000000;
@@ -351,43 +371,50 @@ void iris_write_test_muti_pkt(struct dsi_panel *panel,
 	case OCP_SINGLE_WRITE_BYTEMASK:
 	case OCP_SINGLE_WRITE_BITMASK:
 		for (cnt = 0; cnt < total_cnt; cnt++) {
-			memcpy(ocp_test_cmd[cnt].cmd,
-					&ocp_header.header32, OCP_HEADER);
+			memcpy(ocp_test_cmd[cnt].cmd, &ocp_header.header32,
+			       OCP_HEADER);
 			ocp_test_cmd[cnt].cmd_len = OCP_HEADER;
 
 			test_value = 0xFF000000 | (cnt << 16);
 			while (ocp_test_cmd[cnt].cmd_len <= (pkt_size - 8)) {
 				_iris_add_cmd_addr_val(&ocp_test_cmd[cnt],
-						(iris_addr + cnt * 4), test_value);
+						       (iris_addr + cnt * 4),
+						       test_value);
 				test_value++;
 			}
 
-			iris_test_cmd[cnt].msg.type = MIPI_DSI_GENERIC_LONG_WRITE;
-			iris_test_cmd[cnt].msg.tx_len = ocp_test_cmd[cnt].cmd_len;
+			iris_test_cmd[cnt].msg.type =
+				MIPI_DSI_GENERIC_LONG_WRITE;
+			iris_test_cmd[cnt].msg.tx_len =
+				ocp_test_cmd[cnt].cmd_len;
 			iris_test_cmd[cnt].msg.tx_buf = ocp_test_cmd[cnt].cmd;
 		}
 		iris_test_cmd[total_cnt - 1].last_command = true;
 		break;
 	case OCP_BURST_WRITE:
 		for (cnt = 0; cnt < total_cnt; cnt++) {
-			memcpy(ocp_test_cmd[cnt].cmd,
-					&ocp_header.header32, OCP_HEADER);
+			memcpy(ocp_test_cmd[cnt].cmd, &ocp_header.header32,
+			       OCP_HEADER);
 			ocp_test_cmd[cnt].cmd_len = OCP_HEADER;
 			test_value = 0xFF000000 | (cnt << 16);
 
 			_iris_add_cmd_addr_val(&ocp_test_cmd[cnt],
-					(iris_addr + cnt * 4), test_value);
+					       (iris_addr + cnt * 4),
+					       test_value);
 			/* if(pkt_size <= ocp_test_cmd[cnt].cmd_len)
 			 * break;
 			 */
 			test_value++;
 			while (ocp_test_cmd[cnt].cmd_len <= pkt_size - 4) {
-				_iris_add_cmd_payload(&ocp_test_cmd[cnt], test_value);
+				_iris_add_cmd_payload(&ocp_test_cmd[cnt],
+						      test_value);
 				test_value++;
 			}
 
-			iris_test_cmd[cnt].msg.type = MIPI_DSI_GENERIC_LONG_WRITE;
-			iris_test_cmd[cnt].msg.tx_len = ocp_test_cmd[cnt].cmd_len;
+			iris_test_cmd[cnt].msg.type =
+				MIPI_DSI_GENERIC_LONG_WRITE;
+			iris_test_cmd[cnt].msg.tx_len =
+				ocp_test_cmd[cnt].cmd_len;
 			iris_test_cmd[cnt].msg.tx_buf = ocp_test_cmd[cnt].cmd;
 		}
 		iris_test_cmd[total_cnt - 1].last_command = true;
@@ -397,21 +424,20 @@ void iris_write_test_muti_pkt(struct dsi_panel *panel,
 	}
 
 	IRIS_LOGI("%s(), total count: %#x, iris addr: %#x, test value: %#x",
-			__func__, total_cnt, iris_addr, test_value);
-	iris_dsi_send_cmds(panel, iris_test_cmd, total_cnt, DSI_CMD_SET_STATE_HS);
+		  __func__, total_cnt, iris_addr, test_value);
+	iris_dsi_send_cmds(panel, iris_test_cmd, total_cnt,
+			   DSI_CMD_SET_STATE_HS);
 
 	if (IRIS_IF_NOT_LOGV())
 		return;
 
 	for (cnt = 0; cnt < total_cnt; cnt++)
 		_iris_dump_packet(ocp_test_cmd[cnt].cmd,
-				ocp_test_cmd[cnt].cmd_len);
+				  ocp_test_cmd[cnt].cmd_len);
 }
 
-int iris_dsi_send_cmds(struct dsi_panel *panel,
-		struct dsi_cmd_desc *cmds,
-		u32 count,
-		enum dsi_cmd_set_state state)
+int iris_dsi_send_cmds(struct dsi_panel *panel, struct dsi_cmd_desc *cmds,
+		       u32 count, enum dsi_cmd_set_state state)
 {
 	int rc = 0;
 	int i = 0;
@@ -425,8 +451,7 @@ int iris_dsi_send_cmds(struct dsi_panel *panel,
 
 	if (count == 0) {
 		IRIS_LOGD("%s(), panel %s no commands to be sent for state %d",
-				__func__,
-				panel->name, state);
+			  __func__, panel->name, state);
 		goto error;
 	}
 
@@ -442,27 +467,27 @@ int iris_dsi_send_cmds(struct dsi_panel *panel,
 		if (cmds->last_command)
 			cmds->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
 
-		dsi_display_clk_ctrl(display->dsi_clk_handle,
-				DSI_ALL_CLKS, DSI_CLK_ON);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_ALL_CLKS,
+				     DSI_CLK_ON);
 		WARN_ON(!mutex_is_locked(&panel->panel_lock));
 		len = ops->transfer(panel->host, &cmds->msg);
-		dsi_display_clk_ctrl(display->dsi_clk_handle,
-				DSI_ALL_CLKS, DSI_CLK_OFF);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_ALL_CLKS,
+				     DSI_CLK_OFF);
 
 		if (IRIS_IF_LOGVV())
-			_iris_dump_packet((u8 *)cmds->msg.tx_buf, cmds->msg.tx_len);
+			_iris_dump_packet((u8 *)cmds->msg.tx_buf,
+					  cmds->msg.tx_len);
 
 		if (len < 0) {
 			rc = len;
 			IRIS_LOGE("%s(), failed to set cmds: %d, return: %d",
-					__func__,
-					cmds->msg.type, rc);
+				  __func__, cmds->msg.type, rc);
 			dump_stack();
 			goto error;
 		}
 		if (cmds->post_wait_ms)
 			usleep_range(cmds->post_wait_ms * 1000,
-					((cmds->post_wait_ms * 1000) + 10));
+				     ((cmds->post_wait_ms * 1000) + 10));
 		cmds++;
 	}
 error:
@@ -474,8 +499,9 @@ static u32 _iris_pt_get_split_pkt_cnt(int dlen)
 	u32 sum = 1;
 
 	if (dlen > IRIS_TX_HV_PAYLOAD_LEN)
-		sum = (dlen - IRIS_TX_HV_PAYLOAD_LEN
-				+ IRIS_TX_PAYLOAD_LEN - 1) / IRIS_TX_PAYLOAD_LEN + 1;
+		sum = (dlen - IRIS_TX_HV_PAYLOAD_LEN + IRIS_TX_PAYLOAD_LEN -
+		       1) / IRIS_TX_PAYLOAD_LEN +
+		      1;
 	return sum;
 }
 
@@ -507,21 +533,18 @@ static u32 _iris_pt_calc_cmd_cnt(struct dsi_panel_cmd_set *cmdset)
 	return sum;
 }
 
-static int _iris_pt_alloc_cmds(
-		struct dsi_panel_cmd_set *cmdset,
-		struct dsi_cmd_desc **ptx_cmds,
-		struct iris_ocp_cmd **pocp_cmds)
+static int _iris_pt_alloc_cmds(struct dsi_panel_cmd_set *cmdset,
+			       struct dsi_cmd_desc **ptx_cmds,
+			       struct iris_ocp_cmd **pocp_cmds)
 {
 	int cmds_cnt = _iris_pt_calc_cmd_cnt(cmdset);
 
-	IRIS_LOGD("%s(%d), cmds cnt: %d malloc len: %lu",
-			__func__, __LINE__,
-			cmds_cnt, cmds_cnt * sizeof(**ptx_cmds));
+	IRIS_LOGD("%s(%d), cmds cnt: %d malloc len: %lu", __func__, __LINE__,
+		  cmds_cnt, cmds_cnt * sizeof(**ptx_cmds));
 	*ptx_cmds = vmalloc(cmds_cnt * sizeof(**ptx_cmds));
 	if (!(*ptx_cmds)) {
-		IRIS_LOGE("%s(), failed to malloc buf, len: %lu",
-				__func__,
-				cmds_cnt * sizeof(**ptx_cmds));
+		IRIS_LOGE("%s(), failed to malloc buf, len: %lu", __func__,
+			  cmds_cnt * sizeof(**ptx_cmds));
 		return -ENOMEM;
 	}
 
@@ -535,20 +558,20 @@ static int _iris_pt_alloc_cmds(
 	return cmds_cnt;
 }
 
-static void _iris_pt_init_tx_cmd_hdr(
-		struct dsi_panel_cmd_set *cmdset, struct dsi_cmd_desc *dsi_cmd,
-		union iris_mipi_tx_cmd_header *header)
+static void _iris_pt_init_tx_cmd_hdr(struct dsi_panel_cmd_set *cmdset,
+				     struct dsi_cmd_desc *dsi_cmd,
+				     union iris_mipi_tx_cmd_header *header)
 {
 	u8 dtype = dsi_cmd->msg.type;
 
 	memset(header, 0x00, sizeof(*header));
 	header->stHdr.dtype = dtype;
-	header->stHdr.linkState = (cmdset->state == DSI_CMD_SET_STATE_LP) ? 1 : 0;
+	header->stHdr.linkState = (cmdset->state == DSI_CMD_SET_STATE_LP) ? 1 :
+									    0;
 }
 
-static void _iris_pt_set_cmd_hdr(
-		union iris_mipi_tx_cmd_header *pheader,
-		struct dsi_cmd_desc *dsi_cmd, bool is_write)
+static void _iris_pt_set_cmd_hdr(union iris_mipi_tx_cmd_header *pheader,
+				 struct dsi_cmd_desc *dsi_cmd, bool is_write)
 {
 	u32 dlen = 0;
 	u8 *ptr = NULL;
@@ -577,16 +600,14 @@ static void _iris_pt_set_cmd_hdr(
 	}
 }
 
-static void _iris_pt_set_wrcmd_hdr(
-		union iris_mipi_tx_cmd_header *pheader,
-		struct dsi_cmd_desc *dsi_cmd)
+static void _iris_pt_set_wrcmd_hdr(union iris_mipi_tx_cmd_header *pheader,
+				   struct dsi_cmd_desc *dsi_cmd)
 {
 	_iris_pt_set_cmd_hdr(pheader, dsi_cmd, true);
 }
 
-static void _iris_pt_set_rdcmd_hdr(
-		union iris_mipi_tx_cmd_header *pheader,
-		struct dsi_cmd_desc *dsi_cmd)
+static void _iris_pt_set_rdcmd_hdr(union iris_mipi_tx_cmd_header *pheader,
+				   struct dsi_cmd_desc *dsi_cmd)
 {
 	_iris_pt_set_cmd_hdr(pheader, dsi_cmd, false);
 }
@@ -606,13 +627,14 @@ static void _iris_pt_init_ocp_cmd(struct iris_ocp_cmd *pocp_cmd)
 	pocp_cmd->cmd_len = OCP_HEADER;
 }
 
-static void _iris_add_tx_cmds(
-		struct dsi_cmd_desc *ptx_cmd,
-		struct iris_ocp_cmd *pocp_cmd, u8 wait)
+static void _iris_add_tx_cmds(struct dsi_cmd_desc *ptx_cmd,
+			      struct iris_ocp_cmd *pocp_cmd, u8 wait)
 {
-	struct dsi_cmd_desc desc_init_val = {
-		{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			CMD_PKT_SIZE, NULL, 0, NULL}, 1, 0};
+	struct dsi_cmd_desc desc_init_val = { { 0, MIPI_DSI_GENERIC_LONG_WRITE,
+						0, 0, 0, CMD_PKT_SIZE, NULL, 0,
+						NULL },
+					      1,
+					      0 };
 
 	memcpy(ptx_cmd, &desc_init_val, sizeof(struct dsi_cmd_desc));
 	ptx_cmd->msg.tx_buf = pocp_cmd->cmd;
@@ -620,44 +642,40 @@ static void _iris_add_tx_cmds(
 	ptx_cmd->post_wait_ms = wait;
 }
 
-static u32 _iris_pt_short_write(
-		struct iris_ocp_cmd *pocp_cmd,
-		union iris_mipi_tx_cmd_header *pheader,
-		struct dsi_cmd_desc *dsi_cmd)
+static u32 _iris_pt_short_write(struct iris_ocp_cmd *pocp_cmd,
+				union iris_mipi_tx_cmd_header *pheader,
+				struct dsi_cmd_desc *dsi_cmd)
 {
 	u32 sum = 1;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	u32 address = pcfg->chip_ver == IRIS5_CHIP_VERSION ?
-		IRIS_MIPI_TX_HEADER_ADDR : IRIS_MIPI_TX_HEADER_ADDR_I3;
+			      IRIS_MIPI_TX_HEADER_ADDR :
+			      IRIS_MIPI_TX_HEADER_ADDR_I3;
 
 	pheader->stHdr.longCmdFlag = 0x00;
 
 	_iris_pt_set_wrcmd_hdr(pheader, dsi_cmd);
 
-	IRIS_LOGD("%s(%d), header: 0x%4x",
-			__func__, __LINE__,
-			pheader->hdr32);
+	IRIS_LOGD("%s(%d), header: 0x%4x", __func__, __LINE__, pheader->hdr32);
 	_iris_add_cmd_addr_val(pocp_cmd, address, pheader->hdr32);
 
 	return sum;
 }
 
-static u32 _iris_pt_short_read(
-		struct iris_ocp_cmd *pocp_cmd,
-		union iris_mipi_tx_cmd_header *pheader,
-		struct dsi_cmd_desc *dsi_cmd)
+static u32 _iris_pt_short_read(struct iris_ocp_cmd *pocp_cmd,
+			       union iris_mipi_tx_cmd_header *pheader,
+			       struct dsi_cmd_desc *dsi_cmd)
 {
 	u32 sum = 1;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	u32 address = pcfg->chip_ver == IRIS5_CHIP_VERSION ?
-		IRIS_MIPI_TX_HEADER_ADDR : IRIS_MIPI_TX_HEADER_ADDR_I3;
+			      IRIS_MIPI_TX_HEADER_ADDR :
+			      IRIS_MIPI_TX_HEADER_ADDR_I3;
 
 	pheader->stHdr.longCmdFlag = 0x00;
 	_iris_pt_set_rdcmd_hdr(pheader, dsi_cmd);
 
-	IRIS_LOGD("%s(%d), header: 0x%4x",
-			__func__, __LINE__,
-			pheader->hdr32);
+	IRIS_LOGD("%s(%d), header: 0x%4x", __func__, __LINE__, pheader->hdr32);
 	_iris_add_cmd_addr_val(pocp_cmd, address, pheader->hdr32);
 
 	return sum;
@@ -668,25 +686,27 @@ static u32 _iris_pt_get_split_pkt_len(u16 dlen, int sum, int k)
 	u16 split_len = 0;
 
 	if (k == 0)
-		split_len = dlen <  IRIS_TX_HV_PAYLOAD_LEN
-			? dlen : IRIS_TX_HV_PAYLOAD_LEN;
+		split_len = dlen < IRIS_TX_HV_PAYLOAD_LEN ?
+				    dlen :
+				    IRIS_TX_HV_PAYLOAD_LEN;
 	else if (k == sum - 1)
-		split_len = dlen - IRIS_TX_HV_PAYLOAD_LEN
-			- (k - 1) * IRIS_TX_PAYLOAD_LEN;
+		split_len = dlen - IRIS_TX_HV_PAYLOAD_LEN -
+			    (k - 1) * IRIS_TX_PAYLOAD_LEN;
 	else
 		split_len = IRIS_TX_PAYLOAD_LEN;
 
 	return split_len;
 }
 
-static void _iris_pt_add_split_pkt_payload(
-		struct iris_ocp_cmd *pocp_cmd, u8 *ptr, u16 split_len)
+static void _iris_pt_add_split_pkt_payload(struct iris_ocp_cmd *pocp_cmd,
+					   u8 *ptr, u16 split_len)
 {
 	u32 i = 0;
 	union iris_mipi_tx_cmd_payload payload;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	u32 address = pcfg->chip_ver == IRIS5_CHIP_VERSION ?
-		IRIS_MIPI_TX_PAYLOAD_ADDR : IRIS_MIPI_TX_PAYLOAD_ADDR_I3;
+			      IRIS_MIPI_TX_PAYLOAD_ADDR :
+			      IRIS_MIPI_TX_PAYLOAD_ADDR_I3;
 
 	memset(&payload, 0x00, sizeof(payload));
 	for (i = 0; i < split_len; i += 4, ptr += 4) {
@@ -697,15 +717,13 @@ static void _iris_pt_add_split_pkt_payload(
 			payload.pld32 = *(u32 *)ptr;
 
 		IRIS_LOGD("%s(), payload: %#x", __func__, payload.pld32);
-		_iris_add_cmd_addr_val(pocp_cmd, address,
-				payload.pld32);
+		_iris_add_cmd_addr_val(pocp_cmd, address, payload.pld32);
 	}
 }
 
-static u32 _iris_pt_long_write(
-		struct iris_ocp_cmd *pocp_cmd,
-		union iris_mipi_tx_cmd_header *pheader,
-		struct dsi_cmd_desc *dsi_cmd)
+static u32 _iris_pt_long_write(struct iris_ocp_cmd *pocp_cmd,
+			       union iris_mipi_tx_cmd_header *pheader,
+			       struct dsi_cmd_desc *dsi_cmd)
 {
 	u8 *ptr = NULL;
 	u32 i = 0;
@@ -714,18 +732,16 @@ static u32 _iris_pt_long_write(
 	u32 split_len = 0;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	u32 address = pcfg->chip_ver == IRIS5_CHIP_VERSION ?
-		IRIS_MIPI_TX_HEADER_ADDR : IRIS_MIPI_TX_HEADER_ADDR_I3;
+			      IRIS_MIPI_TX_HEADER_ADDR :
+			      IRIS_MIPI_TX_HEADER_ADDR_I3;
 
 	dlen = dsi_cmd->msg.tx_len;
 
 	pheader->stHdr.longCmdFlag = 0x1;
 	_iris_pt_set_wrcmd_hdr(pheader, dsi_cmd);
 
-	IRIS_LOGD("%s(%d), header: %#x",
-			__func__, __LINE__,
-			pheader->hdr32);
-	_iris_add_cmd_addr_val(pocp_cmd, address,
-			pheader->hdr32);
+	IRIS_LOGD("%s(%d), header: %#x", __func__, __LINE__, pheader->hdr32);
+	_iris_add_cmd_addr_val(pocp_cmd, address, pheader->hdr32);
 
 	ptr = (u8 *)dsi_cmd->msg.tx_buf;
 	sum = _iris_pt_get_split_pkt_cnt(dlen);
@@ -742,9 +758,10 @@ static u32 _iris_pt_long_write(
 	return sum;
 }
 
-static u32 _iris_pt_add_cmd(
-		struct dsi_cmd_desc *ptx_cmd, struct iris_ocp_cmd *pocp_cmd,
-		struct dsi_cmd_desc *dsi_cmd, struct dsi_panel_cmd_set *cmdset)
+static u32 _iris_pt_add_cmd(struct dsi_cmd_desc *ptx_cmd,
+			    struct iris_ocp_cmd *pocp_cmd,
+			    struct dsi_cmd_desc *dsi_cmd,
+			    struct dsi_panel_cmd_set *cmdset)
 {
 	u32 i = 0;
 	u16 dtype = 0;
@@ -776,9 +793,8 @@ static u32 _iris_pt_add_cmd(
 		sum = _iris_pt_long_write(pocp_cmd, &header, dsi_cmd);
 		break;
 	default:
-		IRIS_LOGE("%s(), invalid type: %#x",
-				__func__,
-				dsi_cmd->msg.type);
+		IRIS_LOGE("%s(), invalid type: %#x", __func__,
+			  dsi_cmd->msg.type);
 		break;
 	}
 
@@ -789,9 +805,8 @@ static u32 _iris_pt_add_cmd(
 	return sum;
 }
 
-static void _iris_pt_send_cmds(
-		struct dsi_panel *panel,
-		struct dsi_cmd_desc *ptx_cmds, u32 cmds_cnt)
+static void _iris_pt_send_cmds(struct dsi_panel *panel,
+			       struct dsi_cmd_desc *ptx_cmds, u32 cmds_cnt)
 {
 	struct dsi_panel_cmd_set panel_cmds;
 
@@ -800,15 +815,16 @@ static void _iris_pt_send_cmds(
 	panel_cmds.cmds = ptx_cmds;
 	panel_cmds.count = cmds_cnt;
 	panel_cmds.state = DSI_CMD_SET_STATE_HS;
-	iris_dsi_send_cmds(panel, panel_cmds.cmds,
-			panel_cmds.count, panel_cmds.state);
+	iris_dsi_send_cmds(panel, panel_cmds.cmds, panel_cmds.count,
+			   panel_cmds.state);
 
 	if (iris_get_cont_splash_type() == IRIS_CONT_SPLASH_LK)
-		iris_print_desc_cmds(panel_cmds.cmds, panel_cmds.count, panel_cmds.state);
+		iris_print_desc_cmds(panel_cmds.cmds, panel_cmds.count,
+				     panel_cmds.state);
 }
 
-static void _iris_pt_write_panel_cmd(
-		struct dsi_panel *panel, struct dsi_panel_cmd_set *cmdset)
+static void _iris_pt_write_panel_cmd(struct dsi_panel *panel,
+				     struct dsi_panel_cmd_set *cmdset)
 {
 	u32 i = 0;
 	u32 j = 0;
@@ -828,7 +844,7 @@ static void _iris_pt_write_panel_cmd(
 		return;
 	}
 
-	cmds_cnt =  _iris_pt_alloc_cmds(cmdset, &ptx_cmds, &pocp_cmds);
+	cmds_cnt = _iris_pt_alloc_cmds(cmdset, &ptx_cmds, &pocp_cmds);
 	if (cmds_cnt < 0) {
 		IRIS_LOGE("%s(), invalide cmds count: %d", __func__, cmds_cnt);
 		return;
@@ -838,15 +854,14 @@ static void _iris_pt_write_panel_cmd(
 		/*initial val*/
 		dsi_cmds = cmdset->cmds + i;
 		_iris_pt_init_ocp_cmd(pocp_cmds + j);
-		offset = _iris_pt_add_cmd(
-				ptx_cmds + j, pocp_cmds + j, dsi_cmds, cmdset);
+		offset = _iris_pt_add_cmd(ptx_cmds + j, pocp_cmds + j, dsi_cmds,
+					  cmdset);
 		j += offset;
 	}
 
 	if (j != (u32)cmds_cnt)
-		IRIS_LOGE("%s(), invalid cmd count: %d, j: %d",
-				__func__,
-				cmds_cnt, j);
+		IRIS_LOGE("%s(), invalid cmd count: %d, j: %d", __func__,
+			  cmds_cnt, j);
 	else
 		_iris_pt_send_cmds(panel, ptx_cmds, (u32)cmds_cnt);
 
@@ -856,10 +871,9 @@ static void _iris_pt_write_panel_cmd(
 	ptx_cmds = NULL;
 }
 
-static void _iris_pt_switch_cmd(
-		struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *cmdset,
-		struct dsi_cmd_desc *dsi_cmd)
+static void _iris_pt_switch_cmd(struct dsi_panel *panel,
+				struct dsi_panel_cmd_set *cmdset,
+				struct dsi_cmd_desc *dsi_cmd)
 {
 	if (!cmdset || !panel || !dsi_cmd) {
 		IRIS_LOGE("%s(), invalid input param", __func__);
@@ -870,16 +884,20 @@ static void _iris_pt_switch_cmd(
 	cmdset->count = 1;
 }
 
-static int _iris_pt_write_max_pkt_size(
-		struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *cmdset)
+static int _iris_pt_write_max_pkt_size(struct dsi_panel *panel,
+				       struct dsi_panel_cmd_set *cmdset)
 {
 	u32 rlen = 0;
 	struct dsi_panel_cmd_set local_cmdset;
-	static char max_pktsize[2] = {0x00, 0x00}; /* LSB tx first, 10 bytes */
+	static char max_pktsize[2] = { 0x00,
+				       0x00 }; /* LSB tx first, 10 bytes */
 	static struct dsi_cmd_desc pkt_size_cmd = {
-		{0, MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, MIPI_DSI_MSG_REQ_ACK,
-			0, 0, sizeof(max_pktsize), max_pktsize, 0, NULL}, 1, 0};
+		{ 0, MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE,
+		  MIPI_DSI_MSG_REQ_ACK, 0, 0, sizeof(max_pktsize), max_pktsize,
+		  0, NULL },
+		1,
+		0
+	};
 
 	rlen = cmdset->cmds[0].msg.rx_len;
 	if (rlen > 128) {
@@ -896,8 +914,8 @@ static int _iris_pt_write_max_pkt_size(
 	return 0;
 }
 
-static void _iris_pt_send_panel_rdcmd(
-		struct dsi_panel *panel, struct dsi_panel_cmd_set *cmdset)
+static void _iris_pt_send_panel_rdcmd(struct dsi_panel *panel,
+				      struct dsi_panel_cmd_set *cmdset)
 {
 	struct dsi_panel_cmd_set local_cmdset;
 	struct dsi_cmd_desc *dsi_cmd = cmdset->cmds;
@@ -956,7 +974,8 @@ static void _iris_pt_read(struct dsi_panel_cmd_set *cmdset)
 	u8 *rbuf = NULL;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	u32 address = pcfg->chip_ver == IRIS5_CHIP_VERSION ?
-		IRIS_RD_PACKET_DATA : IRIS_RD_PACKET_DATA_I3;
+			      IRIS_RD_PACKET_DATA :
+			      IRIS_RD_PACKET_DATA_I3;
 
 	rbuf = (u8 *)cmdset->cmds[0].msg.rx_buf;
 	rlen = cmdset->cmds[0].msg.rx_len;
@@ -987,7 +1006,8 @@ static void _iris_pt_read(struct dsi_panel_cmd_set *cmdset)
 
 		for (i = 0; i < num; i++) {
 			len = (i == num - 1) ? rlen - 4 * i : 4;
-			val.pld32 = iris_ocp_read(address, DSI_CMD_SET_STATE_HS);
+			val.pld32 =
+				iris_ocp_read(address, DSI_CMD_SET_STATE_HS);
 			for (j = 0; j < len; j++)
 				rbuf[i * 4 + j] = val.p[j];
 		}
@@ -995,7 +1015,7 @@ static void _iris_pt_read(struct dsi_panel_cmd_set *cmdset)
 }
 
 void iris_pt_read_panel_cmd(struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *cmdset)
+			    struct dsi_panel_cmd_set *cmdset)
 {
 	struct iris_cfg *pcfg = NULL;
 	struct dsi_display *display = NULL;
@@ -1010,8 +1030,7 @@ void iris_pt_read_panel_cmd(struct dsi_panel *panel,
 	pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	display = pcfg->display;
 
-	dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_ALL_CLKS, DSI_CLK_ON);
+	dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_ALL_CLKS, DSI_CLK_ON);
 
 	/*step1  write max packket size*/
 	_iris_pt_write_max_pkt_size(panel, cmdset);
@@ -1022,17 +1041,16 @@ void iris_pt_read_panel_cmd(struct dsi_panel *panel,
 	/*step3 read panel data*/
 	_iris_pt_read(cmdset);
 
-	dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_ALL_CLKS, DSI_CLK_OFF);
+	dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_ALL_CLKS,
+			     DSI_CLK_OFF);
 }
 
-int iris_pt_send_panel_cmd(
-		struct dsi_panel *panel, struct dsi_panel_cmd_set *cmdset)
+int iris_pt_send_panel_cmd(struct dsi_panel *panel,
+			   struct dsi_panel_cmd_set *cmdset)
 {
 	if (!cmdset || !panel) {
 		IRIS_LOGE("%s(), invalid input, cmdset: %p,  panel, %p",
-				__func__,
-				cmdset, panel);
+			  __func__, cmdset, panel);
 		return -EINVAL;
 	}
 
@@ -1044,13 +1062,16 @@ int iris_pt_send_panel_cmd(
 	return 0;
 }
 
-void iris_set_pwil_mode(struct dsi_panel *pane,
-		u8 mode, bool osd_enable, int state)
+void iris_set_pwil_mode(struct dsi_panel *pane, u8 mode, bool osd_enable,
+			int state)
 {
-	char pwil_mode[2] = {0x00, 0x00};
+	char pwil_mode[2] = { 0x00, 0x00 };
 	struct dsi_cmd_desc iris_pwil_mode_cmd = {
-		{0, MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM, 0, 0, 0,
-			sizeof(pwil_mode), pwil_mode, 0, NULL}, 1, 0};
+		{ 0, MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM, 0, 0, 0,
+		  sizeof(pwil_mode), pwil_mode, 0, NULL },
+		1,
+		0
+	};
 	struct dsi_panel_cmd_set panel_cmds = {
 		.state = DSI_CMD_SET_STATE_HS,
 		.count = 1,
@@ -1072,22 +1093,27 @@ void iris_set_pwil_mode(struct dsi_panel *pane,
 		pwil_mode[0] |= 0x80;
 
 	if (pcfg->panel->cur_mode && pcfg->panel->cur_mode->priv_info &&
-			pcfg->panel->cur_mode->priv_info->dsc_enabled)
+	    pcfg->panel->cur_mode->priv_info->dsc_enabled)
 		pwil_mode[0] |= 0x10;
 
-	IRIS_LOGI("%s(), set pwil mode: %x, %x", __func__, pwil_mode[0], pwil_mode[1]);
+	IRIS_LOGI("%s(), set pwil mode: %x, %x", __func__, pwil_mode[0],
+		  pwil_mode[1]);
 
-	iris_dsi_send_cmds(pcfg->panel, panel_cmds.cmds,
-			panel_cmds.count, panel_cmds.state);
+	iris_dsi_send_cmds(pcfg->panel, panel_cmds.cmds, panel_cmds.count,
+			   panel_cmds.state);
 }
 
-static int _iris_ctrl_ocp_read_value(struct dsi_display_ctrl *ctrl,
-		u32 mode, u32 *val)
+static int _iris_ctrl_ocp_read_value(struct dsi_display_ctrl *ctrl, u32 mode,
+				     u32 *val)
 {
-	char pi_read[1] = {0x00};
+	char pi_read[1] = { 0x00 };
 	struct dsi_cmd_desc pi_read_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM, MIPI_DSI_MSG_REQ_ACK,
-			 0, 0, sizeof(pi_read), pi_read, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_READ_REQUEST_1_PARAM,
+		    MIPI_DSI_MSG_REQ_ACK, 0, 0, sizeof(pi_read), pi_read, 0,
+		    NULL },
+		  1,
+		  0 }
+	};
 	u32 response_value;
 	u32 flags = 0;
 	int rc = 0;
@@ -1098,34 +1124,38 @@ static int _iris_ctrl_ocp_read_value(struct dsi_display_ctrl *ctrl,
 	pi_read_cmd[0].msg.rx_buf = iris_read_cmd_rbuf;
 
 	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ |
-			DSI_CTRL_CMD_CUSTOM_DMA_SCHED);
+		  DSI_CTRL_CMD_CUSTOM_DMA_SCHED);
 	flags |= DSI_CTRL_CMD_LAST_COMMAND;
 	pi_read_cmd->msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
 	if (mode == DSI_CMD_SET_STATE_LP)
 		pi_read_cmd->msg.flags |= MIPI_DSI_MSG_USE_LPM;
 	rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &pi_read_cmd->msg, &flags);
 	if (rc <= 0) {
-		IRIS_LOGE("%s(), rx cmd transfer failed, return: %d", __func__, rc);
+		IRIS_LOGE("%s(), rx cmd transfer failed, return: %d", __func__,
+			  rc);
 		return rc;
 	}
-	IRIS_LOGD("read register %02x %02x %02x %02x",
-			iris_read_cmd_rbuf[0], iris_read_cmd_rbuf[1],
-			iris_read_cmd_rbuf[2], iris_read_cmd_rbuf[3]);
+	IRIS_LOGD("read register %02x %02x %02x %02x", iris_read_cmd_rbuf[0],
+		  iris_read_cmd_rbuf[1], iris_read_cmd_rbuf[2],
+		  iris_read_cmd_rbuf[3]);
 	response_value = iris_read_cmd_rbuf[0] | (iris_read_cmd_rbuf[1] << 8) |
-		(iris_read_cmd_rbuf[2] << 16) | (iris_read_cmd_rbuf[3] << 24);
+			 (iris_read_cmd_rbuf[2] << 16) |
+			 (iris_read_cmd_rbuf[3] << 24);
 	*val = response_value;
 
 	return 4;
 }
 
 static void _iris_ctrl_ocp_write_addr(struct dsi_display_ctrl *ctrl,
-		u32 address,
-		u32 mode)
+				      u32 address, u32 mode)
 {
 	struct iris_ocp_cmd ocp_cmd;
 	struct dsi_cmd_desc iris_ocp_cmd[] = {
-		{{0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0,
-			 CMD_PKT_SIZE, ocp_cmd.cmd, 0, NULL}, 1, 0} };
+		{ { 0, MIPI_DSI_GENERIC_LONG_WRITE, 0, 0, 0, CMD_PKT_SIZE,
+		    ocp_cmd.cmd, 0, NULL },
+		  1,
+		  0 }
+	};
 	u32 flags = 0;
 
 	/* Send OCP command.*/
@@ -1141,7 +1171,7 @@ static void _iris_ctrl_ocp_write_addr(struct dsi_display_ctrl *ctrl,
 }
 
 static int _iris_ctrl_ocp_read(struct dsi_display_ctrl *ctrl, u32 address,
-		u32 mode, u32 *pval)
+			       u32 mode, u32 *pval)
 {
 	int rc = 0;
 
@@ -1154,8 +1184,8 @@ static int _iris_ctrl_ocp_read(struct dsi_display_ctrl *ctrl, u32 address,
 }
 
 static int _iris_panel_ctrl_send(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel,
-		struct dsi_cmd_desc *ptx_cmds, u32 cmds_cnt)
+				 struct dsi_panel *panel,
+				 struct dsi_cmd_desc *ptx_cmds, u32 cmds_cnt)
 {
 	u32 flags = 0;
 	int i;
@@ -1167,20 +1197,21 @@ static int _iris_panel_ctrl_send(struct dsi_display_ctrl *ctrl,
 			ptx_cmds[i].msg.flags |= MIPI_DSI_MSG_LASTCOMMAND;
 			flags |= DSI_CTRL_CMD_LAST_COMMAND;
 		}
-		rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &ptx_cmds[i].msg, &flags);
+		rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &ptx_cmds[i].msg,
+					   &flags);
 		if (ptx_cmds[i].post_wait_ms) {
 			usleep_range(ptx_cmds[i].post_wait_ms * 1000,
-					((ptx_cmds[i].post_wait_ms * 1000) + 10));
+				     ((ptx_cmds[i].post_wait_ms * 1000) + 10));
 			IRIS_LOGV("%s(%d), wait: %d ms", __func__, __LINE__,
-					ptx_cmds[i].post_wait_ms);
+				  ptx_cmds[i].post_wait_ms);
 		}
 	}
 	return rc;
 }
 
 static int _iris_panel_ctrl_wr(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *cmdset)
+			       struct dsi_panel *panel,
+			       struct dsi_panel_cmd_set *cmdset)
 {
 	u32 i = 0;
 	u32 j = 0;
@@ -1198,7 +1229,7 @@ static int _iris_panel_ctrl_wr(struct dsi_display_ctrl *ctrl,
 
 	cmds_cnt = _iris_pt_alloc_cmds(cmdset, &ptx_cmds, &pocp_cmds);
 	IRIS_LOGV("%s(%d), cmdset.cnt: %d cmds_cnt: %d", __func__, __LINE__,
-			cmdset->count, cmds_cnt);
+		  cmdset->count, cmds_cnt);
 	if (cmds_cnt < 0) {
 		IRIS_LOGE("%s(), invalid cmds cnt: %d", __func__, cmds_cnt);
 		return -ENOMEM;
@@ -1208,17 +1239,17 @@ static int _iris_panel_ctrl_wr(struct dsi_display_ctrl *ctrl,
 		/*initial val*/
 		dsi_cmds = cmdset->cmds + i;
 		_iris_pt_init_ocp_cmd(pocp_cmds + j);
-		offset = _iris_pt_add_cmd(
-				ptx_cmds + j, pocp_cmds + j, dsi_cmds, cmdset);
+		offset = _iris_pt_add_cmd(ptx_cmds + j, pocp_cmds + j, dsi_cmds,
+					  cmdset);
 		j += offset;
 	}
 
 	if (j != (u32)cmds_cnt) {
-		IRIS_LOGE("%s(), invalid cmds count: %d, j: %d",
-				__func__,
-				cmds_cnt, j);
+		IRIS_LOGE("%s(), invalid cmds count: %d, j: %d", __func__,
+			  cmds_cnt, j);
 	} else {
-		rc = _iris_panel_ctrl_send(ctrl, panel, ptx_cmds, (u32)cmds_cnt);
+		rc = _iris_panel_ctrl_send(ctrl, panel, ptx_cmds,
+					   (u32)cmds_cnt);
 	}
 
 	vfree(pocp_cmds);
@@ -1230,8 +1261,8 @@ static int _iris_panel_ctrl_wr(struct dsi_display_ctrl *ctrl,
 }
 
 static int _iris_panel_ctrl_pt_read_data(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *cmdset)
+					 struct dsi_panel *panel,
+					 struct dsi_panel_cmd_set *cmdset)
 {
 	u32 i = 0;
 	u32 rlen = 0;
@@ -1256,8 +1287,8 @@ static int _iris_panel_ctrl_pt_read_data(struct dsi_display_ctrl *ctrl,
 		return -EINVAL;
 	}
 
-	IRIS_LOGD("%s(%d), rbuf: %p, rlen: %d, pld32: 0x%08x",
-			__func__, __LINE__, rbuf, rlen, val.pld32);
+	IRIS_LOGD("%s(%d), rbuf: %p, rlen: %d, pld32: 0x%08x", __func__,
+		  __LINE__, rbuf, rlen, val.pld32);
 	rlen = _iris_pt_remove_respond_hdr(val.p, &offset);
 
 	if (rlen <= 0) {
@@ -1268,8 +1299,8 @@ static int _iris_panel_ctrl_pt_read_data(struct dsi_display_ctrl *ctrl,
 	if (rlen <= 2) {
 		for (i = 0; i < rlen; i++) {
 			rbuf[i] = val.p[offset + i];
-			IRIS_LOGV("%s(%d), rlen: %d, d: 0x%02x",
-					__func__, __LINE__, rlen, rbuf[i]);
+			IRIS_LOGV("%s(%d), rlen: %d, d: 0x%02x", __func__,
+				  __LINE__, rlen, rbuf[i]);
 		}
 	} else {
 		int j = 0;
@@ -1279,7 +1310,8 @@ static int _iris_panel_ctrl_pt_read_data(struct dsi_display_ctrl *ctrl,
 		for (i = 0; i < num; i++) {
 			len = (i == num - 1) ? rlen - 4 * i : 4;
 
-			rc = _iris_ctrl_ocp_read(ctrl, address, cmdset->state, &val.pld32);
+			rc = _iris_ctrl_ocp_read(ctrl, address, cmdset->state,
+						 &val.pld32);
 			if (rc) {
 				IRIS_LOGE("%s(), return: %d", __func__, rc);
 				return -EINVAL;
@@ -1287,7 +1319,7 @@ static int _iris_panel_ctrl_pt_read_data(struct dsi_display_ctrl *ctrl,
 			for (j = 0; j < len; j++) {
 				rbuf[i * 4 + j] = val.p[j];
 				IRIS_LOGV("%s(%d), rlen: %d, d: 0x%02x",
-						__func__, __LINE__, rlen, rbuf[i]);
+					  __func__, __LINE__, rlen, rbuf[i]);
 			}
 		}
 	}
@@ -1296,7 +1328,8 @@ static int _iris_panel_ctrl_pt_read_data(struct dsi_display_ctrl *ctrl,
 }
 
 static void _iris_panel_ctrl_write_rdcmd(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel, struct dsi_panel_cmd_set *cmdset)
+					 struct dsi_panel *panel,
+					 struct dsi_panel_cmd_set *cmdset)
 {
 	struct dsi_panel_cmd_set local_cmdset;
 	struct dsi_cmd_desc *dsi_cmd = NULL;
@@ -1309,15 +1342,21 @@ static void _iris_panel_ctrl_write_rdcmd(struct dsi_display_ctrl *ctrl,
 }
 
 static int _iris_panel_ctrl_set_max_pkt_size(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel, struct dsi_panel_cmd_set *cmdset)
+					     struct dsi_panel *panel,
+					     struct dsi_panel_cmd_set *cmdset)
 {
 	int rc = 0;
 	size_t rlen;
 	struct dsi_panel_cmd_set local_cmdset;
-	static char max_pktsize[2] = {0x00, 0x00}; /* LSB tx first, 10 bytes */
+	static char max_pktsize[2] = { 0x00,
+				       0x00 }; /* LSB tx first, 10 bytes */
 	static struct dsi_cmd_desc pkt_size_cmd = {
-		{0, MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE, MIPI_DSI_MSG_REQ_ACK,
-			0, 0, sizeof(max_pktsize), max_pktsize, 0, NULL}, 1, 0};
+		{ 0, MIPI_DSI_SET_MAXIMUM_RETURN_PACKET_SIZE,
+		  MIPI_DSI_MSG_REQ_ACK, 0, 0, sizeof(max_pktsize), max_pktsize,
+		  0, NULL },
+		1,
+		0
+	};
 
 	IRIS_LOGV("%s(%d)", __func__, __LINE__);
 	rlen = cmdset->cmds[0].msg.rx_len;
@@ -1358,7 +1397,8 @@ static u32 _iris_get_panel_frame_ms(void)
 }
 
 static int _iris_panel_ctrl_read(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel, struct dsi_panel_cmd_set *cmdset)
+				 struct dsi_panel *panel,
+				 struct dsi_panel_cmd_set *cmdset)
 {
 	int rc = 0;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
@@ -1380,7 +1420,7 @@ static int _iris_panel_ctrl_read(struct dsi_display_ctrl *ctrl,
 }
 
 static int _iris_panel_ctrl_read_status(struct dsi_display_ctrl *ctrl,
-		struct dsi_panel *panel)
+					struct dsi_panel *panel)
 {
 	int i, rc = 0, count = 0, start = 0, *lenp;
 	struct drm_panel_esd_config *config;
@@ -1405,14 +1445,14 @@ static int _iris_panel_ctrl_read_status(struct dsi_display_ctrl *ctrl,
 			rc = _iris_panel_ctrl_read(ctrl, panel, &local_cmdset);
 		} while ((rc <= 0) && (--retry));
 		if (rc <= 0) {
-			IRIS_LOGE("%s(), failed for panel ctrl read, return: %d", __func__, rc);
+			IRIS_LOGE(
+				"%s(), failed for panel ctrl read, return: %d",
+				__func__, rc);
 			return rc;
 		}
-		IRIS_LOGV("%s(%d), status[0]: 0x%02x len: 0x%02x",
-				__func__, __LINE__,
-				config->status_buf[0], lenp[i]);
-		memcpy(config->return_buf + start,
-				config->status_buf, lenp[i]);
+		IRIS_LOGV("%s(%d), status[0]: 0x%02x len: 0x%02x", __func__,
+			  __LINE__, config->status_buf[0], lenp[i]);
+		memcpy(config->return_buf + start, config->status_buf, lenp[i]);
 		start += lenp[i];
 	}
 
@@ -1425,36 +1465,18 @@ void iris_esd_register_dump(void)
 	u32 index = 0;
 	u32 len = 0;
 	static u32 iris_register_list[] = {
-		0xf0000000,
-		0xf0000004,
-		0xf0000008,
-		0xf000001c,
-		0xf0000020,
-		0xf0000024,
-		0xf0000040,
-		0xf0000044,
-		0xf0000048,
-		0xf000004c,
-		0xf0000060,
-		0xf0000094,
-		0xf1800004,
-		0xf1800034,
-		0xf123ffe4,
-		0xf155ffe4,
-		0xf1240030,
-		0xf125ffe4,
-		0xf163ffe4,
-		0xf165ffe4,
-		0xf169ffe4,
-		0xf16bffe4,
-		0xf16dffe4,
+		0xf0000000, 0xf0000004, 0xf0000008, 0xf000001c, 0xf0000020,
+		0xf0000024, 0xf0000040, 0xf0000044, 0xf0000048, 0xf000004c,
+		0xf0000060, 0xf0000094, 0xf1800004, 0xf1800034, 0xf123ffe4,
+		0xf155ffe4, 0xf1240030, 0xf125ffe4, 0xf163ffe4, 0xf165ffe4,
+		0xf169ffe4, 0xf16bffe4, 0xf16dffe4,
 	};
 
 	IRIS_LOGE("iris esd register dump: ");
-	len =  sizeof(iris_register_list) / sizeof(u32);
+	len = sizeof(iris_register_list) / sizeof(u32);
 	for (index = 0; index < len; index++) {
 		value = iris_ocp_read(iris_register_list[index],
-				DSI_CMD_SET_STATE_HS);
+				      DSI_CMD_SET_STATE_HS);
 		IRIS_LOGE("%08x : %08x", iris_register_list[index], value);
 	}
 }
@@ -1484,7 +1506,8 @@ int iris_get_status(void)
 	IRIS_LOGD("INTSTAT_RAW: 0x%x", data);
 
 	data = iris_ocp_read(IRIS_REG_UPDATE, DSI_CMD_SET_STATE_HS);
-	iris_ocp_write_val(IRIS_REG_UPDATE, data | (1 << DISP_CMD_SHAWDOW_EN_SHIFT));
+	iris_ocp_write_val(IRIS_REG_UPDATE,
+			   data | (1 << DISP_CMD_SHAWDOW_EN_SHIFT));
 	do {
 		data = iris_ocp_read(IRIS_REG_UPDATE, DSI_CMD_SET_STATE_HS);
 		reg_update = data & DISP_CMD_SHAWDOW_EN_MASK;
@@ -1492,7 +1515,8 @@ int iris_get_status(void)
 			IRIS_LOGD("esd %d reg_update: 0x%x", cnt, data);
 			break;
 		}
-		IRIS_LOGW("esd %d data: 0x%x reg_update: 0x%x", cnt, data, reg_update);
+		IRIS_LOGW("esd %d data: 0x%x reg_update: 0x%x", cnt, data,
+			  reg_update);
 		usleep_range(1000 * ms, 1000 * ms + 1);
 	} while (--cnt);
 
@@ -1555,15 +1579,17 @@ int iris_read_status(struct dsi_display_ctrl *ctrl, struct dsi_panel *panel)
 	return ret;
 }
 
-int iris_panel_ctrl_read_reg(struct dsi_display_ctrl *ctrl, struct dsi_panel *panel,
-		u8 *rx_buf, int rlen, struct dsi_cmd_desc *cmd)
+int iris_panel_ctrl_read_reg(struct dsi_display_ctrl *ctrl,
+			     struct dsi_panel *panel, u8 *rx_buf, int rlen,
+			     struct dsi_cmd_desc *cmd)
 {
 	int rc = 0;
 	int retry = 3;
 	struct dsi_panel_cmd_set local_cmdset;
 	struct dsi_cmd_desc *cmds = cmd;
 
-	if (ctrl == NULL || panel == NULL || rx_buf == NULL || cmds == NULL || rlen <= 0)
+	if (ctrl == NULL || panel == NULL || rx_buf == NULL || cmds == NULL ||
+	    rlen <= 0)
 		return -EINVAL;
 
 	memset(&local_cmdset, 0x00, sizeof(local_cmdset));
@@ -1577,7 +1603,7 @@ int iris_panel_ctrl_read_reg(struct dsi_display_ctrl *ctrl, struct dsi_panel *pa
 
 	if (rc <= 0) {
 		IRIS_LOGE("%s(), failed for panel ctrl read, return: %d",
-				__func__, rc);
+			  __func__, rc);
 		return rc;
 	}
 

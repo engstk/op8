@@ -63,19 +63,16 @@ int chargepump_reg;
 #define REG_ADDR 0
 #define REG_DATA 1
 static int op20a_init_buf[2][5] = {
-	{0x08, 0x01, 0x02, 0x03, 0x00},
-	{0xff, 0x02, 0x00, 0x00, 0xca},
+	{ 0x08, 0x01, 0x02, 0x03, 0x00 },
+	{ 0xff, 0x02, 0x00, 0x00, 0xca },
 };
 #endif
 
-#define chg_debug(fmt, ...)                                                    \
-	printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_debug(fmt, ...) printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_err(fmt, ...)                                                      \
-	printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_err(fmt, ...) printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_info(fmt, ...)                                                     \
-	printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_info(fmt, ...) printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
 static DEFINE_MUTEX(chargepump_i2c_access);
 
@@ -122,8 +119,7 @@ static int __chargepump_write_reg(int reg, int val)
 
 	ret = i2c_smbus_write_byte_data(chip->client, reg, val);
 	if (ret < 0) {
-		chg_err("i2c write fail: can't write %02x to %02x: %d\n", val,
-			reg, ret);
+		chg_err("i2c write fail: can't write %02x to %02x: %d\n", val, reg, ret);
 		return ret;
 	}
 
@@ -378,8 +374,7 @@ int chargepump_set_for_LDO(void)
 void chargepump_set_chargepump_en_val(struct chip_chargepump *chip, int value)
 {
 	if (!chip) {
-		printk(KERN_ERR "[OP_CHG][%s]: chargepump_ic not ready!\n",
-		       __func__);
+		printk(KERN_ERR "[OP_CHG][%s]: chargepump_ic not ready!\n", __func__);
 		return;
 	}
 
@@ -388,26 +383,21 @@ void chargepump_set_chargepump_en_val(struct chip_chargepump *chip, int value)
 		return;
 	}
 
-	if (IS_ERR_OR_NULL(chip->pinctrl) ||
-	    IS_ERR_OR_NULL(chip->chargepump_en_active) ||
-	    IS_ERR_OR_NULL(chip->chargepump_en_sleep) ||
-	    IS_ERR_OR_NULL(chip->chargepump_en_default)) {
+	if (IS_ERR_OR_NULL(chip->pinctrl) || IS_ERR_OR_NULL(chip->chargepump_en_active) ||
+	    IS_ERR_OR_NULL(chip->chargepump_en_sleep) || IS_ERR_OR_NULL(chip->chargepump_en_default)) {
 		chg_err("pinctrl null, return\n");
 		return;
 	}
 
 	if (value) {
 		gpio_direction_output(chip->chargepump_en_gpio, 1);
-		pinctrl_select_state(chip->pinctrl,
-				     chip->chargepump_en_default);
+		pinctrl_select_state(chip->pinctrl, chip->chargepump_en_default);
 	} else {
 		gpio_direction_output(chip->chargepump_en_gpio, 0);
-		pinctrl_select_state(chip->pinctrl,
-				     chip->chargepump_en_default);
+		pinctrl_select_state(chip->pinctrl, chip->chargepump_en_default);
 	}
 
-	chg_err("set value:%d, gpio_val:%d\n", value,
-		gpio_get_value(chip->chargepump_en_gpio));
+	chg_err("set value:%d, gpio_val:%d\n", value, gpio_get_value(chip->chargepump_en_gpio));
 }
 
 int chargepump_enable(void)
@@ -489,8 +479,7 @@ int chargepump_hardware_init(void)
 static int chargepump_en_gpio_init(struct chip_chargepump *chip)
 {
 	if (!chip) {
-		printk(KERN_ERR "[OP_CHG][%s]: chip_chargepump not ready!\n",
-		       __func__);
+		printk(KERN_ERR "[OP_CHG][%s]: chip_chargepump not ready!\n", __func__);
 		return -EINVAL;
 	}
 
@@ -500,22 +489,19 @@ static int chargepump_en_gpio_init(struct chip_chargepump *chip)
 		return -EINVAL;
 	}
 
-	chip->chargepump_en_active =
-		pinctrl_lookup_state(chip->pinctrl, "cp_en_active");
+	chip->chargepump_en_active = pinctrl_lookup_state(chip->pinctrl, "cp_en_active");
 	if (IS_ERR_OR_NULL(chip->chargepump_en_active)) {
 		chg_err("get chargepump_en_active fail\n");
 		return -EINVAL;
 	}
 
-	chip->chargepump_en_sleep =
-		pinctrl_lookup_state(chip->pinctrl, "cp_en_sleep");
+	chip->chargepump_en_sleep = pinctrl_lookup_state(chip->pinctrl, "cp_en_sleep");
 	if (IS_ERR_OR_NULL(chip->chargepump_en_sleep)) {
 		chg_err("get chargepump_en_sleep fail\n");
 		return -EINVAL;
 	}
 
-	chip->chargepump_en_default =
-		pinctrl_lookup_state(chip->pinctrl, "cp_en_default");
+	chip->chargepump_en_default = pinctrl_lookup_state(chip->pinctrl, "cp_en_default");
 	if (IS_ERR_OR_NULL(chip->chargepump_en_default)) {
 		chg_err("get chargepump_en_default fail\n");
 		return -EINVAL;
@@ -524,8 +510,7 @@ static int chargepump_en_gpio_init(struct chip_chargepump *chip)
 	gpio_direction_output(chip->chargepump_en_gpio, 0);
 	pinctrl_select_state(chip->pinctrl, chip->chargepump_en_default);
 
-	chg_err("<op-cp1>, chargepump_en_gpio: %d \n",
-		gpio_get_value(chip->chargepump_en_gpio));
+	chg_err("<op-cp1>, chargepump_en_gpio: %d \n", gpio_get_value(chip->chargepump_en_gpio));
 
 	return 0;
 }
@@ -544,9 +529,7 @@ void __chargepump_show_registers(void)
 	}
 }
 
-static ssize_t chargepump_show_registers(struct device *dev,
-					 struct device_attribute *attr,
-					 char *buf)
+static ssize_t chargepump_show_registers(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	int addr;
 	int val;
@@ -557,8 +540,7 @@ static ssize_t chargepump_show_registers(struct device *dev,
 	for (addr = 0x0; addr <= 0x08; addr++) {
 		ret = chargepump_read_reg(addr, &val);
 		if (ret == 0) {
-			len += snprintf(buf + len, PAGE_SIZE - len,
-					"Reg[%.2X] = 0x%.2x\n", addr, val);
+			len += snprintf(buf + len, PAGE_SIZE - len, "Reg[%.2X] = 0x%.2x\n", addr, val);
 		}
 	}
 
@@ -609,25 +591,21 @@ static int chargepump_gpio_init(struct chip_chargepump *chip)
 	struct device_node *node = chip->dev->of_node;
 
 	// Parsing gpio chargepump_en_gpio
-	chip->chargepump_en_gpio =
-		of_get_named_gpio(node, "qcom,cp_en-gpio", 0);
+	chip->chargepump_en_gpio = of_get_named_gpio(node, "qcom,cp_en-gpio", 0);
 	if (chip->chargepump_en_gpio < 0) {
 		pr_err("chip->chargepump_en_gpio not specified\n");
 		return -EINVAL;
 	} else {
 		if (gpio_is_valid(chip->chargepump_en_gpio)) {
-			rc = gpio_request(chip->chargepump_en_gpio,
-					  "qcom,cp_en-gpio");
+			rc = gpio_request(chip->chargepump_en_gpio, "qcom,cp_en-gpio");
 			if (rc) {
-				pr_err("unable to request gpio [%d]\n",
-				       chip->chargepump_en_gpio);
+				pr_err("unable to request gpio [%d]\n", chip->chargepump_en_gpio);
 				return rc;
 			}
 		}
 		rc = chargepump_en_gpio_init(chip);
 		if (rc) {
-			pr_err("chip->chargepump_en_gpio =%d\n",
-			       chip->chargepump_en_gpio);
+			pr_err("chip->chargepump_en_gpio =%d\n", chip->chargepump_en_gpio);
 			goto fail;
 		}
 	}
@@ -643,8 +621,7 @@ fail:
 static void watch_dog_work(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct chip_chargepump *chip =
-		container_of(dwork, struct chip_chargepump, watch_dog_work);
+	struct chip_chargepump *chip = container_of(dwork, struct chip_chargepump, watch_dog_work);
 	int ret;
 
 	ret = __chargepump_write_reg(0x0a, 0x71);
@@ -655,9 +632,8 @@ static void watch_dog_work(struct work_struct *work)
 			pr_err("feeding the watch dog error again\n");
 	}
 
-	schedule_delayed_work(&chip->watch_dog_work,  msecs_to_jiffies(100000));
+	schedule_delayed_work(&chip->watch_dog_work, msecs_to_jiffies(100000));
 }
-
 
 #if 0
 struct op_wpc_operations	  *cp_ops = {
@@ -670,14 +646,12 @@ struct op_wpc_operations	  *cp_ops = {
 };
 #endif
 
-static int chargepump_driver_probe(struct i2c_client *client,
-				   const struct i2c_device_id *id)
+static int chargepump_driver_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	int ret = 0;
 	struct chip_chargepump *chg_ic;
 
-	chg_ic = devm_kzalloc(&client->dev, sizeof(struct chip_chargepump),
-			      GFP_KERNEL);
+	chg_ic = devm_kzalloc(&client->dev, sizeof(struct chip_chargepump), GFP_KERNEL);
 	if (!chg_ic) {
 		chg_err(" kzalloc() failed\n");
 		return -ENOMEM;
@@ -720,7 +694,8 @@ static struct i2c_driver chargepump_i2c_driver;
 
 static int chargepump_driver_remove(struct i2c_client *client)
 {
-	struct chip_chargepump *chip = i2c_get_clientdata(client);;
+	struct chip_chargepump *chip = i2c_get_clientdata(client);
+	;
 
 	sysfs_remove_group(&client->dev.kobj, &chargepump_attr_group);
 	if (gpio_is_valid(chip->chargepump_en_gpio))
@@ -737,22 +712,19 @@ static int get_current_time(unsigned long *now_tm_sec)
 
 	rtc = rtc_class_open(CONFIG_RTC_HCTOSYS_DEVICE);
 	if (rtc == NULL) {
-		chg_err("%s: unable to open rtc device (%s)\n", __FILE__,
-			CONFIG_RTC_HCTOSYS_DEVICE);
+		chg_err("%s: unable to open rtc device (%s)\n", __FILE__, CONFIG_RTC_HCTOSYS_DEVICE);
 		return -EINVAL;
 	}
 
 	rc = rtc_read_time(rtc, &tm);
 	if (rc) {
-		chg_err("Error reading rtc device (%s) : %d\n",
-			CONFIG_RTC_HCTOSYS_DEVICE, rc);
+		chg_err("Error reading rtc device (%s) : %d\n", CONFIG_RTC_HCTOSYS_DEVICE, rc);
 		goto close_time;
 	}
 
 	rc = rtc_valid_tm(&tm);
 	if (rc) {
-		chg_err("Invalid RTC time (%s): %d\n",
-			CONFIG_RTC_HCTOSYS_DEVICE, rc);
+		chg_err("Invalid RTC time (%s): %d\n", CONFIG_RTC_HCTOSYS_DEVICE, rc);
 		goto close_time;
 	}
 	rtc_tm_to_time(&tm, now_tm_sec);

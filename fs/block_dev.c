@@ -1671,6 +1671,7 @@ int blkdev_get(struct block_device *bdev, fmode_t mode, void *holder)
 		mutex_unlock(&bdev->bd_mutex);
 		bdput(whole);
 	}
+
 	if (res)
 		bdput(bdev);
 

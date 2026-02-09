@@ -6,7 +6,7 @@ config NET_VENDOR_HP
 	bool "HP devices"
 	default y
 	depends on ISA || EISA || PCI
-	---help---
+	help
 	  If you have a network (Ethernet) card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
@@ -19,7 +19,7 @@ if NET_VENDOR_HP
 config HP100
 	tristate "HP 10/100VG PCLAN (ISA, EISA, PCI) support"
 	depends on (ISA || EISA || PCI)
-	---help---
+	help
 	  If you have a network (Ethernet) card of this type, say Y here.
 
 	  To compile this driver as a module, choose M here. The module

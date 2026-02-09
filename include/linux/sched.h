@@ -6,6 +6,7 @@
  * Define 'struct task_struct' and provide the main scheduler
  * APIs (schedule(), wakeup variants, etc.)
  */
+
 #include <uapi/linux/sched.h>
 
 #include <asm/current.h>
@@ -20,6 +21,7 @@
 #include <linux/seccomp.h>
 #include <linux/nodemask.h>
 #include <linux/rcupdate.h>
+#include <linux/refcount.h>
 #include <linux/resource.h>
 #include <linux/latencytop.h>
 #include <linux/sched/prio.h>
@@ -29,10 +31,6 @@
 #include <linux/task_io_accounting.h>
 #include <linux/rseq.h>
 #include <linux/android_kabi.h>
-
-#ifdef VENDOR_EDIT
-extern void show_regs(struct pt_regs *);
-#endif /* VENDOR_EDIT */
 
 /* task_struct member predeclarations (sorted alphabetically): */
 struct audit_context;
@@ -823,13 +821,6 @@ struct wake_q_node {
 	struct wake_q_node *next;
 };
 
-#if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-union reclaim_limit {
-	unsigned long stop_jiffies;
-	unsigned long stop_scan_addr;
-};
-#endif
-
 struct task_struct {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	/*
@@ -848,7 +839,7 @@ struct task_struct {
 	randomized_struct_fields_start
 
 	void				*stack;
-	atomic_t			usage;
+	refcount_t			usage;
 	/* Per task flags (PF_*), defined further below: */
 	unsigned int			flags;
 	unsigned int			ptrace;
@@ -1009,10 +1000,6 @@ struct task_struct {
 #ifdef CONFIG_MEMCG_KMEM
 	unsigned			memcg_kmem_skip_account:1;
 #endif
-#endif
-#ifdef CONFIG_LRU_GEN
-	/* whether the LRU algorithm may apply to this access */
-	unsigned			in_lru_fault:1;
 #endif
 #ifdef CONFIG_COMPAT_BRK
 	unsigned			brk_randomized:1;
@@ -1485,9 +1472,7 @@ struct task_struct {
 #ifdef CONFIG_BLK_CGROUP
 	struct request_queue		*throttle_queue;
 #endif
-#if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-	union reclaim_limit reclaim;
-#endif
+
 #ifdef CONFIG_UPROBES
 	struct uprobe_task		*utask;
 #endif
@@ -1516,12 +1501,7 @@ struct task_struct {
 	/* Used by LSM modules for access restriction: */
 	void				*security;
 #endif
-
-#if IS_ENABLED(CONFIG_OPLUS_FEATURE_FDLEAK_CHECK)
-	unsigned int fdleak_flag;
-#endif
 	/* task is frozen/stopped (used by the cgroup freezer) */
-
 	ANDROID_KABI_USE(1, unsigned frozen:1);
 
 	/* 095444fad7e3 ("futex: Replace PF_EXITPIDONE with a state") */
@@ -1566,7 +1546,6 @@ struct task_struct {
 	 * Do not put anything below here!
 	 */
 };
-
 
 static inline struct pid *task_pid(struct task_struct *task)
 {
@@ -1754,11 +1733,6 @@ extern struct pid *cad_pid;
 #define PF_MUTEX_TESTER		0x20000000	/* Thread belongs to the rt mutex tester */
 #define PF_FREEZER_SKIP		0x40000000	/* Freezer should not count it as freezable */
 #define PF_SUSPEND_TASK		0x80000000      /* This thread called freeze_processes() and should not be frozen */
-#if defined(OPLUS_FEATURE_PROCESS_RECLAIM) && defined(CONFIG_PROCESS_RECLAIM_ENHANCE)
-#define PF_RECLAIM_SHRINK	0x02000000	/* Flag the task is memory compresser */
-
-#define current_is_reclaimer() (current->flags & PF_RECLAIM_SHRINK)
-#endif
 
 /*
  * Only the _current_ task can read/write to tsk->flags, but other
@@ -1975,20 +1949,11 @@ extern void kick_process(struct task_struct *tsk);
 static inline void kick_process(struct task_struct *tsk) { }
 #endif
 
-#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
-extern pid_t alloc_svc_tgid;
-#endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
-
 extern void __set_task_comm(struct task_struct *tsk, const char *from, bool exec);
 
 static inline void set_task_comm(struct task_struct *tsk, const char *from)
 {
 	__set_task_comm(tsk, from, false);
-
-#ifdef CONFIG_OPLUS_ION_BOOSTPOOL
-	if (!strncmp(from, "allocator-servi", TASK_COMM_LEN))
-		alloc_svc_tgid = tsk->tgid;
-#endif /* CONFIG_OPLUS_ION_BOOSTPOOL */
 }
 
 extern char *__get_task_comm(char *to, size_t len, struct task_struct *tsk);
@@ -2040,8 +2005,6 @@ static inline int test_and_clear_tsk_thread_flag(struct task_struct *tsk, int fl
 
 static inline int test_tsk_thread_flag(struct task_struct *tsk, int flag)
 {
-
-	//printk(KERN_ERR "++++++++++test_tsk_thread_flag++++++%ld\n",tsk->thread_info.flags);
 	return test_ti_thread_flag(task_thread_info(tsk), flag);
 }
 

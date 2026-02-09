@@ -2065,9 +2065,6 @@ lim_send_assoc_req_mgmt_frame(struct mac_context *mac_ctx,
 		populate_dot11f_wapi_opaque(mac_ctx,
 			&(pe_session->lim_join_req->rsnIE),
 			&frm->WAPIOpaque);
-		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG,
-			&frm->WAPIOpaque,
-			sizeof(tDot11fIEWAPIOpaque));
 #endif /* defined(FEATURE_WLAN_WAPI) */
 	}
 	/* include WME EDCA IE as well */

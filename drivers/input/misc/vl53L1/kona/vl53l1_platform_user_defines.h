@@ -29,13 +29,11 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-
 #ifndef _VL53L1_PLATFORM_USER_DEFINES_H_
 #define _VL53L1_PLATFORM_USER_DEFINES_H_
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #ifdef __KERNEL__
@@ -47,7 +45,6 @@ extern "C"
  *
  * @brief  All end user OS/platform/application definitions
  */
-
 
 /**
  * @def do_division_u
@@ -75,18 +72,14 @@ extern "C"
 #define do_division_s(dividend, divisor) (dividend / divisor)
 #endif
 
-#define WARN_OVERRIDE_STATUS(__X__)\
+#define WARN_OVERRIDE_STATUS(__X__) \
 	trace_print(VL53L1_TRACE_LEVEL_WARNING, #__X__)
-
 
 #define DISABLE_WARNINGS()
 #define ENABLE_WARNINGS()
-
-
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

@@ -144,7 +144,6 @@ void sde_set_scaler_v2(struct sde_hw_scaler3_cfg *cfg,
 	cfg->dyn_exp_disabled = (scale_v2->flags & SDE_DYN_EXP_DISABLE) ? 1 : 0;
 
 	cfg->de.enable = scale_v2->de.enable;
-
 	cfg->de.sharpen_level1 = scale_v2->de.sharpen_level1;
 	cfg->de.sharpen_level2 = scale_v2->de.sharpen_level2;
 	cfg->de.clip = scale_v2->de.clip;

@@ -3159,11 +3159,12 @@ static void _sde_dump_reg_by_ranges(struct sde_dbg_reg_base *dbg,
 				range_node->offset.end);
 
 			if (dbg_base->reg_dump_addr) {
-				scnprintf(dbg_base->reg_dump_addr, REG_BASE_NAME_LEN,
-						dbg->name);
+				scnprintf(dbg_base->reg_dump_addr,
+					  REG_BASE_NAME_LEN, dbg->name);
 				dbg_base->reg_dump_addr += REG_BASE_NAME_LEN;
-				scnprintf(dbg_base->reg_dump_addr, REG_BASE_NAME_LEN,
-						range_node->range_name);
+				scnprintf(dbg_base->reg_dump_addr,
+					  REG_BASE_NAME_LEN,
+					  range_node->range_name);
 				dbg_base->reg_dump_addr += RANGE_NAME_LEN;
 			}
 
@@ -3181,7 +3182,7 @@ static void _sde_dump_reg_by_ranges(struct sde_dbg_reg_base *dbg,
 		len = dbg->max_offset;
 		if (dbg_base->reg_dump_addr) {
 			scnprintf(dbg_base->reg_dump_addr, REG_BASE_NAME_LEN,
-					dbg->name);
+				  dbg->name);
 			dbg_base->reg_dump_addr += REG_BASE_NAME_LEN;
 			dbg_base->reg_dump_addr += RANGE_NAME_LEN;
 		}
@@ -3564,7 +3565,7 @@ static void _sde_dump_array(struct sde_dbg_reg_base *blk_arr[],
 
 	if (!dbg_base->reg_dump_addr)
 		pr_err("Failed to allocate memory for reg_dump_addr size:%d\n",
-			reg_dump_size);
+		       reg_dump_size);
 
 	if (dump_all)
 		sde_evtlog_dump_all(sde_dbg_base.evtlog);

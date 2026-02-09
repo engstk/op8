@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2015, Sony Mobile Communications Inc.
  * Copyright (c) 2013, 2018-2019 The Linux Foundation. All rights reserved.
- * Copyright (C) 2020 Oplus. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -225,10 +224,6 @@ static void qrtr_log_tx_msg(struct qrtr_node *node, struct qrtr_hdr_v1 *hdr,
 	if (!hdr || !skb)
 		return;
 
-	//#ifdef OPLUS_FEATURE_NWPOWER
-	oplus_update_qrtr_flag(0);
-	//#endif /* OPLUS_FEATURE_NWPOWER */
-
 	if (hdr->type == QRTR_TYPE_DATA) {
 		skb_copy_bits(skb, QRTR_HDR_MAX_SIZE, &pl_buf, sizeof(pl_buf));
 		QRTR_INFO(node->ilc,
@@ -242,24 +237,12 @@ static void qrtr_log_tx_msg(struct qrtr_node *node, struct qrtr_hdr_v1 *hdr,
 		skb_copy_bits(skb, QRTR_HDR_MAX_SIZE, &pkt, sizeof(pkt));
 		if (hdr->type == QRTR_TYPE_NEW_SERVER ||
 		    hdr->type == QRTR_TYPE_DEL_SERVER)
-		//#ifndef OPLUS_FEATURE_NWPOWER
-		//	QRTR_INFO(node->ilc,
-		//		  "TX CTRL: cmd:0x%x SVC[0x%x:0x%x] addr[0x%x:0x%x]\n",
-		//		  hdr->type, le32_to_cpu(pkt.server.service),
-		//		  le32_to_cpu(pkt.server.instance),
-		//		  le32_to_cpu(pkt.server.node),
-		//		  le32_to_cpu(pkt.server.port));
-		//#else
-		{
 			QRTR_INFO(node->ilc,
 				  "TX CTRL: cmd:0x%x SVC[0x%x:0x%x] addr[0x%x:0x%x]\n",
 				  hdr->type, le32_to_cpu(pkt.server.service),
 				  le32_to_cpu(pkt.server.instance),
 				  le32_to_cpu(pkt.server.node),
 				  le32_to_cpu(pkt.server.port));
-			oplus_match_qrtr_service_port(hdr->type, le32_to_cpu(pkt.server.service), le32_to_cpu(pkt.server.port));
-		}
-		//#endif /* OPLUS_FEATURE_NWPOWER */
 		else if (hdr->type == QRTR_TYPE_DEL_CLIENT ||
 			 hdr->type == QRTR_TYPE_RESUME_TX)
 			QRTR_INFO(node->ilc,
@@ -291,9 +274,6 @@ static void qrtr_log_rx_msg(struct qrtr_node *node, struct sk_buff *skb)
 
 	if (cb->type == QRTR_TYPE_DATA) {
 		skb_copy_bits(skb, 0, &pl_buf, sizeof(pl_buf));
-		//#ifdef OPLUS_FEATURE_NWPOWER
-		oplus_match_qrtr_wakeup(cb->src_node, cb->src_port, cb->dst_port, (unsigned int)pl_buf, (unsigned int)(pl_buf >> 32));
-		//#endif /* OPLUS_FEATURE_NWPOWER */
 		QRTR_INFO(node->ilc,
 			  "RX DATA: Len:0x%x CF:0x%x src[0x%x:0x%x] dst[0x%x:0x%x] [%08x %08x]\n",
 			  skb->len, cb->confirm_rx, cb->src_node, cb->src_port,
@@ -303,24 +283,12 @@ static void qrtr_log_rx_msg(struct qrtr_node *node, struct sk_buff *skb)
 		skb_copy_bits(skb, 0, &pkt, sizeof(pkt));
 		if (cb->type == QRTR_TYPE_NEW_SERVER ||
 		    cb->type == QRTR_TYPE_DEL_SERVER)
-		//#ifndef OPLUS_FEATURE_NWPOWER
-		//	QRTR_INFO(node->ilc,
-		//		  "RX CTRL: cmd:0x%x SVC[0x%x:0x%x] addr[0x%x:0x%x]\n",
-		//		  cb->type, le32_to_cpu(pkt.server.service),
-		//		  le32_to_cpu(pkt.server.instance),
-		//		  le32_to_cpu(pkt.server.node),
-		//		  le32_to_cpu(pkt.server.port));
-		//#else
-		{
 			QRTR_INFO(node->ilc,
 				  "RX CTRL: cmd:0x%x SVC[0x%x:0x%x] addr[0x%x:0x%x]\n",
 				  cb->type, le32_to_cpu(pkt.server.service),
 				  le32_to_cpu(pkt.server.instance),
 				  le32_to_cpu(pkt.server.node),
 				  le32_to_cpu(pkt.server.port));
-			oplus_match_qrtr_service_port(cb->type, le32_to_cpu(pkt.server.service), le32_to_cpu(pkt.server.port));
-		}
-		//#endif /* OPLUS_FEATURE_NWPOWER */
 		else if (cb->type == QRTR_TYPE_DEL_CLIENT ||
 			 cb->type == QRTR_TYPE_RESUME_TX)
 			QRTR_INFO(node->ilc,

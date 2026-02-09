@@ -7,7 +7,7 @@
 #include "oplus_project_data_ocdt.h"
 #include "oplus_project_oldcdt.h"
 
-#define ALIGN4(s) ((sizeof(s) + 3)&(~0x3))
+#define ALIGN4(s) ((sizeof(s) + 3) & (~0x3))
 
 #define FEATURE1_OPEARTOR_OPEN_MASK 0000
 #define FEATURE1_FOREIGN_MASK 0001
@@ -15,7 +15,6 @@
 #define FEATURE1_OPEARTOR_CT_MASK 0011
 #define FEATURE1_OPEARTOR_CU_MASK 0100
 #define FEATURE1_OPEARTOR_MAX_MASK 1111
-
 
 enum F_INDEX {
 	IDX_1 = 1,
@@ -37,11 +36,7 @@ struct pcb_match {
 unsigned int get_cdt_version(void);
 unsigned int get_eng_version(void);
 unsigned int is_new_cdt(void);
-#ifdef CONFIG_OPLUS_SYSTEM_KERNEL_QCOM
 unsigned int get_serialID(void);
-#else
-void get_serialID(char *serialno);
-#endif
 
 //cdt interface for Q or R
 unsigned int get_project(void);

@@ -4,7 +4,7 @@ menu "Passive cards"
 config ISDN_DRV_HISAX
 	tristate "HiSax SiemensChipSet driver support"
 	select CRC_CCITT
-	---help---
+	help
 	  This is a driver supporting the Siemens chipset on various
 	  ISDN-cards (like AVM A1, Elsa ISDN cards, Teles S0-16.0, Teles
 	  S0-16.3, Teles S0-8, Teles/Creatix PnP, ITK micro ix1 and many

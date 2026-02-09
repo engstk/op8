@@ -25,7 +25,6 @@ extern int general_record_pop_cnt;
 extern int general_playback_clip_cnt;
 extern int general_record_clip_cnt;
 
-
 extern int voip_rx_muted_cnt;
 extern int voip_tx_muted_cnt;
 extern int voip_rx_zd_cnt;

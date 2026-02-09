@@ -54,7 +54,7 @@ static bool pool_refill_ok(struct ion_page_pool *pool)
 	return true;
 }
 
-inline struct page *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
+static inline struct page *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
 {
 	if (fatal_signal_pending(current))
 		return NULL;
@@ -138,23 +138,14 @@ struct page *ion_page_pool_alloc(struct ion_page_pool *pool, bool *from_pool)
 	if (fatal_signal_pending(current))
 		return ERR_PTR(-EINTR);
 
-	if (*from_pool) {
-		if (pool->graphic_buffer_flag) {
-			mutex_lock(&pool->mutex);
-			if (pool->high_count)
-				page = ion_page_pool_remove(pool, true);
-			else if (pool->low_count)
-				page = ion_page_pool_remove(pool, false);
-			mutex_unlock(&pool->mutex);
-		} else if (mutex_trylock(&pool->mutex)) {
-			if (pool->high_count)
-				page = ion_page_pool_remove(pool, true);
-			else if (pool->low_count)
-				page = ion_page_pool_remove(pool, false);
-			mutex_unlock(&pool->mutex);
-		}
+	if (*from_pool && mutex_trylock(&pool->mutex)) {
+		if (pool->high_count)
+			page = ion_page_pool_remove(pool, true);
+		else if (pool->low_count)
+			page = ion_page_pool_remove(pool, false);
+		mutex_unlock(&pool->mutex);
 	}
-	if (!page && !(pool->graphic_buffer_flag)) {
+	if (!page) {
 		page = ion_page_pool_alloc_pages(pool);
 		*from_pool = false;
 	}

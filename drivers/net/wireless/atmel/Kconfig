@@ -1,7 +1,7 @@
 config WLAN_VENDOR_ATMEL
 	bool "Atmel devices"
 	default y
-	---help---
+	help
 	  If you have a wireless card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
@@ -18,7 +18,7 @@ config ATMEL
       select WEXT_PRIV
       select FW_LOADER
       select CRC32
-       ---help---
+	help
         A driver 802.11b wireless cards based on the Atmel fast-vnet
         chips. This driver supports standard Linux wireless extensions.
 
@@ -32,7 +32,7 @@ config ATMEL
 config PCI_ATMEL
       tristate "Atmel at76c506 PCI cards"
       depends on ATMEL && PCI
-       ---help---
+	help
         Enable support for PCI and mini-PCI cards containing the
         Atmel at76c506 chip.
 
@@ -42,7 +42,7 @@ config PCMCIA_ATMEL
 	select WIRELESS_EXT
 	select FW_LOADER
 	select CRC32
-	---help---
+	help
 	  Enable support for PCMCIA cards containing the
 	  Atmel at76c502 and at76c504 chips.
 
@@ -50,7 +50,7 @@ config AT76C50X_USB
         tristate "Atmel at76c503/at76c505/at76c505a USB cards"
         depends on MAC80211 && USB
         select FW_LOADER
-        ---help---
+	help
           Enable support for USB Wireless devices using Atmel at76c503,
           at76c505 or at76c505a chips.
 

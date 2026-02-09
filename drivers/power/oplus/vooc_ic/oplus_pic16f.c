@@ -3,7 +3,6 @@
  * Copyright (C) 2018-2020 Oplus. All rights reserved.
  */
 
-
 #define VOOC_MCU_PIC16F
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
@@ -52,19 +51,19 @@
 
 #include "oplus_vooc_fw.h"
 
-#define ERASE_COUNT			224	//0x200-0xFFF
-#define READ_COUNT			223	//448
+#define ERASE_COUNT 224 //0x200-0xFFF
+#define READ_COUNT 223 //448
 
-#define BYTE_OFFSET 					2
-#define BYTES_TO_WRITE 					16
-#define FW_CHECK_FAIL					0
-#define FW_CHECK_SUCCESS				1
+#define BYTE_OFFSET 2
+#define BYTES_TO_WRITE 16
+#define FW_CHECK_FAIL 0
+#define FW_CHECK_SUCCESS 1
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
 
-#define GTP_SUPPORT_I2C_DMA				1
-#define I2C_MASTER_CLOCK				300
-#define GTP_DMA_MAX_TRANSACTION_LENGTH	255			// for DMA mode
+#define GTP_SUPPORT_I2C_DMA 1
+#define I2C_MASTER_CLOCK 300
+#define GTP_DMA_MAX_TRANSACTION_LENGTH 255 // for DMA mode
 
 DEFINE_MUTEX(dma_wr_access_pic);
 
@@ -81,38 +80,32 @@ static int i2c_dma_read(struct i2c_client *client, u8 addr, s32 len, u8 *rxbuf)
 	s32 retry = 0;
 	u8 buffer[1];
 
-	struct i2c_msg msg[2] =
-	{
-		{
-			.addr = (client->addr & I2C_MASK_FLAG),
-			.flags = 0,
-			.buf = buffer,
-			.len = 1,
-			.timing = I2C_MASTER_CLOCK
-		},
-		{
-			.addr = (client->addr & I2C_MASK_FLAG),
-			.ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
-			.flags = I2C_M_RD,
-			.buf = ((__u8 *)gpDMABuf_pa),   //modified by PengNan
-			.len = len,
-			.timing = I2C_MASTER_CLOCK
-		},
+	struct i2c_msg msg[2] = {
+		{ .addr = (client->addr & I2C_MASK_FLAG),
+		  .flags = 0,
+		  .buf = buffer,
+		  .len = 1,
+		  .timing = I2C_MASTER_CLOCK },
+		{ .addr = (client->addr & I2C_MASK_FLAG),
+		  .ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
+		  .flags = I2C_M_RD,
+		  .buf = ((__u8 *)gpDMABuf_pa), //modified by PengNan
+		  .len = len,
+		  .timing = I2C_MASTER_CLOCK },
 	};
 
 	mutex_lock(&dma_wr_access_pic);
 	//buffer[0] = (addr >> 8) & 0xFF;
 	buffer[0] = addr & 0xFF;
 
-	if (rxbuf == NULL){
+	if (rxbuf == NULL) {
 		mutex_unlock(&dma_wr_access_pic);
 		return -1;
-		}
+	}
 	//chg_err(" : 0x%x, %d bytes(s)", addr, len);
 	for (retry = 0; retry < 5; ++retry) {
 		ret = i2c_transfer(client->adapter, &msg[0], 2);
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			continue;
 		}
 		memcpy(rxbuf, gpDMABuf_va, len);
@@ -124,32 +117,27 @@ static int i2c_dma_read(struct i2c_client *client, u8 addr, s32 len, u8 *rxbuf)
 	return ret;
 }
 
-
 static int i2c_dma_write(struct i2c_client *client, u8 addr, s32 len, u8 *txbuf)
 {
 	int ret;
 	s32 retry = 0;
 	u8 *wr_buf = gpDMABuf_va;
-	struct i2c_msg msg =
-	{
-		.addr = (client->addr & I2C_MASK_FLAG),
-		.ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
-		.flags = 0,
-		.buf = ((__u8 *)gpDMABuf_pa),	//modified by PengNan
-		.len = 1 + len,
-		.timing = I2C_MASTER_CLOCK
-	};
+	struct i2c_msg msg = { .addr = (client->addr & I2C_MASK_FLAG),
+			       .ext_flag = (client->ext_flag | I2C_ENEXT_FLAG | I2C_DMA_FLAG),
+			       .flags = 0,
+			       .buf = ((__u8 *)gpDMABuf_pa), //modified by PengNan
+			       .len = 1 + len,
+			       .timing = I2C_MASTER_CLOCK };
 	mutex_lock(&dma_wr_access_pic);
 	wr_buf[0] = (u8)(addr & 0xFF);
-	if (txbuf == NULL){
-			mutex_unlock(&dma_wr_access_pic);
-			return -1;
-		}
-	memcpy(wr_buf+1, txbuf, len);
+	if (txbuf == NULL) {
+		mutex_unlock(&dma_wr_access_pic);
+		return -1;
+	}
+	memcpy(wr_buf + 1, txbuf, len);
 	for (retry = 0; retry < 5; ++retry) {
 		ret = i2c_transfer(client->adapter, &msg, 1);
-		if (ret < 0)
-		{
+		if (ret < 0) {
 			continue;
 		}
 		mutex_unlock(&dma_wr_access_pic);
@@ -180,29 +168,28 @@ static int oplus_vooc_i2c_write(struct i2c_client *client, u8 addr, s32 len, u8 
 #endif
 }
 
-
 static bool pic16f_fw_check(struct oplus_vooc_chip *chip)
 {
-	unsigned char addr_buf[2] = {0x02,0x00};
-	unsigned char data_buf[32] = {0x0};
-	int rc,i,j,addr;
+	unsigned char addr_buf[2] = { 0x02, 0x00 };
+	unsigned char data_buf[32] = { 0x0 };
+	int rc, i, j, addr;
 	int fw_line = 0;
 
 	//first:set address
-	rc = oplus_vooc_i2c_write(chip->client,0x01,2,&addr_buf[0]);
-	if(rc < 0){
+	rc = oplus_vooc_i2c_write(chip->client, 0x01, 2, &addr_buf[0]);
+	if (rc < 0) {
 		chg_err(" i2c_write 0x01 error\n");
 		goto i2c_err;
 	}
 	msleep(10);
 
-	for(i = 0;i < READ_COUNT;i++){	//1508:448,1503:192
-		oplus_vooc_i2c_read(chip->client,0x03,16,&data_buf[0]);
+	for (i = 0; i < READ_COUNT; i++) { //1508:448,1503:192
+		oplus_vooc_i2c_read(chip->client, 0x03, 16, &data_buf[0]);
 		msleep(2);
-		oplus_vooc_i2c_read(chip->client,0x03,16,&data_buf[16]);
+		oplus_vooc_i2c_read(chip->client, 0x03, 16, &data_buf[16]);
 
 		addr = 0x200 + i * 16;
-/*
+		/*
 		chg_err(" addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",addr,
 			data_buf[0],data_buf[1],data_buf[2],data_buf[3],data_buf[4],data_buf[5],data_buf[6],data_buf[7],
 			data_buf[8],data_buf[9],data_buf[10],data_buf[11],data_buf[12],data_buf[13],data_buf[14],
@@ -210,51 +197,56 @@ static bool pic16f_fw_check(struct oplus_vooc_chip *chip)
 			data_buf[23],data_buf[24],data_buf[25],data_buf[26],data_buf[27],data_buf[28],data_buf[29],data_buf[30],
 			data_buf[31]);
 		*/
-//compare recv_buf with Pic16F_firmware_data[] begin
+		//compare recv_buf with Pic16F_firmware_data[] begin
 
 #ifdef CONFIG_OPLUS_CHARGER_MTK
-	if(addr == ((Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34])){
-		for(j = 0; j < 32; j++){
-			if(data_buf[j] != Pic16F_firmware_data[fw_line * 34 + 2 + j]){
-				chg_err(" fail,data_buf[%d]:0x%x != Pic16F_fimware_data[%d]:0x%x\n",
-					j,data_buf[j],(fw_line * 34 + 2 + j),Pic16F_firmware_data[fw_line * 34 + 2 + j]);
-				chg_err(" addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",addr,
-					data_buf[0],data_buf[1],data_buf[2],data_buf[3],data_buf[4],data_buf[5],data_buf[6],data_buf[7],
-					data_buf[8],data_buf[9],data_buf[10],data_buf[11],data_buf[12],data_buf[13],data_buf[14],
-					data_buf[15],data_buf[16],data_buf[17],data_buf[18],data_buf[19],data_buf[20],data_buf[21],data_buf[22],
-					data_buf[23],data_buf[24],data_buf[25],data_buf[26],data_buf[27],data_buf[28],data_buf[29],data_buf[30],
-					data_buf[31]);
-				return FW_CHECK_FAIL;
+		if (addr == ((Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34])) {
+			for (j = 0; j < 32; j++) {
+				if (data_buf[j] != Pic16F_firmware_data[fw_line * 34 + 2 + j]) {
+					chg_err(" fail,data_buf[%d]:0x%x != Pic16F_fimware_data[%d]:0x%x\n", j,
+						data_buf[j], (fw_line * 34 + 2 + j),
+						Pic16F_firmware_data[fw_line * 34 + 2 + j]);
+					chg_err(" addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+						addr, data_buf[0], data_buf[1], data_buf[2], data_buf[3], data_buf[4],
+						data_buf[5], data_buf[6], data_buf[7], data_buf[8], data_buf[9],
+						data_buf[10], data_buf[11], data_buf[12], data_buf[13], data_buf[14],
+						data_buf[15], data_buf[16], data_buf[17], data_buf[18], data_buf[19],
+						data_buf[20], data_buf[21], data_buf[22], data_buf[23], data_buf[24],
+						data_buf[25], data_buf[26], data_buf[27], data_buf[28], data_buf[29],
+						data_buf[30], data_buf[31]);
+					return FW_CHECK_FAIL;
+				}
 			}
-		}
-		fw_line++;
-	} else {
-		//chg_err(" addr dismatch,addr:0x%x,pic_data:0x%x\n",
+			fw_line++;
+		} else {
+			//chg_err(" addr dismatch,addr:0x%x,pic_data:0x%x\n",
 			//addr,(Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34]);
-	}
+		}
 #else
 		j = 0;
-		if(addr == ((Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34])){
-			if(data_buf[0] != Pic16F_firmware_data[fw_line * 34 + 2]){
-				chg_err(" fail,data_buf[%d]:0x%x != Pic16F_fimware_data[%d]:0x%x\n",
-					j,data_buf[j],(fw_line * 34 + 2 + j),Pic16F_firmware_data[fw_line * 34 + 2 + j]);
-				chg_err(" addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",addr,
-						data_buf[0],data_buf[1],data_buf[2],data_buf[3],data_buf[4],data_buf[5],data_buf[6],data_buf[7],
-						data_buf[8],data_buf[9],data_buf[10],data_buf[11],data_buf[12],data_buf[13],data_buf[14],
-						data_buf[15],data_buf[16],data_buf[17],data_buf[18],data_buf[19],data_buf[20],data_buf[21],data_buf[22],
-						data_buf[23],data_buf[24],data_buf[25],data_buf[26],data_buf[27],data_buf[28],data_buf[29],data_buf[30],
-						data_buf[31]);
+		if (addr == ((Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34])) {
+			if (data_buf[0] != Pic16F_firmware_data[fw_line * 34 + 2]) {
+				chg_err(" fail,data_buf[%d]:0x%x != Pic16F_fimware_data[%d]:0x%x\n", j, data_buf[j],
+					(fw_line * 34 + 2 + j), Pic16F_firmware_data[fw_line * 34 + 2 + j]);
+				chg_err(" addr = 0x%x,%x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+					addr, data_buf[0], data_buf[1], data_buf[2], data_buf[3], data_buf[4],
+					data_buf[5], data_buf[6], data_buf[7], data_buf[8], data_buf[9], data_buf[10],
+					data_buf[11], data_buf[12], data_buf[13], data_buf[14], data_buf[15],
+					data_buf[16], data_buf[17], data_buf[18], data_buf[19], data_buf[20],
+					data_buf[21], data_buf[22], data_buf[23], data_buf[24], data_buf[25],
+					data_buf[26], data_buf[27], data_buf[28], data_buf[29], data_buf[30],
+					data_buf[31]);
 				return FW_CHECK_FAIL;
 			}
 			fw_line++;
 		} else {
 			//chg_err(" addr dismatch,addr:0x%x,pic_data:0x%x\n",
-				//addr,(Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34]);
+			//addr,(Pic16F_firmware_data[fw_line * 34 + 1] << 8) | Pic16F_firmware_data[fw_line * 34]);
 		}
 #endif
-	//compare recv_buf with Pic16F_firmware_data[] end
+		//compare recv_buf with Pic16F_firmware_data[] end
 	}
-	chg_debug( " success\n");
+	chg_debug(" success\n");
 	return FW_CHECK_SUCCESS;
 
 i2c_err:
@@ -262,73 +254,76 @@ i2c_err:
 	return FW_CHECK_FAIL;
 }
 
-static void pic16f_fw_data_recover(struct oplus_vooc_chip *chip,unsigned char *data_buf,
-		unsigned int offset,unsigned int length){
+static void pic16f_fw_data_recover(struct oplus_vooc_chip *chip, unsigned char *data_buf, unsigned int offset,
+				   unsigned int length)
+{
 	unsigned int count = 0;
 	unsigned char temp;
 	int i;
 	count = offset;
 
-	while(count < (offset + length)) {
-		for(i = 0;i < 2 * BYTES_TO_WRITE;i = (i+2)){
-			temp = data_buf[count+BYTE_OFFSET+i];
-			data_buf[count+BYTE_OFFSET+i] = data_buf[count+BYTE_OFFSET+i+1];
-			data_buf[count+BYTE_OFFSET+i+1] = temp;
+	while (count < (offset + length)) {
+		for (i = 0; i < 2 * BYTES_TO_WRITE; i = (i + 2)) {
+			temp = data_buf[count + BYTE_OFFSET + i];
+			data_buf[count + BYTE_OFFSET + i] = data_buf[count + BYTE_OFFSET + i + 1];
+			data_buf[count + BYTE_OFFSET + i + 1] = temp;
 		}
 		count = count + BYTE_OFFSET + 2 * BYTES_TO_WRITE;
-		if(count > (offset + length - 1)){
+		if (count > (offset + length - 1)) {
 			break;
 		}
 	}
 }
 
-static int pic16f_fw_write(struct oplus_vooc_chip *chip,unsigned char *data_buf,unsigned int offset,unsigned int length)
+static int pic16f_fw_write(struct oplus_vooc_chip *chip, unsigned char *data_buf, unsigned int offset,
+			   unsigned int length)
 {
 	unsigned int count = 0;
-	unsigned char zero_buf[1] = {0};
-	unsigned char temp_buf[1] = {0};
-	unsigned char addr_buf[2] = {0x00,0x00};
+	unsigned char zero_buf[1] = { 0 };
+	unsigned char temp_buf[1] = { 0 };
+	unsigned char addr_buf[2] = { 0x00, 0x00 };
 	unsigned char temp;
-	int i,rc;
+	int i, rc;
 
 	count = offset;
 	//write data begin
-	while(count < (offset + length)) {
+	while (count < (offset + length)) {
 		addr_buf[0] = data_buf[count + 1];
 		addr_buf[1] = data_buf[count];
 		//chg_err(" write data addr_buf[0]:0x%x,addr_buf[1]:0x%x\n",addr_buf[0],addr_buf[1]);
-			rc = oplus_vooc_i2c_write(chip->client,0x01,2,&addr_buf[0]);
-		if(rc < 0){
+		rc = oplus_vooc_i2c_write(chip->client, 0x01, 2, &addr_buf[0]);
+		if (rc < 0) {
 			chg_err(" i2c_write 0x01 error\n");
 			return -1;
 		}
 
 		//swap low byte and high byte begin
 		//because LSB is before MSB in buf,but pic16F receive MSB first
-		for(i = 0;i < 2 * BYTES_TO_WRITE;i = (i+2)){
-			temp = data_buf[count+BYTE_OFFSET+i];
-			data_buf[count+BYTE_OFFSET+i] = data_buf[count+BYTE_OFFSET+i+1];
-			data_buf[count+BYTE_OFFSET+i+1] = temp;
+		for (i = 0; i < 2 * BYTES_TO_WRITE; i = (i + 2)) {
+			temp = data_buf[count + BYTE_OFFSET + i];
+			data_buf[count + BYTE_OFFSET + i] = data_buf[count + BYTE_OFFSET + i + 1];
+			data_buf[count + BYTE_OFFSET + i + 1] = temp;
 		}
 		//swap low byte and high byte end
 		//write 16 bytes data to pic16F
 
-		oplus_vooc_i2c_write(chip->client,0x02,BYTES_TO_WRITE,&data_buf[count+BYTE_OFFSET]);
-		oplus_vooc_i2c_write(chip->client,0x05,1,&zero_buf[0]);
-		oplus_vooc_i2c_read(chip->client,0x05,1,&temp_buf[0]);
+		oplus_vooc_i2c_write(chip->client, 0x02, BYTES_TO_WRITE, &data_buf[count + BYTE_OFFSET]);
+		oplus_vooc_i2c_write(chip->client, 0x05, 1, &zero_buf[0]);
+		oplus_vooc_i2c_read(chip->client, 0x05, 1, &temp_buf[0]);
 		//chg_err("lfc read 0x05,temp_buf[0]:0x%x\n",temp_buf[0]);
 
 		//write 16 bytes data to pic16F again
-		oplus_vooc_i2c_write(chip->client,0x02,BYTES_TO_WRITE,&data_buf[count+BYTE_OFFSET+BYTES_TO_WRITE]);
-		oplus_vooc_i2c_write(chip->client,0x05,1,&zero_buf[0]);
-		oplus_vooc_i2c_read(chip->client,0x05,1,&temp_buf[0]);
+		oplus_vooc_i2c_write(chip->client, 0x02, BYTES_TO_WRITE,
+				     &data_buf[count + BYTE_OFFSET + BYTES_TO_WRITE]);
+		oplus_vooc_i2c_write(chip->client, 0x05, 1, &zero_buf[0]);
+		oplus_vooc_i2c_read(chip->client, 0x05, 1, &temp_buf[0]);
 		//chg_err("lfc read again 0x05,temp_buf[0]:0x%x\n",temp_buf[0]);
 
 		count = count + BYTE_OFFSET + 2 * BYTES_TO_WRITE;
 
 		msleep(2);
 		//chg_err(" count:%d,offset:%d,length:%d\n",count,offset,length);
-		if(count > (offset + length - 1)){
+		if (count > (offset + length - 1)) {
 			break;
 		}
 	}
@@ -337,29 +332,29 @@ static int pic16f_fw_write(struct oplus_vooc_chip *chip,unsigned char *data_buf,
 
 static int pic16f_fw_update(struct oplus_vooc_chip *chip)
 {
-	unsigned char zero_buf[1] = {0};
-	unsigned char addr_buf[2] = {0x02,0x00};
-	unsigned char temp_buf[1]={0};
-	int i,rc=0;
+	unsigned char zero_buf[1] = { 0 };
+	unsigned char addr_buf[2] = { 0x02, 0x00 };
+	unsigned char temp_buf[1] = { 0 };
+	int i, rc = 0;
 	unsigned int addr = 0x200;
 	int download_again = 0;
 
-	chg_debug( " is start,erase data ing.......\n");
+	chg_debug(" is start,erase data ing.......\n");
 
 update_fw:
 	//erase address 0x200-0x7FF
-	for(i = 0; i < ERASE_COUNT; i++){
+	for (i = 0; i < ERASE_COUNT; i++) {
 		//first:set address
-		rc = oplus_vooc_i2c_write(chip->client,0x01,2,&addr_buf[0]);
-		if(rc < 0){
+		rc = oplus_vooc_i2c_write(chip->client, 0x01, 2, &addr_buf[0]);
+		if (rc < 0) {
 			chg_err(" i2c_write 0x01 error\n");
 			goto update_fw_err;
 		}
 
 		//erase data:0x10 words once
-		oplus_vooc_i2c_write(chip->client,0x04,1,&zero_buf[0]);
+		oplus_vooc_i2c_write(chip->client, 0x04, 1, &zero_buf[0]);
 		msleep(1);
-		oplus_vooc_i2c_read(chip->client,0x04,1,&temp_buf[0]);
+		oplus_vooc_i2c_read(chip->client, 0x04, 1, &temp_buf[0]);
 		//chg_err("lfc read 0x04,temp_buf[0]:0x%x\n",temp_buf[0]);
 
 		//erase data:0x10 words once
@@ -370,15 +365,15 @@ update_fw:
 	}
 	msleep(10);
 
-	pic16f_fw_write(chip,Pic16F_firmware_data,0,sizeof(Pic16F_firmware_data) - 34);
+	pic16f_fw_write(chip, Pic16F_firmware_data, 0, sizeof(Pic16F_firmware_data) - 34);
 
 	//fw check begin:read data from pic1503/1508,and compare it with Pic16F_firmware_data[]
 	rc = pic16f_fw_check(chip);
-	pic16f_fw_data_recover(chip,Pic16F_firmware_data,0,sizeof(Pic16F_firmware_data) - 34);
+	pic16f_fw_data_recover(chip, Pic16F_firmware_data, 0, sizeof(Pic16F_firmware_data) - 34);
 	msleep(10);
-	if(rc == FW_CHECK_FAIL){
+	if (rc == FW_CHECK_FAIL) {
 		download_again++;
-		if(download_again > 3){
+		if (download_again > 3) {
 			goto update_fw_err;
 		}
 		chip->mcu_update_ing = false;
@@ -390,22 +385,22 @@ update_fw:
 	}
 	//fw check end
 
-	chg_debug( " is start55555\n");
+	chg_debug(" is start55555\n");
 	//write 0x7F0~0x7FF(0x7FF = 0x3455)
-	rc = pic16f_fw_write(chip,Pic16F_firmware_data,sizeof(Pic16F_firmware_data) - 34,34);
-	if(rc < 0){
+	rc = pic16f_fw_write(chip, Pic16F_firmware_data, sizeof(Pic16F_firmware_data) - 34, 34);
+	if (rc < 0) {
 		goto update_fw_err;
 	}
 	//write 0x7F0~0x7FF end
 
 	msleep(2);
 	//jump to app code begin
-	oplus_vooc_i2c_write(chip->client,0x06,1,&zero_buf[0]);
-	oplus_vooc_i2c_read(chip->client,0x06,1,&temp_buf[0]);
+	oplus_vooc_i2c_write(chip->client, 0x06, 1, &zero_buf[0]);
+	oplus_vooc_i2c_read(chip->client, 0x06, 1, &temp_buf[0]);
 	//jump to app code end
 	chip->have_updated = 1;
 	chip->mcu_update_ing = false;
-	chg_debug( " success\n");
+	chg_debug(" success\n");
 	return 0;
 
 update_fw_err:
@@ -419,8 +414,8 @@ static int pic16f_fw_check_then_recover(struct oplus_vooc_chip *chip)
 	int update_result = 0;
 	int ret = 0;
 
-	chg_debug( " begin\n");
-	if(oplus_is_power_off_charging(chip) == true) {
+	chg_debug(" begin\n");
+	if (oplus_is_power_off_charging(chip) == true) {
 		chip->mcu_update_ing = true;
 		update_result = pic16f_fw_update(chip);
 		chip->mcu_update_ing = false;
@@ -434,10 +429,10 @@ static int pic16f_fw_check_then_recover(struct oplus_vooc_chip *chip)
 		msleep(2500);
 		chip->mcu_boot_by_gpio = false;
 		opchg_set_clock_sleep(chip);
-		if(pic16f_fw_check(chip) == FW_CHECK_FAIL)
+		if (pic16f_fw_check(chip) == FW_CHECK_FAIL)
 			pic16f_fw_update(chip);
 		else
-			chg_debug( " fw check ok\n");
+			chg_debug(" fw check ok\n");
 		chip->mcu_update_ing = false;
 		msleep(5);
 		opchg_set_reset_active_force(chip);
@@ -507,7 +502,7 @@ static int pic16f_driver_probe(struct i2c_client *client, const struct i2c_devic
 	if (!gpDMABuf_va) {
 		chg_err("[Error] Allocate DMA I2C Buffer failed!\n");
 	} else {
-		chg_debug( " ppp dma_alloc_coherent success\n");
+		chg_debug(" ppp dma_alloc_coherent success\n");
 	}
 	memset(gpDMABuf_va, 0, GTP_DMA_MAX_TRANSACTION_LENGTH);
 #endif
@@ -532,7 +527,7 @@ static int pic16f_driver_probe(struct i2c_client *client, const struct i2c_devic
 	oplus_vooc_fw_update_work_init(chip);
 	oplus_vooc_init(chip);
 	register_vooc_devinfo();
-	chg_debug( " success\n");
+	chg_debug(" success\n");
 
 	return 0;
 }
@@ -544,12 +539,12 @@ static int pic16f_driver_probe(struct i2c_client *client, const struct i2c_devic
   *********************************************************/
 
 static const struct of_device_id pic16f_match[] = {
-	{ .compatible = "oplus,pic16f-fastcg"},
-	{ },
+	{ .compatible = "oplus,pic16f-fastcg" },
+	{},
 };
 
 static const struct i2c_device_id pic16f_id[] = {
-	{ "pic16f-fastcg", 0},
+	{ "pic16f-fastcg", 0 },
 	{},
 };
 
@@ -577,18 +572,18 @@ void pic16f_subsys_exit(void)
 int pic16f_subsys_init(void)
 #endif
 {
-	int ret=0;
+	int ret = 0;
 
-	chg_debug( "[pic16f_init] init start\n");
+	chg_debug("[pic16f_init] init start\n");
 	init_hw_version();
-	if(1) {
+	if (1) {
 		chg_err("pic16f_subsys_init err,MCU stm8s \n");
 		return ret;
 	}
 	if (i2c_add_driver(&pic16f_i2c_driver) != 0) {
 		chg_err("[pic16f_init] failed to register pic16f i2c driver.\n");
 	} else {
-		chg_debug( "[pic16f_init] Success to register pic16f i2c driver.\n");
+		chg_debug("[pic16f_init] Success to register pic16f i2c driver.\n");
 	}
 	return ret;
 }
@@ -598,4 +593,3 @@ subsys_initcall(pic16f_subsys_init);
 #endif
 MODULE_DESCRIPTION("Driver for oplus vooc pic16f fast mcu");
 MODULE_LICENSE("GPL v2");
-

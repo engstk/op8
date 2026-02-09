@@ -3137,8 +3137,8 @@ static void _sde_plane_update_format_and_rects(struct sde_plane *psde,
 			pstate->multirect_index, psde->csc_usr_ptr);
 #if defined(PXLW_IRIS_DUAL)
 	if (psde->pipe_hw->ops.setup_csc_v2)
-		psde->pipe_hw->ops.setup_csc_v2(psde->pipe_hw,
-			fmt, psde->csc_usr_ptr);
+		psde->pipe_hw->ops.setup_csc_v2(psde->pipe_hw, fmt,
+						psde->csc_usr_ptr);
 #endif
 }
 
@@ -3595,8 +3595,8 @@ static void _sde_plane_install_properties(struct drm_plane *plane,
 		0x0, 0, zpos_max, zpos_def, PLANE_PROP_ZPOS);
 
 #ifdef OPLUS_BUG_STABILITY
-	msm_property_install_range(&psde->property_info,"PLANE_CUST",
-		0x0, 0, INT_MAX, 0, PLANE_PROP_CUSTOM);
+	msm_property_install_range(&psde->property_info, "PLANE_CUST", 0x0, 0,
+				   INT_MAX, 0, PLANE_PROP_CUSTOM);
 #endif
 
 	msm_property_install_range(&psde->property_info, "alpha",

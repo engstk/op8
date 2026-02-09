@@ -178,10 +178,6 @@ struct netns_ipv4 {
 	int sysctl_udp_wmem_min;
 	int sysctl_udp_rmem_min;
 
-	#ifdef OPLUS_BUG_STABILITY
-	int sysctl_tcp_random_timestamp;
-	#endif /* OPLUS_BUG_STABILITY */
-
 #ifdef CONFIG_NET_L3_MASTER_DEV
 	int sysctl_udp_l3mdev_accept;
 #endif

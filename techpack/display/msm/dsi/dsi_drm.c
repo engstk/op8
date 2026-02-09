@@ -91,7 +91,8 @@ static void convert_to_dsi_mode(const struct drm_display_mode *drm_mode,
 		dsi_mode->panel_mode = DSI_OP_CMD_MODE;
 
 #ifdef OPLUS_FEATURE_ADFR
-	dsi_mode->vsync_source = (drm_mode->flags & DRM_MODE_FLAG_VSYNCE_SOURCE_MASK) >> 25;
+	dsi_mode->vsync_source =
+		(drm_mode->flags & DRM_MODE_FLAG_VSYNCE_SOURCE_MASK) >> 25;
 #endif /*OPLUS_FEATURE_ADFR*/
 }
 
@@ -149,21 +150,22 @@ void dsi_convert_to_drm_mode(const struct dsi_display_mode *dsi_mode,
 
 #ifdef OPLUS_FEATURE_ADFR
 	if (dsi_mode->vsync_source >= 0 && dsi_mode->vsync_source <= 15) {
-		drm_mode->flags |= (dsi_mode->vsync_source << 25) & DRM_MODE_FLAG_VSYNCE_SOURCE_MASK;
+		drm_mode->flags |= (dsi_mode->vsync_source << 25) &
+				   DRM_MODE_FLAG_VSYNCE_SOURCE_MASK;
 	}
 #endif /*OPLUS_FEATURE_ADFR*/
 
 	/* set mode name */
 #ifndef OPLUS_FEATURE_ADFR
 	snprintf(drm_mode->name, DRM_DISPLAY_MODE_LEN, "%dx%dx%dx%d%s",
-			drm_mode->hdisplay, drm_mode->vdisplay,
-			drm_mode->vrefresh, drm_mode->clock,
+		 drm_mode->hdisplay, drm_mode->vdisplay, drm_mode->vrefresh,
+		 drm_mode->clock,
 #else
 	snprintf(drm_mode->name, DRM_DISPLAY_MODE_LEN, "%dx%dx%dx%dx%d%s",
-			drm_mode->hdisplay, drm_mode->vdisplay,
-			drm_mode->vrefresh, drm_mode->clock, dsi_mode->vsync_source,
+		 drm_mode->hdisplay, drm_mode->vdisplay, drm_mode->vrefresh,
+		 drm_mode->clock, dsi_mode->vsync_source,
 #endif /*OPLUS_FEATURE_ADFR*/
-			video_mode ? "vid" : "cmd");
+		 video_mode ? "vid" : "cmd");
 }
 
 static int dsi_bridge_attach(struct drm_bridge *bridge)
@@ -250,22 +252,32 @@ static void dsi_bridge_enable(struct drm_bridge *bridge)
 		DSI_ERR("Invalid params\n");
 		return;
 	}
-	#ifdef OPLUS_BUG_STABILITY
+#ifdef OPLUS_BUG_STABILITY
 	if (c_bridge->display->panel->nt36523w_ktz8866) {
 		if (c_bridge->display->panel->panel_initialized) {
-			if (c_bridge->display->panel->cur_mode->timing.refresh_rate == 60
-					&& old_refresh_rate != c_bridge->display->panel->cur_mode->timing.refresh_rate) {
-				rc = dsi_panel_fps60_cmd_set(c_bridge->display->panel);
+			if (c_bridge->display->panel->cur_mode->timing
+					    .refresh_rate == 60 &&
+			    old_refresh_rate !=
+				    c_bridge->display->panel->cur_mode->timing
+					    .refresh_rate) {
+				rc = dsi_panel_fps60_cmd_set(
+					c_bridge->display->panel);
 				if (rc) {
-					DSI_ERR("fps60 [%s] failed to set cmd\n", c_bridge->display->name);
+					DSI_ERR("fps60 [%s] failed to set cmd\n",
+						c_bridge->display->name);
 				} else {
-					pr_info("fps60 [%s] success to set cmd,fps old_fps=%d\n", c_bridge->display->name, old_refresh_rate);
-					old_refresh_rate = c_bridge->display->panel->cur_mode->timing.refresh_rate;
+					pr_info("fps60 [%s] success to set cmd,fps old_fps=%d\n",
+						c_bridge->display->name,
+						old_refresh_rate);
+					old_refresh_rate =
+						c_bridge->display->panel
+							->cur_mode->timing
+							.refresh_rate;
 				}
 			}
 		}
 	}
-	#endif /*OPLUS_BUG_STABILITY*/
+#endif /*OPLUS_BUG_STABILITY*/
 	if (c_bridge->dsi_mode.dsi_mode_flags &
 			(DSI_MODE_FLAG_SEAMLESS | DSI_MODE_FLAG_VRR |
 			 DSI_MODE_FLAG_DYN_CLK)) {
@@ -477,7 +489,8 @@ static bool dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 		dsi_mode.dsi_mode_flags &= ~DSI_MODE_FLAG_DMS;
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 	if (display->panel && display->panel->oplus_priv.is_aod_ramless) {
-		if (crtc_state->active_changed && (dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DYN_CLK)) {
+		if (crtc_state->active_changed &&
+		    (dsi_mode.dsi_mode_flags & DSI_MODE_FLAG_DYN_CLK)) {
 			DSI_ERR("dyn clk changed when active_changed, WA to skip dyn clk change\n");
 			dsi_mode.dsi_mode_flags &= ~DSI_MODE_FLAG_DYN_CLK;
 		}

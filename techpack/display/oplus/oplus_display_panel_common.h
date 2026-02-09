@@ -25,29 +25,34 @@
 
 #define PANEL_REG_MAX_LENS 28
 #define PANEL_TX_MAX_BUF 112
+#define PANEL_NAME_LENS 50
+#define RGB_COLOR_WEIGHT 3
 
-struct panel_id
-{
+struct panel_id {
 	uint32_t DA;
 	uint32_t DB;
 	uint32_t DC;
 };
 
-struct panel_info{
+struct panel_info {
 	char version[32];
 	char manufacture[32];
 };
 
 struct panel_serial_number {
-    char serial_number[40];
+	char serial_number[40];
+};
+
+struct panel_name {
+	char name[PANEL_NAME_LENS];
 };
 
 struct display_timing_info {
 	uint32_t h_active;
 	uint32_t v_active;
 	uint32_t refresh_rate;
-	uint32_t clk_rate_hz_h32;  /* the high 32bit of clk_rate_hz */
-	uint32_t clk_rate_hz_l32;  /* the low 32bit of clk_rate_hz */
+	uint32_t clk_rate_hz_h32; /* the high 32bit of clk_rate_hz */
+	uint32_t clk_rate_hz_l32; /* the low 32bit of clk_rate_hz */
 };
 
 enum {
@@ -65,11 +70,14 @@ struct panel_reg_get {
 struct panel_reg_rw {
 	uint32_t rw_flags; /*1 for read, 0 for write*/
 	uint32_t cmd;
-	uint32_t lens;     /*lens represent for u8 to kernel space*/
-	uint32_t value[PANEL_REG_MAX_LENS]; /*for read, value is empty, just user get function for read the value*/
+	uint32_t lens; /*lens represent for u8 to kernel space*/
+	uint32_t value
+		[PANEL_REG_MAX_LENS]; /*for read, value is empty, just user get function for read the value*/
 };
 
-int dsi_panel_read_panel_reg(struct dsi_display_ctrl *ctrl, struct dsi_panel *panel, u8 cmd, void *rbuf,  size_t len);
+int dsi_panel_read_panel_reg(struct dsi_display_ctrl *ctrl,
+			     struct dsi_panel *panel, u8 cmd, void *rbuf,
+			     size_t len);
 int oplus_display_panel_get_id(void *buf);
 int oplus_display_panel_get_max_brightness(void *buf);
 int oplus_display_panel_set_max_brightness(void *buf);
@@ -97,4 +105,8 @@ int oplus_display_panel_hbm_lightspot_check(void);
 int oplus_display_set_dither_status(void *buf);
 int oplus_display_get_dither_status(void *buf);
 int oplus_dsi_update_dynamic_osc_clock(void);
+/* Apollo DC backlight */
+int oplus_display_panel_set_dc_real_brightness(void *data);
+int oplus_display_panel_get_panel_bpp(void *buf);
+int oplus_display_panel_get_panel_name(void *buf);
 #endif /*_OPLUS_DISPLAY_PANEL_COMMON_H_*/

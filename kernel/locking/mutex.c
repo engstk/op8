@@ -36,10 +36,6 @@
 # include "mutex.h"
 #endif
 
-#ifdef CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE
-#include <soc/oplus/system/oplus_signal.h>
-#endif
-
 void
 __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
 {
@@ -49,6 +45,7 @@ __mutex_init(struct mutex *lock, const char *name, struct lock_class_key *key)
 #ifdef CONFIG_MUTEX_SPIN_ON_OWNER
 	osq_lock_init(&lock->osq);
 #endif
+
 	debug_mutex_init(lock, name, key);
 }
 EXPORT_SYMBOL(__mutex_init);
@@ -188,7 +185,6 @@ __mutex_add_waiter(struct mutex *lock, struct mutex_waiter *waiter,
 	debug_mutex_add_waiter(lock, waiter, current);
 
 	list_add_tail(&waiter->list, list);
-
 	if (__mutex_waiter_is_first(lock, waiter))
 		__mutex_set_flag(lock, MUTEX_FLAG_WAITERS);
 }
@@ -1017,12 +1013,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * wait_lock. This ensures the lock cancellation is ordered
 		 * against mutex_unlock() and wake-ups do not go missing.
 		 */
-#ifdef CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE
-		if (unlikely(signal_pending_state(state, current))
-			|| hung_long_and_fatal_signal_pending(current)) {
-#else
 		if (unlikely(signal_pending_state(state, current))) {
-#endif
 			ret = -EINTR;
 			goto err;
 		}
@@ -1032,6 +1023,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 			if (ret)
 				goto err;
 		}
+
 		spin_unlock(&lock->wait_lock);
 		schedule_preempt_disabled();
 

@@ -220,17 +220,8 @@ static bool msm_cvp_check_for_inst_overload(struct msm_cvp_core *core)
 		overload = true;
 	return overload;
 }
-#ifdef OPLUS_FEATURE_CAMERA_COMMON
-static int __init_session_queue(struct msm_cvp_inst *inst)
-{
-	spin_lock_init(&inst->session_queue.lock);
-	INIT_LIST_HEAD(&inst->session_queue.msgs);
-	inst->session_queue.msg_count = 0;
-	init_waitqueue_head(&inst->session_queue.wq);
-	inst->session_queue.state = QUEUE_ACTIVE;
-	return 0;
-}
 
+#ifdef OPLUS_FEATURE_CAMERA_COMMON
 static void __init_fence_queue(struct msm_cvp_inst *inst)
 {
 	spin_lock_init(&inst->fence_cmd_queue.lock);
@@ -245,8 +236,8 @@ static void __init_fence_queue(struct msm_cvp_inst *inst)
 	init_waitqueue_head(&inst->session_queue_fence.wq);
 	inst->session_queue_fence.state = QUEUE_ACTIVE;
 }
+#endif
 
-#else
 static int _init_session_queue(struct msm_cvp_inst *inst)
 {
 	spin_lock_init(&inst->session_queue.lock);
@@ -256,7 +247,7 @@ static int _init_session_queue(struct msm_cvp_inst *inst)
 	inst->session_queue.state = QUEUE_ACTIVE;
 	return 0;
 }
-#endif
+
 static void _deinit_session_queue(struct msm_cvp_inst *inst)
 {
 	struct cvp_session_msg *msg, *tmpmsg;
@@ -322,7 +313,6 @@ void *msm_cvp_open(int core_id, int session_type)
 #endif
 	spin_lock_init(&inst->event_handler.lock);
 
-
 	INIT_MSM_CVP_LIST(&inst->persistbufs);
 	INIT_MSM_CVP_LIST(&inst->cvpcpubufs);
 	INIT_MSM_CVP_LIST(&inst->cvpdspbufs);
@@ -357,13 +347,11 @@ void *msm_cvp_open(int core_id, int session_type)
 	mutex_lock(&core->lock);
 	list_add_tail(&inst->list, &core->instances);
 	mutex_unlock(&core->lock);
+
 #ifdef OPLUS_FEATURE_CAMERA_COMMON
 	__init_fence_queue(inst);
-
-	rc = __init_session_queue(inst);
-#else
-	rc = _init_session_queue(inst);
 #endif
+	rc = _init_session_queue(inst);
 	if (rc)
 		goto fail_init;
 
@@ -436,6 +424,7 @@ wait:
 	if (cvp_comm_release_persist_buffers(inst))
 		dprintk(CVP_ERR,
 			"Failed to release persist buffers\n");
+
 #ifdef OPLUS_FEATURE_CAMERA_COMMON
 	msm_cvp_session_queue_stop(inst);
 #endif

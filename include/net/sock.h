@@ -188,17 +188,6 @@ struct sock_common {
 	struct proto		*skc_prot;
 	possible_net_t		skc_net;
 
-	//#ifdef VENDOR_EDIT
-	char skc_cmdline[TASK_COMM_LEN];
-	//#enidf /* VENDOR_EDIT */
-
-	//#ifdef OPLUS_FEATURE_NWPOWER
-	u32 skc_oplus_pid;
-	u64 skc_oplus_last_rcv_stamp[2];//index 0 = last, index 1 = now
-	u64 skc_oplus_last_send_stamp[2];//index 0 = last, index 1 = now
-	//#endif /* OPLUS_FEATURE_NWPOWER */
-
-
 #if IS_ENABLED(CONFIG_IPV6)
 	struct in6_addr		skc_v6_daddr;
 	struct in6_addr		skc_v6_rcv_saddr;
@@ -337,6 +326,8 @@ struct bpf_local_storage;
   *	@sk_clockid: clockid used by time-based scheduling (SO_TXTIME)
   *	@sk_txtime_deadline_mode: set deadline mode for SO_TXTIME
   *	@sk_txtime_unused: unused txtime flags
+  *	@sk_owner: reference to the real owner of the socket that calls
+  *		   sock_lock_init_class_and_name().
   */
 struct sock {
 	/*
@@ -377,17 +368,6 @@ struct sock {
 #define sk_incoming_cpu		__sk_common.skc_incoming_cpu
 #define sk_flags		__sk_common.skc_flags
 #define sk_rxhash		__sk_common.skc_rxhash
-
-//#ifdef VENDOR_EDIT
-#define sk_cmdline		__sk_common.skc_cmdline
-//#enidf /* VENDOR_EDIT */
-
-//#ifdef OPLUS_FEATURE_NWPOWER
-#define sk_oplus_pid				__sk_common.skc_oplus_pid
-#define oplus_last_rcv_stamp		__sk_common.skc_oplus_last_rcv_stamp
-#define oplus_last_send_stamp	__sk_common.skc_oplus_last_send_stamp
-//#endif /* OPLUS_FEATURE_NWPOWER */
-
 
 	socket_lock_t		sk_lock;
 	atomic_t		sk_drops;
@@ -527,6 +507,10 @@ struct sock {
 	struct bpf_local_storage __rcu	*sk_bpf_storage;
 #endif
 	struct rcu_head		sk_rcu;
+
+#if IS_ENABLED(CONFIG_PROVE_LOCKING) && IS_ENABLED(CONFIG_MODULES)
+	struct module		*sk_owner;
+#endif
 
 #if IS_ENABLED(CONFIG_DEBUG_SPINLOCK) || IS_ENABLED(CONFIG_DEBUG_LOCK_ALLOC)
 	ANDROID_KABI_RESERVE(1);
@@ -752,6 +736,19 @@ static inline bool sk_nulls_del_node_init_rcu(struct sock *sk)
 		__sock_put(sk);
 	}
 	return rc;
+}
+
+static inline bool sk_nulls_replace_node_init_rcu(struct sock *old,
+						  struct sock *new)
+{
+	if (sk_hashed(old)) {
+		hlist_nulls_replace_init_rcu(&old->sk_nulls_node,
+					     &new->sk_nulls_node);
+		__sock_put(old);
+		return true;
+	}
+
+	return false;
 }
 
 static inline void __sk_add_node(struct sock *sk, struct hlist_head *list)
@@ -1567,6 +1564,35 @@ static inline void sock_release_ownership(struct sock *sk)
 	}
 }
 
+#if IS_ENABLED(CONFIG_PROVE_LOCKING) && IS_ENABLED(CONFIG_MODULES)
+static inline void sk_owner_set(struct sock *sk, struct module *owner)
+{
+	__module_get(owner);
+	sk->sk_owner = owner;
+}
+
+static inline void sk_owner_clear(struct sock *sk)
+{
+	sk->sk_owner = NULL;
+}
+
+static inline void sk_owner_put(struct sock *sk)
+{
+	module_put(sk->sk_owner);
+}
+#else
+static inline void sk_owner_set(struct sock *sk, struct module *owner)
+{
+}
+
+static inline void sk_owner_clear(struct sock *sk)
+{
+}
+
+static inline void sk_owner_put(struct sock *sk)
+{
+}
+#endif
 /*
  * Macro so as to not evaluate some arguments when
  * lockdep is not enabled.
@@ -1576,13 +1602,14 @@ static inline void sock_release_ownership(struct sock *sk)
  */
 #define sock_lock_init_class_and_name(sk, sname, skey, name, key)	\
 do {									\
+	sk_owner_set(sk, THIS_MODULE);					\
 	sk->sk_lock.owned = 0;						\
 	init_waitqueue_head(&sk->sk_lock.wq);				\
 	spin_lock_init(&(sk)->sk_lock.slock);				\
 	debug_check_no_locks_freed((void *)&(sk)->sk_lock,		\
-			sizeof((sk)->sk_lock));				\
+				   sizeof((sk)->sk_lock));		\
 	lockdep_set_class_and_name(&(sk)->sk_lock.slock,		\
-				(skey), (sname));				\
+				   (skey), (sname));			\
 	lockdep_init_map(&(sk)->sk_lock.dep_map, (name), (key), 0);	\
 } while (0)
 
@@ -2037,11 +2064,6 @@ static inline void sk_dst_confirm(struct sock *sk)
 
 static inline void sock_confirm_neigh(struct sk_buff *skb, struct neighbour *n)
 {
-	#ifdef OPLUS_BUG_STABILITY
-	//Remove for [1357567],some AP doesn't send arp when it needs to send data to DUT
-	//We remove this code to send arp more frequently to notify our mac to AP
-	return;
-	#endif /* OPLUS_BUG_STABILITY */
 	if (skb_get_dst_pending_confirm(skb)) {
 		struct sock *sk = skb->sk;
 		unsigned long now = jiffies;

@@ -14,16 +14,15 @@
 #include "dsi_pwr.h"
 #include "dsi_iris5.h"
 
-#define IRIS_CHIP_CNT   2
-#define IRIS_PWIL_CUR_META0	0xf12400c8
+#define IRIS_CHIP_CNT 2
+#define IRIS_PWIL_CUR_META0 0xf12400c8
 
-#define MDSS_MAX_PANEL_LEN      256
+#define MDSS_MAX_PANEL_LEN 256
 
 #define HIGH_FREQ 120
 #define LOW_FREQ 60
 #define FHD_H 2376
 #define QHD_H 3168
-
 
 /* iris ip option, it will create according to opt_id.
  *  link_state will be create according to the last cmds
@@ -73,7 +72,8 @@ struct iris_out_cmds {
 
 typedef int (*iris_i2c_read_cb)(u32 reg_addr, u32 *reg_val);
 typedef int (*iris_i2c_write_cb)(u32 reg_addr, u32 reg_val);
-typedef int (*iris_i2c_burst_write_cb)(u32 start_addr, u32 *lut_buffer, u16 reg_num);
+typedef int (*iris_i2c_burst_write_cb)(u32 start_addr, u32 *lut_buffer,
+				       u16 reg_num);
 
 enum IRIS_PARAM_VALID {
 	PARAM_NONE = 0,
@@ -118,7 +118,7 @@ struct iris_cfg {
 	uint32_t split_pkt_size;
 	uint32_t loop_back_mode;
 	uint32_t loop_back_mode_res;
-    struct mutex lb_mutex;
+	struct mutex lb_mutex;
 	uint32_t min_color_temp;
 	uint32_t max_color_temp;
 	uint8_t rx_mode; /* 0: DSI_VIDEO_MODE, 1: DSI_CMD_MODE */
@@ -217,19 +217,21 @@ int iris_lightup(struct dsi_panel *panel, struct dsi_panel_cmd_set *on_cmds);
 int iris_lightoff(struct dsi_panel *panel, struct dsi_panel_cmd_set *off_cmds);
 int32_t iris_send_ipopt_cmds(int32_t ip, int32_t opt_id);
 void iris_update_pq_opt(struct iris_update_ipopt *popt, int len, uint8_t path);
-void iris_update_bitmask_regval(
-		struct iris_update_regval *pregval, bool is_commit);
-void iris_update_bitmask_regval_nonread(
-		struct iris_update_regval *pregval, bool is_commit);
+void iris_update_bitmask_regval(struct iris_update_regval *pregval,
+				bool is_commit);
+void iris_update_bitmask_regval_nonread(struct iris_update_regval *pregval,
+					bool is_commit);
 
 void iris_alloc_seq_space(void);
 
-void iris_init_update_ipopt(struct iris_update_ipopt *popt,
-		uint8_t ip, uint8_t opt_old, uint8_t opt_new, uint8_t skip_last);
-struct iris_pq_ipopt_val  *iris_get_cur_ipopt_val(uint8_t ip);
+void iris_init_update_ipopt(struct iris_update_ipopt *popt, uint8_t ip,
+			    uint8_t opt_old, uint8_t opt_new,
+			    uint8_t skip_last);
+struct iris_pq_ipopt_val *iris_get_cur_ipopt_val(uint8_t ip);
 
-int iris_init_update_ipopt_t(struct iris_update_ipopt *popt,  int len,
-		uint8_t ip, uint8_t opt_old, uint8_t opt_new, uint8_t skip_last);
+int iris_init_update_ipopt_t(struct iris_update_ipopt *popt, int len,
+			     uint8_t ip, uint8_t opt_old, uint8_t opt_new,
+			     uint8_t skip_last);
 struct iris_ip_opt *iris_find_ip_opt(uint8_t ip, uint8_t opt_id);
 /*
  * @description  get assigned position data of ip opt
@@ -238,8 +240,9 @@ struct iris_ip_opt *iris_find_ip_opt(uint8_t ip, uint8_t opt_id);
  * @param pos      the position of option payload
  * @return   fail NULL/success payload data of position
  */
-uint32_t  *iris_get_ipopt_payload_data(uint8_t ip, uint8_t opt_id, int32_t pos);
-void iris_set_ipopt_payload_data(uint8_t ip, uint8_t opt_id, int32_t pos, uint32_t value);
+uint32_t *iris_get_ipopt_payload_data(uint8_t ip, uint8_t opt_id, int32_t pos);
+void iris_set_ipopt_payload_data(uint8_t ip, uint8_t opt_id, int32_t pos,
+				 uint32_t value);
 
 /*
  *@Description: get current continue splash stage
@@ -258,8 +261,8 @@ int iris_init_cmds(void);
 void iris_get_cmds(struct dsi_panel_cmd_set *cmds, char **ls_arr);
 void iris_get_lightoff_cmds(struct dsi_panel_cmd_set *cmds, char **ls_arr);
 
-int32_t iris_attach_cmd_to_ipidx(const struct iris_data *data,
-		int32_t data_cnt, struct iris_ip_index *pip_index);
+int32_t iris_attach_cmd_to_ipidx(const struct iris_data *data, int32_t data_cnt,
+				 struct iris_ip_index *pip_index);
 
 struct iris_ip_index *iris_get_ip_idx(int32_t type);
 
@@ -268,7 +271,8 @@ void iris_change_type_addr(struct iris_ip_opt *dest, struct iris_ip_opt *src);
 struct iris_ip_opt *iris_find_ip_opt(uint8_t ip, uint8_t opt_id);
 
 int iris_wait_vsync(void);
-int iris_set_pending_panel_brightness(int32_t pending, int32_t delay, int32_t level);
+int iris_set_pending_panel_brightness(int32_t pending, int32_t delay,
+				      int32_t level);
 
 bool iris_virtual_display(const struct dsi_display *display);
 void iris_free_ipopt_buf(uint32_t ip_type);
@@ -276,9 +280,9 @@ void iris_free_seq_space(void);
 
 void iris_send_assembled_pkt(struct iris_ctrl_opt *arr, int seq_cnt);
 int32_t iris_parse_dtsi_cmd(const struct device_node *lightup_node,
-		uint32_t cmd_index);
+			    uint32_t cmd_index);
 int32_t iris_parse_optional_seq(struct device_node *np, const uint8_t *key,
-		struct iris_ctrl_seq *pseq);
+				struct iris_ctrl_seq *pseq);
 
 int iris_display_cmd_engine_enable(struct dsi_display *display);
 int iris_display_cmd_engine_disable(struct dsi_display *display);

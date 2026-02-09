@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (C) 2018-2020 Oplus. All rights reserved.
+ * Copyright (C) 2018-2022 Oplus. All rights reserved.
  */
+
 #ifndef _OPLUS_PPS_CP_H_
 #define _OPLUS_PPS_CP_H_
 int oplus_pps_cp_init(void);
@@ -29,6 +30,7 @@ int oplus_cp_slave_get_vbus(void);
 int oplus_cp_slave_get_vac(void);
 int oplus_cp_slave_get_vout(void);
 int oplus_cp_slave_get_ucp_flag(void);
+int oplus_cp_slave_b_cp_enable(int enable);
 int oplus_cp_master_get_tdie(void);
 int oplus_cp_slave_get_tdie(void);
 void oplus_cp_pmid2vout_enable(bool enable);

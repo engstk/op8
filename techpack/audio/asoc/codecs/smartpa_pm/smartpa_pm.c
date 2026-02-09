@@ -15,15 +15,15 @@
 
 //#define TEST_DEBUG_LOG 1
 
-static char const *smartpa_pm_ctrl_text[] = {"Off", "On"};
-static const struct soc_enum smartpa_pm_ctrl_enum =
-	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(smartpa_pm_ctrl_text), smartpa_pm_ctrl_text);
+static char const *smartpa_pm_ctrl_text[] = { "Off", "On" };
+static const struct soc_enum smartpa_pm_ctrl_enum = SOC_ENUM_SINGLE_EXT(
+	ARRAY_SIZE(smartpa_pm_ctrl_text), smartpa_pm_ctrl_text);
 
 extern int set_smartpa_pm_status_apr(void *buf, int cmd_size);
 extern int get_smartpa_pm_result_apr(void *buf, int cmd_size);
 
 static int smartpa_pm_ctrl_put(struct snd_kcontrol *kcontrol,
-		struct snd_ctl_elem_value *ucontrol)
+			       struct snd_ctl_elem_value *ucontrol)
 {
 	int ret = 0;
 	//struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
@@ -31,22 +31,22 @@ static int smartpa_pm_ctrl_put(struct snd_kcontrol *kcontrol,
 
 	ret = set_smartpa_pm_status_apr(&val, sizeof(int));
 	if (ret != 0) {
-    	pr_info("%s(), apr set failed, ret = %d", __func__, ret);
+		pr_info("%s(), apr set failed, ret = %d", __func__, ret);
 	}
-	#ifdef TEST_DEBUG_LOG
+#ifdef TEST_DEBUG_LOG
 	pr_info("%s(), ret = %d", __func__, ret);
-	#endif
+#endif
 
 	return ret;
 }
 
 static int smartpa_pm_result_get(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_value *ucontrol)
+				 struct snd_ctl_elem_value *ucontrol)
 {
 	int ret = 0;
-	int len = 4 + sizeof(struct param_hdr_v3);//status + param_hdr_v3;
-	int count = len + 2*sizeof(int); //L&R(2*4)
-	uint8_t * buffer = kzalloc(count, GFP_KERNEL);
+	int len = 4 + sizeof(struct param_hdr_v3); //status + param_hdr_v3;
+	int count = len + 2 * sizeof(int); //L&R(2*4)
+	uint8_t *buffer = kzalloc(count, GFP_KERNEL);
 
 	if (!buffer) {
 		pr_err("%s(), kzalloc failed", __func__);
@@ -55,15 +55,18 @@ static int smartpa_pm_result_get(struct snd_kcontrol *kcontrol,
 
 	ret = get_smartpa_pm_result_apr(buffer, count);
 	if (ret == 0) {
-		ucontrol->value.integer.value[0] = *(unsigned int *) (buffer + len);
-		ucontrol->value.integer.value[1] = *(unsigned int *)(buffer + len + sizeof(int));
-		#ifdef TEST_DEBUG_LOG
+		ucontrol->value.integer.value[0] =
+			*(unsigned int *)(buffer + len);
+		ucontrol->value.integer.value[1] =
+			*(unsigned int *)(buffer + len + sizeof(int));
+#ifdef TEST_DEBUG_LOG
 		pr_info("%s(), get 10000*lspk=(%d), 10000*rspk=(%d)", __func__,
-				(unsigned int)(*(float *)(buffer+len)*10000),
-				(unsigned int)(*(float *)(buffer+len+sizeof(int))*10000));
-		#endif
+			(unsigned int)(*(float *)(buffer + len) * 10000),
+			(unsigned int)(*(float *)(buffer + len + sizeof(int)) *
+				       10000));
+#endif
 	} else {
-    	pr_info("%s(), apr get failed, ret = %d", __func__, ret);
+		pr_info("%s(), apr get failed, ret = %d", __func__, ret);
 	}
 	kfree(buffer);
 
@@ -71,7 +74,7 @@ static int smartpa_pm_result_get(struct snd_kcontrol *kcontrol,
 }
 
 static int smartpa_pm_result_ctl(struct snd_kcontrol *kcontrol,
-			       struct snd_ctl_elem_info *uinfo)
+				 struct snd_ctl_elem_info *uinfo)
 {
 	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
 	uinfo->count = 2;
@@ -82,22 +85,20 @@ static int smartpa_pm_result_ctl(struct snd_kcontrol *kcontrol,
 }
 
 static const struct snd_kcontrol_new smartpa_pm_controls[] = {
-	SOC_ENUM_EXT("SMARTPA_PM_STATE", smartpa_pm_ctrl_enum,
-					NULL, smartpa_pm_ctrl_put),
-	{
-		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
-		.name = "SMARTPA_PM_RESULT",
-		.access = SNDRV_CTL_ELEM_ACCESS_READ,
-		.info = smartpa_pm_result_ctl,
-		.get = smartpa_pm_result_get
-	},
+	SOC_ENUM_EXT("SMARTPA_PM_STATE", smartpa_pm_ctrl_enum, NULL,
+		     smartpa_pm_ctrl_put),
+	{ .iface = SNDRV_CTL_ELEM_IFACE_MIXER,
+	  .name = "SMARTPA_PM_RESULT",
+	  .access = SNDRV_CTL_ELEM_ACCESS_READ,
+	  .info = smartpa_pm_result_ctl,
+	  .get = smartpa_pm_result_get },
 };
 
 void add_smartpa_pm_controls(struct snd_soc_component *component)
 {
-	#ifdef TEST_DEBUG_LOG
+#ifdef TEST_DEBUG_LOG
 	pr_info("%s(), enter", __func__);
-	#endif
+#endif
 	snd_soc_add_component_controls(component, smartpa_pm_controls,
-				ARRAY_SIZE(smartpa_pm_controls));
+				       ARRAY_SIZE(smartpa_pm_controls));
 }

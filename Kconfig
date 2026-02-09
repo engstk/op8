@@ -5,20 +5,6 @@
 #
 mainmenu "Linux/$(ARCH) $(KERNELVERSION) Kernel Configuration"
 
-#ifdef CONFIG_OPLUS_SYSTEM_KERNEL
-config OPLUS_SYSTEM_KERNEL_QCOM
-  bool "config oplus system feature "
-  default y
-  help
-	define this config to Distinguish between qcom and mtk platform
-
-config OPLUS_SYSTEM_KERNEL_MTK
-  bool "config oplus system feature "
-  default n
-  help
-	define this config to Distinguish between qcom and mtk platform
-#endif /*CONFIG_OPLUS_SYSTEM_KERNEL*/
-
 source "scripts/Kconfig.include"
 
 source "init/Kconfig"

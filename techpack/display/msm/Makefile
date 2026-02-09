@@ -109,27 +109,30 @@ msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/dsi_phy.o \
 	dsi/ktz8866_init.o \
 
 #ifeq ($(OPLUS_FEATURE_PXLW_IRIS5),y)
-msm_drm-$(CONFIG_DRM_MSM_DSI) += dsi/iris/dsi_iris5_ioctl.o \
-				dsi/iris/dsi_iris5_lightup.o \
-				dsi/iris/dsi_iris5_lightup_ocp.o \
-				dsi/iris/dsi_iris5_lp.o \
-				dsi/iris/dsi_iris5_lut.o \
-				dsi/iris/dsi_iris5_pq.o \
-				dsi/iris/dsi_iris5_mode_switch.o \
-				dsi/iris/dsi_iris5_cmds.o \
-				dsi/iris/dsi_iris5_i3c.o \
-				dsi/iris/dsi_iris5_i2c.o \
-				dsi/iris/dsi_iris5_loop_back.o \
-				dsi/iris/dsi_iris5_gpio.o \
-				dsi/iris/dsi_iris5_frc.o \
-				dsi/iris/dsi_iris5_timing_switch.o \
-				dsi/iris/dsi_iris5_dbg.o \
-				dsi/iris/msm_iris5_extended.o \
-				dsi/iris/sde_iris5_extended.o \
-				dsi/iris/dsi_iris5_extended.o
+msm_drm-$(CONFIG_DRM_MSM_DSI) += \
+	dsi/iris/dsi_iris5_ioctl.o \
+	dsi/iris/dsi_iris5_lightup.o \
+	dsi/iris/dsi_iris5_lightup_ocp.o \
+	dsi/iris/dsi_iris5_lp.o \
+	dsi/iris/dsi_iris5_lut.o \
+	dsi/iris/dsi_iris5_pq.o \
+	dsi/iris/dsi_iris5_mode_switch.o \
+	dsi/iris/dsi_iris5_cmds.o \
+	dsi/iris/dsi_iris5_i3c.o \
+	dsi/iris/dsi_iris5_i2c.o \
+	dsi/iris/dsi_iris5_loop_back.o \
+	dsi/iris/dsi_iris5_gpio.o \
+	dsi/iris/dsi_iris5_frc.o \
+	dsi/iris/dsi_iris5_timing_switch.o \
+	dsi/iris/dsi_iris5_dbg.o \
+	dsi/iris/msm_iris5_extended.o \
+	dsi/iris/sde_iris5_extended.o \
+	dsi/iris/dsi_iris5_extended.o
+
 ccflags-y += -DOPLUS_FEATURE_PXLW_IRIS5
 ccflags-y += -DPXLW_IRIS_DUAL
 #endif
+
 msm_drm-$(CONFIG_DSI_PARSER) += dsi/dsi_parser.o \
 
 msm_drm-$(CONFIG_DRM_MSM) += \
@@ -147,9 +150,8 @@ msm_drm-$(CONFIG_DRM_MSM) += \
 obj-$(CONFIG_DRM_MSM)	+= msm_drm.o
 
 #ifdef OPLUS_BUG_STABILITY
-###########################################################################################
-#build oplus so
-msm_drm-$(CONFIG_DRM_OPLUS) += ../oplus/oplus_dsi_support.o \
+msm_drm-$(CONFIG_DRM_OPLUS) += \
+	../oplus/oplus_dsi_support.o \
 	../oplus/oplus_display_private_api.o \
 	../oplus/oplus_dc_diming.o \
 	../oplus/oplus_onscreenfingerprint.o \
@@ -160,11 +162,13 @@ msm_drm-$(CONFIG_DRM_OPLUS) += ../oplus/oplus_dsi_support.o \
 	../oplus/oplus_display_panel_seed.o \
 	../oplus/oplus_display_panel_common.o \
 	../oplus/oplus_display_panel_hbm.o \
-	../oplus/oplus_display_panel_cabc.o \
+	../oplus/oplus_display_panel_cabc.o
 #endif /*OPLUS_BUG_STABILITY*/
 
 ifeq ($(OPLUS_FEATURE_ADFR_KERNEL),yes)
 msm_drm-$(CONFIG_DRM_OPLUS) += ../oplus/oplus_adfr.o
 endif #/* OPLUS_FEATURE_ADFR_KERNEL */
+
+msm_drm-$(CONFIG_DRM_OPLUS_NOTIFY) += ../oplus/oplus_notify.o
 
 obj-$(CONFIG_DRM_FBDEV_EMULATION) += msm_fbdev.o

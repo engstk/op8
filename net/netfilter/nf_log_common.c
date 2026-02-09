@@ -141,16 +141,9 @@ void nf_log_dump_sk_uid_gid(struct net *net, struct nf_log_buf *m,
 	read_lock_bh(&sk->sk_callback_lock);
 	if (sk->sk_socket && sk->sk_socket->file) {
 		const struct cred *cred = sk->sk_socket->file->f_cred;
-		//#ifndef VENDOR_EDIT
-		/*nf_log_buf_add(m, "UID=%u GID=%u ",
+		nf_log_buf_add(m, "UID=%u GID=%u ",
 			from_kuid_munged(&init_user_ns, cred->fsuid),
-			from_kgid_munged(&init_user_ns, cred->fsgid));*/
-		//else /* VENDOR_EDIT */
-		nf_log_buf_add(m, "UID=%u GID=%u cmdline=%s",
-			from_kuid_munged(&init_user_ns, cred->fsuid),
-			from_kgid_munged(&init_user_ns, cred->fsgid),
-			sk->sk_cmdline);
-		//#enidf /* VENDOR_EDIT */
+			from_kgid_munged(&init_user_ns, cred->fsgid));
 	}
 	read_unlock_bh(&sk->sk_callback_lock);
 }

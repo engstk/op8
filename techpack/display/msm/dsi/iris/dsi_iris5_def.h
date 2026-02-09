@@ -8,68 +8,67 @@
 #ifndef _DSI_IRIS_DEF_H_
 #define _DSI_IRIS_DEF_H_
 
-
 // Use Iris Analog bypass mode to light up panel
 // Note: input timing should be same with output timing
 //#define IRIS_ABYP_LIGHTUP
 //#define IRIS_MIPI_TEST
-#define IRIS_CFG_NUM	2
+#define IRIS_CFG_NUM 2
 
-#define IRIS_FIRMWARE_NAME	"iris5.fw"
+#define IRIS_FIRMWARE_NAME "iris5.fw"
 #define IRIS_CCF1_FIRMWARE_NAME "iris5_ccf1.fw"
 #define IRIS_CCF2_FIRMWARE_NAME "iris5_ccf2.fw"
 #define IRIS_CCF1_CALIBRATED_FIRMWARE_NAME "iris5_ccf1b.fw"
 #define IRIS_CCF2_CALIBRATED_FIRMWARE_NAME "iris5_ccf2b.fw"
-#define IRIS3_CHIP_VERSION	0x6933
-#define IRIS5_CHIP_VERSION	0x6935
+#define IRIS3_CHIP_VERSION 0x6933
+#define IRIS5_CHIP_VERSION 0x6935
 
 #define DIRECT_BUS_HEADER_SIZE 8
 
 #define LUT_LEN 256
 #define CM_LUT_GROUP 3 // table 0,3,6 should store at the same address in iris
 #define SCALER1D_LUT_NUMBER 9
-#define SDR2HDR_LUT_BLOCK_SIZE (128*4)
+#define SDR2HDR_LUT_BLOCK_SIZE (128 * 4)
 #define SDR2HDR_LUT2_BLOCK_NUMBER (6)
 #define SDR2HDR_LUTUVY_BLOCK_NUMBER (12)
 #define SDR2HDR_LUT2_ADDRESS 0x3000
 #define SDR2HDR_LUTUVY_ADDRESS 0x6000
 #define SDR2HDR_LUT_BLOCK_ADDRESS_INC 0x400
-#define SDR2HDR_LUT2_BLOCK_CNT (6)  //for ambient light lut
-#define SDR2HDR_LUTUVY_BLOCK_CNT (12)  // for maxcll lut
+#define SDR2HDR_LUT2_BLOCK_CNT (6) //for ambient light lut
+#define SDR2HDR_LUTUVY_BLOCK_CNT (12) // for maxcll lut
 
 #define PANEL_BL_MAX_RATIO 10000
-#define IRIS_MODE_RFB                   0x0
-#define IRIS_MODE_FRC_PREPARE           0x1
-#define IRIS_MODE_FRC_PREPARE_DONE      0x2
-#define IRIS_MODE_FRC                   0x3
-#define IRIS_MODE_FRC_CANCEL            0x4
-#define IRIS_MODE_FRC_PREPARE_RFB       0x5
-#define IRIS_MODE_FRC_PREPARE_TIMEOUT   0x6
-#define IRIS_MODE_RFB2FRC               0x7
-#define IRIS_MODE_RFB_PREPARE           0x8
-#define IRIS_MODE_RFB_PREPARE_DONE      0x9
-#define IRIS_MODE_RFB_PREPARE_TIMEOUT   0xa
-#define IRIS_MODE_FRC2RFB               0xb
-#define IRIS_MODE_PT_PREPARE            0xc
-#define IRIS_MODE_PT_PREPARE_DONE       0xd
-#define IRIS_MODE_PT_PREPARE_TIMEOUT    0xe
-#define IRIS_MODE_RFB2PT                0xf
-#define IRIS_MODE_PT2RFB                0x10
-#define IRIS_MODE_PT                    0x11
-#define IRIS_MODE_KICKOFF60_ENABLE      0x12
-#define IRIS_MODE_KICKOFF60_DISABLE     0x13
-#define IRIS_MODE_PT2BYPASS             0x14
-#define IRIS_MODE_BYPASS                0x15
-#define IRIS_MODE_BYPASS2PT             0x16
-#define IRIS_MODE_PTLOW_PREPARE         0x17
-#define IRIS_MODE_DSI_SWITCH_2PT        0x18    // dsi mode switch during RFB->PT
-#define IRIS_MODE_DSI_SWITCH_2RFB       0x19    // dsi mode switch during PT->RFB
-#define IRIS_MODE_FRC_POST              0x1a    // for set parameters after FRC
-#define IRIS_MODE_RFB_PREPARE_DELAY     0x1b    // for set parameters before RFB
-#define IRIS_MODE_RFB_POST              0x1c    // for set parameters after RFB
-#define IRIS_MODE_INITING               0xff
-#define IRIS_MODE_OFF                   0xf0
-#define IRIS_MODE_HDR_EN                0x20
+#define IRIS_MODE_RFB 0x0
+#define IRIS_MODE_FRC_PREPARE 0x1
+#define IRIS_MODE_FRC_PREPARE_DONE 0x2
+#define IRIS_MODE_FRC 0x3
+#define IRIS_MODE_FRC_CANCEL 0x4
+#define IRIS_MODE_FRC_PREPARE_RFB 0x5
+#define IRIS_MODE_FRC_PREPARE_TIMEOUT 0x6
+#define IRIS_MODE_RFB2FRC 0x7
+#define IRIS_MODE_RFB_PREPARE 0x8
+#define IRIS_MODE_RFB_PREPARE_DONE 0x9
+#define IRIS_MODE_RFB_PREPARE_TIMEOUT 0xa
+#define IRIS_MODE_FRC2RFB 0xb
+#define IRIS_MODE_PT_PREPARE 0xc
+#define IRIS_MODE_PT_PREPARE_DONE 0xd
+#define IRIS_MODE_PT_PREPARE_TIMEOUT 0xe
+#define IRIS_MODE_RFB2PT 0xf
+#define IRIS_MODE_PT2RFB 0x10
+#define IRIS_MODE_PT 0x11
+#define IRIS_MODE_KICKOFF60_ENABLE 0x12
+#define IRIS_MODE_KICKOFF60_DISABLE 0x13
+#define IRIS_MODE_PT2BYPASS 0x14
+#define IRIS_MODE_BYPASS 0x15
+#define IRIS_MODE_BYPASS2PT 0x16
+#define IRIS_MODE_PTLOW_PREPARE 0x17
+#define IRIS_MODE_DSI_SWITCH_2PT 0x18 // dsi mode switch during RFB->PT
+#define IRIS_MODE_DSI_SWITCH_2RFB 0x19 // dsi mode switch during PT->RFB
+#define IRIS_MODE_FRC_POST 0x1a // for set parameters after FRC
+#define IRIS_MODE_RFB_PREPARE_DELAY 0x1b // for set parameters before RFB
+#define IRIS_MODE_RFB_POST 0x1c // for set parameters after RFB
+#define IRIS_MODE_INITING 0xff
+#define IRIS_MODE_OFF 0xf0
+#define IRIS_MODE_HDR_EN 0x20
 
 enum DBC_LEVEL {
 	DBC_INIT = 0,
@@ -239,18 +238,18 @@ enum SCALER_IP_TYPE {
 };
 
 struct iris_pq_setting {
-	u32 peaking:4;
-	u32 cm6axis:2;
-	u32 cmcolortempmode:2;
-	u32 cmcolorgamut:4;
-	u32 lcemode:2;
-	u32 lcelevel:3;
-	u32 graphicdet:1;
-	u32 alenable:1;
-	u32 dbc:2;
-	u32 demomode:3;
-	u32 sdr2hdr:4;
-	u32 readingmode:4;
+	u32 peaking : 4;
+	u32 cm6axis : 2;
+	u32 cmcolortempmode : 2;
+	u32 cmcolorgamut : 4;
+	u32 lcemode : 2;
+	u32 lcelevel : 3;
+	u32 graphicdet : 1;
+	u32 alenable : 1;
+	u32 dbc : 2;
+	u32 demomode : 3;
+	u32 sdr2hdr : 4;
+	u32 readingmode : 4;
 };
 
 struct quality_setting {
@@ -305,7 +304,7 @@ struct iris_lp_ctrl {
 struct iris_abypass_ctrl {
 	bool analog_bypass_disable;
 	uint8_t abypass_mode;
-	uint16_t pending_mode;	// pending_mode is accessed by SDEEncoder and HWBinder
+	uint16_t pending_mode; // pending_mode is accessed by SDEEncoder and HWBinder
 	int abyp_switch_state;
 	int frame_delay;
 	struct mutex abypass_mutex;
@@ -349,9 +348,9 @@ struct iris_frc_setting {
 };
 
 struct iris_mspwil_parameter {
-	int frc_var_disp;	// -1: mean no update
-	int frc_pt_switch_on;	// -1: mean no update
-	int cmd_disp_on;	// -1: mean no update
+	int frc_var_disp; // -1: mean no update
+	int frc_pt_switch_on; // -1: mean no update
+	int cmd_disp_on; // -1: mean no update
 	int ratio_update;
 	int out_fps_ratio;
 	int in_fps_ratio;
@@ -369,7 +368,8 @@ enum iris_config_type {
 	IRIS_PEAKING = 0,
 	IRIS_MEMC_LEVEL = 5,
 	USER_DEMO_WND = 17,
-	IRIS_CHIP_VERSION = 33,      // 0x0 : IRIS2, 0x1 : IRIS2-plus, 0x2 : IRIS3-lite
+	IRIS_CHIP_VERSION =
+		33, // 0x0 : IRIS2, 0x1 : IRIS2-plus, 0x2 : IRIS3-lite
 	IRIS_LUX_VALUE = 34,
 	IRIS_CCT_VALUE = 35,
 	IRIS_READING_MODE = 36,
@@ -381,7 +381,7 @@ enum iris_config_type {
 	IRIS_LCE_MODE = 41,
 	IRIS_LCE_LEVEL = 42,
 	IRIS_GRAPHIC_DET_ENABLE = 43,
-	IRIS_AL_ENABLE = 44,			//AL means ambient light
+	IRIS_AL_ENABLE = 44, //AL means ambient light
 	IRIS_DBC_LEVEL = 45,
 	IRIS_DEMO_MODE = 46,
 	IRIS_SDR2HDR = 47,
@@ -431,7 +431,7 @@ enum iris_config_type {
 
 	IRIS_MODE_SET = 120,
 	IRIS_VIDEO_FRAME_RATE_SET = 121,
-	IRIS_OUT_FRAME_RATE_SET = 122,	// debug only
+	IRIS_OUT_FRAME_RATE_SET = 122, // debug only
 	IRIS_OSD_ENABLE = 123,
 	IRIS_OSD_AUTOREFRESH = 124,
 	IRIS_OSD_OVERFLOW_ST = 125,

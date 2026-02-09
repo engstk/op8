@@ -11,7 +11,7 @@ config NET_DSA
 	select GRO_CELLS
 	select NET_SWITCHDEV
 	select PHYLINK
-	---help---
+	help
 	  Say Y if you want to enable support for the hardware switches supported
 	  by the Distributed Switch Architecture.
 
@@ -20,7 +20,7 @@ if NET_DSA
 config NET_DSA_LEGACY
 	bool "Support for older platform device and Device Tree registration"
 	default y
-	---help---
+	help
 	  Say Y if you want to enable support for the older platform device and
 	  deprecated Device Tree binding registration.
 

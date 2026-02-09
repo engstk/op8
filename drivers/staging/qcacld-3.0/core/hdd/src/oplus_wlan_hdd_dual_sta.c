@@ -5,7 +5,7 @@
 * Description: create proc file to show if current router is 1x1 IOT router
 * Version : 1.0
 * Date : 2019-9-12
-* Author : zhaomengqing@oplus.com
+* Author : zhaomengqing
 * ---------------- Revision History: --------------------------
 * <version> <date> < author > <desc>
 *

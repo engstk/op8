@@ -116,9 +116,10 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 	})
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define __raw_write_logged_oplus_vooc(v, a, _t) ({ \
-	volatile void __iomem *_a = (a); \
-	__raw_write##_t##_no_log((v), _a); \
+#define __raw_write_logged_oplus_vooc(v, a, _t)    \
+	({                                         \
+		volatile void __iomem *_a = (a);   \
+		__raw_write##_t##_no_log((v), _a); \
 	})
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -126,7 +127,7 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 #define __raw_writew(v, a)	__raw_write_logged((v), a, w)
 #define __raw_writel(v, a)	__raw_write_logged((v), a, l)
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define __raw_writel_oplus_vooc(v, a)	__raw_write_logged_oplus_vooc((v), a, l)
+#define __raw_writel_oplus_vooc(v, a) __raw_write_logged_oplus_vooc((v), a, l)
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
 #define __raw_writeq(v, a)	__raw_write_logged((v), a, q)
@@ -144,10 +145,12 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 	})
 
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define __raw_read_logged_oplus_vooc(a, _l, _t)    ({ \
-	_t __a; \
-	const volatile void __iomem *_a = (const volatile void __iomem *)(a); \
-	__a = __raw_read##_l##_no_log(_a); \
+#define __raw_read_logged_oplus_vooc(a, _l, _t)             \
+	({                                                  \
+		_t __a;                                     \
+		const volatile void __iomem *_a =           \
+			(const volatile void __iomem *)(a); \
+		__a = __raw_read##_l##_no_log(_a);          \
 	})
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
@@ -155,7 +158,7 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 #define __raw_readw(a)		__raw_read_logged((a), w, u16)
 #define __raw_readl(a)		__raw_read_logged((a), l, u32)
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define __raw_readl_oplus_vooc(a)		__raw_read_logged_oplus_vooc((a), l, u32)
+#define __raw_readl_oplus_vooc(a) __raw_read_logged_oplus_vooc((a), l, u32)
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 #define __raw_readq(a)		__raw_read_logged((a), q, u64)
 
@@ -190,7 +193,12 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 #define readw_relaxed(c)	({ u16 __r = le16_to_cpu((__force __le16)__raw_readw(c)); __r; })
 #define readl_relaxed(c)	({ u32 __r = le32_to_cpu((__force __le32)__raw_readl(c)); __r; })
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define readl_relaxed_oplus_vooc(c)	({ u32 __r = le32_to_cpu((__force __le32)__raw_readl_oplus_vooc(c)); __r; })
+#define readl_relaxed_oplus_vooc(c)                                 \
+	({                                                          \
+		u32 __r = le32_to_cpu(                              \
+			(__force __le32)__raw_readl_oplus_vooc(c)); \
+		__r;                                                \
+	})
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 #define readq_relaxed(c)	({ u64 __r = le64_to_cpu((__force __le64)__raw_readq(c)); __r; })
 
@@ -198,7 +206,8 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 #define writew_relaxed(v,c)	((void)__raw_writew((__force u16)cpu_to_le16(v),(c)))
 #define writel_relaxed(v,c)	((void)__raw_writel((__force u32)cpu_to_le32(v),(c)))
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define writel_relaxed_oplus_vooc(v,c)	((void)__raw_writel_oplus_vooc((__force u32)cpu_to_le32(v),(c)))
+#define writel_relaxed_oplus_vooc(v, c) \
+	((void)__raw_writel_oplus_vooc((__force u32)cpu_to_le32(v), (c)))
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 
 #define writeq_relaxed(v,c)	((void)__raw_writeq((__force u64)cpu_to_le64(v),(c)))
@@ -228,7 +237,11 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 #define readw(c)		({ u16 __v = readw_relaxed(c); __iormb(__v); __v; })
 #define readl(c)		({ u32 __v = readl_relaxed(c); __iormb(__v); __v; })
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define readl_oplus_vooc(c)		({ u32 __v = readl_relaxed_oplus_vooc(c);  __v; })
+#define readl_oplus_vooc(c)                            \
+	({                                             \
+		u32 __v = readl_relaxed_oplus_vooc(c); \
+		__v;                                   \
+	})
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 #define readq(c)		({ u64 __v = readq_relaxed(c); __iormb(__v); __v; })
 
@@ -236,7 +249,7 @@ static inline u64 __raw_readq_no_log(const volatile void __iomem *addr)
 #define writew(v,c)		({ __iowmb(); writew_relaxed((v),(c)); })
 #define writel(v,c)		({ __iowmb(); writel_relaxed((v),(c)); })
 #ifdef OPLUS_FEATURE_CHG_BASIC
-#define writel_oplus_vooc(v,c)		({ writel_relaxed_oplus_vooc((v),(c)); })
+#define writel_oplus_vooc(v, c) ({ writel_relaxed_oplus_vooc((v), (c)); })
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 #define writeq(v,c)		({ __iowmb(); writeq_relaxed((v),(c)); })
 

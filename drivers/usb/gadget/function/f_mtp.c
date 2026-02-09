@@ -1092,10 +1092,6 @@ static int mtp_send_event(struct mtp_dev *dev, struct mtp_event *event)
 	if (ret)
 		mtp_req_put(dev, &dev->intr_idle, req);
 
-#ifdef OPLUS_FEATURE_CHG_BASIC
-	mtp_log("exit: (%d)\n", ret);
-#endif
-
 	return ret;
 }
 
@@ -1106,10 +1102,6 @@ static long mtp_send_receive_ioctl(struct file *fp, unsigned int code,
 	struct file *filp = NULL;
 	struct work_struct *work;
 	int ret = -EINVAL;
-
-#ifdef OPLUS_FEATURE_CHG_BASIC
-	mtp_log("entering ioctl with state: %d\n", dev->state);
-#endif
 
 	if (mtp_lock(&dev->ioctl_excl)) {
 		mtp_log("ioctl returning EBUSY state:%d\n", dev->state);
@@ -1171,7 +1163,8 @@ static long mtp_send_receive_ioctl(struct file *fp, unsigned int code,
 	flush_workqueue(dev->wq);
 	fput(filp);
 #ifdef OPLUS_FEATURE_CHG_BASIC
-	atomic_notifier_call_chain(&mtp_rw_notifier, code | 0x8000, (void *)&mfr);
+	atomic_notifier_call_chain(&mtp_rw_notifier, code | 0x8000,
+				   (void *)&mfr);
 #endif
 
 	/* read the result */
@@ -1204,7 +1197,6 @@ int mtp_unregister_notifier(struct notifier_block *nb)
 }
 EXPORT_SYMBOL(mtp_unregister_notifier);
 #endif /*OPLUS_FEATURE_CHG_BASIC*/
-
 
 static long mtp_ioctl(struct file *fp, unsigned int code, unsigned long value)
 {

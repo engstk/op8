@@ -8,12 +8,12 @@
 #include <linux/notifier.h>
 
 /* A hardware display blank change occurred */
-#define MSM_DRM_EVENT_BLANK			0x01
+#define MSM_DRM_EVENT_BLANK 0x01
 /* A hardware display blank early change occurred */
-#define MSM_DRM_EARLY_EVENT_BLANK		0x02
+#define MSM_DRM_EARLY_EVENT_BLANK 0x02
 #ifdef VENDOR_EDIT
 /* event for onscreenfingerprint scene */
-#define MSM_DRM_ONSCREENFINGERPRINT_EVENT	0x10
+#define MSM_DRM_ONSCREENFINGERPRINT_EVENT 0x10
 #endif /* VENDOR_EDIT */
 
 enum {
@@ -36,9 +36,10 @@ struct msm_drm_notifier {
 	void *data;
 };
 
-#ifdef CONFIG_DRM_MSM
+#if defined(CONFIG_DRM_MSM) || defined(CONFIG_DRM_OPLUS_NOTIFY)
 int msm_drm_register_client(struct notifier_block *nb);
 int msm_drm_unregister_client(struct notifier_block *nb);
+int msm_drm_notifier_call_chain(unsigned long val, void *v);
 #else
 static inline int msm_drm_register_client(struct notifier_block *nb)
 {
@@ -46,6 +47,10 @@ static inline int msm_drm_register_client(struct notifier_block *nb)
 }
 
 static inline int msm_drm_unregister_client(struct notifier_block *nb)
+{
+	return 0;
+}
+static inline int msm_drm_notifier_call_chain(unsigned long val, void *v)
 {
 	return 0;
 }

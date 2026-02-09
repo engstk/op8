@@ -46,14 +46,11 @@
 #define BQ25970_ROLE_SLAVE 1
 #define BQ25970_ROLE_MASTER 2
 
-#define chg_debug(fmt, ...)                                                    \
-	printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_debug(fmt, ...) printk(KERN_NOTICE "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_err(fmt, ...)                                                      \
-	printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_err(fmt, ...) printk(KERN_ERR "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
-#define chg_info(fmt, ...)                                                     \
-	printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
+#define chg_info(fmt, ...) printk(KERN_INFO "[WLCHG][%s]" fmt, __func__, ##__VA_ARGS__)
 
 enum {
 	BQ25970_STDALONE,
@@ -128,43 +125,34 @@ static int bq2597x_wl_mode_data[] = {
 #define VBAT_REG_STATUS_MASK (1 << VBAT_REG_STATUS_SHIFT)
 #define IBAT_REG_STATUS_MASK (1 << VBAT_REG_STATUS_SHIFT)
 
-#define bq_err(fmt, ...)                                                       \
-	do {                                                                   \
-		if (bq->mode == BQ25970_ROLE_MASTER)                           \
-			printk(KERN_ERR "[bq2597x-wl-MASTER]:%s:" fmt, __func__,  \
-			       ##__VA_ARGS__);                                 \
-		else if (bq->mode == BQ25970_ROLE_SLAVE)                       \
-			printk(KERN_ERR "[bq2597x-wl-SLAVE]:%s:" fmt, __func__,   \
-			       ##__VA_ARGS__);                                 \
-		else                                                           \
-			printk(KERN_ERR "[bq2597x-wl-STANDALONE]:%s:" fmt,        \
-			       __func__, ##__VA_ARGS__);                       \
+#define bq_err(fmt, ...)                                                                                               \
+	do {                                                                                                           \
+		if (bq->mode == BQ25970_ROLE_MASTER)                                                                   \
+			printk(KERN_ERR "[bq2597x-wl-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);                       \
+		else if (bq->mode == BQ25970_ROLE_SLAVE)                                                               \
+			printk(KERN_ERR "[bq2597x-wl-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);                        \
+		else                                                                                                   \
+			printk(KERN_ERR "[bq2597x-wl-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);                   \
 	} while (0)
 
-#define bq_info(fmt, ...)                                                      \
-	do {                                                                   \
-		if (bq->mode == BQ25970_ROLE_MASTER)                           \
-			printk(KERN_INFO "[bq2597x-wl-MASTER]:%s:" fmt, __func__, \
-			       ##__VA_ARGS__);                                 \
-		else if (bq->mode == BQ25970_ROLE_SLAVE)                       \
-			printk(KERN_INFO "[bq2597x-wl-SLAVE]:%s:" fmt, __func__,  \
-			       ##__VA_ARGS__);                                 \
-		else                                                           \
-			printk(KERN_INFO "[bq2597x-wl-STANDALONE]:%s:" fmt,       \
-			       __func__, ##__VA_ARGS__);                       \
+#define bq_info(fmt, ...)                                                                                              \
+	do {                                                                                                           \
+		if (bq->mode == BQ25970_ROLE_MASTER)                                                                   \
+			printk(KERN_INFO "[bq2597x-wl-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);                      \
+		else if (bq->mode == BQ25970_ROLE_SLAVE)                                                               \
+			printk(KERN_INFO "[bq2597x-wl-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);                       \
+		else                                                                                                   \
+			printk(KERN_INFO "[bq2597x-wl-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);                  \
 	} while (0)
 
-#define bq_dbg(fmt, ...)                                                       \
-	do {                                                                   \
-		if (bq->mode == BQ25970_ROLE_MASTER)                           \
-			printk(KERN_DEBUG "[bq2597x-wl-MASTER]:%s:" fmt,          \
-			       __func__, ##__VA_ARGS__);                       \
-		else if (bq->mode == BQ25970_ROLE_SLAVE)                       \
-			printk(KERN_DEBUG "[bq2597x-wl-SLAVE]:%s:" fmt, __func__, \
-			       ##__VA_ARGS__);                                 \
-		else                                                           \
-			printk(KERN_DEBUG "[bq2597x-wl-STANDALONE]:%s:" fmt,      \
-			       __func__, ##__VA_ARGS__);                       \
+#define bq_dbg(fmt, ...)                                                                                               \
+	do {                                                                                                           \
+		if (bq->mode == BQ25970_ROLE_MASTER)                                                                   \
+			printk(KERN_DEBUG "[bq2597x-wl-MASTER]:%s:" fmt, __func__, ##__VA_ARGS__);                     \
+		else if (bq->mode == BQ25970_ROLE_SLAVE)                                                               \
+			printk(KERN_DEBUG "[bq2597x-wl-SLAVE]:%s:" fmt, __func__, ##__VA_ARGS__);                      \
+		else                                                                                                   \
+			printk(KERN_DEBUG "[bq2597x-wl-STANDALONE]:%s:" fmt, __func__, ##__VA_ARGS__);                 \
 	} while (0)
 
 /*end*/
@@ -231,8 +219,7 @@ static int __bq2597x_wl_write_byte(struct bq2597x_wl *bq, int reg, u8 val)
 
 	ret = i2c_smbus_write_byte_data(bq->client, reg, val);
 	if (ret < 0) {
-		bq_err("i2c write fail: can't write 0x%02X to reg 0x%02X: %d\n",
-		       val, reg, ret);
+		bq_err("i2c write fail: can't write 0x%02X to reg 0x%02X: %d\n", val, reg, ret);
 		return ret;
 	}
 	return 0;
@@ -305,8 +292,7 @@ static int bq2597x_wl_update_bits(struct bq2597x_wl *bq, u8 reg, u8 mask, u8 dat
 	u8 tmp;
 
 	if (bq->skip_reads || bq->skip_writes) {
-		bq_err("skip because skip_reads=%d,skip_writes=%d\n",
-		       bq->skip_reads, bq->skip_writes);
+		bq_err("skip because skip_reads=%d,skip_writes=%d\n", bq->skip_reads, bq->skip_writes);
 		return 0;
 	}
 
@@ -317,8 +303,7 @@ static int bq2597x_wl_update_bits(struct bq2597x_wl *bq, u8 reg, u8 mask, u8 dat
 		goto out;
 	}
 
-	bq_err("read reg(0x%02x)=0x%02x, wanna write data=0x%02x.\n", reg, tmp,
-	       data);
+	bq_err("read reg(0x%02x)=0x%02x, wanna write data=0x%02x.\n", reg, tmp, data);
 	tmp &= ~mask;
 	tmp |= data & mask;
 
@@ -389,8 +374,7 @@ int bq2597x_wl_enable_charge_pump(bool enable)
 
 	ret = bq2597x_wl_check_charge_enabled(bq, &bq->charge_enabled);
 	if (bq->charge_enabled == enable) {
-		bq_err("bq2597x_wl is already %s.",
-		       enable ? "enabled" : "disabled");
+		bq_err("bq2597x_wl is already %s.", enable ? "enabled" : "disabled");
 		return 0;
 	}
 
@@ -415,8 +399,7 @@ static int bq2597x_wl_enable_wdt(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_WATCHDOG_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0B, BQ2597X_WATCHDOG_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0B, BQ2597X_WATCHDOG_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_wdt);
@@ -439,8 +422,7 @@ static int bq2597x_wl_set_wdt(struct bq2597x_wl *bq, int ms)
 
 	val <<= BQ2597X_WATCHDOG_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0B, BQ2597X_WATCHDOG_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0B, BQ2597X_WATCHDOG_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_wdt);
@@ -457,8 +439,7 @@ static int bq2597x_wl_enable_batovp(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BAT_OVP_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_00, BQ2597X_BAT_OVP_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_00, BQ2597X_BAT_OVP_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_batovp);
@@ -475,8 +456,7 @@ static int bq2597x_wl_set_batovp_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BAT_OVP_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_00, BQ2597X_BAT_OVP_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_00, BQ2597X_BAT_OVP_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_batovp_th);
@@ -493,8 +473,7 @@ static int bq2597x_wl_enable_batovp_alarm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BAT_OVP_ALM_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_01,
-				  BQ2597X_BAT_OVP_ALM_DIS_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_01, BQ2597X_BAT_OVP_ALM_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_batovp_alarm);
@@ -511,8 +490,7 @@ static int bq2597x_wl_set_batovp_alarm_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BAT_OVP_ALM_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_01, BQ2597X_BAT_OVP_ALM_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_01, BQ2597X_BAT_OVP_ALM_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_batovp_alarm_th);
@@ -529,8 +507,7 @@ static int bq2597x_wl_enable_batocp(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BAT_OCP_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_02, BQ2597X_BAT_OCP_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_02, BQ2597X_BAT_OCP_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_batocp);
@@ -547,8 +524,7 @@ static int bq2597x_wl_set_batocp_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BAT_OCP_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_02, BQ2597X_BAT_OCP_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_02, BQ2597X_BAT_OCP_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_batocp_th);
@@ -565,8 +541,7 @@ static int bq2597x_wl_enable_batocp_alarm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BAT_OCP_ALM_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_03,
-				  BQ2597X_BAT_OCP_ALM_DIS_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_03, BQ2597X_BAT_OCP_ALM_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_batocp_alarm);
@@ -583,8 +558,7 @@ static int bq2597x_wl_set_batocp_alarm_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BAT_OCP_ALM_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_03, BQ2597X_BAT_OCP_ALM_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_03, BQ2597X_BAT_OCP_ALM_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_batocp_alarm_th);
@@ -601,8 +575,7 @@ static int bq2597x_wl_set_busovp_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BUS_OVP_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_06, BQ2597X_BUS_OVP_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_06, BQ2597X_BUS_OVP_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_busovp_th);
@@ -619,8 +592,7 @@ static int bq2597x_wl_enable_busovp_alarm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BUS_OVP_ALM_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_07,
-				  BQ2597X_BUS_OVP_ALM_DIS_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_07, BQ2597X_BUS_OVP_ALM_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_busovp_alarm);
@@ -637,8 +609,7 @@ static int bq2597x_wl_set_busovp_alarm_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BUS_OVP_ALM_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_07, BQ2597X_BUS_OVP_ALM_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_07, BQ2597X_BUS_OVP_ALM_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_busovp_alarm_th);
@@ -655,8 +626,7 @@ static int bq2597x_wl_enable_busocp(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BUS_OCP_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_08, BQ2597X_BUS_OCP_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_08, BQ2597X_BUS_OCP_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_busocp);
@@ -673,8 +643,7 @@ static int bq2597x_wl_set_busocp_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BUS_OCP_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_08, BQ2597X_BUS_OCP_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_08, BQ2597X_BUS_OCP_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_busocp_th);
@@ -691,8 +660,7 @@ static int bq2597x_wl_enable_busocp_alarm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BUS_OCP_ALM_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_09,
-				  BQ2597X_BUS_OCP_ALM_DIS_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_09, BQ2597X_BUS_OCP_ALM_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_busocp_alarm);
@@ -709,8 +677,7 @@ static int bq2597x_wl_set_busocp_alarm_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BUS_OCP_ALM_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_09, BQ2597X_BUS_OCP_ALM_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_09, BQ2597X_BUS_OCP_ALM_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_busocp_alarm_th);
@@ -727,8 +694,7 @@ static int bq2597x_wl_enable_batucp_alarm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_BAT_UCP_ALM_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_04,
-				  BQ2597X_BAT_UCP_ALM_DIS_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_04, BQ2597X_BAT_UCP_ALM_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_batucp_alarm);
@@ -745,8 +711,7 @@ static int bq2597x_wl_set_batucp_alarm_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_BAT_UCP_ALM_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_04, BQ2597X_BAT_UCP_ALM_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_04, BQ2597X_BAT_UCP_ALM_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_batucp_alarm_th);
@@ -784,8 +749,7 @@ static int bq2597x_wl_set_vdrop_th(struct bq2597x_wl *bq, int threshold)
 
 	val <<= BQ2597X_VDROP_THRESHOLD_SET_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_05,
-				  BQ2597X_VDROP_THRESHOLD_SET_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_05, BQ2597X_VDROP_THRESHOLD_SET_MASK, val);
 
 	return ret;
 }
@@ -802,8 +766,7 @@ static int bq2597x_wl_set_vdrop_deglitch(struct bq2597x_wl *bq, int us)
 
 	val <<= BQ2597X_VDROP_DEGLITCH_SET_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_05,
-				  BQ2597X_VDROP_DEGLITCH_SET_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_05, BQ2597X_VDROP_DEGLITCH_SET_MASK, val);
 	return ret;
 }
 
@@ -819,8 +782,7 @@ static int bq2597x_wl_enable_bat_therm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_TSBAT_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0C, BQ2597X_TSBAT_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0C, BQ2597X_TSBAT_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_bat_therm);
@@ -849,8 +811,7 @@ static int bq2597x_wl_enable_bus_therm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_TSBUS_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0C, BQ2597X_TSBUS_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0C, BQ2597X_TSBUS_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_bus_therm);
@@ -879,8 +840,7 @@ static int bq2597x_wl_enable_die_therm(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_TDIE_DIS_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0C, BQ2597X_TDIE_DIS_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_0C, BQ2597X_TDIE_DIS_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_enable_die_therm);
@@ -897,8 +857,7 @@ static int bq2597x_wl_set_die_therm_th(struct bq2597x_wl *bq, u8 threshold)
 	val = (threshold - BQ2597X_TDIE_ALM_BASE) * BQ2597X_TDIE_ALM_LSB;
 	val <<= BQ2597X_TDIE_ALM_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2A, BQ2597X_TDIE_ALM_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2A, BQ2597X_TDIE_ALM_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_die_therm_th);
@@ -934,8 +893,7 @@ static int bq2597x_wl_set_adc_average(struct bq2597x_wl *bq, bool avg)
 
 	val <<= BQ2597X_ADC_AVG_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_14, BQ2597X_ADC_AVG_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_14, BQ2597X_ADC_AVG_MASK, val);
 	return 0;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_adc_average);
@@ -970,8 +928,7 @@ static int bq2597x_wl_set_adc_bits(struct bq2597x_wl *bq, int bits)
 
 	val <<= BQ2597X_ADC_SAMPLE_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_14, BQ2597X_ADC_SAMPLE_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_14, BQ2597X_ADC_SAMPLE_MASK, val);
 	return ret;
 }
 EXPORT_SYMBOL_GPL(bq2597x_wl_set_adc_bits);
@@ -1111,8 +1068,7 @@ static int bq2597x_wl_set_sense_resistor(struct bq2597x_wl *bq, int r_mohm)
 
 	val <<= BQ2597X_SET_IBAT_SNS_RES_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B,
-				  BQ2597X_SET_IBAT_SNS_RES_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B, BQ2597X_SET_IBAT_SNS_RES_MASK, val);
 	return ret;
 }
 
@@ -1128,8 +1084,7 @@ static int bq2597x_wl_enable_regulation(struct bq2597x_wl *bq, bool enable)
 
 	val <<= BQ2597X_EN_REGULATION_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B,
-				  BQ2597X_EN_REGULATION_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B, BQ2597X_EN_REGULATION_MASK, val);
 
 	return ret;
 }
@@ -1146,8 +1101,7 @@ static int bq2597x_wl_set_ibus_ucp_rise_th(struct bq2597x_wl *bq, int th_ma)
 
 	val <<= BQ2597X_IBUS_UCP_RISE_TH_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B,
-				  BQ2597X_IBUS_UCP_RISE_TH_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B, BQ2597X_IBUS_UCP_RISE_TH_MASK, val);
 
 	return ret;
 }
@@ -1189,8 +1143,7 @@ static int bq2597x_wl_set_ss_timeout(struct bq2597x_wl *bq, int timeout)
 
 	val <<= BQ2597X_SS_TIMEOUT_SET_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B,
-				  BQ2597X_SS_TIMEOUT_SET_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2B, BQ2597X_SS_TIMEOUT_SET_MASK, val);
 
 	return ret;
 }
@@ -1212,8 +1165,7 @@ static int bq2597x_wl_set_ibat_reg_th(struct bq2597x_wl *bq, int th_ma)
 		val = BQ2597X_IBAT_REG_500MA;
 
 	val <<= BQ2597X_IBAT_REG_SHIFT;
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2C, BQ2597X_IBAT_REG_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2C, BQ2597X_IBAT_REG_MASK, val);
 
 	return ret;
 }
@@ -1234,8 +1186,7 @@ static int bq2597x_wl_set_vbat_reg_th(struct bq2597x_wl *bq, int th_mv)
 
 	val <<= BQ2597X_VBAT_REG_SHIFT;
 
-	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2C, BQ2597X_VBAT_REG_MASK,
-				  val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2C, BQ2597X_VBAT_REG_MASK, val);
 
 	return ret;
 }
@@ -1277,9 +1228,7 @@ static int bq2597x_wl_get_work_mode(struct bq2597x_wl *bq, int *mode)
 		*mode = BQ25970_ROLE_STDALONE;
 
 	bq_info("work mode:%s\n",
-		*mode == BQ25970_ROLE_STDALONE ?
-			"Standalone" :
-			(*mode == BQ25970_ROLE_SLAVE ? "Slave" : "Master"));
+		*mode == BQ25970_ROLE_STDALONE ? "Standalone" : (*mode == BQ25970_ROLE_SLAVE ? "Slave" : "Master"));
 	return ret;
 }
 
@@ -1308,111 +1257,86 @@ static int bq2597x_wl_parse_dt(struct bq2597x_wl *bq, struct device *dev)
 	if (!bq->cfg)
 		return -ENOMEM;
 
-	bq->cfg->bat_ovp_disable =
-		of_property_read_bool(np, "ti,bq2597x,bat-ovp-disable");
-	bq->cfg->bat_ocp_disable =
-		of_property_read_bool(np, "ti,bq2597x,bat-ocp-disable");
-	bq->cfg->bat_ovp_alm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bat-ovp-alarm-disable");
-	bq->cfg->bat_ocp_alm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bat-ocp-alarm-disable");
-	bq->cfg->bus_ocp_disable =
-		of_property_read_bool(np, "ti,bq2597x,bus-ocp-disable");
-	bq->cfg->bus_ovp_alm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bus-ovp-alarm-disable");
-	bq->cfg->bus_ocp_alm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bus-ocp-alarm-disable");
-	bq->cfg->bat_ucp_alm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bat-ucp-alarm-disable");
-	bq->cfg->bat_therm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bat-therm-disable");
-	bq->cfg->bus_therm_disable =
-		of_property_read_bool(np, "ti,bq2597x,bus-therm-disable");
-	bq->cfg->die_therm_disable =
-		of_property_read_bool(np, "ti,bq2597x,die-therm-disable");
+	bq->cfg->bat_ovp_disable = of_property_read_bool(np, "ti,bq2597x,bat-ovp-disable");
+	bq->cfg->bat_ocp_disable = of_property_read_bool(np, "ti,bq2597x,bat-ocp-disable");
+	bq->cfg->bat_ovp_alm_disable = of_property_read_bool(np, "ti,bq2597x,bat-ovp-alarm-disable");
+	bq->cfg->bat_ocp_alm_disable = of_property_read_bool(np, "ti,bq2597x,bat-ocp-alarm-disable");
+	bq->cfg->bus_ocp_disable = of_property_read_bool(np, "ti,bq2597x,bus-ocp-disable");
+	bq->cfg->bus_ovp_alm_disable = of_property_read_bool(np, "ti,bq2597x,bus-ovp-alarm-disable");
+	bq->cfg->bus_ocp_alm_disable = of_property_read_bool(np, "ti,bq2597x,bus-ocp-alarm-disable");
+	bq->cfg->bat_ucp_alm_disable = of_property_read_bool(np, "ti,bq2597x,bat-ucp-alarm-disable");
+	bq->cfg->bat_therm_disable = of_property_read_bool(np, "ti,bq2597x,bat-therm-disable");
+	bq->cfg->bus_therm_disable = of_property_read_bool(np, "ti,bq2597x,bus-therm-disable");
+	bq->cfg->die_therm_disable = of_property_read_bool(np, "ti,bq2597x,die-therm-disable");
 
-	ret = of_property_read_u32(np, "ti,bq2597x,bat-ovp-threshold",
-				   &bq->cfg->bat_ovp_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bat-ovp-threshold", &bq->cfg->bat_ovp_th);
 	if (ret) {
 		bq_err("failed to read bat-ovp-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bat-ovp-alarm-threshold",
-				   &bq->cfg->bat_ovp_alm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bat-ovp-alarm-threshold", &bq->cfg->bat_ovp_alm_th);
 	if (ret) {
 		bq_err("failed to read bat-ovp-alarm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bat-ocp-threshold",
-				   &bq->cfg->bat_ocp_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bat-ocp-threshold", &bq->cfg->bat_ocp_th);
 	if (ret) {
 		bq_err("failed to read bat-ocp-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bat-ocp-alarm-threshold",
-				   &bq->cfg->bat_ocp_alm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bat-ocp-alarm-threshold", &bq->cfg->bat_ocp_alm_th);
 	if (ret) {
 		bq_err("failed to read bat-ocp-alarm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bus-ovp-threshold",
-				   &bq->cfg->bus_ovp_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bus-ovp-threshold", &bq->cfg->bus_ovp_th);
 	if (ret) {
 		bq_err("failed to read bus-ovp-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bus-ovp-alarm-threshold",
-				   &bq->cfg->bus_ovp_alm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bus-ovp-alarm-threshold", &bq->cfg->bus_ovp_alm_th);
 	if (ret) {
 		bq_err("failed to read bus-ovp-alarm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bus-ocp-threshold",
-				   &bq->cfg->bus_ocp_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bus-ocp-threshold", &bq->cfg->bus_ocp_th);
 	if (ret) {
 		bq_err("failed to read bus-ocp-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bus-ocp-alarm-threshold",
-				   &bq->cfg->bus_ocp_alm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bus-ocp-alarm-threshold", &bq->cfg->bus_ocp_alm_th);
 	if (ret) {
 		bq_err("failed to read bus-ocp-alarm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bat-ucp-alarm-threshold",
-				   &bq->cfg->bat_ucp_alm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bat-ucp-alarm-threshold", &bq->cfg->bat_ucp_alm_th);
 	if (ret) {
 		bq_err("failed to read bat-ucp-alarm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bat-therm-threshold",
-				   &bq->cfg->bat_therm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bat-therm-threshold", &bq->cfg->bat_therm_th);
 	if (ret) {
 		bq_err("failed to read bat-therm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,bus-therm-threshold",
-				   &bq->cfg->bus_therm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,bus-therm-threshold", &bq->cfg->bus_therm_th);
 	if (ret) {
 		bq_err("failed to read bus-therm-threshold\n");
 		return ret;
 	}
-	ret = of_property_read_u32(np, "ti,bq2597x,die-therm-threshold",
-				   &bq->cfg->die_therm_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,die-therm-threshold", &bq->cfg->die_therm_th);
 	if (ret) {
 		bq_err("failed to read die-therm-threshold\n");
 		return ret;
 	}
 
-	ret = of_property_read_u32(np, "ti,bq2597x,ac-ovp-threshold",
-				   &bq->cfg->ac_ovp_th);
+	ret = of_property_read_u32(np, "ti,bq2597x,ac-ovp-threshold", &bq->cfg->ac_ovp_th);
 	if (ret) {
 		bq_err("failed to read ac-ovp-threshold\n");
 		return ret;
 	}
 
-	ret = of_property_read_u32(np, "ti,bq2597x,sense-resistor-mohm",
-				   &bq->cfg->sense_r_mohm);
+	ret = of_property_read_u32(np, "ti,bq2597x,sense-resistor-mohm", &bq->cfg->sense_r_mohm);
 	if (ret) {
 		bq_err("failed to read sense-resistor-mohm\n");
 		return ret;
@@ -1426,109 +1350,82 @@ static int bq2597x_wl_init_protection(struct bq2597x_wl *bq)
 	int ret;
 
 	ret = bq2597x_wl_enable_batovp(bq, !bq->cfg->bat_ovp_disable);
-	bq_info("%s bat ovp %s\n",
-		bq->cfg->bat_ovp_disable ? "disable" : "enable",
-		!ret ? "successfullly" : "failed");
+	bq_info("%s bat ovp %s\n", bq->cfg->bat_ovp_disable ? "disable" : "enable", !ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_batocp(bq, !bq->cfg->bat_ocp_disable);
-	bq_info("%s bat ocp %s\n",
-		bq->cfg->bat_ocp_disable ? "disable" : "enable",
-		!ret ? "successfullly" : "failed");
+	bq_info("%s bat ocp %s\n", bq->cfg->bat_ocp_disable ? "disable" : "enable", !ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_batovp_alarm(bq, !bq->cfg->bat_ovp_alm_disable);
-	bq_info("%s bat ovp alarm %s\n",
-		bq->cfg->bat_ovp_alm_disable ? "disable" : "enable",
+	bq_info("%s bat ovp alarm %s\n", bq->cfg->bat_ovp_alm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_batocp_alarm(bq, !bq->cfg->bat_ocp_alm_disable);
-	bq_info("%s bat ocp alarm %s\n",
-		bq->cfg->bat_ocp_alm_disable ? "disable" : "enable",
+	bq_info("%s bat ocp alarm %s\n", bq->cfg->bat_ocp_alm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_batucp_alarm(bq, !bq->cfg->bat_ucp_alm_disable);
-	bq_info("%s bat ocp alarm %s\n",
-		bq->cfg->bat_ucp_alm_disable ? "disable" : "enable",
+	bq_info("%s bat ocp alarm %s\n", bq->cfg->bat_ucp_alm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_busovp_alarm(bq, !bq->cfg->bus_ovp_alm_disable);
-	bq_info("%s bus ovp alarm %s\n",
-		bq->cfg->bus_ovp_alm_disable ? "disable" : "enable",
+	bq_info("%s bus ovp alarm %s\n", bq->cfg->bus_ovp_alm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_busocp(bq, !bq->cfg->bus_ocp_disable);
-	bq_info("%s bus ocp %s\n",
-		bq->cfg->bus_ocp_disable ? "disable" : "enable",
-		!ret ? "successfullly" : "failed");
+	bq_info("%s bus ocp %s\n", bq->cfg->bus_ocp_disable ? "disable" : "enable", !ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_busocp_alarm(bq, !bq->cfg->bus_ocp_alm_disable);
-	bq_info("%s bus ocp alarm %s\n",
-		bq->cfg->bus_ocp_alm_disable ? "disable" : "enable",
+	bq_info("%s bus ocp alarm %s\n", bq->cfg->bus_ocp_alm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_bat_therm(bq, !bq->cfg->bat_therm_disable);
-	bq_info("%s bat therm %s\n",
-		bq->cfg->bat_therm_disable ? "disable" : "enable",
+	bq_info("%s bat therm %s\n", bq->cfg->bat_therm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_bus_therm(bq, !bq->cfg->bus_therm_disable);
-	bq_info("%s bus therm %s\n",
-		bq->cfg->bus_therm_disable ? "disable" : "enable",
+	bq_info("%s bus therm %s\n", bq->cfg->bus_therm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_enable_die_therm(bq, !bq->cfg->die_therm_disable);
-	bq_info("%s die therm %s\n",
-		bq->cfg->die_therm_disable ? "disable" : "enable",
+	bq_info("%s die therm %s\n", bq->cfg->die_therm_disable ? "disable" : "enable",
 		!ret ? "successfullly" : "failed");
 
 	ret = bq2597x_wl_set_batovp_th(bq, bq->cfg->bat_ovp_th);
-	bq_info("set bat ovp th %d %s\n", bq->cfg->bat_ovp_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bat ovp th %d %s\n", bq->cfg->bat_ovp_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_batovp_alarm_th(bq, bq->cfg->bat_ovp_alm_th);
-	bq_info("set bat ovp alarm threshold %d %s\n", bq->cfg->bat_ovp_alm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bat ovp alarm threshold %d %s\n", bq->cfg->bat_ovp_alm_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_batocp_th(bq, bq->cfg->bat_ocp_th);
-	bq_info("set bat ocp threshold %d %s\n", bq->cfg->bat_ocp_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bat ocp threshold %d %s\n", bq->cfg->bat_ocp_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_batocp_alarm_th(bq, bq->cfg->bat_ocp_alm_th);
-	bq_info("set bat ocp alarm threshold %d %s\n", bq->cfg->bat_ocp_alm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bat ocp alarm threshold %d %s\n", bq->cfg->bat_ocp_alm_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_busovp_th(bq, bq->cfg->bus_ovp_th);
-	bq_info("set bus ovp threshold %d %s\n", bq->cfg->bus_ovp_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bus ovp threshold %d %s\n", bq->cfg->bus_ovp_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_busovp_alarm_th(bq, bq->cfg->bus_ovp_alm_th);
-	bq_info("set bus ovp alarm threshold %d %s\n", bq->cfg->bus_ovp_alm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bus ovp alarm threshold %d %s\n", bq->cfg->bus_ovp_alm_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_busocp_th(bq, bq->cfg->bus_ocp_th);
-	bq_info("set bus ocp threshold %d %s\n", bq->cfg->bus_ocp_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bus ocp threshold %d %s\n", bq->cfg->bus_ocp_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_busocp_alarm_th(bq, bq->cfg->bus_ocp_alm_th);
-	bq_info("set bus ocp alarm th %d %s\n", bq->cfg->bus_ocp_alm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bus ocp alarm th %d %s\n", bq->cfg->bus_ocp_alm_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_batucp_alarm_th(bq, bq->cfg->bat_ucp_alm_th);
-	bq_info("set bat ucp threshold %d %s\n", bq->cfg->bat_ucp_alm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bat ucp threshold %d %s\n", bq->cfg->bat_ucp_alm_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_bat_therm_th(bq, bq->cfg->bat_therm_th);
-	bq_info("set die therm threshold %d %s\n", bq->cfg->bat_therm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set die therm threshold %d %s\n", bq->cfg->bat_therm_th, !ret ? "successfully" : "failed");
 	ret = bq2597x_wl_set_bus_therm_th(bq, bq->cfg->bus_therm_th);
-	bq_info("set bus therm threshold %d %s\n", bq->cfg->bus_therm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set bus therm threshold %d %s\n", bq->cfg->bus_therm_th, !ret ? "successfully" : "failed");
 	ret = bq2597x_wl_set_die_therm_th(bq, bq->cfg->die_therm_th);
-	bq_info("set die therm threshold %d %s\n", bq->cfg->die_therm_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set die therm threshold %d %s\n", bq->cfg->die_therm_th, !ret ? "successfully" : "failed");
 
 	ret = bq2597x_wl_set_acovp_th(bq, bq->cfg->ac_ovp_th);
-	bq_info("set ac ovp threshold %d %s\n", bq->cfg->ac_ovp_th,
-		!ret ? "successfully" : "failed");
+	bq_info("set ac ovp threshold %d %s\n", bq->cfg->ac_ovp_th, !ret ? "successfully" : "failed");
 
 	return 0;
 }
@@ -1560,8 +1457,7 @@ static int bq2597x_wl_init_int_src(struct bq2597x_wl *bq)
 	 *	fault mask register, so you need call
 	 *	bq2597x_wl_set_fault_int_mask for tsbus and tsbat alarm
 	 */
-	ret = bq2597x_wl_set_alarm_int_mask(bq, ADC_DONE | BAT_UCP_ALARM |
-						     BAT_OVP_ALARM);
+	ret = bq2597x_wl_set_alarm_int_mask(bq, ADC_DONE | BAT_UCP_ALARM | BAT_OVP_ALARM);
 	if (ret) {
 		bq_err("failed to set alarm mask:%d\n", ret);
 		return ret;
@@ -1589,9 +1485,7 @@ static int bq2597x_wl_set_deglitch_long_time(struct bq2597x_wl *bq)
 	val_ibus_low_dg <<= BQ2597X_IBUS_LOW_DG_SHIFT;
 	val = val_vbus_err_low_dg | val_ibus_low_dg;
 
-	ret = bq2597x_wl_update_bits(
-		bq, BQ2597X_REG_2E,
-		BQ2597X_VBUS_ERR_LOW_DG_MASK | BQ2597X_IBUS_LOW_DG_MASK, val);
+	ret = bq2597x_wl_update_bits(bq, BQ2597X_REG_2E, BQ2597X_VBUS_ERR_LOW_DG_MASK | BQ2597X_IBUS_LOW_DG_MASK, val);
 
 	return ret;
 }
@@ -1698,8 +1592,7 @@ static int bq2597x_wl_set_present(struct bq2597x_wl *bq, bool present)
 }
 #endif
 
-static ssize_t bq2597x_wl_show_registers(struct device *dev,
-				      struct device_attribute *attr, char *buf)
+static ssize_t bq2597x_wl_show_registers(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct bq2597x_wl *bq = dev_get_drvdata(dev);
 	u8 addr;
@@ -1713,8 +1606,7 @@ static ssize_t bq2597x_wl_show_registers(struct device *dev,
 	for (addr = 0x0; addr <= 0x2B; addr++) {
 		ret = bq2597x_wl_read_byte(bq, addr, &val);
 		if (ret == 0) {
-			len = snprintf(tmpbuf, PAGE_SIZE - idx,
-				       "Reg[%.2X] = 0x%.2x\n", addr, val);
+			len = snprintf(tmpbuf, PAGE_SIZE - idx, "Reg[%.2X] = 0x%.2x\n", addr, val);
 			memcpy(&buf[idx], tmpbuf, len);
 			idx += len;
 		}
@@ -1723,9 +1615,8 @@ static ssize_t bq2597x_wl_show_registers(struct device *dev,
 	return idx;
 }
 
-static ssize_t bq2597x_wl_store_register(struct device *dev,
-				      struct device_attribute *attr,
-				      const char *buf, size_t count)
+static ssize_t bq2597x_wl_store_register(struct device *dev, struct device_attribute *attr, const char *buf,
+					 size_t count)
 {
 	struct bq2597x_wl *bq = dev_get_drvdata(dev);
 	int ret;
@@ -1739,8 +1630,7 @@ static ssize_t bq2597x_wl_store_register(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(registers, 0660, bq2597x_wl_show_registers,
-		   bq2597x_wl_store_register);
+static DEVICE_ATTR(registers, 0660, bq2597x_wl_show_registers, bq2597x_wl_store_register);
 
 static struct attribute *bq2597x_wl_attributes[] = {
 	&dev_attr_registers.attr,
@@ -2012,13 +1902,11 @@ static void bq2597x_wl_check_alarm_status(struct bq2597x_wl *bq)
 
 	ret = bq2597x_wl_read_byte(bq, BQ2597X_REG_08, &flag);
 	if (!ret && (flag & BQ2597X_IBUS_UCP_FALL_FLAG_MASK))
-		bq_dbg("UCP_FLAG =0x%02X\n",
-		       !!(flag & BQ2597X_IBUS_UCP_FALL_FLAG_MASK));
+		bq_dbg("UCP_FLAG =0x%02X\n", !!(flag & BQ2597X_IBUS_UCP_FALL_FLAG_MASK));
 
 	ret = bq2597x_wl_read_byte(bq, BQ2597X_REG_2D, &flag);
 	if (!ret && (flag & BQ2597X_VDROP_OVP_FLAG_MASK))
-		bq_dbg("VDROP_OVP_FLAG =0x%02X\n",
-		       !!(flag & BQ2597X_VDROP_OVP_FLAG_MASK));
+		bq_dbg("VDROP_OVP_FLAG =0x%02X\n", !!(flag & BQ2597X_VDROP_OVP_FLAG_MASK));
 
 	/*read to clear alarm flag*/
 	ret = bq2597x_wl_read_byte(bq, BQ2597X_REG_0E, &flag);
@@ -2282,15 +2170,11 @@ static void create_debugfs_entry(struct bq2597x_wl *bq)
 		bq_err("Failed to create debug dir\n");
 
 	if (bq->debug_root) {
-		debugfs_create_file("registers", S_IFREG | S_IRUGO,
-				    bq->debug_root, bq, &reg_debugfs_ops);
+		debugfs_create_file("registers", S_IFREG | S_IRUGO, bq->debug_root, bq, &reg_debugfs_ops);
 
-		debugfs_create_x32("skip_reads", S_IFREG | S_IWUSR | S_IRUGO,
-				   bq->debug_root, &(bq->skip_reads));
-		debugfs_create_x32("skip_writes", S_IFREG | S_IWUSR | S_IRUGO,
-				   bq->debug_root, &(bq->skip_writes));
-		debugfs_create_file("enable", S_IFREG | S_IRUGO, bq->debug_root,
-				    bq, &enable_debugfs_ops);
+		debugfs_create_x32("skip_reads", S_IFREG | S_IWUSR | S_IRUGO, bq->debug_root, &(bq->skip_reads));
+		debugfs_create_x32("skip_writes", S_IFREG | S_IWUSR | S_IRUGO, bq->debug_root, &(bq->skip_writes));
+		debugfs_create_file("enable", S_IFREG | S_IRUGO, bq->debug_root, bq, &enable_debugfs_ops);
 	}
 }
 
@@ -2315,8 +2199,7 @@ static void get_reg_task_work_process(struct work_struct *work)
 		bq2597x_wl_enable_charge_pump(true);
 	}
 	cycle_cont++;
-	schedule_delayed_work(&get_reg_task_work,
-			      round_jiffies_relative(msecs_to_jiffies(5000)));
+	schedule_delayed_work(&get_reg_task_work, round_jiffies_relative(msecs_to_jiffies(5000)));
 }
 
 static int init_bq_irq(struct i2c_client *client, struct bq2597x_wl *bq)
@@ -2325,8 +2208,7 @@ static int init_bq_irq(struct i2c_client *client, struct bq2597x_wl *bq)
 	struct pinctrl *pinctrl;
 	struct pinctrl_state *bq_irq_active;
 
-	bq->irq_gpio =
-		of_get_named_gpio(client->dev.of_node, "qcom,bq_int-gpio", 0);
+	bq->irq_gpio = of_get_named_gpio(client->dev.of_node, "qcom,bq_int-gpio", 0);
 	if (bq->irq_gpio < 0) {
 		pr_err("bq_irq_gpio not specified\n");
 		return -EINVAL;
@@ -2334,8 +2216,7 @@ static int init_bq_irq(struct i2c_client *client, struct bq2597x_wl *bq)
 		if (gpio_is_valid(bq->irq_gpio)) {
 			rc = gpio_request(bq->irq_gpio, "bq-irq-gpio");
 			if (rc) {
-				pr_err("unable to request gpio [%d]\n",
-				       bq->irq_gpio);
+				pr_err("unable to request gpio [%d]\n", bq->irq_gpio);
 				return rc;
 			} else {
 				pinctrl = devm_pinctrl_get(&client->dev);
@@ -2345,8 +2226,7 @@ static int init_bq_irq(struct i2c_client *client, struct bq2597x_wl *bq)
 					goto fail;
 				}
 
-				bq_irq_active = pinctrl_lookup_state(
-					pinctrl, "bq_irq_active");
+				bq_irq_active = pinctrl_lookup_state(pinctrl, "bq_irq_active");
 				if (IS_ERR_OR_NULL(bq_irq_active)) {
 					pr_err("get bq_irq_active fail\n");
 					rc = IS_ERR_OR_NULL(bq_irq_active);
@@ -2383,8 +2263,7 @@ static struct of_device_id bq2597x_wl_charger_match_table[] = {
 };
 //MODULE_DEVICE_TABLE(of, bq2597x_wl_charger_match_table);
 
-static int bq2597x_wl_charger_probe(struct i2c_client *client,
-				 const struct i2c_device_id *id)
+static int bq2597x_wl_charger_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct bq2597x_wl *bq;
 	const struct of_device_id *match;
@@ -2451,14 +2330,10 @@ static int bq2597x_wl_charger_probe(struct i2c_client *client,
 
 	INIT_DELAYED_WORK(&bq->irq_int_work, bq2597x_wl_irq_work);
 	if (client->irq) {
-		ret = devm_request_threaded_irq(&client->dev, client->irq, NULL,
-						bq2597x_wl_charger_interrupt,
-						IRQF_TRIGGER_FALLING |
-							IRQF_ONESHOT,
-						"bq2597x_wl charger irq", bq);
+		ret = devm_request_threaded_irq(&client->dev, client->irq, NULL, bq2597x_wl_charger_interrupt,
+						IRQF_TRIGGER_FALLING | IRQF_ONESHOT, "bq2597x_wl charger irq", bq);
 		if (ret < 0) {
-			bq_err("request irq for irq=%d failed, ret =%d\n",
-			       client->irq, ret);
+			bq_err("request irq for irq=%d failed, ret =%d\n", client->irq, ret);
 			goto free_gpio;
 		}
 		enable_irq_wake(client->irq);
@@ -2514,8 +2389,7 @@ static int bq2597x_wl_suspend_noirq(struct device *dev)
 	struct bq2597x_wl *bq = i2c_get_clientdata(client);
 
 	if (bq->irq_waiting) {
-		pr_err_ratelimited(
-			"Aborting suspend, an interrupt was detected while suspending\n");
+		pr_err_ratelimited("Aborting suspend, an interrupt was detected while suspending\n");
 		return -EBUSY;
 	}
 	return 0;

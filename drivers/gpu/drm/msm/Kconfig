@@ -102,3 +102,9 @@ config DRM_MSM_DSI_10NM_PHY
 	default y
 	help
 	  Choose this option if DSI PHY on SDM845 is used on the platform.
+
+config DRM_OPLUS_NOTIFY
+	tristate "CONFIG_DRM_OPLUS_NOTIFY"
+	help
+	  Say 'y' or 'm' to support oplus notify
+	  Say 'n' to not support oplus notify

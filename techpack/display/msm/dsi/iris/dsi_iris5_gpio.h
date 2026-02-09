@@ -8,7 +8,6 @@
 #ifndef __DSI_IRIS_GPIO__
 #define __DSI_IRIS_GPIO__
 
-
 typedef enum {
 	IRIS_POWER_UP_SYS,
 	IRIS_ENTER_ANALOG_BYPASS,

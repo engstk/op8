@@ -321,4 +321,9 @@ void inet_csk_update_fastreuse(struct inet_bind_bucket *tb,
 			       struct sock *sk);
 
 struct dst_entry *inet_csk_update_pmtu(struct sock *sk, u32 mtu);
+
+static inline bool inet_csk_has_ulp(struct sock *sk)
+{
+	return inet_sk(sk)->is_icsk && !!inet_csk(sk)->icsk_ulp_ops;
+}
 #endif /* _INET_CONNECTION_SOCK_H */

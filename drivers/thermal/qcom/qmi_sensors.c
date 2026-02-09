@@ -250,9 +250,11 @@ void qmi_ts_ind_cb(struct qmi_handle *qmi, struct sockaddr_qrtr *sq,
 		pr_err("Error invalid temperature field.\n");
 }
 
+#ifdef OPLUS_BUG_STABILITY
 bool ts_wait_error = false, ts_send_error = false;
 #ifdef CONFIG_ESOC_MDM_4x
 extern bool modem_force_rst;
+#endif
 #endif
 static int qmi_ts_request(struct qmi_sensor *qmi_sens,
 				bool send_current_temp_report)
@@ -263,16 +265,22 @@ static int qmi_ts_request(struct qmi_sensor *qmi_sens,
 	struct qmi_ts_instance *ts = qmi_sens->ts;
 	struct qmi_txn txn;
 
+#ifdef OPLUS_BUG_STABILITY
 	static int i = 0, j = 0;
+#endif
 
 	memset(&req, 0, sizeof(req));
 	memset(&resp, 0, sizeof(resp));
+
+#ifdef OPLUS_BUG_STABILITY
 #ifdef CONFIG_ESOC_MDM_4x
 	if (modem_force_rst) {
 		i = 0;
 		j = 0;
 	}
 #endif
+#endif
+
 	strlcpy(req.sensor_id.sensor_id, qmi_sens->qmi_name,
 		QMI_TS_SENSOR_ID_LENGTH_MAX_V01);
 	req.seq_num = 0;
@@ -315,26 +323,32 @@ static int qmi_ts_request(struct qmi_sensor *qmi_sens,
 	if (ret < 0) {
 		pr_err("qmi txn send failed for %s ret:%d\n",
 			qmi_sens->qmi_name, ret);
-		
-		if ((ret == -5 || ret == -11 || ret == -12 || ret == -110) && i++ >= 15) {
+#ifdef OPLUS_BUG_STABILITY
+		if ((ret == -5 || ret == -11 || ret == -12 || ret == -110) &&
+		    i++ >= 15) {
 			ts_send_error = true;
 			i = 0;
-		} 
+		}
+#endif
 		qmi_txn_cancel(&txn);
 		goto qmi_send_exit;
+#ifdef OPLUS_BUG_STABILITY
 	} else {
 		ts_send_error = false;
 		i = 0;
+#endif
 	}
 
 	ret = qmi_txn_wait(&txn, QMI_TS_RESP_TOUT);
 	if (ret < 0) {
 		pr_err("qmi txn wait failed for %s ret:%d\n",
 			qmi_sens->qmi_name, ret);
+#ifdef OPLUS_BUG_STABILITY
 		if ((ret == -11 || ret == -12 || ret == -110) && j++ >= 15) {
 			ts_wait_error = true;
 			j = 0;
 		}
+#endif
 		goto qmi_send_exit;
 	}
 	if (resp.resp.result != QMI_RESULT_SUCCESS_V01) {
@@ -342,20 +356,14 @@ static int qmi_ts_request(struct qmi_sensor *qmi_sens,
 		pr_err("qmi NOT success for %s ret:%d\n",
 			qmi_sens->qmi_name, ret);
 		goto qmi_send_exit;
+#ifdef OPLUS_BUG_STABILITY
 	} else {
 		ts_wait_error = false;
 		j = 0;
+#endif
 	}
-
-	if (resp.resp.result != QMI_RESULT_SUCCESS_V01) {
-		ret = resp.resp.result;
-		pr_err("qmi NOT success for %s ret:%d\n",
-			qmi_sens->qmi_name, ret);
-		goto qmi_send_exit;
-	}
-
 	ret = 0;
-	
+
 qmi_send_exit:
 	mutex_unlock(&ts->mutex);
 	return ret;

@@ -323,7 +323,6 @@ struct kgsl_device {
 	unsigned int num_l3_pwrlevels;
 	/* store current L3 vote to determine if we should change our vote */
 	unsigned int cur_l3_pwrlevel;
-
 	/** @timelines: Iterator for assigning IDs to timelines */
 	struct idr timelines;
 	/** @timelines_lock: Spinlock to protect the timelines idr */

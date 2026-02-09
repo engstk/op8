@@ -68,8 +68,8 @@ static inline bool rt6_need_strict(const struct in6_addr *daddr)
 
 static inline bool rt6_qualify_for_ecmp(const struct fib6_info *f6i)
 {
-	return (f6i->fib6_flags & (RTF_GATEWAY|RTF_ADDRCONF|RTF_DYNAMIC)) ==
-	       RTF_GATEWAY;
+	return !(f6i->fib6_flags & (RTF_ADDRCONF|RTF_DYNAMIC)) &&
+		f6i->fib6_nh.fib_nh_gw_family;
 }
 
 void ip6_route_input(struct sk_buff *skb);
@@ -175,6 +175,7 @@ struct rt6_rtnl_dump_arg {
 	struct sk_buff *skb;
 	struct netlink_callback *cb;
 	struct net *net;
+	struct fib_dump_filter filter;
 };
 
 int rt6_dump_route(struct fib6_info *f6i, void *p_arg);
@@ -282,9 +283,11 @@ static inline struct in6_addr *rt6_nexthop(struct rt6_info *rt,
 
 static inline bool rt6_duplicate_nexthop(struct fib6_info *a, struct fib6_info *b)
 {
-	return a->fib6_nh.nh_dev == b->fib6_nh.nh_dev &&
-	       ipv6_addr_equal(&a->fib6_nh.nh_gw, &b->fib6_nh.nh_gw) &&
-	       !lwtunnel_cmp_encap(a->fib6_nh.nh_lwtstate, b->fib6_nh.nh_lwtstate);
+	struct fib6_nh *nha = &a->fib6_nh, *nhb = &b->fib6_nh;
+
+	return nha->fib_nh_dev == nhb->fib_nh_dev &&
+	       ipv6_addr_equal(&nha->fib_nh_gw6, &nhb->fib_nh_gw6) &&
+	       !lwtunnel_cmp_encap(nha->fib_nh_lws, nhb->fib_nh_lws);
 }
 
 static inline unsigned int ip6_dst_mtu_forward(const struct dst_entry *dst)

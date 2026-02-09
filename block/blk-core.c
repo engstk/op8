@@ -1036,10 +1036,6 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id,
 	if (!q->stats)
 		goto fail_stats;
 
-	q->backing_dev_info->ra_pages =
-			(VM_MAX_READAHEAD * 1024) / PAGE_SIZE;
-	q->backing_dev_info->io_pages =
-			(VM_MAX_READAHEAD * 1024) / PAGE_SIZE;
 	q->backing_dev_info->capabilities = BDI_CAP_CGROUP_WRITEBACK;
 	q->backing_dev_info->name = "block";
 	q->node = node_id;
@@ -1476,6 +1472,7 @@ out:
 	 */
 	if (ioc_batching(q, ioc))
 		ioc->nr_batch_requests--;
+
 	trace_block_getrq(q, bio, op);
 	return rq;
 
@@ -1717,6 +1714,7 @@ void __blk_put_request(struct request_queue *q, struct request *req)
 	WARN_ON(req->bio != NULL);
 
 	rq_qos_done(q, req);
+
 	/*
 	 * Request may not have originated from ll_rw_blk. if not,
 	 * it didn't come out of our reserved rq pools
@@ -1927,6 +1925,7 @@ out:
 void blk_init_request_from_bio(struct request *req, struct bio *bio)
 {
 	struct io_context *ioc = rq_ioc(bio);
+
 	if (bio->bi_opf & REQ_RAHEAD)
 		req->cmd_flags |= REQ_FAILFAST_MASK;
 
@@ -2523,6 +2522,7 @@ blk_qc_t submit_bio(struct bio *bio)
 				bio_devname(bio, b), count);
 		}
 	}
+
 	/*
 	 * If we're reading data that is part of the userspace
 	 * workingset, count submission time as memory stall. When the
@@ -2794,13 +2794,14 @@ static struct request *elv_next_request(struct request_queue *q)
 	WARN_ON_ONCE(q->mq_ops);
 
 	while (1) {
-			list_for_each_entry(rq, &q->queue_head, queuelist) {
+		list_for_each_entry(rq, &q->queue_head, queuelist) {
 			if (blk_pm_allow_request(rq))
 				return rq;
 
 			if (rq->rq_flags & RQF_SOFTBARRIER)
 				break;
 		}
+
 		/*
 		 * Flush request is running and flush request isn't queueable
 		 * in the drive, we can hold the queue till flush request is
@@ -2864,7 +2865,6 @@ struct request *blk_peek_request(struct request_queue *q)
 			 * not be passed by new incoming requests
 			 */
 			rq->rq_flags |= RQF_STARTED;
-
 			trace_block_rq_issue(q, rq);
 		}
 
@@ -2924,6 +2924,7 @@ struct request *blk_peek_request(struct request_queue *q)
 			break;
 		}
 	}
+
 	return rq;
 }
 EXPORT_SYMBOL(blk_peek_request);

@@ -9,8 +9,8 @@
 #ifndef __MSM_DRM_IRIS_H__
 #define __MSM_DRM_IRIS_H__
 
-#define DRM_MSM_IRIS_OPERATE_CONF      0x50
-#define DRM_MSM_IRIS_OPERATE_TOOL      0x51
+#define DRM_MSM_IRIS_OPERATE_CONF 0x50
+#define DRM_MSM_IRIS_OPERATE_TOOL 0x51
 
 enum iris_oprt_type {
 	IRIS_OPRT_TOOL_DSI,
@@ -24,8 +24,8 @@ struct msmfb_mipi_dsi_cmd {
 	__u8 dtype;
 	__u8 vc;
 #define MSMFB_MIPI_DSI_COMMAND_LAST 1
-#define MSMFB_MIPI_DSI_COMMAND_ACK  2
-#define MSMFB_MIPI_DSI_COMMAND_HS   4
+#define MSMFB_MIPI_DSI_COMMAND_ACK 2
+#define MSMFB_MIPI_DSI_COMMAND_HS 4
 #define MSMFB_MIPI_DSI_COMMAND_BLLP 8
 #define MSMFB_MIPI_DSI_COMMAND_DEBUG 16
 #define MSMFB_MIPI_DSI_COMMAND_TO_PANEL 32
@@ -55,12 +55,16 @@ struct msmfb_iris_ambient_info {
 };
 
 struct msmfb_iris_maxcll_info {
-    uint32_t mMAXCLL;
-    void *lut_luty_payload;
-    void *lut_lutuv_payload;
+	uint32_t mMAXCLL;
+	void *lut_luty_payload;
+	void *lut_lutuv_payload;
 };
 
-#define DRM_IOCTL_MSM_IRIS_OPERATE_CONF     DRM_IOW (DRM_COMMAND_BASE + DRM_MSM_IRIS_OPERATE_CONF, struct msm_iris_operate_value)
-#define DRM_IOCTL_MSM_IRIS_OPERATE_TOOL     DRM_IOW (DRM_COMMAND_BASE + DRM_MSM_IRIS_OPERATE_TOOL, struct msm_iris_operate_value)
+#define DRM_IOCTL_MSM_IRIS_OPERATE_CONF                       \
+	DRM_IOW(DRM_COMMAND_BASE + DRM_MSM_IRIS_OPERATE_CONF, \
+		struct msm_iris_operate_value)
+#define DRM_IOCTL_MSM_IRIS_OPERATE_TOOL                       \
+	DRM_IOW(DRM_COMMAND_BASE + DRM_MSM_IRIS_OPERATE_TOOL, \
+		struct msm_iris_operate_value)
 
 #endif /* __MSM_DRM_IRIS_H__ */

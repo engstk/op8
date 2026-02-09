@@ -921,16 +921,7 @@ static int hid_scan_report(struct hid_device *hid)
 				hid->group = HID_GROUP_RMI;
 		break;
 	}
-#ifdef OPLUS_BUG_STABILITY
-//add for BLE-M1 uhid group change HID_GROUP_GENERIC
-	if (0x248a == hid->vendor && 2 == hid->group) {
-		hid_warn(hid, "scan_report change to GENERIC %u\n", hid->group);
-		hid->group = HID_GROUP_GENERIC;
-	}
 
-	/* fall back to generic driver in case specific driver doesn't exist */
-	hid_warn(hid, "report vendor %u,group %u\n", hid->vendor, hid->group);
-#endif /* OPLUS_BUG_STABILITY */
 	kfree(parser->collection_stack);
 	vfree(parser);
 	return 0;
@@ -1174,7 +1165,12 @@ EXPORT_SYMBOL_GPL(hid_snto32);
 
 static u32 s32ton(__s32 value, unsigned n)
 {
-	s32 a = value >> (n - 1);
+	s32 a;
+
+	if (!value || !n)
+		return 0;
+
+	a = value >> (n - 1);
 	if (a && a != -1)
 		return value < 0 ? 1 << (n - 1) : (1 << (n - 1)) - 1;
 	return value & ((1 << n) - 1);

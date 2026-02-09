@@ -2021,6 +2021,7 @@ void wb_workfn(struct work_struct *work)
 						    WB_REASON_FORKER_THREAD);
 		trace_writeback_pages_written(pages_written);
 	}
+
 	if (!list_empty(&wb->work_list))
 		wb_wakeup(wb);
 	else if (wb_has_dirty_io(wb) && dirty_writeback_interval)
@@ -2242,9 +2243,6 @@ void __mark_inode_dirty(struct inode *inode, int flags)
 			wakeup_bdi = inode_io_list_move_locked(inode, wb,
 							       dirty_list);
 
-			spin_unlock(&wb->list_lock);
-			trace_writeback_dirty_inode_enqueue(inode);
-
 			/*
 			 * If this is the first dirty inode for this bdi,
 			 * we have to wake-up the corresponding bdi thread
@@ -2253,6 +2251,10 @@ void __mark_inode_dirty(struct inode *inode, int flags)
 			 */
 			if (bdi_cap_writeback_dirty(wb->bdi) && wakeup_bdi)
 				wb_wakeup_delayed(wb);
+
+			spin_unlock(&wb->list_lock);
+			trace_writeback_dirty_inode_enqueue(inode);
+
 			return;
 		}
 	}

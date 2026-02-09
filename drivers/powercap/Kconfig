@@ -19,7 +19,7 @@ config INTEL_RAPL
 	tristate "Intel RAPL Support"
 	depends on X86 && IOSF_MBI
 	default n
-	---help---
+	help
 	  This enables support for the Intel Running Average Power Limit (RAPL)
 	  technology which allows power limits to be enforced and monitored on
 	  modern Intel processors (Sandy Bridge and later).

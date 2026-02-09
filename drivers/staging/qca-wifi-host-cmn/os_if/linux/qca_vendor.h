@@ -656,13 +656,13 @@ enum qca_nl80211_vendor_subcmds {
 	QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT = 191,
 	QCA_NL80211_VENDOR_SUBCMD_GETBAND = 192,
 
-	#ifdef OPLUS_ARCH_INJECT
+#ifdef OPLUS_ARCH_INJECT
 	// We need a common value to let this function work on dfferent QCOM plaftom
 	// which may have different SUBCMD defination, so assign a more large number for
 	// OPLUS command
 	OPLUS_NL80211_VENDOR_SUBCMD_MODIFY_ACL = 1001,
 	OPLUS_NL80211_VENDOR_SUBCMD_SET_MAX_ASSOC = 1002,
-	#endif /* OPLUS_ARCH_INJECT */
+#endif /* OPLUS_ARCH_INJECT */
 };
 
 #ifdef OPLUS_ARCH_INJECT
@@ -675,8 +675,7 @@ enum oplus_vendor_attr {
 
 	/* add attr above */
 	OPLUS_WLAN_VENDOR_ATTR_LAST,
-	OPLUS_WLAN_VENDOR_ATTR_MAX =
-			OPLUS_WLAN_VENDOR_ATTR_LAST - 1,
+	OPLUS_WLAN_VENDOR_ATTR_MAX = OPLUS_WLAN_VENDOR_ATTR_LAST - 1,
 };
 #endif /* OPLUS_ARCH_INJECT */
 

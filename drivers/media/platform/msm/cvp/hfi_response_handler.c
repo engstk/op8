@@ -17,12 +17,14 @@
 #include "msm_cvp_common.h"
 
 extern struct msm_cvp_drv *cvp_driver;
+
 #ifndef OPLUS_FEATURE_CAMERA_COMMON
 static int _deprecated_hfi_msg_process(u32 device_id,
 	struct cvp_hfi_msg_session_hdr *pkt,
 	struct msm_cvp_cb_info *info,
 	struct msm_cvp_inst *inst);
 #endif
+
 static enum cvp_status hfi_map_err_status(u32 hfi_err)
 {
 	enum cvp_status cvp_err;
@@ -474,6 +476,7 @@ static int __dme_output_cache_operation(struct cvp_hfi_msg_session_hdr *pkt)
 	return rc;
 }
 #endif
+
 static int hfi_process_session_cvp_msg(u32 device_id,
 	struct cvp_hfi_msg_session_hdr *pkt,
 	struct msm_cvp_cb_info *info)
@@ -481,7 +484,7 @@ static int hfi_process_session_cvp_msg(u32 device_id,
 	struct cvp_session_msg *sess_msg;
 	struct msm_cvp_inst *inst = NULL;
 	struct msm_cvp_core *core;
-	void *session_id;
+	unsigned int session_id;
 #ifdef OPLUS_FEATURE_CAMERA_COMMON
 	struct cvp_session_queue *sq;
 #endif
@@ -493,14 +496,15 @@ static int hfi_process_session_cvp_msg(u32 device_id,
 		dprintk(CVP_ERR, "%s: bad_pkt_size %d\n", __func__, pkt->size);
 		return -E2BIG;
 	}
-	session_id = (void *)(uintptr_t)get_msg_session_id(pkt);
+	session_id = get_msg_session_id(pkt);
 	core = list_first_entry(&cvp_driver->cores, struct msm_cvp_core, list);
-	inst = cvp_get_inst_from_id(core, (unsigned int)session_id);
+	inst = cvp_get_inst_from_id(core, session_id);
 
 	if (!inst) {
 		dprintk(CVP_ERR, "%s: invalid session\n", __func__);
 		return -EINVAL;
 	}
+
 #ifndef OPLUS_FEATURE_CAMERA_COMMON
 	if (inst->deprecate_bitmask) {
 		if (pkt->packet_type == HFI_MSG_SESSION_CVP_DME
@@ -573,6 +577,7 @@ static int hfi_process_session_cvp_msg(u32 device_id,
 #else
 	wake_up_all(&inst->session_queue.wq);
 #endif
+
 	info->response_type = HAL_NO_RESP;
 
 	cvp_put_inst(inst);

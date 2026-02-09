@@ -36,7 +36,6 @@
 #ifndef STMVL53L1_TUNINGS_H
 #define STMVL53L1_TUNINGS_H
 
-static const int tunings[][2] = {
-};
+static const int tunings[][2] = {};
 
 #endif /* STMVL53L1_TUNINGS_H */

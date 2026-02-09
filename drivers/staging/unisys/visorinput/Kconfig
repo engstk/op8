@@ -5,7 +5,7 @@
 config UNISYS_VISORINPUT
 	tristate "Unisys visorinput driver"
 	depends on UNISYSSPAR && UNISYS_VISORBUS && INPUT
-	---help---
+	help
 	The Unisys s-Par visorinput driver provides a virtualized system
 	console (keyboard and mouse) that is accessible through the
 	s-Par firmware's user interface. s-Par provides video using the EFI

@@ -1068,13 +1068,11 @@ static int spi_transfer_one_message(struct spi_controller *ctlr,
 				ret = 0;
 				ms = 8LL * 1000LL * xfer->len;
 				do_div(ms, xfer->speed_hz);
-
-				#ifndef OPLUS_FEATURE_TP_BASIC
+#ifndef OPLUS_FEATURE_TP_BASIC
 				ms += ms + 200; /* some tolerance */
-				#else
+#else
 				ms += ms + 1500; /* some tolerance */
-				#endif /* OPLUS_FEATURE_TP_BASIC */
-
+#endif /* OPLUS_FEATURE_TP_BASIC */
 
 				if (ms > UINT_MAX)
 					ms = UINT_MAX;
@@ -1858,6 +1856,16 @@ static acpi_status acpi_register_spi_device(struct spi_controller *ctlr,
 
 	acpi_set_modalias(adev, acpi_device_hid(adev), spi->modalias,
 			  sizeof(spi->modalias));
+
+	/*
+	 * This gets re-tried in spi_probe() for -EPROBE_DEFER handling in case
+	 * the GPIO controller does not have a driver yet. This needs to be done
+	 * here too, because this call sets the GPIO direction and/or bias.
+	 * Setting these needs to be done even if there is no driver, in which
+	 * case spi_probe() will never get called.
+	 */
+	if (spi->irq < 0)
+		spi->irq = acpi_dev_gpio_irq_get(adev, 0);
 
 	acpi_device_set_enumerated(adev);
 

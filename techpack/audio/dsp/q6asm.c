@@ -1593,12 +1593,12 @@ int q6asm_audio_client_buf_alloc_contiguous(unsigned int dir,
 		return 0;
 	}
 
-	#ifdef OPLUS_BUG_STABILITY
+#ifdef OPLUS_BUG_STABILITY
 	if (bufcnt == 0) {
 		pr_err("%s: invalid buffer count\n", __func__);
 		return -EINVAL;
 	}
-	#endif /* OPLUS_BUG_STABILITY */
+#endif /* OPLUS_BUG_STABILITY */
 
 	mutex_lock(&ac->cmd_lock);
 	buf = kzalloc(((sizeof(struct audio_buffer))*bufcnt),

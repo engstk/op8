@@ -73,7 +73,6 @@ struct stmvl53l1_pinctrl_info {
 	struct pinctrl_state *gpio_state_pullup;
 };
 
-
 struct stmvl53l1_pinctrl_info stmvl53l1_pinctrl;
 int flash_version = 0;
 
@@ -83,7 +82,7 @@ extern int get_version(struct device *dev, struct i2c_data *i2c_data);
 
 static int stmvl53l1_request_pinctrl(struct device *dev)
 {
-    struct stmvl53l1_pinctrl_info *device_pctrl = &stmvl53l1_pinctrl;
+	struct stmvl53l1_pinctrl_info *device_pctrl = &stmvl53l1_pinctrl;
 	device_pctrl->pinctrl = devm_pinctrl_get(dev);
 	if (IS_ERR_OR_NULL(device_pctrl->pinctrl)) {
 		vl53l1_errmsg("Pinctrl not available");
@@ -91,24 +90,21 @@ static int stmvl53l1_request_pinctrl(struct device *dev)
 		return 0;
 	}
 	device_pctrl->gpio_state_active =
-		pinctrl_lookup_state(device_pctrl->pinctrl,
-				"laser_default");
+		pinctrl_lookup_state(device_pctrl->pinctrl, "laser_default");
 	if (IS_ERR_OR_NULL(device_pctrl->gpio_state_active)) {
 		vl53l1_errmsg("Failed to get the active state pinctrl handle");
 		device_pctrl->gpio_state_active = NULL;
 		return -EINVAL;
 	}
-	device_pctrl->gpio_state_suspend
-		= pinctrl_lookup_state(device_pctrl->pinctrl,
-				"laser_suspend");
+	device_pctrl->gpio_state_suspend =
+		pinctrl_lookup_state(device_pctrl->pinctrl, "laser_suspend");
 	if (IS_ERR_OR_NULL(device_pctrl->gpio_state_suspend)) {
 		vl53l1_errmsg("Failed to get the suspend state pinctrl handle");
 		device_pctrl->gpio_state_suspend = NULL;
 		return -EINVAL;
 	}
-	device_pctrl->gpio_state_pullup
-		= pinctrl_lookup_state(device_pctrl->pinctrl,
-				"gpio_pullup");
+	device_pctrl->gpio_state_pullup =
+		pinctrl_lookup_state(device_pctrl->pinctrl, "gpio_pullup");
 	if (IS_ERR_OR_NULL(device_pctrl->gpio_state_pullup)) {
 		vl53l1_info("Failed to get the pullup state pinctrl handle");
 		device_pctrl->gpio_state_pullup = NULL;
@@ -119,46 +115,43 @@ static int stmvl53l1_request_pinctrl(struct device *dev)
 
 int stmvl53l1_enable_pinctrl(void)
 {
-    int rc = 0;
+	int rc = 0;
 
-    if (stmvl53l1_pinctrl.pinctrl &&
-        stmvl53l1_pinctrl.gpio_state_active) {
-        rc = pinctrl_select_state(stmvl53l1_pinctrl.pinctrl,
-            stmvl53l1_pinctrl.gpio_state_active);
-        vl53l1_errmsg("enable pinctrl rc=%d\n", rc);
-    }
+	if (stmvl53l1_pinctrl.pinctrl && stmvl53l1_pinctrl.gpio_state_active) {
+		rc = pinctrl_select_state(stmvl53l1_pinctrl.pinctrl,
+					  stmvl53l1_pinctrl.gpio_state_active);
+		vl53l1_errmsg("enable pinctrl rc=%d\n", rc);
+	}
 
-    return rc;
+	return rc;
 }
 
 int stmvl53l1_disable_pinctrl(void)
 {
-    int rc = 0;
+	int rc = 0;
 
-    if (stmvl53l1_pinctrl.pinctrl &&
-        stmvl53l1_pinctrl.gpio_state_suspend) {
-        rc = pinctrl_select_state(stmvl53l1_pinctrl.pinctrl,
-            stmvl53l1_pinctrl.gpio_state_suspend);
-        vl53l1_errmsg("disable pinctrl rc=%d\n", rc);
-    }
+	if (stmvl53l1_pinctrl.pinctrl && stmvl53l1_pinctrl.gpio_state_suspend) {
+		rc = pinctrl_select_state(stmvl53l1_pinctrl.pinctrl,
+					  stmvl53l1_pinctrl.gpio_state_suspend);
+		vl53l1_errmsg("disable pinctrl rc=%d\n", rc);
+	}
 
-    return rc;
-
+	return rc;
 }
 
 int stmvl53l1_release_pinctrl(struct device *dev)
 {
-    if (stmvl53l1_pinctrl.pinctrl)
-        devm_pinctrl_put(stmvl53l1_pinctrl.pinctrl);
-    stmvl53l1_pinctrl.pinctrl = NULL;
+	if (stmvl53l1_pinctrl.pinctrl)
+		devm_pinctrl_put(stmvl53l1_pinctrl.pinctrl);
+	stmvl53l1_pinctrl.pinctrl = NULL;
 
-    return 0;
+	return 0;
 }
 
 static ssize_t version_proc_write(struct file *filp, const char __user *buff,
-						size_t len, loff_t *data)
+				  size_t len, loff_t *data)
 {
-	char buf[5] = {0};
+	char buf[5] = { 0 };
 	if (len > 5)
 		len = 5;
 	if (copy_from_user(buf, buff, len)) {
@@ -170,17 +163,17 @@ static ssize_t version_proc_write(struct file *filp, const char __user *buff,
 }
 
 static ssize_t version_proc_read(struct file *filp, char __user *buff,
-						size_t len, loff_t *data)
+				 size_t len, loff_t *data)
 {
-	char value[2] = {0};
+	char value[2] = { 0 };
 	snprintf(value, sizeof(value), "%d", flash_version);
-	return simple_read_from_buffer(buff, len, data, value,1);
+	return simple_read_from_buffer(buff, len, data, value, 1);
 }
 
 static const struct file_operations version_fops = {
-	.owner		= THIS_MODULE,
-	.read		= version_proc_read,
-	.write      = version_proc_write,
+	.owner = THIS_MODULE,
+	.read = version_proc_read,
+	.write = version_proc_write,
 };
 
 static int version_proc_init(void)
@@ -189,119 +182,118 @@ static int version_proc_init(void)
 	char proc_flash[16] = "flashlight_ver";
 	struct proc_dir_entry *proc_entry;
 
-	proc_entry = proc_create_data(proc_flash, 0666, NULL, &version_fops, NULL);
+	proc_entry =
+		proc_create_data(proc_flash, 0666, NULL, &version_fops, NULL);
 	if (proc_entry == NULL) {
 		ret = -ENOMEM;
-		pr_err("[%s]: Error! Couldn't create flashlight_ver proc entry\n", __func__);
+		pr_err("[%s]: Error! Couldn't create flashlight_ver proc entry\n",
+		       __func__);
 	}
 	return ret;
 }
 
-static int32_t stmvl53l1_probe_cci(
-	struct platform_device *pdev)
+static int32_t stmvl53l1_probe_cci(struct platform_device *pdev)
 {
-    int rc = 0;
-    struct stmvl53l1_data *vl53l1_data = NULL;
-    struct i2c_data *i2c_data = NULL;
+	int rc = 0;
+	struct stmvl53l1_data *vl53l1_data = NULL;
+	struct i2c_data *i2c_data = NULL;
 
-    vl53l1_dbgmsg("Enter %s : 0x%02x\n", pdev->name, pdev->id);
+	vl53l1_dbgmsg("Enter %s : 0x%02x\n", pdev->name, pdev->id);
 
+	vl53l1_data = kzalloc(sizeof(struct stmvl53l1_data), GFP_KERNEL);
+	if (!vl53l1_data) {
+		rc = -ENOMEM;
+		return rc;
+	}
+	if (vl53l1_data) {
+		vl53l1_data->client_object =
+			kzalloc(sizeof(struct i2c_data), GFP_KERNEL);
+		if (!vl53l1_data->client_object)
+			goto done_freemem;
+		i2c_data = (struct i2c_data *)vl53l1_data->client_object;
+	}
+	//i2c_data->client = client;
+	i2c_data->vl53l1_data = vl53l1_data;
+	i2c_data->irq = -1;
+	rc = stmvl53l1_parse_tree(&(pdev->dev), i2c_data);
+	if (rc)
+		goto done_freemem;
 
-    vl53l1_data = kzalloc(sizeof(struct stmvl53l1_data), GFP_KERNEL);
-    if (!vl53l1_data) {
-        rc = -ENOMEM;
-        return rc;
-    }
-    if (vl53l1_data) {
-        vl53l1_data->client_object =
-                kzalloc(sizeof(struct i2c_data), GFP_KERNEL);
-        if (!vl53l1_data->client_object)
-            goto done_freemem;
-        i2c_data = (struct i2c_data *)vl53l1_data->client_object;
-    }
-    //i2c_data->client = client;
-    i2c_data->vl53l1_data = vl53l1_data;
-    i2c_data->irq = -1 ;
-    rc = stmvl53l1_parse_tree(&(pdev->dev), i2c_data);
-    if (rc)
-        goto done_freemem;
+	rc = stmvl53l1_request_pinctrl(&(pdev->dev));
+	if (rc) {
+		vl53l1_errmsg("fail to request pinctrl,rc = %d", rc);
+		goto done_freemem;
+	}
+	rc = stmvl53l1_enable_pinctrl();
+	if (rc) {
+		vl53l1_errmsg("fail to enable pinctrl,rc = %d", rc);
+		goto release_gpios;
+	}
 
-    rc = stmvl53l1_request_pinctrl(&(pdev->dev));
-    if (rc){
-        vl53l1_errmsg("fail to request pinctrl,rc = %d", rc);
-        goto done_freemem;
-    }
-    rc = stmvl53l1_enable_pinctrl();
-    if (rc){
-        vl53l1_errmsg("fail to enable pinctrl,rc = %d", rc);
-        goto release_gpios;
-    }
+	if (stmvl53l1_pinctrl.pinctrl && stmvl53l1_pinctrl.gpio_state_pullup) {
+		rc = pinctrl_select_state(stmvl53l1_pinctrl.pinctrl,
+					  stmvl53l1_pinctrl.gpio_state_pullup);
+		vl53l1_errmsg("enable gpio_state_pullup rc=%d\n", rc);
+		flash_version = !get_version(&(pdev->dev), i2c_data);
+		version_proc_init();
+	}
 
-    if (stmvl53l1_pinctrl.pinctrl &&
-        stmvl53l1_pinctrl.gpio_state_pullup) {
-        rc = pinctrl_select_state(stmvl53l1_pinctrl.pinctrl,
-            stmvl53l1_pinctrl.gpio_state_pullup);
-        vl53l1_errmsg("enable gpio_state_pullup rc=%d\n", rc);
-        flash_version = !get_version(&(pdev->dev), i2c_data);
-        version_proc_init();
-    }
+	platform_set_drvdata(pdev, vl53l1_data);
+	//vl53l1_data->plat_dev = pdev;
 
-    platform_set_drvdata(pdev, vl53l1_data);
-    //vl53l1_data->plat_dev = pdev;
+	rc = stmvl53l1_setup(vl53l1_data);
+	if (rc)
+		goto release_gpios;
+	vl53l1_dbgmsg("End\n");
 
-    rc = stmvl53l1_setup(vl53l1_data);
-    if (rc)
-        goto release_gpios;
-    vl53l1_dbgmsg("End\n");
+	kref_init(&i2c_data->ref);
 
-    kref_init(&i2c_data->ref);
-
-    return rc;
+	return rc;
 
 release_gpios:
-    stmvl53l1_release_gpios(i2c_data);
+	stmvl53l1_release_gpios(i2c_data);
 
 done_freemem:
-    kfree(vl53l1_data);
-    kfree(i2c_data);
+	kfree(vl53l1_data);
+	kfree(i2c_data);
 
-    return 0;
+	return 0;
 }
 
 static int32_t stmvl53l1_remove_cci(struct platform_device *pdev)
 {
-    int rc = 0;
-    struct stmvl53l1_data *data = platform_get_drvdata(pdev);
-    struct i2c_data *i2c_data = (struct i2c_data *)data->client_object;
+	int rc = 0;
+	struct stmvl53l1_data *data = platform_get_drvdata(pdev);
+	struct i2c_data *i2c_data = (struct i2c_data *)data->client_object;
 
-    vl53l1_dbgmsg("Enter\n");
-    mutex_lock(&data->work_mutex);
-    /* main driver cleanup */
-    stmvl53l1_cleanup(data);
+	vl53l1_dbgmsg("Enter\n");
+	mutex_lock(&data->work_mutex);
+	/* main driver cleanup */
+	stmvl53l1_cleanup(data);
 
-    rc = stmvl53l1_disable_pinctrl();
-    if (rc){
-        vl53l1_errmsg("fatal,fail to disable pinctrl,rc = %d", rc);
-    }
-    rc = stmvl53l1_release_pinctrl(&(pdev->dev));
-    if (rc){
-        vl53l1_errmsg("fatal,fail to release pinctrl,rc = %d", rc);
-    }
+	rc = stmvl53l1_disable_pinctrl();
+	if (rc) {
+		vl53l1_errmsg("fatal,fail to disable pinctrl,rc = %d", rc);
+	}
+	rc = stmvl53l1_release_pinctrl(&(pdev->dev));
+	if (rc) {
+		vl53l1_errmsg("fatal,fail to release pinctrl,rc = %d", rc);
+	}
 
-    /* release gpios */
-    stmvl53l1_release_gpios(i2c_data);
+	/* release gpios */
+	stmvl53l1_release_gpios(i2c_data);
 
-    mutex_unlock(&data->work_mutex);
+	mutex_unlock(&data->work_mutex);
 
-    stmvl53l1_put(data->client_object);
+	stmvl53l1_put(data->client_object);
 
-    vl53l1_dbgmsg("End\n");
+	vl53l1_dbgmsg("End\n");
 
-    return 0;
+	return 0;
 }
 
 static const struct of_device_id stmvl53l1_driver_dt_match[] = {
-	{.compatible = "st,stmvl53l1"},
+	{ .compatible = "st,stmvl53l1" },
 	{}
 };
 
@@ -320,19 +312,18 @@ static struct platform_driver stmvl53l1_platform_driver = {
 int __init stmvl53l1_init_cci(void)
 {
 	int32_t rc = 0;
-    vl53l1_dbgmsg("enter\n");
+	vl53l1_dbgmsg("enter\n");
 	rc = platform_driver_register(&stmvl53l1_platform_driver);
 	if (rc < 0) {
-        vl53l1_dbgmsg("platform_driver_register fail\n");
+		vl53l1_dbgmsg("platform_driver_register fail\n");
 		return rc;
 	}
 
 	return rc;
 }
 
-void __exit stmvl53l1_exit_cci(void* obj)
+void __exit stmvl53l1_exit_cci(void *obj)
 {
-    vl53l1_dbgmsg("enter\n");
+	vl53l1_dbgmsg("enter\n");
 	platform_driver_unregister(&stmvl53l1_platform_driver);
 }
-

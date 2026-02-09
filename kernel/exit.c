@@ -70,14 +70,6 @@
 #include <linux/pgtable.h>
 #include <asm/mmu_context.h>
 
-#ifdef OPLUS_BUG_STABILITY
-#include <soc/oplus/system/oplus_process.h>
-#endif
-#if defined(OPLUS_FEATURE_VIRTUAL_RESERVE_MEMORY) && defined(CONFIG_VIRTUAL_RESERVE_MEMORY)
-//reserved area operations
-#include <linux/reserve_area.h>
-#endif
-
 /*
  * The default value should be high enough to not crash a system that randomly
  * crashes its kernel from time to time, but low enough to at least not permit
@@ -309,7 +301,7 @@ retry:
 	if (!task)
 		return NULL;
 
-	probe_kernel_address(&task->sighand, sighand);
+	get_kernel_nofault(sighand, &task->sighand);
 
 	/*
 	 * Pairs with atomic_dec_and_test() in put_task_struct(). If this task
@@ -457,12 +449,6 @@ kill_orphaned_pgrp(struct task_struct *tsk, struct task_struct *parent)
 	    task_session(parent) == task_session(tsk) &&
 	    will_become_orphaned_pgrp(pgrp, ignored_task) &&
 	    has_stopped_jobs(pgrp)) {
-#ifdef OPLUS_BUG_STABILITY
-            if (oplus_is_android_core_group(pgrp)) {
-                printk("kill_orphaned_pgrp: find android core process will be hungup, ignored it, only hungup itself:%s:%d , current=%d \n",tsk->comm,tsk->pid,current->pid);
-                return;
-            }
-#endif /*OPLUS_BUG_STABILITY*/
 		__kill_pgrp_info(SIGHUP, SEND_SIG_PRIV, pgrp);
 		__kill_pgrp_info(SIGCONT, SEND_SIG_PRIV, pgrp);
 	}
@@ -553,7 +539,6 @@ assign_new_owner:
 		goto retry;
 	}
 	mm->owner = c;
-	lru_gen_migrate_mm(mm);
 	task_unlock(c);
 	put_task_struct(c);
 }
@@ -846,18 +831,12 @@ void __noreturn do_exit(long code)
 	struct task_struct *tsk = current;
 	int group_dead;
 
-//#ifdef OPLUS_BUG_STABILITY
-    if (is_critial_process(tsk)) {
-        printk("critical svc %d:%s exit with %ld !\n", tsk->pid, tsk->comm,code);
-    }
-//#endif /*OPLUS_BUG_STABILITY*/
-
 	/*
-		 * We can get here from a kernel oops, sometimes with preemption off.
-		 * Start by checking for critical errors.
-		 * Then fix up important state like USER_DS and preemption.
-		 * Then do everything else.
-		 */
+	 * We can get here from a kernel oops, sometimes with preemption off.
+	 * Start by checking for critical errors.
+	 * Then fix up important state like USER_DS and preemption.
+	 * Then do everything else.
+	 */
 
 	WARN_ON(blk_needs_flush_plug(tsk));
 
@@ -1850,6 +1829,30 @@ Efault:
 	return -EFAULT;
 }
 #endif
+
+/**
+ * thread_group_exited - check that a thread group has exited
+ * @pid: tgid of thread group to be checked.
+ *
+ * Test if the thread group represented by tgid has exited (all
+ * threads are zombies, dead or completely gone).
+ *
+ * Return: true if the thread group has exited. false otherwise.
+ */
+bool thread_group_exited(struct pid *pid)
+{
+	struct task_struct *task;
+	bool exited;
+
+	rcu_read_lock();
+	task = pid_task(pid, PIDTYPE_PID);
+	exited = !task ||
+		(READ_ONCE(task->exit_state) && thread_group_empty(task));
+	rcu_read_unlock();
+
+	return exited;
+}
+EXPORT_SYMBOL(thread_group_exited);
 
 __weak void abort(void)
 {

@@ -46,18 +46,16 @@ static int trace_level;
 
 module_param(trace_function, bool, 0644);
 MODULE_PARM_DESC(trace_function,
-	"allow tracing of low level function entry and exit");
+		 "allow tracing of low level function entry and exit");
 
 module_param(trace_module, int, 0644);
-MODULE_PARM_DESC(trace_module,
-	"control tracing of low level per module");
+MODULE_PARM_DESC(trace_module, "control tracing of low level per module");
 
 module_param(trace_level, int, 0644);
-MODULE_PARM_DESC(trace_level,
-	"control tracing of low level per level");
+MODULE_PARM_DESC(trace_level, "control tracing of low level per level");
 
 void log_trace_print(uint32_t module, uint32_t level, uint32_t function,
-	const char *format, ...)
+		     const char *format, ...)
 {
 	va_list args;
 

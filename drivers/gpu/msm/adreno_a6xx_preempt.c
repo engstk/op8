@@ -487,7 +487,7 @@ void a6xx_preemption_schedule(struct adreno_device *adreno_dev)
 {
 	struct kgsl_device *device = KGSL_DEVICE(adreno_dev);
 
-	if (!ADRENO_FEATURE(adreno_dev, ADRENO_PREEMPTION))
+	if (!adreno_is_preemption_enabled(adreno_dev))
 		return;
 
 	mutex_lock(&device->mutex);
@@ -602,7 +602,7 @@ void a6xx_preemption_start(struct adreno_device *adreno_dev)
 	struct adreno_ringbuffer *rb;
 	unsigned int i;
 
-	if (!ADRENO_FEATURE(adreno_dev, ADRENO_PREEMPTION))
+	if (!adreno_is_preemption_enabled(adreno_dev))
 		return;
 
 	/* Force the state to be clear */

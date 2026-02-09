@@ -26,9 +26,9 @@
 #include "dsi_iris5_log.h"
 
 //#define IRIS_HDK_DEV
-#define IRIS_CHIP_VER_0   0
-#define IRIS_CHIP_VER_1   1
-#define IRIS_OCP_HEADER_ADDR_LEN  8
+#define IRIS_CHIP_VER_0 0
+#define IRIS_CHIP_VER_1 1
+#define IRIS_OCP_HEADER_ADDR_LEN 8
 
 #define to_dsi_display(x) container_of(x, struct dsi_display, host)
 
@@ -40,7 +40,7 @@ enum {
 
 /*use to parse dtsi cmd list*/
 struct iris_cmd_header {
-	uint32_t dsi_type;  /* dsi command type 0x23 0x29*/
+	uint32_t dsi_type; /* dsi command type 0x23 0x29*/
 	uint32_t last_pkt; /*last in chain*/
 	uint32_t wait_us; /*wait time*/
 	uint32_t ip_type; /*ip type*/
@@ -73,12 +73,13 @@ static int _iris_get_vreg(void)
 	struct dsi_panel *panel = pcfg->panel;
 
 	for (i = 0; i < pcfg->iris_power_info.count; i++) {
-		vreg = devm_regulator_get(panel->parent,
-				pcfg->iris_power_info.vregs[i].vreg_name);
+		vreg = devm_regulator_get(
+			panel->parent,
+			pcfg->iris_power_info.vregs[i].vreg_name);
 		rc = PTR_RET(vreg);
 		if (rc) {
 			IRIS_LOGE("failed to get %s regulator",
-					pcfg->iris_power_info.vregs[i].vreg_name);
+				  pcfg->iris_power_info.vregs[i].vreg_name);
 			goto error_put;
 		}
 		pcfg->iris_power_info.vregs[i].vreg = vreg;
@@ -109,9 +110,8 @@ void iris_init(struct dsi_display *display, struct dsi_panel *panel)
 {
 	struct iris_cfg *pcfg = iris_get_cfg();
 
-	IRIS_LOGI("%s(), for dispaly: %s, panel: %s, cfg index: %d",
-			__func__,
-			display->display_type, panel->name, gcfg_index);
+	IRIS_LOGI("%s(), for dispaly: %s, panel: %s, cfg index: %d", __func__,
+		  display->display_type, panel->name, gcfg_index);
 	pcfg->display = display;
 	pcfg->panel = panel;
 	pcfg->iris_i2c_read = NULL;
@@ -208,10 +208,9 @@ void iris_power_on(struct dsi_panel *panel)
 	if (!iris_is_chip_supported())
 		return;
 
-	IRIS_LOGI("%s(), for [%s] %s, cfg index: %i, secondary: %s",
-			__func__,
-			panel->name, panel->type, gcfg_index,
-			panel->is_secondary ? "true" : "false");
+	IRIS_LOGI("%s(), for [%s] %s, cfg index: %i, secondary: %s", __func__,
+		  panel->name, panel->type, gcfg_index,
+		  panel->is_secondary ? "true" : "false");
 
 	if (panel->is_secondary)
 		return;
@@ -268,10 +267,9 @@ void iris_power_off(struct dsi_panel *panel)
 	if (!iris_is_chip_supported())
 		return;
 
-	IRIS_LOGI("%s(), for [%s] %s, cfg index: %i, secondary: %s",
-			__func__,
-			panel->name, panel->type, gcfg_index,
-			panel->is_secondary ? "true" : "false");
+	IRIS_LOGI("%s(), for [%s] %s, cfg index: %i, secondary: %s", __func__,
+		  panel->name, panel->type, gcfg_index,
+		  panel->is_secondary ? "true" : "false");
 
 	if (panel->is_secondary)
 		return;
@@ -296,7 +294,8 @@ void iris_power_off(struct dsi_panel *panel)
 void iris_set_cfg_index(int index)
 {
 	if (index >= IRIS_CFG_NUM) {
-		IRIS_LOGE("%s(), index: %d exceed %d", __func__, index, IRIS_CFG_NUM);
+		IRIS_LOGE("%s(), index: %d exceed %d", __func__, index,
+			  IRIS_CFG_NUM);
 		return;
 	}
 
@@ -356,8 +355,8 @@ uint8_t iris_get_cont_splash_type(void)
 	return g_cont_splash_type;
 }
 
-static struct iris_ctrl_seq *_iris_get_ctrl_seq_addr(
-		struct iris_ctrl_seq *base, uint8_t chip_id)
+static struct iris_ctrl_seq *_iris_get_ctrl_seq_addr(struct iris_ctrl_seq *base,
+						     uint8_t chip_id)
 {
 	struct iris_ctrl_seq *pseq = NULL;
 
@@ -386,15 +385,16 @@ static bool _iris_is_valid_ip(uint32_t ip)
 	return false;
 }
 
-static struct iris_ctrl_seq *_iris_get_ctrl_seq_common(
-		struct iris_cfg *pcfg, int32_t type)
+static struct iris_ctrl_seq *_iris_get_ctrl_seq_common(struct iris_cfg *pcfg,
+						       int32_t type)
 {
 	struct iris_ctrl_seq *pseq = NULL;
 
 	if (type == IRIS_CONT_SPLASH_NONE)
 		pseq = _iris_get_ctrl_seq_addr(pcfg->ctrl_seq, pcfg->chip_id);
 	else if (type == IRIS_CONT_SPLASH_LK)
-		pseq = _iris_get_ctrl_seq_addr(pcfg->ctrl_seq_cs, pcfg->chip_id);
+		pseq = _iris_get_ctrl_seq_addr(pcfg->ctrl_seq_cs,
+					       pcfg->chip_id);
 
 	return pseq;
 }
@@ -466,7 +466,9 @@ static int _iris_split_mult_pkt(const uint8_t *payload, int payload_size)
 
 	pkt_size = pcfg->split_pkt_size;
 	if (payload_size > pkt_size + IRIS_OCP_HEADER_ADDR_LEN)
-		pkt_cnt =  (payload_size - IRIS_OCP_HEADER_ADDR_LEN + pkt_size - 1) / pkt_size;
+		pkt_cnt = (payload_size - IRIS_OCP_HEADER_ADDR_LEN + pkt_size -
+			   1) /
+			  pkt_size;
 
 	return pkt_cnt;
 }
@@ -537,9 +539,10 @@ static int32_t _iris_alloc_pip_buf(struct iris_ip_index *pip_index)
 		if (opt_cnt != 0) {
 			pip_index[i].opt =
 				kvzalloc(opt_cnt * sizeof(struct iris_ip_opt),
-						GFP_KERNEL);
+					 GFP_KERNEL);
 			if (!pip_index[i].opt) {
-				IRIS_LOGE("%s:%d no space\n", __func__, __LINE__);
+				IRIS_LOGE("%s:%d no space\n", __func__,
+					  __LINE__);
 				/*free already malloc space*/
 				for (j = 0; j < i; j++) {
 					kvfree(pip_index[j].opt);
@@ -575,7 +578,7 @@ static int32_t _iris_alloc_desc_buf(struct dsi_cmd_desc **cmds, int cmd_cnt)
 }
 
 static int32_t _iris_alloc_cmd_buf(struct dsi_cmd_desc **cmds,
-		struct iris_ip_index *pip_index, int cmd_cnt)
+				   struct iris_ip_index *pip_index, int cmd_cnt)
 {
 	int32_t rc = 0;
 
@@ -593,8 +596,9 @@ static int32_t _iris_alloc_cmd_buf(struct dsi_cmd_desc **cmds,
 }
 
 static int32_t _iris_write_ip_opt(struct dsi_cmd_desc *cmd,
-		const struct iris_cmd_header *hdr, int32_t pkt_cnt,
-		struct iris_ip_index *pip_index)
+				  const struct iris_cmd_header *hdr,
+				  int32_t pkt_cnt,
+				  struct iris_ip_index *pip_index)
 {
 	uint8_t i = 0;
 	uint8_t ip = 0;
@@ -629,25 +633,27 @@ static int32_t _iris_write_ip_opt(struct dsi_cmd_desc *cmd,
 
 	if (i == cnt) {
 		IRIS_LOGE("%s(), find ip opt fail, ip = 0x%02x opt = 0x%02x.",
-				__func__, ip, opt_id);
+			  __func__, ip, opt_id);
 		return -EINVAL;
 	}
 
 	/*to set link state*/
-	if (pip_index[ip].opt[i].link_state == 0xff
-			&& pip_index[ip].opt[i].opt_id == opt_id) {
+	if (pip_index[ip].opt[i].link_state == 0xff &&
+	    pip_index[ip].opt[i].opt_id == opt_id) {
 		uint8_t link_state = 0;
 
 		link_state = (hdr->opt_and_link >> 8) & 0xff;
-		pip_index[ip].opt[i].link_state =
-			link_state ? DSI_CMD_SET_STATE_LP : DSI_CMD_SET_STATE_HS;
+		pip_index[ip].opt[i].link_state = link_state ?
+							  DSI_CMD_SET_STATE_LP :
+							  DSI_CMD_SET_STATE_HS;
 	}
 
 	return 0;
 }
 
-static int32_t _iris_trans_section_hdr_to_desc(
-		struct dsi_cmd_desc *cmd, const struct iris_cmd_header *hdr)
+static int32_t
+_iris_trans_section_hdr_to_desc(struct dsi_cmd_desc *cmd,
+				const struct iris_cmd_header *hdr)
 {
 	memset(cmd, 0, sizeof(struct dsi_cmd_desc));
 
@@ -656,23 +662,24 @@ static int32_t _iris_trans_section_hdr_to_desc(
 	cmd->last_command = ((hdr->last_pkt & 0xff) != 0);
 	cmd->msg.tx_len = hdr->payload_len;
 
-	IRIS_LOGV("%s(), type: %#x, wait: %#x, last: %s, len: %zu",
-			__func__,
-			cmd->msg.type, cmd->post_wait_ms,
-			cmd->last_command ? "true" : "false", cmd->msg.tx_len);
+	IRIS_LOGV("%s(), type: %#x, wait: %#x, last: %s, len: %zu", __func__,
+		  cmd->msg.type, cmd->post_wait_ms,
+		  cmd->last_command ? "true" : "false", cmd->msg.tx_len);
 
 	return cmd->msg.tx_len;
 }
 
 static void _iris_change_last_and_size(struct iris_cmd_header *dest,
-		const struct iris_cmd_header *src, int index, const int pkt_cnt)
+				       const struct iris_cmd_header *src,
+				       int index, const int pkt_cnt)
 {
 	struct iris_cfg *pcfg = iris_get_cfg();
 	int pkt_size = pcfg->split_pkt_size;
 
 	memcpy(dest, src, sizeof(*src));
 	if (index == pkt_cnt - 1) {
-		dest->payload_len = src->payload_len * sizeof(uint32_t) - (pkt_cnt - 1) * pkt_size;
+		dest->payload_len = src->payload_len * sizeof(uint32_t) -
+				    (pkt_cnt - 1) * pkt_size;
 		return;
 	}
 
@@ -681,7 +688,7 @@ static void _iris_change_last_and_size(struct iris_cmd_header *dest,
 }
 
 static int _iris_write_cmd_hdr(struct dsi_cmd_desc *cmd,
-		const struct iris_cmd_header *phdr, int pkt_cnt)
+			       const struct iris_cmd_header *phdr, int pkt_cnt)
 {
 	int i = 0;
 	struct iris_cmd_header tmp_hdr;
@@ -710,7 +717,8 @@ static bool _iris_need_direct_send(const struct iris_cmd_header *hdr)
 }
 
 static void _iris_create_cmd_payload(const struct iris_cmd_header *hdr,
-		const uint8_t *payload, uint8_t *msg_buf, int32_t buf_size)
+				     const uint8_t *payload, uint8_t *msg_buf,
+				     int32_t buf_size)
 {
 	int32_t i = 0;
 	uint32_t *pval = NULL;
@@ -728,7 +736,8 @@ static void _iris_create_cmd_payload(const struct iris_cmd_header *hdr,
 }
 
 static int _iris_write_cmd_payload(struct dsi_cmd_desc *pdesc,
-		const struct iris_cmd_header *hdr, const char *payload, int pkt_cnt)
+				   const struct iris_cmd_header *hdr,
+				   const char *payload, int pkt_cnt)
 {
 	int i = 0;
 	uint32_t dlen = 0;
@@ -762,9 +771,9 @@ static int _iris_write_cmd_payload(struct dsi_cmd_desc *pdesc,
 
 			_iris_set_ocp_base_addr(ptr, base_addr + i * pkt_size);
 			_iris_set_ocp_type(ptr, ocp_type);
-			_iris_create_cmd_payload(hdr, payload,
-					ptr + IRIS_OCP_HEADER_ADDR_LEN,
-					dlen - IRIS_OCP_HEADER_ADDR_LEN);
+			_iris_create_cmd_payload(
+				hdr, payload, ptr + IRIS_OCP_HEADER_ADDR_LEN,
+				dlen - IRIS_OCP_HEADER_ADDR_LEN);
 
 			/* add payload */
 			payload += (dlen - IRIS_OCP_HEADER_ADDR_LEN);
@@ -776,9 +785,10 @@ static int _iris_write_cmd_payload(struct dsi_cmd_desc *pdesc,
 		int len = 0;
 
 		for (i = 0; i < pkt_cnt; i++) {
-			len = (pdesc[i].msg.tx_len > 16) ? 16 : pdesc[i].msg.tx_len;
+			len = (pdesc[i].msg.tx_len > 16) ? 16 :
+							   pdesc[i].msg.tx_len;
 			print_hex_dump(KERN_ERR, "", DUMP_PREFIX_NONE, 16, 4,
-					pdesc[i].msg.tx_buf, len, false);
+				       pdesc[i].msg.tx_buf, len, false);
 		}
 	}
 
@@ -800,8 +810,9 @@ void iris_change_type_addr(struct iris_ip_opt *dest, struct iris_ip_opt *src)
 		_iris_set_ocp_base_addr(buf, base_addr + i * pkt_size);
 		_iris_set_ocp_type(buf, ocp_type);
 		if (IRIS_LOGD_IF(i == 0)) {
-			IRIS_LOGD("%s(), change ocp type 0x%08x, change base addr to 0x%08x.",
-					__func__, ocp_type, base_addr);
+			IRIS_LOGD(
+				"%s(), change ocp type 0x%08x, change base addr to 0x%08x.",
+				__func__, ocp_type, base_addr);
 		}
 	}
 }
@@ -836,7 +847,7 @@ struct iris_ip_opt *iris_find_ip_opt(uint8_t ip, uint8_t opt_id)
 	return NULL;
 }
 
-static void _iris_print_ipopt(struct iris_ip_index  *pip_index)
+static void _iris_print_ipopt(struct iris_ip_index *pip_index)
 {
 	int32_t i = 0;
 	int32_t j = 0;
@@ -849,15 +860,16 @@ static void _iris_print_ipopt(struct iris_ip_index  *pip_index)
 		for (j = 0; j < pip_index[i].opt_cnt; j++) {
 			struct iris_ip_opt *popt = &(pip_index[i].opt[j]);
 
-			IRIS_LOGI("%s(%d), ip: %02x, opt: %02x, cmd: %p, len: %d, link state: %#x",
-					__func__, __LINE__,
-					i, popt->opt_id, popt->cmd, popt->cmd_cnt, popt->link_state);
+			IRIS_LOGI(
+				"%s(%d), ip: %02x, opt: %02x, cmd: %p, len: %d, link state: %#x",
+				__func__, __LINE__, i, popt->opt_id, popt->cmd,
+				popt->cmd_cnt, popt->link_state);
 		}
 	}
 }
 
-static void _iris_parse_appversion(
-		const uint8_t *payload, const struct iris_cmd_header *phdr)
+static void _iris_parse_appversion(const uint8_t *payload,
+				   const struct iris_cmd_header *phdr)
 {
 	struct iris_cfg *pcfg = iris_get_cfg();
 	uint32_t *pval = NULL;
@@ -876,17 +888,14 @@ static void _iris_parse_appversion(
 	pcfg->app_date[1] = (app_date >> 8) & 0xff;
 	pcfg->app_date[2] = (app_date >> 16) & 0xff;
 	pcfg->app_date[3] = (app_date >> 24) & 0xff;
-	IRIS_LOGI("%s(), iris fw version: %d, [date]%d:%d:%d:%d",
-			__func__,
-			pcfg->app_version,
-			pcfg->app_date[3],
-			pcfg->app_date[2],
-			pcfg->app_date[1],
-			pcfg->app_date[0]);
+	IRIS_LOGI("%s(), iris fw version: %d, [date]%d:%d:%d:%d", __func__,
+		  pcfg->app_version, pcfg->app_date[3], pcfg->app_date[2],
+		  pcfg->app_date[1], pcfg->app_date[0]);
 }
 
 static int32_t _iris_add_cmd_to_ipidx(const struct iris_data *data,
-		struct dsi_cmd_desc *cmds, int cmd_pos, struct iris_ip_index *pip_index)
+				      struct dsi_cmd_desc *cmds, int cmd_pos,
+				      struct iris_ip_index *pip_index)
 {
 	int32_t span = 0;
 	int32_t pkt_cnt = 0;
@@ -930,8 +939,10 @@ static int32_t _iris_add_cmd_to_ipidx(const struct iris_data *data,
 	return span;
 }
 
-static int32_t _iris_create_ipidx(const struct iris_data *data, int32_t data_cnt,
-		struct iris_ip_index *pip_index, int32_t cmd_cnt)
+static int32_t _iris_create_ipidx(const struct iris_data *data,
+				  int32_t data_cnt,
+				  struct iris_ip_index *pip_index,
+				  int32_t cmd_cnt)
 {
 	int32_t i = 0;
 	int32_t rc = 0;
@@ -952,25 +963,28 @@ static int32_t _iris_create_ipidx(const struct iris_data *data, int32_t data_cnt
 			IRIS_LOGW("data[%d] length is %d.", i, data[i].size);
 			continue;
 		}
-		cmd_pos += _iris_add_cmd_to_ipidx(&data[i], cmds, cmd_pos, pip_index);
+		cmd_pos += _iris_add_cmd_to_ipidx(&data[i], cmds, cmd_pos,
+						  pip_index);
 	}
 
 	if (cmd_cnt != cmd_pos) {
 		IRIS_LOGE("%s(), invalid desc, cmd count: %d, cmd pos: %d.",
-				__func__, cmd_cnt, cmd_pos);
+			  __func__, cmd_cnt, cmd_pos);
 	}
 
 	return 0;
 }
 
 static int32_t _iris_accum_section_desc_cnt(const struct iris_cmd_header *hdr,
-		const uint8_t *payload, int32_t *pcmd_cnt)
+					    const uint8_t *payload,
+					    int32_t *pcmd_cnt)
 {
 	int pkt_cnt = 1;
 	int32_t payload_size = 0;
 
 	if (!hdr || !pcmd_cnt || !payload) {
-		IRIS_LOGE("%s(%d), invalid input parameter!", __func__, __LINE__);
+		IRIS_LOGE("%s(%d), invalid input parameter!", __func__,
+			  __LINE__);
 		return -EINVAL;
 	}
 
@@ -988,13 +1002,14 @@ static int32_t _iris_accum_section_desc_cnt(const struct iris_cmd_header *hdr,
 }
 
 static int32_t _iris_accum_section_opt_cnt(const struct iris_cmd_header *hdr,
-		struct iris_ip_index *pip_index)
+					   struct iris_ip_index *pip_index)
 {
 	uint8_t last = 0;
 	uint8_t ip = 0;
 
 	if (!hdr || !pip_index) {
-		IRIS_LOGE("%s(%d), invalid input parameter.", __func__, __LINE__);
+		IRIS_LOGE("%s(%d), invalid input parameter.", __func__,
+			  __LINE__);
 		return -EINVAL;
 	}
 
@@ -1011,7 +1026,9 @@ static int32_t _iris_accum_section_opt_cnt(const struct iris_cmd_header *hdr,
 }
 
 static int32_t _iris_poll_each_section(const struct iris_cmd_header *hdr,
-		const char *payload, struct iris_ip_index *pip_index, int32_t *pcmd_cnt)
+				       const char *payload,
+				       struct iris_ip_index *pip_index,
+				       int32_t *pcmd_cnt)
 {
 	int32_t rc = 0;
 
@@ -1032,7 +1049,7 @@ EXIT_VAL:
 }
 
 static int32_t _iris_verify_dtsi(const struct iris_cmd_header *hdr,
-		struct iris_ip_index *pip_index)
+				 struct iris_ip_index *pip_index)
 {
 	uint32_t *pval = NULL;
 	uint8_t tmp = 0;
@@ -1041,15 +1058,18 @@ static int32_t _iris_verify_dtsi(const struct iris_cmd_header *hdr,
 
 	if (type >= IRIS_DTSI0_PIP_IDX && type <= IRIS_DTSI1_PIP_IDX) {
 		if (hdr->ip_type >= IRIS_IP_CNT) {
-			IRIS_LOGE("hdr->ip_type is  0x%0x out of max ip", hdr->ip_type);
+			IRIS_LOGE("hdr->ip_type is  0x%0x out of max ip",
+				  hdr->ip_type);
 			rc = -EINVAL;
-		} else if (((hdr->opt_and_link >> 8) & 0xff)  > 1) {
-			IRIS_LOGE("hdr->opt link state not right 0x%0x", hdr->opt_and_link);
+		} else if (((hdr->opt_and_link >> 8) & 0xff) > 1) {
+			IRIS_LOGE("hdr->opt link state not right 0x%0x",
+				  hdr->opt_and_link);
 			rc = -EINVAL;
 		}
 	} else {
 		if (hdr->ip_type >= LUT_IP_END || hdr->ip_type < LUT_IP_START) {
-			IRIS_LOGE("hdr->ip_type is  0x%0x out of ip range", hdr->ip_type);
+			IRIS_LOGE("hdr->ip_type is  0x%0x out of ip range",
+				  hdr->ip_type);
 			rc = -EINVAL;
 		}
 	}
@@ -1074,7 +1094,8 @@ static int32_t _iris_verify_dtsi(const struct iris_cmd_header *hdr,
 			break;
 		} else if (tmp == 0x04) {
 			if ((hdr->payload_len - 1) % 2 != 0) {
-				IRIS_LOGE("dlen is not right = %d", hdr->payload_len);
+				IRIS_LOGE("dlen is not right = %d",
+					  hdr->payload_len);
 				rc = -EINVAL;
 			}
 		} else {
@@ -1088,17 +1109,16 @@ static int32_t _iris_verify_dtsi(const struct iris_cmd_header *hdr,
 	}
 
 	if (rc) {
-		IRIS_LOGE("hdr info: %#x %#x %#x %#x %#x %#x",
-				hdr->dsi_type, hdr->last_pkt,
-				hdr->wait_us, hdr->ip_type,
-				hdr->opt_and_link, hdr->payload_len);
+		IRIS_LOGE("hdr info: %#x %#x %#x %#x %#x %#x", hdr->dsi_type,
+			  hdr->last_pkt, hdr->wait_us, hdr->ip_type,
+			  hdr->opt_and_link, hdr->payload_len);
 	}
 
 	return rc;
 }
 
-static int32_t _iris_parse_panel_type(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_panel_type(struct device_node *np,
+				      struct iris_cfg *pcfg)
 {
 	const char *data = NULL;
 	u32 value = 0;
@@ -1113,7 +1133,7 @@ static int32_t _iris_parse_panel_type(
 			pcfg->panel_type = PANEL_LCD_P3;
 		else if (!strcmp(data, "PANEL_OLED"))
 			pcfg->panel_type = PANEL_OLED;
-		else/*default value is 0*/
+		else /*default value is 0*/
 			pcfg->panel_type = PANEL_LCD_SRGB;
 	} else { /*default value is 0*/
 		pcfg->panel_type = PANEL_LCD_SRGB;
@@ -1141,13 +1161,12 @@ static int32_t _iris_parse_panel_type(
 	return 0;
 }
 
-static int32_t _iris_parse_chip_ver(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_chip_ver(struct device_node *np,
+				    struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 
-	rc = of_property_read_u32(np, "pxlw,chip-ver",
-			&(pcfg->chip_ver));
+	rc = of_property_read_u32(np, "pxlw,chip-ver", &(pcfg->chip_ver));
 	if (rc) {
 		IRIS_LOGE("can not get property: pxlw, chip-ver");
 		return rc;
@@ -1157,8 +1176,8 @@ static int32_t _iris_parse_chip_ver(
 	return rc;
 }
 
-static int32_t _iris_parse_lut_mode(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_lut_mode(struct device_node *np,
+				    struct iris_cfg *pcfg)
 {
 	const char *data;
 
@@ -1168,7 +1187,7 @@ static int32_t _iris_parse_lut_mode(
 			pcfg->lut_mode = SINGLE_MODE;
 		else if (!strcmp(data, "interpolation"))
 			pcfg->lut_mode = INTERPOLATION_MODE;
-		else/*default value is 0*/
+		else /*default value is 0*/
 			pcfg->lut_mode = INTERPOLATION_MODE;
 	} else { /*default value is 0*/
 		pcfg->lut_mode = INTERPOLATION_MODE;
@@ -1179,13 +1198,13 @@ static int32_t _iris_parse_lut_mode(
 	return 0;
 }
 
-static int32_t _iris_parse_split_pkt_info(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_split_pkt_info(struct device_node *np,
+					  struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 
 	rc = of_property_read_u32(np, "pxlw,pkt-payload-size",
-			&(pcfg->split_pkt_size));
+				  &(pcfg->split_pkt_size));
 	if (rc) {
 		IRIS_LOGE("can not get property: pxlw,pkt-payload-size");
 		return rc;
@@ -1193,27 +1212,30 @@ static int32_t _iris_parse_split_pkt_info(
 	IRIS_LOGI("pxlw,split-pkt-payload-size: %d", pcfg->split_pkt_size);
 
 	rc = of_property_read_u32(np, "pxlw,last-for-per-pkt",
-			&(pcfg->add_on_last_flag));
+				  &(pcfg->add_on_last_flag));
 	if (rc) {
 		IRIS_LOGE("can not get property:pxlw,last-for-per-pkt");
 		pcfg->add_on_last_flag = DSI_CMD_ONE_LAST_FOR_ONE_PKT;
 	}
 	rc = of_property_read_u32(np, "pxlw,pt-last-for-per-pkt",
-			&(pcfg->add_pt_last_flag));
+				  &(pcfg->add_pt_last_flag));
 	if (rc) {
 		IRIS_LOGE("can not get property:pxlw,pt-last-for-per-pkt");
 		pcfg->add_pt_last_flag = DSI_CMD_ONE_LAST_FOR_MULT_IPOPT;
 	}
-	IRIS_LOGE("pxlw,add-last-for-split-pkt: %d, pxlw,add-pt-last-for-split-pkt: %d",
-			pcfg->add_on_last_flag, pcfg->add_pt_last_flag);
+	IRIS_LOGE(
+		"pxlw,add-last-for-split-pkt: %d, pxlw,add-pt-last-for-split-pkt: %d",
+		pcfg->add_on_last_flag, pcfg->add_pt_last_flag);
 
 	pcfg->add_last_flag = pcfg->add_on_last_flag;
 
 	return rc;
 }
 
-static int32_t _iris_poll_cmd_lists(const struct iris_data *data, int32_t data_cnt,
-		struct iris_ip_index *pip_index, int32_t *pcmd_cnt)
+static int32_t _iris_poll_cmd_lists(const struct iris_data *data,
+				    int32_t data_cnt,
+				    struct iris_ip_index *pip_index,
+				    int32_t *pcmd_cnt)
 {
 	int32_t rc = 0;
 	int32_t i = 0;
@@ -1239,22 +1261,28 @@ static int32_t _iris_poll_cmd_lists(const struct iris_data *data, int32_t data_c
 			hdr = (const struct iris_cmd_header *)buf_ptr;
 			data_len -= sizeof(struct iris_cmd_header);
 			if (hdr->payload_len > (data_len >> 2)) {
-				IRIS_LOGE("%s: length error, ip = 0x%02x opt=0x%02x, len=%d",
-						__func__, hdr->ip_type, hdr->opt_and_link, hdr->payload_len);
+				IRIS_LOGE(
+					"%s: length error, ip = 0x%02x opt=0x%02x, len=%d",
+					__func__, hdr->ip_type,
+					hdr->opt_and_link, hdr->payload_len);
 				return -EINVAL;
 			}
 
 			if (IRIS_IF_LOGVV()) {
 				rc = _iris_verify_dtsi(hdr, pip_index);
 				if (rc) {
-					IRIS_LOGE("%s(%d), verify dtis return: %d", __func__, __LINE__, rc);
+					IRIS_LOGE(
+						"%s(%d), verify dtis return: %d",
+						__func__, __LINE__, rc);
 					return rc;
 				}
 			}
 
-			IRIS_LOGV("hdr info, type: 0x%02x, last: 0x%02x, wait: 0x%02x, ip: 0x%02x, opt: 0x%02x, len: %d.",
-					hdr->dsi_type, hdr->last_pkt, hdr->wait_us,
-					hdr->ip_type, hdr->opt_and_link, hdr->payload_len);
+			IRIS_LOGV(
+				"hdr info, type: 0x%02x, last: 0x%02x, wait: 0x%02x, ip: 0x%02x, opt: 0x%02x, len: %d.",
+				hdr->dsi_type, hdr->last_pkt, hdr->wait_us,
+				hdr->ip_type, hdr->opt_and_link,
+				hdr->payload_len);
 
 			//payload
 			buf_ptr += sizeof(struct iris_cmd_header);
@@ -1263,10 +1291,12 @@ static int32_t _iris_poll_cmd_lists(const struct iris_data *data, int32_t data_c
 			//hdr->payload_len *= sizeof(uint32_t);
 			payload_size = hdr->payload_len * sizeof(uint32_t);
 
-			rc = _iris_poll_each_section(hdr, buf_ptr, pip_index, pcmd_cnt);
+			rc = _iris_poll_each_section(hdr, buf_ptr, pip_index,
+						     pcmd_cnt);
 			if (rc) {
-				IRIS_LOGE("%s(), failed to poll section: %d, return: %d",
-						__func__, hdr->ip_type, rc);
+				IRIS_LOGE(
+					"%s(), failed to poll section: %d, return: %d",
+					__func__, hdr->ip_type, rc);
 				return rc;
 			}
 
@@ -1278,8 +1308,8 @@ static int32_t _iris_poll_cmd_lists(const struct iris_data *data, int32_t data_c
 	return rc;
 }
 
-static int32_t _iris_alloc_dtsi_cmd_buf(
-		const struct device_node *np, const uint8_t *key, uint8_t **buf)
+static int32_t _iris_alloc_dtsi_cmd_buf(const struct device_node *np,
+					const uint8_t *key, uint8_t **buf)
 {
 	int32_t cmd_size = 0;
 	int32_t cmd_len = 0;
@@ -1300,21 +1330,22 @@ static int32_t _iris_alloc_dtsi_cmd_buf(
 	*buf = vzalloc(cmd_size);
 	if (!*buf) {
 		IRIS_LOGE("can not vzalloc memory");
-		return  -ENOMEM;
+		return -ENOMEM;
 	}
 
 	return cmd_size;
 }
 
 static int32_t _iris_write_dtsi_cmd_to_buf(const struct device_node *np,
-		const uint8_t *key, uint8_t **buf, int size)
+					   const uint8_t *key, uint8_t **buf,
+					   int size)
 {
 	int32_t rc = 0;
 
-	rc = of_property_read_u32_array(np, key,
-			(uint32_t *)(*buf), size >> 2);
+	rc = of_property_read_u32_array(np, key, (uint32_t *)(*buf), size >> 2);
 	if (rc != 0) {
-		IRIS_LOGE("%s(%d), read array is not right", __func__, __LINE__);
+		IRIS_LOGE("%s(%d), read array is not right", __func__,
+			  __LINE__);
 		return -EINVAL;
 	}
 
@@ -1330,13 +1361,13 @@ static void _iris_free_dtsi_cmd_buf(uint8_t **buf)
 }
 
 static void _iris_save_cmd_count(const struct iris_ip_index *pip_index,
-		const int cmd_cnt)
+				 const int cmd_cnt)
 {
 	struct iris_cfg *pcfg = iris_get_cfg();
 	int32_t idx_type = _iris_get_ip_idx_type(pip_index);
 
-	if (idx_type == IRIS_DTSI0_PIP_IDX
-			|| idx_type == IRIS_DTSI1_PIP_IDX) { //CID101339
+	if (idx_type == IRIS_DTSI0_PIP_IDX ||
+	    idx_type == IRIS_DTSI1_PIP_IDX) { //CID101339
 		if (cmd_cnt > pcfg->dtsi_cmds_cnt)
 			pcfg->dtsi_cmds_cnt = cmd_cnt;
 		return;
@@ -1348,11 +1379,11 @@ static void _iris_save_cmd_count(const struct iris_ip_index *pip_index,
 	}
 
 	IRIS_LOGI("%s(), doesn't save count for type %#x pip index %p",
-			__func__, idx_type, pip_index);
+		  __func__, idx_type, pip_index);
 }
 
-int32_t iris_attach_cmd_to_ipidx(const struct iris_data *data,
-		int32_t data_cnt, struct iris_ip_index *pip_index)
+int32_t iris_attach_cmd_to_ipidx(const struct iris_data *data, int32_t data_cnt,
+				 struct iris_ip_index *pip_index)
 {
 	int32_t rc = 0;
 	int32_t cmd_cnt = 0;
@@ -1370,7 +1401,8 @@ int32_t iris_attach_cmd_to_ipidx(const struct iris_data *data,
 	return rc;
 }
 
-int32_t iris_parse_dtsi_cmd(const struct device_node *lightup_node, uint32_t cmd_index)
+int32_t iris_parse_dtsi_cmd(const struct device_node *lightup_node,
+			    uint32_t cmd_index)
 {
 	int32_t rc = 0;
 	int32_t cmd_size = 0;
@@ -1391,7 +1423,8 @@ int32_t iris_parse_dtsi_cmd(const struct device_node *lightup_node, uint32_t cmd
 		return -ENOMEM;
 	}
 
-	rc = _iris_write_dtsi_cmd_to_buf(lightup_node, key, &dtsi_buf, cmd_size);
+	rc = _iris_write_dtsi_cmd_to_buf(lightup_node, key, &dtsi_buf,
+					 cmd_size);
 	if (rc) {
 		IRIS_LOGE("cant not write dtsi cmd to buf");
 		goto FREE_DTSI_BUF;
@@ -1409,8 +1442,8 @@ FREE_DTSI_BUF:
 	return rc;
 }
 
-static void _iris_add_cmd_seq(struct iris_ctrl_opt *ctrl_opt,
-		int item_cnt, const uint8_t *pdata)
+static void _iris_add_cmd_seq(struct iris_ctrl_opt *ctrl_opt, int item_cnt,
+			      const uint8_t *pdata)
 {
 	int32_t i = 0;
 	uint8_t ip = 0;
@@ -1428,14 +1461,14 @@ static void _iris_add_cmd_seq(struct iris_ctrl_opt *ctrl_opt,
 		ctrl_opt[i].skip_last = skip_last & 0xff;
 
 		if (IRIS_IF_LOGV()) {
-			IRIS_LOGE("ip = %d opt = %d  skip=%d",
-					ip, opt_id, skip_last);
+			IRIS_LOGE("ip = %d opt = %d  skip=%d", ip, opt_id,
+				  skip_last);
 		}
 	}
 }
 
-static int32_t _iris_alloc_cmd_seq(
-		struct iris_ctrl_seq  *pctrl_seq, int32_t seq_cnt)
+static int32_t _iris_alloc_cmd_seq(struct iris_ctrl_seq *pctrl_seq,
+				   int32_t seq_cnt)
 {
 	pctrl_seq->ctrl_opt = vmalloc(seq_cnt * sizeof(struct iris_ctrl_seq));
 	if (pctrl_seq->ctrl_opt == NULL) {
@@ -1448,7 +1481,8 @@ static int32_t _iris_alloc_cmd_seq(
 }
 
 static int32_t _iris_parse_cmd_seq_data(struct device_node *np,
-		const uint8_t *key, const uint8_t **pval)
+					const uint8_t *key,
+					const uint8_t **pval)
 {
 	const uint8_t *pdata = NULL;
 	int32_t item_cnt = 0;
@@ -1461,7 +1495,7 @@ static int32_t _iris_parse_cmd_seq_data(struct device_node *np,
 		return -EINVAL;
 	}
 
-	seq_cnt =  (item_cnt / span);
+	seq_cnt = (item_cnt / span);
 	if (item_cnt == 0 || item_cnt != span * seq_cnt) {
 		IRIS_LOGE("parse %s len is not right = %d", key, item_cnt);
 		return -EINVAL;
@@ -1472,9 +1506,10 @@ static int32_t _iris_parse_cmd_seq_data(struct device_node *np,
 	return seq_cnt;
 }
 
-static int32_t _iris_parse_cmd_seq_common(
-		struct device_node *np, const uint8_t *pre_key,
-		const uint8_t *key, struct iris_ctrl_seq *pctrl_seq)
+static int32_t _iris_parse_cmd_seq_common(struct device_node *np,
+					  const uint8_t *pre_key,
+					  const uint8_t *key,
+					  struct iris_ctrl_seq *pctrl_seq)
 {
 	int32_t pre_seq_cnt = 0;
 	int32_t seq_cnt = 0;
@@ -1503,8 +1538,8 @@ static int32_t _iris_parse_cmd_seq_common(
 	return rc;
 }
 
-static int32_t _iris_parse_cmd_seq(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_cmd_seq(struct device_node *np,
+				   struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 	uint8_t *pre0_key = "pxlw,iris-lightup-sequence-pre0";
@@ -1515,11 +1550,12 @@ static int32_t _iris_parse_cmd_seq(
 	if (rc != 0)
 		return rc;
 
-	return _iris_parse_cmd_seq_common(np, pre1_key, key, pcfg->ctrl_seq + 1);
+	return _iris_parse_cmd_seq_common(np, pre1_key, key,
+					  pcfg->ctrl_seq + 1);
 }
 
 int32_t iris_parse_optional_seq(struct device_node *np, const uint8_t *key,
-		struct iris_ctrl_seq *pseq)
+				struct iris_ctrl_seq *pseq)
 {
 	int32_t rc = 0;
 	int32_t seq_cnt = 0;
@@ -1527,15 +1563,16 @@ int32_t iris_parse_optional_seq(struct device_node *np, const uint8_t *key,
 
 	seq_cnt = _iris_parse_cmd_seq_data(np, key, &pdata);
 	if (seq_cnt <= 0) {
-		IRIS_LOGI("%s(), [optional] without sequence for %s, seq_cnt %d",
-				__func__, key, seq_cnt);
+		IRIS_LOGI(
+			"%s(), [optional] without sequence for %s, seq_cnt %d",
+			__func__, key, seq_cnt);
 		return 0;
 	}
 
 	rc = _iris_alloc_cmd_seq(pseq, seq_cnt);
 	if (rc != 0) {
 		IRIS_LOGE("%s(), failed to alloc for %s seq, return %d",
-				__func__, key, rc);
+			  __func__, key, rc);
 		return rc;
 	}
 
@@ -1545,8 +1582,8 @@ int32_t iris_parse_optional_seq(struct device_node *np, const uint8_t *key,
 }
 
 /*use for debug cont-splash lk part*/
-static int32_t _iris_parse_cont_splash_cmd_seq(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_cont_splash_cmd_seq(struct device_node *np,
+					       struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 	uint8_t *pre0_key = "pxlw,iris-lightup-sequence-pre0";
@@ -1557,13 +1594,13 @@ static int32_t _iris_parse_cont_splash_cmd_seq(
 	if (rc != 0)
 		return rc;
 
-	return _iris_parse_cmd_seq_common(np, pre1_key,
-			key, pcfg->ctrl_seq_cs + 1);
+	return _iris_parse_cmd_seq_common(np, pre1_key, key,
+					  pcfg->ctrl_seq_cs + 1);
 }
 
-static int32_t _iris_parse_tx_mode(
-		struct device_node *np,
-		struct dsi_panel *panel, struct iris_cfg *pcfg)
+static int32_t _iris_parse_tx_mode(struct device_node *np,
+				   struct dsi_panel *panel,
+				   struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 	u8 tx_mode;
@@ -1600,7 +1637,8 @@ static int _iris_parse_pwr_entries(struct dsi_display *display)
 		supply_name = "qcom,iris-supply-entries";
 
 		rc = dsi_pwr_of_get_vreg_data(&display->panel->utils,
-				&pcfg->iris_power_info, supply_name);
+					      &pcfg->iris_power_info,
+					      supply_name);
 		if (rc) {
 			rc = -EINVAL;
 			IRIS_LOGE("%s pwr enters error", __func__);
@@ -1627,7 +1665,7 @@ int iris_parse_param(struct dsi_display *display)
 	struct device_node *lightup_node = NULL;
 	struct iris_cfg *pcfg = iris_get_cfg();
 
-	pcfg->valid = PARAM_EMPTY;	/* empty */
+	pcfg->valid = PARAM_EMPTY; /* empty */
 
 	IRIS_LOGI("%s(%d), enter.", __func__, __LINE__);
 	if (!display || !display->pdev->dev.of_node || !display->panel_node) {
@@ -1647,7 +1685,8 @@ int iris_parse_param(struct dsi_display *display)
 	mutex_init(&pcfg->lb_mutex);
 	init_completion(&pcfg->frame_ready_completion);
 
-	lightup_node = of_parse_phandle(display->pdev->dev.of_node, "pxlw,iris-lightup-config", 0);
+	lightup_node = of_parse_phandle(display->pdev->dev.of_node,
+					"pxlw,iris-lightup-config", 0);
 	if (!lightup_node) {
 		IRIS_LOGE("%s(), failed to find lightup node", __func__);
 		return -EINVAL;
@@ -1677,7 +1716,8 @@ int iris_parse_param(struct dsi_display *display)
 
 	rc = iris_parse_timing_switch_info(lightup_node, pcfg);
 	if (rc)
-		IRIS_LOGI("%s, [optional] have not timing switch info", __func__);
+		IRIS_LOGI("%s, [optional] have not timing switch info",
+			  __func__);
 
 	rc = iris_parse_default_pq_param(lightup_node, pcfg);
 	if (rc) {
@@ -1727,7 +1767,7 @@ int iris_parse_param(struct dsi_display *display)
 
 	INIT_WORK(&pcfg->cont_splash_work, __cont_splash_work_handler);
 
-	pcfg->valid = PARAM_PARSED;	/* parse ok */
+	pcfg->valid = PARAM_PARSED; /* parse ok */
 	IRIS_LOGI("%s(%d), exit.", __func__, __LINE__);
 
 	return 0;
@@ -1755,12 +1795,12 @@ static void _iris_reset_out_cmds(void)
 	int sum = pcfg->dtsi_cmds_cnt + pcfg->lut_cmds_cnt;
 
 	memset(pcfg->iris_cmds.iris_cmds_buf, 0x00,
-			sum * sizeof(struct dsi_cmd_desc));
+	       sum * sizeof(struct dsi_cmd_desc));
 	pcfg->iris_cmds.cmds_index = 0;
 }
 
-static int32_t _iris_init_cmd_comp(int32_t ip,
-		int32_t opt_index, struct iris_cmd_comp *pcmd_comp)
+static int32_t _iris_init_cmd_comp(int32_t ip, int32_t opt_index,
+				   struct iris_cmd_comp *pcmd_comp)
 {
 	struct iris_ip_opt *opt = NULL;
 
@@ -1772,15 +1812,15 @@ static int32_t _iris_init_cmd_comp(int32_t ip,
 	opt = iris_find_ip_opt(ip, opt_index);
 	if (!opt) {
 		IRIS_LOGE("%s(), can not find popt, i_iris_p: %#x, opt: %#x",
-				__func__, ip, opt_index);
+			  __func__, ip, opt_index);
 		return -EINVAL;
 	}
 
 	pcmd_comp->cmd = opt->cmd;
 	pcmd_comp->cnt = opt->cmd_cnt;
 	pcmd_comp->link_state = opt->link_state;
-	IRIS_LOGV("%s(), opt count: %d, link state: %#x",
-			__func__, pcmd_comp->cnt, pcmd_comp->link_state);
+	IRIS_LOGV("%s(), opt count: %d, link state: %#x", __func__,
+		  pcmd_comp->cnt, pcmd_comp->link_state);
 
 	return 0;
 }
@@ -1795,10 +1835,10 @@ void iris_print_desc_cmds(struct dsi_cmd_desc *p, int cmd_cnt, int state)
 	uint8_t *ptr = NULL;
 	uint8_t *ptr_tx = NULL;
 	struct dsi_cmd_desc *pcmd = NULL;
-	int str_len = 0;//CID99296
+	int str_len = 0; //CID99296
 
 	IRIS_LOGI("%s(), cmd len: %d, state: %s", __func__, cmd_cnt,
-			(state == DSI_CMD_SET_STATE_HS) ? "high speed" : "low power");
+		  (state == DSI_CMD_SET_STATE_HS) ? "high speed" : "low power");
 
 	for (i = 0; i < cmd_cnt; i++) {
 		pcmd = p + i;
@@ -1812,11 +1852,12 @@ void iris_print_desc_cmds(struct dsi_cmd_desc *p, int cmd_cnt, int state)
 		memset(arr, 0x00, sizeof(uint8_t) * msg_len);
 
 		ptr = arr;
-		ptr_tx = (uint8_t *) pcmd->msg.tx_buf;
+		ptr_tx = (uint8_t *)pcmd->msg.tx_buf;
 		str_len = snprintf(ptr, msg_len, "\" %02X", pcmd->msg.type);
 		ptr += str_len;
 		for (j = 0; j < dlen; j++) {
-			str_len = snprintf(ptr, msg_len - (ptr - arr), " %02X", ptr_tx[j]);
+			str_len = snprintf(ptr, msg_len - (ptr - arr), " %02X",
+					   ptr_tx[j]);
 			ptr += str_len;
 		}
 		snprintf(ptr, msg_len - (ptr - arr), "\\n\"");
@@ -1845,49 +1886,57 @@ static void _iris_print_spec_cmds(struct dsi_cmd_desc *p, int cmd_cnt)
 	IRIS_LOGD("%s(), package count in cmd list: %d", __func__, cmd_cnt);
 	for (i = 0; i < cmd_cnt; i++) {
 		pcmd = p + i;
-		value_count = pcmd->msg.tx_len/sizeof(uint32_t);
+		value_count = pcmd->msg.tx_len / sizeof(uint32_t);
 		print_count = value_count;
 		if (value_count > 16)
 			print_count = 16;
 		pval = (uint32_t *)pcmd->msg.tx_buf;
-		if (i == 0 || i == cmd_cnt-1) {
-			IRIS_LOGD("%s(), package: %d, type: 0x%02x, last: %s, channel: 0x%02x, flags: 0x%04x, wait: 0x%02x, send size: %zu.",
-					__func__, i,
-					pcmd->msg.type, pcmd->last_command?"true":"false", pcmd->msg.channel,
-					pcmd->msg.flags, pcmd->post_wait_ms, pcmd->msg.tx_len);
+		if (i == 0 || i == cmd_cnt - 1) {
+			IRIS_LOGD(
+				"%s(), package: %d, type: 0x%02x, last: %s, channel: 0x%02x, flags: 0x%04x, wait: 0x%02x, send size: %zu.",
+				__func__, i, pcmd->msg.type,
+				pcmd->last_command ? "true" : "false",
+				pcmd->msg.channel, pcmd->msg.flags,
+				pcmd->post_wait_ms, pcmd->msg.tx_len);
 
 			if (IRIS_IF_NOT_LOGV())
 				continue;
 
-			IRIS_LOGV("%s(), payload value count: %d, print count: %d, ocp type: 0x%08x, addr: 0x%08x",
-					__func__, value_count, print_count, pval[0], pval[1]);
+			IRIS_LOGV(
+				"%s(), payload value count: %d, print count: %d, ocp type: 0x%08x, addr: 0x%08x",
+				__func__, value_count, print_count, pval[0],
+				pval[1]);
 			for (j = 2; j < print_count; j++)
 				IRIS_LOGV("0x%08x", pval[j]);
 
-			if (i == cmd_cnt-1 && value_count > 4 && print_count != value_count) {
-				IRIS_LOGV("%s(), payload tail: 0x%08x, 0x%08x, 0x%08x, 0x%08x.", __func__,
-						pval[value_count-4], pval[value_count-3],
-						pval[value_count-2], pval[value_count-1]);
+			if (i == cmd_cnt - 1 && value_count > 4 &&
+			    print_count != value_count) {
+				IRIS_LOGV(
+					"%s(), payload tail: 0x%08x, 0x%08x, 0x%08x, 0x%08x.",
+					__func__, pval[value_count - 4],
+					pval[value_count - 3],
+					pval[value_count - 2],
+					pval[value_count - 1]);
 			}
 		}
 	}
 }
 
-static void _iris_print_dtsi_cmds_for_lk(struct dsi_cmd_desc *cmds,
-		int32_t cnt, int32_t wait, int32_t link_state)
+static void _iris_print_dtsi_cmds_for_lk(struct dsi_cmd_desc *cmds, int32_t cnt,
+					 int32_t wait, int32_t link_state)
 {
 	if (iris_get_cont_splash_type() != IRIS_CONT_SPLASH_LK)
 		return;
 
 	//restore the last cmd wait time
 	if (wait != 0)
-		cmds[cnt-1].post_wait_ms = 1;
+		cmds[cnt - 1].post_wait_ms = 1;
 
 	iris_print_desc_cmds(cmds, cnt, link_state);
 }
 
 static int32_t _iris_i2c_send_ocp_cmds(struct dsi_panel *panel,
-		struct iris_cmd_comp *pcmd_comp)
+				       struct iris_cmd_comp *pcmd_comp)
 {
 	int i = 0;
 	int ret = 0;
@@ -1910,16 +1959,20 @@ static int32_t _iris_i2c_send_ocp_cmds(struct dsi_panel *panel,
 	if (!is_allburst) {
 		for (i = 0; i < pcmd_comp->cnt; i++) {
 			header = *(uint32_t *)(pcmd_comp->cmd[i].msg.tx_buf);
-			payload = (uint32_t *)(pcmd_comp->cmd[i].msg.tx_buf) + 1;
+			payload =
+				(uint32_t *)(pcmd_comp->cmd[i].msg.tx_buf) + 1;
 			len = (pcmd_comp->cmd[i].msg.tx_len >> 2) - 1;
-			is_burst = _iris_is_direct_bus(pcmd_comp->cmd[i].msg.tx_buf);
+			is_burst = _iris_is_direct_bus(
+				pcmd_comp->cmd[i].msg.tx_buf);
 			if (is_burst) {
 				if ((header & 0x0f) == 0x0c)
-					iris_i2c_direct_write(payload, len-1, header);
+					iris_i2c_direct_write(payload, len - 1,
+							      header);
 				else
-					iris_i2c_ocp_burst_write(payload, len-1);
+					iris_i2c_ocp_burst_write(payload,
+								 len - 1);
 			} else {
-				iris_i2c_ocp_single_write(payload, len/2);
+				iris_i2c_ocp_single_write(payload, len / 2);
 			}
 		}
 
@@ -1943,8 +1996,8 @@ static int32_t _iris_i2c_send_ocp_cmds(struct dsi_panel *panel,
 	return ret;
 }
 
-
-static int32_t _iris_dsi_send_ocp_cmds(struct dsi_panel *panel, struct iris_cmd_comp *pcmd_comp)
+static int32_t _iris_dsi_send_ocp_cmds(struct dsi_panel *panel,
+				       struct iris_cmd_comp *pcmd_comp)
 {
 	int ret;
 	uint32_t wait = 0;
@@ -1961,19 +2014,20 @@ static int32_t _iris_dsi_send_ocp_cmds(struct dsi_panel *panel, struct iris_cmd_
 	if (wait)
 		cmd->post_wait_ms = 0;
 
-	ret = iris_dsi_send_cmds(panel, pcmd_comp->cmd,
-			pcmd_comp->cnt, pcmd_comp->link_state);
+	ret = iris_dsi_send_cmds(panel, pcmd_comp->cmd, pcmd_comp->cnt,
+				 pcmd_comp->link_state);
 	if (wait)
 		udelay(wait);
 
 	_iris_print_spec_cmds(pcmd_comp->cmd, pcmd_comp->cnt);
-	_iris_print_dtsi_cmds_for_lk(pcmd_comp->cmd, pcmd_comp->cnt, wait, pcmd_comp->link_state);
+	_iris_print_dtsi_cmds_for_lk(pcmd_comp->cmd, pcmd_comp->cnt, wait,
+				     pcmd_comp->link_state);
 
 	return ret;
 }
 
 int32_t _iris_send_cmds(struct dsi_panel *panel,
-		struct iris_cmd_comp *pcmd_comp, uint8_t path)
+			struct iris_cmd_comp *pcmd_comp, uint8_t path)
 {
 	int32_t ret = 0;
 
@@ -1995,7 +2049,7 @@ int32_t _iris_send_cmds(struct dsi_panel *panel,
 }
 
 static void _iris_send_panel_cmd(struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *cmds)
+				 struct dsi_panel_cmd_set *cmds)
 {
 	if (!cmds || !cmds->count) {
 		IRIS_LOGE("cmds = %p or cmd_cnt = 0", cmds);
@@ -2014,8 +2068,9 @@ int32_t iris_send_ipopt_cmds(int32_t ip, int32_t opt_id)
 	IRIS_LOGD("%s(), i_iris_p: %#x, opt: %#x.", __func__, ip, opt_id);
 	rc = _iris_init_cmd_comp(ip, opt_id, &cmd_comp);
 	if (rc) {
-		IRIS_LOGE("%s(), can not find in seq for i_iris_p: 0x%02x opt: 0x%02x.",
-				__func__, ip, opt_id);
+		IRIS_LOGE(
+			"%s(), can not find in seq for i_iris_p: 0x%02x opt: 0x%02x.",
+			__func__, ip, opt_id);
 		return rc;
 	}
 
@@ -2028,8 +2083,7 @@ int32_t iris_send_ipopt_cmds(int32_t ip, int32_t opt_id)
  ***********************************************/
 static void _iris_send_spec_lut(uint8_t lut_table, uint8_t lut_idx)
 {
-	if (lut_table == AMBINET_HDR_GAIN
-			|| lut_table == AMBINET_SDR2HDR_LUT)
+	if (lut_table == AMBINET_HDR_GAIN || lut_table == AMBINET_SDR2HDR_LUT)
 		return;
 
 	if (lut_table == DBC_LUT && lut_idx < CABC_DLV_OFF)
@@ -2048,7 +2102,8 @@ static void _iris_send_new_lut(uint8_t lut_table, uint8_t lut_idx)
 	iris_send_lut(lut_table, lut_idx, dbc_lut_index);
 }
 
-static void _iris_update_cmds(struct iris_cmd_comp *pcmd_comp, int32_t link_state)
+static void _iris_update_cmds(struct iris_cmd_comp *pcmd_comp,
+			      int32_t link_state)
 {
 	struct iris_cfg *pcfg = iris_get_cfg();
 
@@ -2060,8 +2115,8 @@ static void _iris_update_cmds(struct iris_cmd_comp *pcmd_comp, int32_t link_stat
 	pcmd_comp->cnt = pcfg->iris_cmds.cmds_index;
 }
 
-static void _iris_update_desc_last(struct dsi_cmd_desc *pcmd,
-		int count, bool last_cmd)
+static void _iris_update_desc_last(struct dsi_cmd_desc *pcmd, int count,
+				   bool last_cmd)
 {
 	int i = 0;
 
@@ -2075,8 +2130,8 @@ static void _iris_add_last_pkt(struct dsi_cmd_desc *cmd, int cmd_cnt)
 	_iris_update_desc_last(cmd + cmd_cnt - 1, 1, true);
 }
 
-static void _iris_update_mult_pkt_last(struct dsi_cmd_desc *cmd,
-		int cmd_cnt, int skip_last)
+static void _iris_update_mult_pkt_last(struct dsi_cmd_desc *cmd, int cmd_cnt,
+				       int skip_last)
 {
 	int i = 0;
 	int pos = 0;
@@ -2092,7 +2147,7 @@ static void _iris_update_mult_pkt_last(struct dsi_cmd_desc *cmd,
 	span = pcfg->add_last_flag;
 
 	num = sum / span;
-	surplus = sum  - num * span;
+	surplus = sum - num * span;
 
 	for (i = 0; i < num; i++) {
 		if (i == 0) {
@@ -2113,8 +2168,8 @@ static void _iris_update_mult_pkt_last(struct dsi_cmd_desc *cmd,
 	}
 }
 
-static int _iris_set_pkt_last(struct dsi_cmd_desc *cmd,
-		int cmd_cnt, int skip_last)
+static int _iris_set_pkt_last(struct dsi_cmd_desc *cmd, int cmd_cnt,
+			      int skip_last)
 {
 	int32_t ret = 0;
 	struct iris_cfg *pcfg = iris_get_cfg();
@@ -2143,9 +2198,9 @@ static int _iris_set_pkt_last(struct dsi_cmd_desc *cmd,
 	return ret;
 }
 
-static int _iris_send_lut_pkt(
-		struct iris_ctrl_opt *popt, struct iris_cmd_comp *pcomp,
-		bool is_update, uint8_t path)
+static int _iris_send_lut_pkt(struct iris_ctrl_opt *popt,
+			      struct iris_cmd_comp *pcomp, bool is_update,
+			      uint8_t path)
 {
 	int32_t cur = 0;
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
@@ -2154,8 +2209,8 @@ static int _iris_send_lut_pkt(
 	int32_t skip_last = popt->skip_last;
 	int32_t prev = pcomp->cnt;
 
-	IRIS_LOGD("%s(), ip: %#x opt: %#x, skip last: %d, update: %s",
-			__func__, ip, opt_id, skip_last, is_update ? "true" : "false");
+	IRIS_LOGD("%s(), ip: %#x opt: %#x, skip last: %d, update: %s", __func__,
+		  ip, opt_id, skip_last, is_update ? "true" : "false");
 
 	pcfg->iris_cmds.cmds_index = prev;
 	if (is_update)
@@ -2165,8 +2220,8 @@ static int _iris_send_lut_pkt(
 
 	cur = pcfg->iris_cmds.cmds_index;
 	if (cur == prev) {
-		IRIS_LOGD("lut table is empty for ip: %02x opt: %02x",
-				popt->ip, opt_id);
+		IRIS_LOGD("lut table is empty for ip: %02x opt: %02x", popt->ip,
+			  opt_id);
 		return 0;
 	}
 
@@ -2181,8 +2236,8 @@ static int _iris_send_lut_pkt(
 	return 0;
 }
 
-static int _iris_send_dtsi_pkt(
-		struct iris_ctrl_opt *pip_opt, struct iris_cmd_comp *pcomp, uint8_t path)
+static int _iris_send_dtsi_pkt(struct iris_ctrl_opt *pip_opt,
+			       struct iris_cmd_comp *pcomp, uint8_t path)
 {
 	uint8_t ip = 0;
 	uint8_t opt_id = 0;
@@ -2201,13 +2256,14 @@ static int _iris_send_dtsi_pkt(
 	skip_last = pip_opt->skip_last;
 	add_last_flag = pcfg->add_last_flag;
 
-	IRIS_LOGD("%s(), ip: %#x opt: %#x, skip last: %d.",
-			__func__, ip, opt_id, skip_last);
+	IRIS_LOGD("%s(), ip: %#x opt: %#x, skip last: %d.", __func__, ip,
+		  opt_id, skip_last);
 
 	/*get single/multiple selection(s) according to option of ip*/
 	rc = _iris_init_cmd_comp(ip, opt_id, &comp_priv);
 	if (rc) {
-		IRIS_LOGE("%s(), invalid i_iris_p: %#x opt: %#x.", __func__, ip, opt_id);
+		IRIS_LOGE("%s(), invalid i_iris_p: %#x opt: %#x.", __func__, ip,
+			  opt_id);
 		return -EINVAL;
 	}
 
@@ -2221,7 +2277,7 @@ static int _iris_send_dtsi_pkt(
 		/*move single/multiples selection to one command*/
 
 		memcpy(pcomp->cmd + pcomp->cnt, comp_priv.cmd,
-				comp_priv.cnt * sizeof(*comp_priv.cmd));
+		       comp_priv.cnt * sizeof(*comp_priv.cmd));
 		pcomp->cnt += comp_priv.cnt;
 
 		cur = pcomp->cnt;
@@ -2240,7 +2296,7 @@ static int _iris_send_dtsi_pkt(
 }
 
 void iris_send_pkt(struct iris_ctrl_opt *arr, int seq_cnt,
-		struct iris_cmd_comp *pcmd_comp)
+		   struct iris_cmd_comp *pcmd_comp)
 {
 	int i = 0;
 	uint8_t ip = 0;
@@ -2254,12 +2310,15 @@ void iris_send_pkt(struct iris_ctrl_opt *arr, int seq_cnt,
 
 		/*lut table*/
 		if (_iris_is_lut(ip))
-			rc = _iris_send_lut_pkt(arr + i, pcmd_comp, false, PATH_DSI);
+			rc = _iris_send_lut_pkt(arr + i, pcmd_comp, false,
+						PATH_DSI);
 		else
 			rc = _iris_send_dtsi_pkt(arr + i, pcmd_comp, PATH_DSI);
 
 		if (rc)
-			IRIS_LOGE("%s(), [FATAL ERROR] invalid ip: %0x opt: %0x", __func__, ip, opt_id);
+			IRIS_LOGE(
+				"%s(), [FATAL ERROR] invalid ip: %0x opt: %0x",
+				__func__, ip, opt_id);
 	}
 }
 
@@ -2279,9 +2338,8 @@ static void _iris_send_lightup_pkt(void)
 	iris_send_assembled_pkt(pseq->ctrl_opt, pseq->cnt);
 }
 
-void iris_init_update_ipopt(
-		struct iris_update_ipopt *popt, uint8_t ip,
-		uint8_t opt_old, uint8_t opt_new, uint8_t skip_last)
+void iris_init_update_ipopt(struct iris_update_ipopt *popt, uint8_t ip,
+			    uint8_t opt_old, uint8_t opt_new, uint8_t skip_last)
 {
 	popt->ip = ip;
 	popt->opt_old = opt_old;
@@ -2290,9 +2348,10 @@ void iris_init_update_ipopt(
 }
 
 int iris_init_update_ipopt_t(struct iris_update_ipopt *popt, int max_cnt,
-		uint8_t ip, uint8_t opt_old, uint8_t opt_new, uint8_t skip_last)
+			     uint8_t ip, uint8_t opt_old, uint8_t opt_new,
+			     uint8_t skip_last)
 {
-	int i  = 0;
+	int i = 0;
 	int cnt = 0;
 
 	for (i = 0; i < max_cnt; i++) {
@@ -2301,12 +2360,13 @@ int iris_init_update_ipopt_t(struct iris_update_ipopt *popt, int max_cnt,
 	}
 
 	if (i >= max_cnt) {
-		IRIS_LOGE("%s(), no empty space to install ip: %#x, opt old: %#x, opt new: %#x",
-				__func__, ip, opt_old, opt_new);
+		IRIS_LOGE(
+			"%s(), no empty space to install ip: %#x, opt old: %#x, opt new: %#x",
+			__func__, ip, opt_old, opt_new);
 		return -EINVAL;
 	}
 
-	iris_init_update_ipopt(&popt[i],  ip, opt_old, opt_new, skip_last);
+	iris_init_update_ipopt(&popt[i], ip, opt_old, opt_new, skip_last);
 	cnt = i + 1;
 
 	return cnt;
@@ -2318,7 +2378,8 @@ static int _iris_read_chip_id(void)
 	struct iris_cfg *pcfg = iris_get_cfg();
 
 	if (pcfg->chip_value[0] != 0)
-		pcfg->chip_value[1] = iris_ocp_read(pcfg->chip_value[0], DSI_CMD_SET_STATE_HS);
+		pcfg->chip_value[1] = iris_ocp_read(pcfg->chip_value[0],
+						    DSI_CMD_SET_STATE_HS);
 
 	// FIXME: if chip version is set by sw, skip hw read chip id.
 	// if (pcfg->chip_ver == IRIS3_CHIP_VERSION)
@@ -2326,8 +2387,8 @@ static int _iris_read_chip_id(void)
 	// else
 	pcfg->chip_id = 0;
 
-	IRIS_LOGI("%s(), chip version: %#x, chip id: %#x",
-			__func__, pcfg->chip_ver, pcfg->chip_id);
+	IRIS_LOGI("%s(), chip version: %#x, chip id: %#x", __func__,
+		  pcfg->chip_ver, pcfg->chip_id);
 
 	return pcfg->chip_id;
 }
@@ -2352,26 +2413,45 @@ void iris_free_ipopt_buf(uint32_t ip_type)
 		ip_cnt = LUT_IP_END - LUT_IP_START;
 
 	for (ip_index = 0; ip_index < ip_cnt; ip_index++) {
-		if (pip_index[ip_index].opt_cnt == 0 || pip_index[ip_index].opt == NULL)
+		if (pip_index[ip_index].opt_cnt == 0 ||
+		    pip_index[ip_index].opt == NULL)
 			continue;
 
-		for (opt_index = 0; opt_index < pip_index[ip_index].opt_cnt; opt_index++) {
-			if (pip_index[ip_index].opt[opt_index].cmd_cnt == 0
-					|| pip_index[ip_index].opt[opt_index].cmd == NULL)
+		for (opt_index = 0; opt_index < pip_index[ip_index].opt_cnt;
+		     opt_index++) {
+			if (pip_index[ip_index].opt[opt_index].cmd_cnt == 0 ||
+			    pip_index[ip_index].opt[opt_index].cmd == NULL)
 				continue;
 
 			/* get desc cmd start address */
-			if (pdesc_addr == NULL || pip_index[ip_index].opt[opt_index].cmd < pdesc_addr)
-				pdesc_addr = pip_index[ip_index].opt[opt_index].cmd;
+			if (pdesc_addr == NULL ||
+			    pip_index[ip_index].opt[opt_index].cmd < pdesc_addr)
+				pdesc_addr =
+					pip_index[ip_index].opt[opt_index].cmd;
 
-			for (desc_index = 0; desc_index < pip_index[ip_index].opt[opt_index].cmd_cnt; desc_index++) {
-				if (pip_index[ip_index].opt[opt_index].cmd[desc_index].msg.tx_buf == NULL
-						|| pip_index[ip_index].opt[opt_index].cmd[desc_index].msg.tx_len == 0)
+			for (desc_index = 0;
+			     desc_index <
+			     pip_index[ip_index].opt[opt_index].cmd_cnt;
+			     desc_index++) {
+				if (pip_index[ip_index]
+						    .opt[opt_index]
+						    .cmd[desc_index]
+						    .msg.tx_buf == NULL ||
+				    pip_index[ip_index]
+						    .opt[opt_index]
+						    .cmd[desc_index]
+						    .msg.tx_len == 0)
 					continue;
 
 				/* free cmd payload, which alloc in "_iris_write_cmd_payload()" */
-				vfree(pip_index[ip_index].opt[opt_index].cmd[desc_index].msg.tx_buf);
-				pip_index[ip_index].opt[opt_index].cmd[desc_index].msg.tx_buf = NULL;
+				vfree(pip_index[ip_index]
+					      .opt[opt_index]
+					      .cmd[desc_index]
+					      .msg.tx_buf);
+				pip_index[ip_index]
+					.opt[opt_index]
+					.cmd[desc_index]
+					.msg.tx_buf = NULL;
 			}
 
 			/* set each desc cmd to NULL first */
@@ -2388,7 +2468,8 @@ void iris_free_ipopt_buf(uint32_t ip_type)
 	 * cmd buffer is continus memory, so only free once on start address
 	 */
 	if (pdesc_addr != NULL) {
-		IRIS_LOGI("%s(), free desc cmd buffer %p, type %#x", __func__, pdesc_addr, ip_type);
+		IRIS_LOGI("%s(), free desc cmd buffer %p, type %#x", __func__,
+			  pdesc_addr, ip_type);
 		vfree(pdesc_addr);
 		pdesc_addr = NULL;
 	}
@@ -2400,11 +2481,11 @@ void iris_free_seq_space(void)
 
 	/* free cmd to sent buffer, which alloc in "iris_alloc_seq_space()" */
 	if (pcfg->iris_cmds.iris_cmds_buf != NULL) {
-		IRIS_LOGI("%s(), free %p", __func__, pcfg->iris_cmds.iris_cmds_buf);
+		IRIS_LOGI("%s(), free %p", __func__,
+			  pcfg->iris_cmds.iris_cmds_buf);
 		vfree(pcfg->iris_cmds.iris_cmds_buf);
 		pcfg->iris_cmds.iris_cmds_buf = NULL;
 	}
-
 }
 
 void iris_alloc_seq_space(void)
@@ -2413,8 +2494,8 @@ void iris_alloc_seq_space(void)
 	struct iris_cfg *pcfg = iris_get_cfg();
 	int sum = pcfg->dtsi_cmds_cnt + pcfg->lut_cmds_cnt;
 
-	IRIS_LOGI("%s(), seq = %u, lut = %u", __func__,
-			pcfg->dtsi_cmds_cnt, pcfg->lut_cmds_cnt);
+	IRIS_LOGI("%s(), seq = %u, lut = %u", __func__, pcfg->dtsi_cmds_cnt,
+		  pcfg->lut_cmds_cnt);
 
 	sum *= sizeof(struct dsi_cmd_desc);
 	pdesc = vmalloc(sum);
@@ -2434,7 +2515,7 @@ void iris_alloc_seq_space(void)
 static void _iris_load_mcu(void)
 {
 	struct iris_cfg *pcfg = iris_get_cfg();
-	u32 values[2] = {0xF00000C8, 0x1};
+	u32 values[2] = { 0xF00000C8, 0x1 };
 	struct iris_ctrl_opt ctrl_opt;
 
 	IRIS_LOGI("%s(%d): load and run mcu", __func__, __LINE__);
@@ -2455,19 +2536,23 @@ static void _iris_pre_lightup(struct dsi_panel *panel)
 	int len = 0;
 	bool high = false;
 
-	if ((panel->cur_mode->timing.refresh_rate == HIGH_FREQ)
-			&& (pcfg->panel->cur_mode->timing.v_active == FHD_H))
+	if ((panel->cur_mode->timing.refresh_rate == HIGH_FREQ) &&
+	    (pcfg->panel->cur_mode->timing.v_active == FHD_H))
 		high = true;
 
 	iris_init_ipopt_ip(popt, IP_OPT_MAX);
 	//sys pll
-	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_SYS, high ? 0xA1:0xA0, 0x1);
+	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_SYS,
+				 high ? 0xA1 : 0xA0, 0x1);
 	//dtg
-	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_DTG, high ? 0x1:0x0, 0x1);
+	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_DTG,
+				 high ? 0x1 : 0x0, 0x1);
 	//mipi tx
-	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_TX, high ? 0x4:0x0, 0x1);
+	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_TX, high ? 0x4 : 0x0,
+				 0x1);
 	//mipi abp
-	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_RX, high ? 0xE1:0xE0, 0x0);
+	len = iris_update_ip_opt(popt, IP_OPT_MAX, IRIS_IP_RX,
+				 high ? 0xE1 : 0xE0, 0x0);
 	_iris_update_pq_seq(popt, len);
 
 	/*send rx cmds first with low power*/
@@ -2487,10 +2572,14 @@ static void _iris_pre_lightup(struct dsi_panel *panel)
 
 void _iris_read_power_mode(struct dsi_panel *panel)
 {
-	char get_power_mode[1] = {0x0a};
-	char read_cmd_rbuf[16] = {0};
+	char get_power_mode[1] = { 0x0a };
+	char read_cmd_rbuf[16] = { 0 };
 	struct dsi_cmd_desc cmds = {
-		{0, MIPI_DSI_DCS_READ, MIPI_DSI_MSG_REQ_ACK, 0, 0, sizeof(get_power_mode), get_power_mode, 1, read_cmd_rbuf}, 1, 0};
+		{ 0, MIPI_DSI_DCS_READ, MIPI_DSI_MSG_REQ_ACK, 0, 0,
+		  sizeof(get_power_mode), get_power_mode, 1, read_cmd_rbuf },
+		1,
+		0
+	};
 	struct dsi_panel_cmd_set cmdset = {
 		.state = DSI_CMD_SET_STATE_HS,
 		.count = 1,
@@ -2499,11 +2588,13 @@ void _iris_read_power_mode(struct dsi_panel *panel)
 	struct iris_cfg *pcfg = iris_get_cfg();
 
 	IRIS_LOGI("%s(%d), abyp mode: %d", __func__, __LINE__,
-			pcfg->abypss_ctrl.abypass_mode);
+		  pcfg->abypss_ctrl.abypass_mode);
 	if (pcfg->abypss_ctrl.abypass_mode == ANALOG_BYPASS_MODE) {
-		iris_dsi_send_cmds(panel, cmdset.cmds, cmdset.count, cmdset.state);
+		iris_dsi_send_cmds(panel, cmdset.cmds, cmdset.count,
+				   cmdset.state);
 	} else {
-		iris_dsi_send_cmds(panel, cmdset.cmds, cmdset.count, cmdset.state);
+		iris_dsi_send_cmds(panel, cmdset.cmds, cmdset.count,
+				   cmdset.state);
 		IRIS_LOGE("[a]power mode: 0x%02x", read_cmd_rbuf[0]);
 		read_cmd_rbuf[0] = 0;
 		_iris_send_panel_cmd(panel, &cmdset);
@@ -2513,8 +2604,7 @@ void _iris_read_power_mode(struct dsi_panel *panel)
 	IRIS_LOGI("%s(), power mode: 0x%02x", __func__, pcfg->power_mode);
 }
 
-int iris_lightup(struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *on_cmds)
+int iris_lightup(struct dsi_panel *panel, struct dsi_panel_cmd_set *on_cmds)
 {
 	ktime_t ktime0;
 	ktime_t ktime1;
@@ -2526,21 +2616,24 @@ int iris_lightup(struct dsi_panel *panel,
 	struct iris_cfg *pcfg = iris_get_cfg();
 
 	IRIS_LOGI("%s(%d), mode: %s(%d) +++", __func__, __LINE__,
-			pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE ? "PT" : "ABYP",
-			pcfg->abypss_ctrl.abypass_mode);
+		  pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE ? "PT" :
+									"ABYP",
+		  pcfg->abypss_ctrl.abypass_mode);
 
 	ktime0 = ktime_get();
-	rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_ALL_CLKS, DSI_CLK_ON);
+	rc = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_ALL_CLKS,
+				  DSI_CLK_ON);
 	if (rc) {
-		IRIS_LOGE("%s(), failed to enable all DSI clocks for display: %s, return: %d",
-				__func__, display->name, rc);
+		IRIS_LOGE(
+			"%s(), failed to enable all DSI clocks for display: %s, return: %d",
+			__func__, display->name, rc);
 	}
 
 	rc = iris_display_cmd_engine_enable(display);
 	if (rc) {
-		IRIS_LOGE("%s(), failed to enable cmd engine for display: %s, return: %d",
-				__func__, display->name, rc);
+		IRIS_LOGE(
+			"%s(), failed to enable cmd engine for display: %s, return: %d",
+			__func__, display->name, rc);
 	}
 
 	pcfg->add_last_flag = pcfg->add_on_last_flag;
@@ -2581,24 +2674,26 @@ int iris_lightup(struct dsi_panel *panel,
 
 	rc = iris_display_cmd_engine_disable(display);
 	if (rc) {
-		IRIS_LOGE("%s(), failed to disable cmd engine for display: %s, return: %d",
-				__func__, display->name, rc);
+		IRIS_LOGE(
+			"%s(), failed to disable cmd engine for display: %s, return: %d",
+			__func__, display->name, rc);
 	}
-	rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_ALL_CLKS, DSI_CLK_OFF);
+	rc = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_ALL_CLKS,
+				  DSI_CLK_OFF);
 	if (rc) {
-		IRIS_LOGE("%s(), failed to disable all DSI clocks for display: %s, return: %d",
-				__func__, display->name, rc);
+		IRIS_LOGE(
+			"%s(), failed to disable all DSI clocks for display: %s, return: %d",
+			__func__, display->name, rc);
 	}
 
 	pcfg->cur_fps_in_iris = panel->cur_mode->timing.refresh_rate;
 	pcfg->cur_vres_in_iris = panel->cur_mode->timing.v_active;
 	iris_update_frc_fps(pcfg->cur_fps_in_iris & 0xFF);
 
-	timeus0 = (u32) ktime_to_us(ktime1) - (u32)ktime_to_us(ktime0);
-	timeus1 = (u32) ktime_to_us(ktime_get()) - (u32)ktime_to_us(ktime1);
-	IRIS_LOGI("%s() spend time0 %d us, time1 %d us.",
-			__func__, timeus0, timeus1);
+	timeus0 = (u32)ktime_to_us(ktime1) - (u32)ktime_to_us(ktime0);
+	timeus1 = (u32)ktime_to_us(ktime_get()) - (u32)ktime_to_us(ktime1);
+	IRIS_LOGI("%s() spend time0 %d us, time1 %d us.", __func__, timeus0,
+		  timeus1);
 
 #ifdef IRIS_MIPI_TEST
 	_iris_read_power_mode(panel);
@@ -2618,7 +2713,8 @@ int iris_enable(struct dsi_panel *panel, struct dsi_panel_cmd_set *on_cmds)
 #endif
 	int lightup_opt = iris_lightup_opt_get();
 
-    pcfg = iris_get_cfg_by_index(panel->is_secondary ? DSI_SECONDARY : DSI_PRIMARY);
+	pcfg = iris_get_cfg_by_index(panel->is_secondary ? DSI_SECONDARY :
+							   DSI_PRIMARY);
 
 	if (panel->is_secondary) {
 		if (pcfg->iris_osd_autorefresh) {
@@ -2636,19 +2732,17 @@ int iris_enable(struct dsi_panel *panel, struct dsi_panel_cmd_set *on_cmds)
 	pcfg->next_fps_for_iris = panel->cur_mode->timing.refresh_rate;
 
 	/* Special process for WQHD@120Hz */
-	if (panel->cur_mode->timing.refresh_rate == HIGH_FREQ
-			&& panel->cur_mode->timing.v_active == QHD_H) {
+	if (panel->cur_mode->timing.refresh_rate == HIGH_FREQ &&
+	    panel->cur_mode->timing.v_active == QHD_H) {
 		/* Force Iris work in ABYP mode */
 		pcfg->abypss_ctrl.abypass_mode = ANALOG_BYPASS_MODE;
 	}
 #endif
 
-	IRIS_LOGI("%s(), mode:%d, rate: %d, v: %d, on_opt:0x%x",
-			__func__,
-			pcfg->abypss_ctrl.abypass_mode,
-			panel->cur_mode->timing.refresh_rate,
-			panel->cur_mode->timing.v_active,
-			lightup_opt);
+	IRIS_LOGI("%s(), mode:%d, rate: %d, v: %d, on_opt:0x%x", __func__,
+		  pcfg->abypss_ctrl.abypass_mode,
+		  panel->cur_mode->timing.refresh_rate,
+		  panel->cur_mode->timing.v_active, lightup_opt);
 
 	// if (pcfg->fod == true && pcfg->fod_pending) {
 	//	iris_abyp_lp(1);
@@ -2664,7 +2758,8 @@ int iris_enable(struct dsi_panel *panel, struct dsi_panel_cmd_set *on_cmds)
 	/* support lightup_opt */
 	if (lightup_opt & 0x1) {
 		if (on_cmds != NULL)
-			rc = iris_dsi_send_cmds(panel, on_cmds->cmds, on_cmds->count, on_cmds->state);
+			rc = iris_dsi_send_cmds(panel, on_cmds->cmds,
+						on_cmds->count, on_cmds->state);
 		IRIS_LOGI("%s(), force ABYP lightup.", __func__);
 		return rc;
 	}
@@ -2695,13 +2790,15 @@ int iris_enable(struct dsi_panel *panel, struct dsi_panel_cmd_set *on_cmds)
 	pcfg->abypss_ctrl.abypass_mode = PASS_THROUGH_MODE;
 #else
 	if (on_cmds != NULL)
-		rc = iris_dsi_send_cmds(panel, on_cmds->cmds, on_cmds->count, on_cmds->state);
+		rc = iris_dsi_send_cmds(panel, on_cmds->cmds, on_cmds->count,
+					on_cmds->state);
 #endif
 
 #ifndef IRIS_HDK_DEV // skip preload
 	//Switch back to ABYP mode if need
 	if (prev_mode == ANALOG_BYPASS_MODE)
-		iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE, false, true);
+		iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE,
+					 false, true);
 #endif
 
 	return rc;
@@ -2728,14 +2825,18 @@ int iris_set_aod(struct dsi_panel *panel, bool aod)
 		if (!pcfg->fod) {
 			pcfg->abyp_prev_mode = pcfg->abypss_ctrl.abypass_mode;
 			if (iris_get_abyp_mode(panel) == PASS_THROUGH_MODE)
-				iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE, false, true);
+				iris_abypass_switch_proc(pcfg->display,
+							 ANALOG_BYPASS_MODE,
+							 false, true);
 		}
 	} else {
 		if (!pcfg->fod) {
 			if (iris_get_abyp_mode(panel) == ANALOG_BYPASS_MODE &&
-					pcfg->abyp_prev_mode == PASS_THROUGH_MODE &&
-					!pcfg->fod) {
-				iris_abypass_switch_proc(pcfg->display, PASS_THROUGH_MODE, false, true);
+			    pcfg->abyp_prev_mode == PASS_THROUGH_MODE &&
+			    !pcfg->fod) {
+				iris_abypass_switch_proc(pcfg->display,
+							 PASS_THROUGH_MODE,
+							 false, true);
 			}
 		}
 	}
@@ -2765,7 +2866,8 @@ int iris_set_fod(struct dsi_panel *panel, bool fod)
 	}
 
 	if (!dsi_panel_initialized(panel)) {
-		IRIS_LOGD("%s(%d), panel is not initialized fod: %d", __func__, __LINE__, fod);
+		IRIS_LOGD("%s(%d), panel is not initialized fod: %d", __func__,
+			  __LINE__, fod);
 		pcfg->fod_pending = true;
 		atomic_set(&pcfg->fod_cnt, 1);
 		pcfg->fod = fod;
@@ -2776,7 +2878,9 @@ int iris_set_fod(struct dsi_panel *panel, bool fod)
 		if (!pcfg->aod) {
 			pcfg->abyp_prev_mode = pcfg->abypss_ctrl.abypass_mode;
 			if (iris_get_abyp_mode(panel) == PASS_THROUGH_MODE)
-				iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE, false, true);
+				iris_abypass_switch_proc(pcfg->display,
+							 ANALOG_BYPASS_MODE,
+							 false, true);
 		}
 	} else {
 		/* pending until hbm off cmds sent in update_hbm 1->0 */
@@ -2801,7 +2905,8 @@ int iris_post_fod(struct dsi_panel *panel)
 		return rc;
 
 	if (atomic_read(&pcfg->fod_cnt) > 0) {
-		IRIS_LOGD("%s(%d), fod delay %d", __func__, __LINE__, atomic_read(&pcfg->fod_cnt));
+		IRIS_LOGD("%s(%d), fod delay %d", __func__, __LINE__,
+			  atomic_read(&pcfg->fod_cnt));
 		atomic_dec(&pcfg->fod_cnt);
 		return rc;
 	}
@@ -2812,13 +2917,17 @@ int iris_post_fod(struct dsi_panel *panel)
 		if (!pcfg->aod) {
 			pcfg->abyp_prev_mode = pcfg->abypss_ctrl.abypass_mode;
 			if (iris_get_abyp_mode(panel) == PASS_THROUGH_MODE)
-				iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE, false, true);
+				iris_abypass_switch_proc(pcfg->display,
+							 ANALOG_BYPASS_MODE,
+							 false, true);
 		}
 	} else {
 		if (!pcfg->aod) {
 			if (iris_get_abyp_mode(panel) == ANALOG_BYPASS_MODE &&
-					pcfg->abyp_prev_mode == PASS_THROUGH_MODE) {
-				iris_abypass_switch_proc(pcfg->display, PASS_THROUGH_MODE, false, true);
+			    pcfg->abyp_prev_mode == PASS_THROUGH_MODE) {
+				iris_abypass_switch_proc(pcfg->display,
+							 PASS_THROUGH_MODE,
+							 false, true);
 			}
 		}
 	}
@@ -2869,8 +2978,8 @@ static bool _iris_check_cont_splash_ipopt(uint8_t ip, uint8_t opt_id)
 }
 
 /*select ip/opt to the opt_arr according to lightup stage type*/
-static int _iris_select_cont_splash_ipopt(
-		int type, struct iris_ctrl_opt *opt_arr)
+static int _iris_select_cont_splash_ipopt(int type,
+					  struct iris_ctrl_opt *opt_arr)
 {
 	uint32_t i = 0;
 	uint32_t j = 0;
@@ -2933,9 +3042,11 @@ static void _iris_send_cont_splash_pkt(uint32_t type)
 	} else if (type == IRIS_CONT_SPLASH_BYPASS) {
 		iris_lp_preinit();
 		pcfg->iris_initialized = false;
-		pt_mode = iris_abypass_switch_proc(pcfg->display, PASS_THROUGH_MODE, false, true);
+		pt_mode = iris_abypass_switch_proc(
+			pcfg->display, PASS_THROUGH_MODE, false, true);
 		if (pt_mode)
-			iris_set_out_frame_rate(pcfg->panel->cur_mode->timing.refresh_rate);
+			iris_set_out_frame_rate(
+				pcfg->panel->cur_mode->timing.refresh_rate);
 	} else if (type == IRIS_CONT_SPLASH_BYPASS_PRELOAD) {
 		iris_reset_mipi();
 		iris_enable(pcfg->panel, NULL);
@@ -2974,8 +3085,7 @@ void iris_send_cont_splash(struct dsi_display *display)
 	mutex_unlock(&pcfg->panel->panel_lock);
 }
 
-int iris_lightoff(struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *off_cmds)
+int iris_lightoff(struct dsi_panel *panel, struct dsi_panel_cmd_set *off_cmds)
 {
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	struct iris_cfg *pcfg2 = iris_get_cfg_by_index(DSI_SECONDARY);
@@ -2989,18 +3099,21 @@ int iris_lightoff(struct dsi_panel *panel,
 	}
 
 	if ((lightup_opt & 0x10) == 0)
-		pcfg->abypss_ctrl.abypass_mode = ANALOG_BYPASS_MODE; //clear to ABYP mode
+		pcfg->abypss_ctrl.abypass_mode =
+			ANALOG_BYPASS_MODE; //clear to ABYP mode
 
 	iris_set_cfg_index(DSI_PRIMARY);
 
 	IRIS_LOGI("%s(%d), mode: %s(%d) ---", __func__, __LINE__,
-			pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE ? "PT" : "ABYP",
-			pcfg->abypss_ctrl.abypass_mode);
+		  pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE ? "PT" :
+									"ABYP",
+		  pcfg->abypss_ctrl.abypass_mode);
 	if (off_cmds) {
 		if (pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE)
 			iris_pt_send_panel_cmd(panel, off_cmds);
 		else
-			iris_dsi_send_cmds(panel, off_cmds->cmds, off_cmds->count, off_cmds->state);
+			iris_dsi_send_cmds(panel, off_cmds->cmds,
+					   off_cmds->count, off_cmds->state);
 	}
 	iris_quality_setting_off();
 	iris_lp_setting_off();
@@ -3016,12 +3129,11 @@ int iris_lightoff(struct dsi_panel *panel,
 
 int iris_disable(struct dsi_panel *panel, struct dsi_panel_cmd_set *off_cmds)
 {
-    return iris_lightoff(panel, off_cmds);
+	return iris_lightoff(panel, off_cmds);
 }
 
-static void _iris_send_update_opt(
-		struct iris_update_ipopt *popt,
-		struct iris_cmd_comp *pasm_comp, uint8_t path)
+static void _iris_send_update_opt(struct iris_update_ipopt *popt,
+				  struct iris_cmd_comp *pasm_comp, uint8_t path)
 {
 	int32_t ip = 0;
 	int32_t rc = 0;
@@ -3040,12 +3152,12 @@ static void _iris_send_update_opt(
 
 	if (rc) {
 		IRIS_LOGE("%s(), [FATAL ERROR] invalid ip: %#x, opt: %#x",
-				__func__,
-				ip, ctrl_opt.opt_id);
+			  __func__, ip, ctrl_opt.opt_id);
 	}
 }
 
-static void _iris_send_pq_cmds(struct iris_update_ipopt *popt, int ipopt_cnt, uint8_t path)
+static void _iris_send_pq_cmds(struct iris_update_ipopt *popt, int ipopt_cnt,
+			       uint8_t path)
 {
 	int32_t i = 0;
 	struct iris_cmd_comp cmd_comp;
@@ -3057,7 +3169,7 @@ static void _iris_send_pq_cmds(struct iris_update_ipopt *popt, int ipopt_cnt, ui
 	}
 
 	memset(&cmd_comp, 0x00, sizeof(cmd_comp));
-	cmd_comp.cmd =  pcfg->iris_cmds.iris_cmds_buf;
+	cmd_comp.cmd = pcfg->iris_cmds.iris_cmds_buf;
 	cmd_comp.link_state = DSI_CMD_SET_STATE_HS;
 	cmd_comp.cnt = pcfg->iris_cmds.cmds_index;
 
@@ -3082,14 +3194,14 @@ static int _iris_update_pq_seq(struct iris_update_ipopt *popt, int ipopt_cnt)
 				opt_id = pseq->ctrl_opt[j].opt_id;
 
 				if (ip == popt[i].ip &&
-						opt_id == popt[i].opt_old)
+				    opt_id == popt[i].opt_old)
 					break;
 			}
 
 			if (j == pseq->cnt) {
-				IRIS_LOGE("%s(), failed to find ip: %#x opt: %d",
-						__func__,
-						popt[i].ip, popt[i].opt_old);
+				IRIS_LOGE(
+					"%s(), failed to find ip: %#x opt: %d",
+					__func__, popt[i].ip, popt[i].opt_old);
 				return -EINVAL;
 			}
 
@@ -3100,7 +3212,8 @@ static int _iris_update_pq_seq(struct iris_update_ipopt *popt, int ipopt_cnt)
 	return 0;
 }
 
-void iris_update_pq_opt(struct iris_update_ipopt *popt, int ipopt_cnt, uint8_t path)
+void iris_update_pq_opt(struct iris_update_ipopt *popt, int ipopt_cnt,
+			uint8_t path)
 {
 	int32_t rc = 0;
 
@@ -3114,7 +3227,8 @@ void iris_update_pq_opt(struct iris_update_ipopt *popt, int ipopt_cnt, uint8_t p
 		_iris_send_pq_cmds(popt, ipopt_cnt, path);
 }
 
-static struct dsi_cmd_desc *_iris_get_desc_from_ipopt(uint8_t ip, uint8_t opt_id, int32_t pos)
+static struct dsi_cmd_desc *
+_iris_get_desc_from_ipopt(uint8_t ip, uint8_t opt_id, int32_t pos)
 {
 	struct iris_ip_opt *popt = NULL;
 	struct iris_cfg *pcfg = NULL;
@@ -3122,8 +3236,9 @@ static struct dsi_cmd_desc *_iris_get_desc_from_ipopt(uint8_t ip, uint8_t opt_id
 	pcfg = iris_get_cfg();
 	popt = iris_find_ip_opt(ip, opt_id);
 	if (popt == NULL) {
-		IRIS_LOGE("%s(), can't find ip opt for ip: 0x%02x, opt: 0x%02x.",
-				__func__, ip, opt_id);
+		IRIS_LOGE(
+			"%s(), can't find ip opt for ip: 0x%02x, opt: 0x%02x.",
+			__func__, ip, opt_id);
 		return NULL;
 	}
 
@@ -3132,11 +3247,11 @@ static struct dsi_cmd_desc *_iris_get_desc_from_ipopt(uint8_t ip, uint8_t opt_id
 		return NULL;
 	}
 
-	return popt->cmd + (pos * 4 - IRIS_OCP_HEADER_ADDR_LEN) / pcfg->split_pkt_size;
+	return popt->cmd +
+	       (pos * 4 - IRIS_OCP_HEADER_ADDR_LEN) / pcfg->split_pkt_size;
 }
 
-uint32_t *iris_get_ipopt_payload_data(
-		uint8_t ip, uint8_t opt_id, int32_t pos)
+uint32_t *iris_get_ipopt_payload_data(uint8_t ip, uint8_t opt_id, int32_t pos)
 {
 	struct dsi_cmd_desc *pdesc = NULL;
 	struct iris_cfg *pcfg = iris_get_cfg();
@@ -3146,17 +3261,17 @@ uint32_t *iris_get_ipopt_payload_data(
 		IRIS_LOGE("%s(), failed to find desc!", __func__);
 		return NULL;
 	} else if (pos > pdesc->msg.tx_len) {
-		IRIS_LOGE("%s(), pos %d is out of paload length %zu",
-				__func__,
-				pos, pdesc->msg.tx_len);
+		IRIS_LOGE("%s(), pos %d is out of paload length %zu", __func__,
+			  pos, pdesc->msg.tx_len);
 		return NULL;
 	}
 
-	return (uint32_t *)((uint8_t *)pdesc->msg.tx_buf + (pos * 4) % pcfg->split_pkt_size);
+	return (uint32_t *)((uint8_t *)pdesc->msg.tx_buf +
+			    (pos * 4) % pcfg->split_pkt_size);
 }
 
-void iris_set_ipopt_payload_data(
-		uint8_t ip, uint8_t opt_id, int32_t pos, uint32_t value)
+void iris_set_ipopt_payload_data(uint8_t ip, uint8_t opt_id, int32_t pos,
+				 uint32_t value)
 {
 	struct dsi_cmd_desc *pdesc = NULL;
 	struct iris_cfg *pcfg = NULL;
@@ -3169,12 +3284,13 @@ void iris_set_ipopt_payload_data(
 		return;
 	}
 
-	pvalue = (uint32_t *)((uint8_t *)pdesc->msg.tx_buf + (pos * 4) % pcfg->split_pkt_size);
+	pvalue = (uint32_t *)((uint8_t *)pdesc->msg.tx_buf +
+			      (pos * 4) % pcfg->split_pkt_size);
 	pvalue[0] = value;
 }
 
-void iris_update_bitmask_regval_nonread(
-		struct iris_update_regval *pregval, bool is_commit)
+void iris_update_bitmask_regval_nonread(struct iris_update_regval *pregval,
+					bool is_commit)
 {
 	int32_t ip = 0;
 	int32_t opt_id = 0;
@@ -3193,12 +3309,12 @@ void iris_update_bitmask_regval_nonread(
 
 	popt = iris_find_ip_opt(ip, opt_id);
 	if (popt == NULL) {
-		IRIS_LOGE("%s(), can't find ip: 0x%02x opt: 0x%02x",
-				__func__, ip, opt_id);
+		IRIS_LOGE("%s(), can't find ip: 0x%02x opt: 0x%02x", __func__,
+			  ip, opt_id);
 		return;
 	} else if (popt->cmd_cnt != 1) {
-		IRIS_LOGE("%s(), invalid bitmask, popt len: %d",
-				__func__, popt->cmd_cnt);
+		IRIS_LOGE("%s(), invalid bitmask, popt len: %d", __func__,
+			  popt->cmd_cnt);
 		return;
 	}
 
@@ -3206,7 +3322,7 @@ void iris_update_bitmask_regval_nonread(
 
 	orig_val = cpu_to_le32(data[2]);
 	val = orig_val & (~pregval->mask);
-	val |= (pregval->value  & pregval->mask);
+	val |= (pregval->value & pregval->mask);
 	data[2] = val;
 	pregval->value = val;
 
@@ -3214,8 +3330,8 @@ void iris_update_bitmask_regval_nonread(
 		iris_send_ipopt_cmds(ip, opt_id);
 }
 
-void iris_update_bitmask_regval(
-		struct iris_update_regval *pregval, bool is_commit)
+void iris_update_bitmask_regval(struct iris_update_regval *pregval,
+				bool is_commit)
 {
 	int32_t ip = 0;
 	int32_t opt_id = 0;
@@ -3232,12 +3348,12 @@ void iris_update_bitmask_regval(
 
 	popt = iris_find_ip_opt(ip, opt_id);
 	if (popt == NULL) {
-		IRIS_LOGE("%s(), can't find ip: 0x%02x opt: 0x%02x",
-				__func__, ip, opt_id);
+		IRIS_LOGE("%s(), can't find ip: 0x%02x opt: 0x%02x", __func__,
+			  ip, opt_id);
 		return;
 	} else if (popt->cmd_cnt != 2) {
-		IRIS_LOGE("%s(), invalid bitmask, popt len: %d",
-				__func__, popt->cmd_cnt);
+		IRIS_LOGE("%s(), invalid bitmask, popt len: %d", __func__,
+			  popt->cmd_cnt);
 		return;
 	}
 
@@ -3249,9 +3365,9 @@ void iris_update_bitmask_regval(
 		iris_send_ipopt_cmds(ip, opt_id);
 }
 
-static ssize_t _iris_cont_splash_write(
-		struct file *file, const char __user *buff,
-		size_t count, loff_t *ppos)
+static ssize_t _iris_cont_splash_write(struct file *file,
+				       const char __user *buff, size_t count,
+				       loff_t *ppos)
 {
 	unsigned long val;
 
@@ -3265,17 +3381,15 @@ static ssize_t _iris_cont_splash_write(
 		mutex_lock(&pcfg->panel->panel_lock);
 		_iris_send_cont_splash_pkt(val);
 		mutex_unlock(&pcfg->panel->panel_lock);
-	} else if (val != IRIS_CONT_SPLASH_LK &&
-			val != IRIS_CONT_SPLASH_NONE) {
+	} else if (val != IRIS_CONT_SPLASH_LK && val != IRIS_CONT_SPLASH_NONE) {
 		IRIS_LOGE("the value is %zu, need to be 1 or 2 3", val);
 	}
 
 	return count;
 }
 
-static ssize_t _iris_cont_splash_read(
-		struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+static ssize_t _iris_cont_splash_read(struct file *file, char __user *buff,
+				      size_t count, loff_t *ppos)
 {
 	uint8_t type;
 	int len, tot = 0;
@@ -3302,9 +3416,8 @@ static const struct file_operations iris_cont_splash_fops = {
 	.read = _iris_cont_splash_read,
 };
 
-static ssize_t _iris_split_pkt_write(
-		struct file *file, const char __user *buff,
-		size_t count, loff_t *ppos)
+static ssize_t _iris_split_pkt_write(struct file *file, const char __user *buff,
+				     size_t count, loff_t *ppos)
 {
 	unsigned long val;
 	struct iris_cfg *pcfg = NULL;
@@ -3318,9 +3431,8 @@ static ssize_t _iris_split_pkt_write(
 	return count;
 }
 
-static ssize_t _iris_split_pkt_read(
-		struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+static ssize_t _iris_split_pkt_read(struct file *file, char __user *buff,
+				    size_t count, loff_t *ppos)
 {
 	uint8_t type;
 	int len, tot = 0;
@@ -3349,7 +3461,7 @@ int iris_wait_vsync(void)
 	struct iris_cfg *pcfg = iris_get_cfg();
 	struct drm_encoder *drm_enc;
 
-	if (pcfg->display == NULL || pcfg->display->bridge == NULL)//CID107520
+	if (pcfg->display == NULL || pcfg->display->bridge == NULL) //CID107520
 		return -ENOLINK;
 	drm_enc = pcfg->display->bridge->base.encoder;
 	if (!drm_enc || !drm_enc->crtc)
@@ -3362,11 +3474,13 @@ int iris_wait_vsync(void)
 	return 0;
 }
 
-int iris_set_pending_panel_brightness(int32_t pending, int32_t delay, int32_t level)
+int iris_set_pending_panel_brightness(int32_t pending, int32_t delay,
+				      int32_t level)
 {
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	if (pcfg) {
-		IRIS_LOGI("set pending panel %d, %d, %d", pending, delay, level);
+		IRIS_LOGI("set pending panel %d, %d, %d", pending, delay,
+			  level);
 		pcfg->panel_pending = pending;
 		pcfg->panel_delay = delay;
 		pcfg->panel_level = level;
@@ -3401,28 +3515,34 @@ int iris_sync_panel_brightness(int32_t step, void *phys_enc)
 	pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 
 	if (pcfg->panel_pending == step) {
-		IRIS_LOGI("sync pending panel %d %d,%d,%d",
-				step, pcfg->panel_pending, pcfg->panel_delay,
-				pcfg->panel_level);
+		IRIS_LOGI("sync pending panel %d %d,%d,%d", step,
+			  pcfg->panel_pending, pcfg->panel_delay,
+			  pcfg->panel_level);
 		SDE_ATRACE_BEGIN("sync_panel_brightness");
 		if (step <= 2) {
 			if (pcfg->panel_delay != 0) {
-				rc = c_conn->ops.set_backlight(&c_conn->base,
-						display, pcfg->panel_level);
-				usleep_range(pcfg->panel_delay, pcfg->panel_delay + 1);
+				rc = c_conn->ops.set_backlight(
+					&c_conn->base, display,
+					pcfg->panel_level);
+				usleep_range(pcfg->panel_delay,
+					     pcfg->panel_delay + 1);
 			} else {
-				rc = c_conn->ops.set_backlight(&c_conn->base,
-						display, pcfg->panel_level);
+				rc = c_conn->ops.set_backlight(
+					&c_conn->base, display,
+					pcfg->panel_level);
 			}
 
 		} else {
 			if (pcfg->panel_delay != 0) {
-				usleep_range(pcfg->panel_delay, pcfg->panel_delay + 1);
-				rc = c_conn->ops.set_backlight(&c_conn->base,
-						display, pcfg->panel_level);
+				usleep_range(pcfg->panel_delay,
+					     pcfg->panel_delay + 1);
+				rc = c_conn->ops.set_backlight(
+					&c_conn->base, display,
+					pcfg->panel_level);
 			} else {
-				rc = c_conn->ops.set_backlight(&c_conn->base,
-						display, pcfg->panel_level);
+				rc = c_conn->ops.set_backlight(
+					&c_conn->base, display,
+					pcfg->panel_level);
 			}
 		}
 		if (c_conn->bl_device)
@@ -3441,7 +3561,7 @@ static const struct file_operations iris_split_pkt_fops = {
 };
 
 static ssize_t _iris_chip_id_read(struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+				  size_t count, loff_t *ppos)
 {
 	int tot = 0;
 	struct iris_cfg *pcfg = NULL;
@@ -3466,7 +3586,7 @@ static const struct file_operations iris_chip_id_fops = {
 };
 
 static ssize_t _iris_power_mode_read(struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+				     size_t count, loff_t *ppos)
 {
 	int tot = 0;
 	struct iris_cfg *pcfg = NULL;
@@ -3491,15 +3611,13 @@ static const struct file_operations iris_power_mode_fops = {
 };
 
 static ssize_t _iris_dbg_i2c_write(struct file *file, const char __user *buff,
-		size_t count, loff_t *ppos)
+				   size_t count, loff_t *ppos)
 {
-
 	unsigned long val;
 	int ret = 0;
 	bool is_ulps_enable = 0;
 	uint32_t header = 0;
-	uint32_t arr[100] = {0};
-
+	uint32_t arr[100] = { 0 };
 
 	if (kstrtoul_from_user(buff, count, 0, &val))
 		return -EFAULT;
@@ -3511,7 +3629,8 @@ static ssize_t _iris_dbg_i2c_write(struct file *file, const char __user *buff,
 	arr[1] = 0x12345678;
 
 	is_ulps_enable = iris_ulps_enable_get();
-	IRIS_LOGI("%s(%d), is_ulps_enable = %d", __func__, __LINE__, is_ulps_enable);
+	IRIS_LOGI("%s(%d), is_ulps_enable = %d", __func__, __LINE__,
+		  is_ulps_enable);
 	if (is_ulps_enable)
 		iris_ulps_source_sel(ULPS_NONE);
 	ret = iris_i2c_ocp_write(arr, 1, 0);
@@ -3521,23 +3640,23 @@ static ssize_t _iris_dbg_i2c_write(struct file *file, const char __user *buff,
 		IRIS_LOGE("%s(%d), ret = %d", __func__, __LINE__, ret);
 
 	return count;
-
 }
 
 static ssize_t _iris_dbg_i2c_read(struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+				  size_t count, loff_t *ppos)
 {
 	int ret = 0;
 	int i = 0;
 	const int cnt = 5;
 	const bool is_burst = true;
 	bool is_ulps_enable = 0;
-	uint32_t arr[100] = {0};
+	uint32_t arr[100] = { 0 };
 
 	arr[0] = 0xf0000000;
 
 	is_ulps_enable = iris_ulps_enable_get();
-	IRIS_LOGI("%s(%d), is_ulps_enable = %d", __func__, __LINE__, is_ulps_enable);
+	IRIS_LOGI("%s(%d), is_ulps_enable = %d", __func__, __LINE__,
+		  is_ulps_enable);
 	if (is_ulps_enable)
 		iris_ulps_source_sel(ULPS_NONE);
 	ret = iris_i2c_ocp_read(arr, cnt, is_burst);
@@ -3548,7 +3667,8 @@ static ssize_t _iris_dbg_i2c_read(struct file *file, char __user *buff,
 		IRIS_LOGE("%s(%d), ret = %d", __func__, __LINE__, ret);
 	} else {
 		for (i = 0; i < cnt; i++)
-			IRIS_LOGI("%s(%d), arr[%d] = %x", __func__, __LINE__, i, arr[i]);
+			IRIS_LOGI("%s(%d), arr[%d] = %x", __func__, __LINE__, i,
+				  arr[i]);
 	}
 	return 0;
 }
@@ -3559,8 +3679,8 @@ static const struct file_operations iris_i2c_srw_fops = {
 	.read = _iris_dbg_i2c_read,
 };
 
-static ssize_t _iris_list_debug(struct file *file,
-		const char __user *user_buf, size_t count, loff_t *ppos)
+static ssize_t _iris_list_debug(struct file *file, const char __user *user_buf,
+				size_t count, loff_t *ppos)
 {
 	uint8_t ip;
 	uint8_t opt_id;
@@ -3572,7 +3692,7 @@ static ssize_t _iris_list_debug(struct file *file,
 	if (count > sizeof(buf))
 		return -EINVAL;
 
-	memset(buf, 0, sizeof(buf));//CID98777
+	memset(buf, 0, sizeof(buf)); //CID98777
 
 	if (copy_from_user(buf, user_buf, count))
 		return -EFAULT;
@@ -3603,53 +3723,54 @@ static int _iris_dbgfs_cont_splash_init(struct dsi_display *display)
 	if (pcfg->dbg_root == NULL) {
 		pcfg->dbg_root = debugfs_create_dir("iris", NULL);
 		if (IS_ERR_OR_NULL(pcfg->dbg_root)) {
-			IRIS_LOGE("debugfs_create_dir for iris_debug failed, error %ld",
-					PTR_ERR(pcfg->dbg_root));
+			IRIS_LOGE(
+				"debugfs_create_dir for iris_debug failed, error %ld",
+				PTR_ERR(pcfg->dbg_root));
 			return -ENODEV;
 		}
 	}
-	if (debugfs_create_file("iris_cont_splash", 0644, pcfg->dbg_root, display,
-				&iris_cont_splash_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+	if (debugfs_create_file("iris_cont_splash", 0644, pcfg->dbg_root,
+				display, &iris_cont_splash_fops) == NULL) {
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 
 	if (debugfs_create_file("iris_split_pkt", 0644, pcfg->dbg_root, display,
 				&iris_split_pkt_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 
 	if (debugfs_create_file("chip_id", 0644, pcfg->dbg_root, display,
 				&iris_chip_id_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 
 	if (debugfs_create_file("power_mode", 0644, pcfg->dbg_root, display,
 				&iris_power_mode_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 
 	debugfs_create_u8("iris_pq_update_path", 0644, pcfg->dbg_root,
-			(uint8_t *)&iris_pq_update_path);
+			  (uint8_t *)&iris_pq_update_path);
 
-	if (debugfs_create_file("iris_i2c_srw",	0644, pcfg->dbg_root, display,
+	if (debugfs_create_file("iris_i2c_srw", 0644, pcfg->dbg_root, display,
 				&iris_i2c_srw_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 
-	if (debugfs_create_file("iris_list_debug",	0644, pcfg->dbg_root, display,
-				&_iris_list_debug_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+	if (debugfs_create_file("iris_list_debug", 0644, pcfg->dbg_root,
+				display, &_iris_list_debug_fops) == NULL) {
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 
@@ -3703,13 +3824,13 @@ static int _iris_dev_probe(struct platform_device *pdev)
 	rc = iris_enable_pinctrl(pdev, pcfg);
 	if (rc) {
 		IRIS_LOGE("%s(), failed to enable pinctrl, return: %d",
-			__func__, rc);
+			  __func__, rc);
 	}
 
 	rc = iris_parse_gpio(pdev, pcfg);
 	if (rc) {
-		IRIS_LOGE("%s(), failed to parse gpio, return: %d",
-				__func__, rc);
+		IRIS_LOGE("%s(), failed to parse gpio, return: %d", __func__,
+			  rc);
 		return rc;
 	}
 
@@ -3731,10 +3852,9 @@ static int _iris_dev_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static const struct of_device_id iris_dt_match[] = {
-	{.compatible = "pxlw,iris"},
-	{}
-};
+static const struct of_device_id iris_dt_match[] = { { .compatible =
+							       "pxlw,iris" },
+						     {} };
 
 static struct platform_driver iris_driver = {
 	.probe = _iris_dev_probe,

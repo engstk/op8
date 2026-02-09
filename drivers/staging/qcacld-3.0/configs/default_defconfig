@@ -604,10 +604,6 @@ ifeq ($(CONFIG_ARCH_QCS40X), y)
 CONFIG_FEATURE_WLAN_STA_4ADDR_SCHEME := y
 endif
 
-#ifdef OPLUS_ARCH_INJECT
-    CONFIG_WLAN_DEBUG_CRASH_INJECT := y
-#endif /* OPLUS_ARCH_INJECT */
-
 #Enable power management suspend/resume functionality to PCI
 CONFIG_ATH_BUS_PM := y
 

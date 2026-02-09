@@ -10,7 +10,7 @@ config MLX5_CORE
 	imply VXLAN
 	imply MLXFW
 	default n
-	---help---
+	help
 	  Core driver for low level functionality of the ConnectX-4 and
 	  Connect-IB cards by Mellanox Technologies.
 
@@ -21,7 +21,7 @@ config MLX5_FPGA
         bool "Mellanox Technologies Innova support"
         depends on MLX5_CORE
 	select MLX5_ACCEL
-        ---help---
+	help
           Build support for the Innova family of network cards by Mellanox
           Technologies. Innova network cards are comprised of a ConnectX chip
           and an FPGA chip on one board. If you select this option, the
@@ -34,14 +34,14 @@ config MLX5_CORE_EN
 	depends on IPV6=y || IPV6=n || MLX5_CORE=m
 	select PAGE_POOL
 	default n
-	---help---
+	help
 	  Ethernet support in Mellanox Technologies ConnectX-4 NIC.
 
 config MLX5_EN_ARFS
 	bool "Mellanox MLX5 ethernet accelerated receive flow steering (ARFS) support"
 	depends on MLX5_CORE_EN && RFS_ACCEL
 	default y
-	---help---
+	help
 	  Mellanox MLX5 ethernet hardware-accelerated receive flow steering support,
 	  Enables ethernet netdevice arfs support and ntuple filtering.
 
@@ -49,7 +49,7 @@ config MLX5_EN_RXNFC
 	bool "Mellanox MLX5 ethernet rx nfc flow steering support"
 	depends on MLX5_CORE_EN
 	default y
-	---help---
+	help
 	  Mellanox MLX5 ethernet rx nfc flow steering support
 	  Enables ethtool receive network flow classification, which allows user defined
 	  flow rules to direct traffic into arbitrary rx queue via ethtool set/get_rxnfc
@@ -59,7 +59,7 @@ config MLX5_MPFS
         bool "Mellanox Technologies MLX5 MPFS support"
         depends on MLX5_CORE_EN
 	default y
-        ---help---
+	help
 	  Mellanox Technologies Ethernet Multi-Physical Function Switch (MPFS)
           support in ConnectX NIC. MPFs is required for when multi-PF configuration
           is enabled to allow passing user configured unicast MAC addresses to the
@@ -69,7 +69,7 @@ config MLX5_ESWITCH
 	bool "Mellanox Technologies MLX5 SRIOV E-Switch support"
 	depends on MLX5_CORE_EN && NET_SWITCHDEV
 	default y
-	---help---
+	help
 	  Mellanox Technologies Ethernet SRIOV E-Switch support in ConnectX NIC.
           E-Switch provides internal SRIOV packet steering and switching for the
           enabled VFs and PF in two available modes:
@@ -80,7 +80,7 @@ config MLX5_CORE_EN_DCB
 	bool "Data Center Bridging (DCB) Support"
 	default y
 	depends on MLX5_CORE_EN && DCB
-	---help---
+	help
 	  Say Y here if you want to use Data Center Bridging (DCB) in the
 	  driver.
 	  If set to N, will not be able to configure QoS and ratelimit attributes.
@@ -92,7 +92,7 @@ config MLX5_CORE_IPOIB
 	bool "Mellanox 5th generation network adapters (connectX series) IPoIB offloads support"
 	depends on MLX5_CORE_EN
 	default n
-	---help---
+	help
 	  MLX5 IPoIB offloads & acceleration support.
 
 config MLX5_EN_IPSEC
@@ -102,7 +102,7 @@ config MLX5_EN_IPSEC
 	depends on XFRM_OFFLOAD
 	depends on INET_ESP_OFFLOAD || INET6_ESP_OFFLOAD
 	default n
-	---help---
+	help
 	  Build support for IPsec cryptography-offload accelaration in the NIC.
 	  Note: Support for hardware with this capability needs to be selected
 	  for this option to become available.
@@ -114,7 +114,7 @@ config MLX5_EN_TLS
 	depends on TLS=y || MLX5_CORE=m
 	depends on MLX5_ACCEL
 	default n
-	---help---
+	help
 	  Build support for TLS cryptography-offload accelaration in the NIC.
 	  Note: Support for hardware with this capability needs to be selected
 	  for this option to become available.

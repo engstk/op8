@@ -283,10 +283,6 @@ static void free_fw_priv(struct fw_priv *fw_priv)
 /* direct firmware loading support */
 static char fw_path_para[256];
 static const char * const fw_path[] = {
-	//#ifdef OPLUS_FEATURE_WIFI_RUSUPGRADE
-	//add for: support auto update function, include mtk fw, mtk wifi.cfg, qcom fw, qcom bdf, qcom ini
-	"/data/misc/firmware/active",
-	//#endif /* OPLUS_FEATURE_WIFI_RUSUPGRADE */
 	fw_path_para,
 	"/lib/firmware/updates/" UTS_RELEASE,
 	"/lib/firmware/updates",
@@ -304,8 +300,8 @@ MODULE_PARM_DESC(path, "customized firmware image search path with a higher prio
 
 #ifdef OPLUS_FEATURE_TP_BSPFWUPDATE
 static int fw_get_filesystem_firmware(struct device *device,
-					struct fw_priv *fw_priv,
-					enum fw_opt opt_flags)
+				      struct fw_priv *fw_priv,
+				      enum fw_opt opt_flags)
 #else
 static int
 fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv)
@@ -319,11 +315,11 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv)
 	size_t msize = INT_MAX;
 
 #ifdef OPLUS_FEATURE_TP_BSPFWUPDATE
-	if(opt_flags & FW_OPT_COMPARE) {
+	if (opt_flags & FW_OPT_COMPARE) {
 		pr_err("%s opt_flags get FW_OPT_COMPARE!\n", __func__);
 		return rc;
 	}
-#endif/*OPLUS_FEATURE_TP_BSPFWUPDATE*/
+#endif /*OPLUS_FEATURE_TP_BSPFWUPDATE*/
 
 	/* Already populated data member means we're loading into a buffer */
 	if (fw_priv->data) {
@@ -350,19 +346,23 @@ fw_get_filesystem_firmware(struct device *device, struct fw_priv *fw_priv)
 #if defined(OPLUS_FEATURE_CAMERA_OIS)
 		if (strstr(fw_path[i], "/lib/firmware/") != NULL) {
 			if (strstr(fw_priv->fw_name, "ois_") != NULL) {
-				snprintf(path, PATH_MAX, "%s/%s", "/odm/vendor/firmware", fw_priv->fw_name);
+				snprintf(path, PATH_MAX, "%s/%s",
+					 "/odm/vendor/firmware",
+					 fw_priv->fw_name);
 			}
 		}
 #endif /*OPLUS_FEATURE_CAMERA_OIS*/
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
-		if (!strcmp(fw_priv->fw_name, "iris5.fw")
-			|| !strcmp(fw_priv->fw_name, "iris5_ccf1.fw")
-			|| !strcmp(fw_priv->fw_name, "iris5_ccf2.fw")) {
-			snprintf(path, PATH_MAX, "%s/%s", "/odm/vendor/firmware", fw_priv->fw_name);
+		if (!strcmp(fw_priv->fw_name, "iris5.fw") ||
+		    !strcmp(fw_priv->fw_name, "iris5_ccf1.fw") ||
+		    !strcmp(fw_priv->fw_name, "iris5_ccf2.fw")) {
+			snprintf(path, PATH_MAX, "%s/%s",
+				 "/odm/vendor/firmware", fw_priv->fw_name);
 		}
-		if (!strcmp(fw_priv->fw_name, "iris5_ccf1b.fw")
-			|| !strcmp(fw_priv->fw_name, "iris5_ccf2b.fw")) {
-			snprintf(path, PATH_MAX, "%s/%s", "/data/vendor/display", fw_priv->fw_name);
+		if (!strcmp(fw_priv->fw_name, "iris5_ccf1b.fw") ||
+		    !strcmp(fw_priv->fw_name, "iris5_ccf2b.fw")) {
+			snprintf(path, PATH_MAX, "%s/%s",
+				 "/data/vendor/display", fw_priv->fw_name);
 		}
 #endif /*OPLUS_FEATURE_PXLW_IRIS5*/
 		fw_priv->size = 0;
@@ -659,7 +659,7 @@ _request_firmware(const struct firmware **firmware_p, const char *name,
 	ret = fw_get_filesystem_firmware(device, fw->priv, opt_flags);
 #else
 	ret = fw_get_filesystem_firmware(device, fw->priv);
-#endif/*OPLUS_FEATURE_TP_BSPFWUPDATE*/
+#endif /*OPLUS_FEATURE_TP_BSPFWUPDATE*/
 	if (ret) {
 		if (!(opt_flags & FW_OPT_NO_WARN))
 			dev_dbg(device,
@@ -717,12 +717,10 @@ request_firmware(const struct firmware **firmware_p, const char *name,
 }
 EXPORT_SYMBOL(request_firmware);
 
-
 #ifdef VENDOR_EDIT
 //Add for: reload wlan bdf without using cache
-int
-request_firmware_no_cache(const struct firmware **firmware_p, const char *name,
-		 struct device *device)
+int request_firmware_no_cache(const struct firmware **firmware_p,
+			      const char *name, struct device *device)
 {
 	int ret;
 

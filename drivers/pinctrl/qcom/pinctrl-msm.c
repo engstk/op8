@@ -486,6 +486,7 @@ static int msm_gpio_get(struct gpio_chip *chip, unsigned offset)
 	val = readl(pctrl->regs + g->io_reg);
 	return !!(val & BIT(g->in_bit));
 }
+
 #ifdef OPLUS_FEATURE_CHG_BASIC
 static int msm_gpio_get_oplus_vooc(struct gpio_chip *chip, unsigned offset)
 {
@@ -493,7 +494,6 @@ static int msm_gpio_get_oplus_vooc(struct gpio_chip *chip, unsigned offset)
 	struct msm_pinctrl *pctrl = gpiochip_get_data(chip);
 	u32 val;
 
-	//pr_err("%s enter\n", __func__);
 	g = &pctrl->soc->groups[offset];
 
 	val = readl_oplus_vooc(pctrl->regs + g->io_reg);
@@ -521,17 +521,16 @@ static void msm_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
 
 	raw_spin_unlock_irqrestore(&pctrl->lock, flags);
 }
+
 #ifdef OPLUS_FEATURE_CHG_BASIC
-static void msm_gpio_set_oplus_vooc(struct gpio_chip *chip, unsigned offset, int value)
+static void msm_gpio_set_oplus_vooc(struct gpio_chip *chip, unsigned offset,
+				    int value)
 {
 	const struct msm_pingroup *g;
 	struct msm_pinctrl *pctrl = gpiochip_get_data(chip);
 	u32 val;
 
-	//pr_err("%s enter\n", __func__);
 	g = &pctrl->soc->groups[offset];
-
-	//spin_lock_irqsave(&pctrl->lock, flags);
 
 	val = readl_oplus_vooc(pctrl->regs + g->io_reg);
 	if (value)
@@ -539,10 +538,9 @@ static void msm_gpio_set_oplus_vooc(struct gpio_chip *chip, unsigned offset, int
 	else
 		val &= ~BIT(g->out_bit);
 	writel_oplus_vooc(val, pctrl->regs + g->io_reg);
-
-	//spin_unlock_irqrestore(&pctrl->lock, flags);
 }
 #endif /* OPLUS_FEATURE_CHG_BASIC */
+
 #ifdef CONFIG_DEBUG_FS
 #include <linux/seq_file.h>
 
@@ -562,16 +560,16 @@ static void msm_gpio_dbg_show_one(struct seq_file *s,
 	u32 ctl_reg, io_reg;
 
 	static const char * const pulls_keeper[] = {
-		"no-pull",
-		"pull-down",
+		"no pull",
+		"pull down",
 		"keeper",
-		"pull-up"
+		"pull up"
 	};
 
 	static const char * const pulls_no_keeper[] = {
-		"no-pull",
-		"pull-down",
-		"pull-up",
+		"no pull",
+		"pull down",
+		"pull up",
 	};
 
 	if (!gpiochip_line_is_valid(chip, offset))
@@ -606,18 +604,8 @@ static void msm_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
 	unsigned gpio = chip->base;
 	unsigned i;
 
-	for (i = 0; i < chip->ngpio; i++, gpio++) {
-		if (i == 28 ||
-			i == 29 ||
-			i == 30 ||
-			i == 31 ||
-			i == 40 ||
-			i == 41 ||
-			i == 42 ||
-			i == 43)
-			continue;
+	for (i = 0; i < chip->ngpio; i++, gpio++)
 		msm_gpio_dbg_show_one(s, NULL, chip, i, gpio);
-	}
 }
 
 #else
@@ -630,11 +618,11 @@ static const struct gpio_chip msm_gpio_template = {
 	.get_direction    = msm_gpio_get_direction,
 	.get              = msm_gpio_get,
 #ifdef OPLUS_FEATURE_CHG_BASIC
-	.get_oplus_vooc	  = msm_gpio_get_oplus_vooc,
+	.get_oplus_vooc   = msm_gpio_get_oplus_vooc,
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 	.set              = msm_gpio_set,
 #ifdef OPLUS_FEATURE_CHG_BASIC
-	.set_oplus_vooc	  = msm_gpio_set_oplus_vooc,
+	.set_oplus_vooc   = msm_gpio_set_oplus_vooc,
 #endif /* OPLUS_FEATURE_CHG_BASIC */
 	.request          = gpiochip_generic_request,
 	.free             = gpiochip_generic_free,

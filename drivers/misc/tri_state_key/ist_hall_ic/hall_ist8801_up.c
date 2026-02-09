@@ -30,51 +30,49 @@
 #include "hall_ist8801.h"
 #include "../oplus_tri_key.h"
 
-#define IST8801_I2C_BUF_SIZE				(17)
+#define IST8801_I2C_BUF_SIZE (17)
 
 #define HALL_IST8801_UP "oplus,hall-ist8801,up"
-#define TRI_KEY_TAG                  "[tri_state_key] "
-#define TRI_KEY_ERR(fmt, args...)\
-	pr_info(TRI_KEY_TAG" %s : "fmt, __func__, ##args)
-#define TRI_KEY_LOG(fmt, args...)\
-	pr_info(TRI_KEY_TAG" %s : "fmt, __func__, ##args)
+#define TRI_KEY_TAG "[tri_state_key] "
+#define TRI_KEY_ERR(fmt, args...) \
+	pr_info(TRI_KEY_TAG " %s : " fmt, __func__, ##args)
+#define TRI_KEY_LOG(fmt, args...) \
+	pr_info(TRI_KEY_TAG " %s : " fmt, __func__, ##args)
 
 static struct ist8801_data_t *g_ist8801_data;
 
 static struct hall_srs ist8801_ranges_1[] = {
-	{"40mT", GAIN_2_TIME, false, 0},
-	{"35mT", GAIN_2_TIME, false, 10},
-	{"20mT", GAIN_2_TIME, false, 28},
-	{"15mT", GAIN_4_TIME, false, 17},
-	{"10mT", GAIN_8_TIME, false, 0},
+	{ "40mT", GAIN_2_TIME, false, 0 },  { "35mT", GAIN_2_TIME, false, 10 },
+	{ "20mT", GAIN_2_TIME, false, 28 }, { "15mT", GAIN_4_TIME, false, 17 },
+	{ "10mT", GAIN_8_TIME, false, 0 },
 };
 
 static struct hall_srs ist8801_ranges_2[] = {
-	{"40mT", GAIN_2_TIME, false, 0},
-	{"35mT", GAIN_2_TIME, false, 6},
-	{"20mT", GAIN_2_TIME, false, 24},
-	{"15mT", GAIN_4_TIME, false, 13},
-	{"10mT", GAIN_8_TIME, false, 0},
+	{ "40mT", GAIN_2_TIME, false, 0 },  { "35mT", GAIN_2_TIME, false, 6 },
+	{ "20mT", GAIN_2_TIME, false, 24 }, { "15mT", GAIN_4_TIME, false, 13 },
+	{ "10mT", GAIN_8_TIME, false, 0 },
 };
 
-
 static DEFINE_MUTEX(ist8801_i2c_mutex);
-__attribute__((weak)) void ist8801_reconfig(struct ist8801_data_t *chip) { return; }
+__attribute__((weak)) void ist8801_reconfig(struct ist8801_data_t *chip)
+{
+	return;
+}
 
-static int ist8801_i2c_read_block(struct ist8801_data_t *ist8801_data,
-		u8 addr, u8 *data, u8 len)
+static int ist8801_i2c_read_block(struct ist8801_data_t *ist8801_data, u8 addr,
+				  u8 *data, u8 len)
 {
 	u8 reg_addr = addr;
 	int err = 0;
 	struct i2c_client *client = ist8801_data->client;
-	struct i2c_msg msgs[2] = {{0}, {0}};
+	struct i2c_msg msgs[2] = { { 0 }, { 0 } };
 
 	if (!client) {
 		TRI_KEY_ERR("client null\n");
 		return -EINVAL;
 	} else if (len >= IST8801_I2C_BUF_SIZE) {
-		TRI_KEY_ERR(" length %d exceeds %d\n",
-				len, IST8801_I2C_BUF_SIZE);
+		TRI_KEY_ERR(" length %d exceeds %d\n", len,
+			    IST8801_I2C_BUF_SIZE);
 		return -EINVAL;
 	}
 	mutex_lock(&ist8801_i2c_mutex);
@@ -89,12 +87,11 @@ static int ist8801_i2c_read_block(struct ist8801_data_t *ist8801_data,
 	msgs[1].len = len;
 	msgs[1].buf = data;
 
-	err = i2c_transfer(client->adapter, msgs,
-				ARRAY_SIZE(msgs));
+	err = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
 
 	if (err < 0) {
-		TRI_KEY_ERR("i2c_transfer error: (%d %p %d) %d\n",
-				addr, data, len, err);
+		TRI_KEY_ERR("i2c_transfer error: (%d %p %d) %d\n", addr, data,
+			    len, err);
 		err = -EIO;
 	} else
 		err = 0;
@@ -103,21 +100,21 @@ static int ist8801_i2c_read_block(struct ist8801_data_t *ist8801_data,
 	return err;
 }
 
-static int ist8801_i2c_write_block(struct ist8801_data_t *ist8801_data,
-			u8 addr, u8 *data, u8 len)
+static int ist8801_i2c_write_block(struct ist8801_data_t *ist8801_data, u8 addr,
+				   u8 *data, u8 len)
 {
 	int err = 0;
 	int idx = 0;
 	int num = 0;
-	char buf[IST8801_I2C_BUF_SIZE] = {0};
+	char buf[IST8801_I2C_BUF_SIZE] = { 0 };
 	struct i2c_client *client = ist8801_data->client;
 
 	if (!client) {
 		TRI_KEY_ERR("client null\n");
 		return -EINVAL;
 	} else if (len >= IST8801_I2C_BUF_SIZE) {
-		TRI_KEY_ERR(" length %d exceeds %d\n",
-				len, IST8801_I2C_BUF_SIZE);
+		TRI_KEY_ERR(" length %d exceeds %d\n", len,
+			    IST8801_I2C_BUF_SIZE);
 		return -EINVAL;
 	}
 
@@ -167,13 +164,13 @@ static int ist8801_i2c_write_block(struct ist8801_data_t *ist8801_data,
 	return err;
 }
 
-static void ist8801_short_to_2byte(struct ist8801_data_t *ist8801_data,
-			short x, u8 *hbyte, u8 *lbyte)
+static void ist8801_short_to_2byte(struct ist8801_data_t *ist8801_data, short x,
+				   u8 *hbyte, u8 *lbyte)
 {
 	unsigned short temp;
 
 	if (x >= 0)
-		temp  = x;
+		temp = x;
 	else
 		temp = 65536 + x;
 
@@ -182,11 +179,11 @@ static void ist8801_short_to_2byte(struct ist8801_data_t *ist8801_data,
 }
 
 static short ist8801_2byte_to_short(struct ist8801_data_t *ist8801_data,
-				u8 hbyte, u8 lbyte)
+				    u8 hbyte, u8 lbyte)
 {
 	short x = 0;
 
-	x = (short) ((hbyte << 8) | lbyte);
+	x = (short)((hbyte << 8) | lbyte);
 
 	return x;
 }
@@ -199,24 +196,24 @@ static void moving_average_1(u8 *data_hi, u8 *data_lo, u8 mode)
 
 	x = 0;
 	y = 0;
-	x = (int) ist8801_2byte_to_short(NULL, *data_hi, *data_lo);
+	x = (int)ist8801_2byte_to_short(NULL, *data_hi, *data_lo);
 
 	if (!first_1) {
 		if (mode == 0) {
 			y = x;
-			temp_1 = 4*x;
+			temp_1 = 4 * x;
 		} else {
 			y = x;
-			temp_1 = 2*x;
+			temp_1 = 2 * x;
 		}
 	} else {
 		if (mode == 0) {
-			temp_1 = (temp_1>>2) + 3*x;
+			temp_1 = (temp_1 >> 2) + 3 * x;
 			y = temp_1 >> 2;
 		} else {
-			temp_1 = 2*x + temp_1;
+			temp_1 = 2 * x + temp_1;
 			y = temp_1 >> 2;
-			temp_1 =  temp_1 >> 1;
+			temp_1 = temp_1 >> 1;
 		}
 	}
 
@@ -227,7 +224,7 @@ static void moving_average_1(u8 *data_hi, u8 *data_lo, u8 mode)
 	else if (y <= -32768)
 		y = -32768;
 
-	ist8801_short_to_2byte(NULL, (short) y, data_hi, data_lo);
+	ist8801_short_to_2byte(NULL, (short)y, data_hi, data_lo);
 }
 
 #endif
@@ -245,7 +242,7 @@ static int ist8801_get_id(struct ist8801_data_t *ist8801_data)
 static int ist8801_get_data(short *data)
 {
 	int err = 0;
-	u8 buf[3] = {0};
+	u8 buf[3] = { 0 };
 	short value = 0;
 	static short pre_value;
 
@@ -254,8 +251,8 @@ static int ist8801_get_data(short *data)
 		return -EINVAL;
 	}
 
-	err = ist8801_i2c_read_block(g_ist8801_data,
-			IST8801_REG_ST1, buf, sizeof(buf));
+	err = ist8801_i2c_read_block(g_ist8801_data, IST8801_REG_ST1, buf,
+				     sizeof(buf));
 	if (err < 0) {
 		TRI_KEY_LOG("fail %d\n", err);
 		return err;
@@ -282,8 +279,8 @@ static void ist8801_dump_reg(u8 *buf)
 {
 	int i, err;
 	u8 val;
-	u8 buffer[512] = {0};
-	u8 _buf[20] = {0};
+	u8 buffer[512] = { 0 };
+	u8 _buf[20] = { 0 };
 
 	if (g_ist8801_data == NULL) {
 		TRI_KEY_LOG("g_ist8801_data NULL\n");
@@ -299,7 +296,7 @@ static void ist8801_dump_reg(u8 *buf)
 			return;
 		}
 
-		sprintf(_buf,  "reg 0x%x:0x%x\n", i, val);
+		sprintf(_buf, "reg 0x%x:0x%x\n", i, val);
 		strcat(buffer, _buf);
 	}
 
@@ -308,10 +305,10 @@ static void ist8801_dump_reg(u8 *buf)
 		sprintf(buf, "read reg error!\n");
 		return;
 	}
-	sprintf(_buf,  "reg 0x%x:0x%x\n", 0x54, val);
+	sprintf(_buf, "reg 0x%x:0x%x\n", 0x54, val);
 	strcat(buffer, _buf);
 
-	sprintf(buf, "%s\n", (char*)buffer);
+	sprintf(buf, "%s\n", (char *)buffer);
 	TRI_KEY_LOG("%s\n", buf);
 }
 
@@ -328,7 +325,6 @@ static int ist8801_set_reg(int reg, int val)
 
 	return 0;
 }
-
 
 static bool ist8801_is_power_on(void)
 {
@@ -357,14 +353,14 @@ static int ist8801_set_power(struct ist8801_data_t *ist8801_data, bool on)
 	if (on) {
 		if (regulator_count_voltages(ist8801_data->power_2v8) > 0) {
 			ret = regulator_set_voltage(ist8801_data->power_2v8,
-					2856000, 3104000);
+						    2856000, 3104000);
 			if (ret) {
 				TRI_KEY_LOG("Regulator failed vdd\n", ret);
 				return ret;
 			}
 
 			ret = regulator_set_load(ist8801_data->power_2v8,
-					CURRENT_LOAD_UA);
+						 CURRENT_LOAD_UA);
 			if (ret) {
 				TRI_KEY_LOG("Regulator failed vdd\n");
 				return ret;
@@ -372,7 +368,7 @@ static int ist8801_set_power(struct ist8801_data_t *ist8801_data, bool on)
 		}
 		if (regulator_count_voltages(ist8801_data->power_1v8) > 0) {
 			ret = regulator_set_voltage(ist8801_data->power_1v8,
-					1800000, 1800000);
+						    1800000, 1800000);
 			if (ret) {
 				TRI_KEY_LOG("Regulator failed vcc_i2c\n");
 				return ret;
@@ -420,14 +416,14 @@ static int ist8801_clear_interrupt(struct ist8801_data_t *ist8801_data)
 
 	u8 data = ist8801_data->reg.map.persint | 0x01;
 
-	ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_PERSINT, &data, 1);
+	ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_PERSINT, &data,
+				      1);
 
 	ist8801_data->reg.map.persint = ist8801_data->reg.map.persint & 0xfe;
 	data = ist8801_data->reg.map.persint;
 
-	ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_PERSINT, &data, 1);
+	ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_PERSINT, &data,
+				      1);
 
 	return ret;
 }
@@ -444,8 +440,8 @@ static int ist8801_clear_interrupt(struct ist8801_data_t *ist8801_data)
  *15-bit:0x02 : threshold range: 16383~-16384
  *16-bit: other : threshold range: 32767~-32768
  */
-static bool ist8801_up_update_threshold(int position,
-				short lowthd, short highthd)
+static bool ist8801_up_update_threshold(int position, short lowthd,
+					short highthd)
 {
 	u8 lthh, lthl, hthh, hthl;
 	int err = 0;
@@ -463,14 +459,14 @@ static bool ist8801_up_update_threshold(int position,
 		ist8801_short_to_2byte(g_ist8801_data, highthd, &hthh, &hthl);
 		ist8801_short_to_2byte(g_ist8801_data, lowthd, &lthh, &lthl);
 
-		err |= ist8801_i2c_write_block(g_ist8801_data,
-				IST8801_REG_HTHH, &hthh, 1);
-		err |= ist8801_i2c_write_block(g_ist8801_data,
-				IST8801_REG_HTHL, &hthl, 1);
-		err |= ist8801_i2c_write_block(g_ist8801_data,
-				IST8801_REG_LTHH, &lthh, 1);
-		err |= ist8801_i2c_write_block(g_ist8801_data,
-				IST8801_REG_LTHL, &lthl, 1);
+		err |= ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_HTHH,
+					       &hthh, 1);
+		err |= ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_HTHL,
+					       &hthl, 1);
+		err |= ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_LTHH,
+					       &lthh, 1);
+		err |= ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_LTHL,
+					       &lthl, 1);
 	}
 
 	if (err < 0) {
@@ -482,7 +478,7 @@ static bool ist8801_up_update_threshold(int position,
 }
 
 static int ist8801_set_operation_mode(struct ist8801_data_t *ist8801_data,
-						int mode)
+				      int mode)
 {
 	u8 opf = 0;
 	int ret = 0;
@@ -492,84 +488,84 @@ static int ist8801_set_operation_mode(struct ist8801_data_t *ist8801_data,
 	case OPERATION_MODE_POWERDOWN:
 		opf = 0;
 		ifcntl = 0;
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_OPF, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OPF,
+					      &opf, 1);
 
-		ret = ist8801_i2c_read_block(ist8801_data,
-				IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_read_block(ist8801_data, IST8801_REG_IFCNTL,
+					     &ifcntl, 1);
 		ifcntl |= 0x04;
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_IFCNTL,
+					      &ifcntl, 1);
 		TRI_KEY_ERR("operation ERATION_MODE_POWERDOWN\n");
 		break;
 	case OPERATION_MODE_MEASUREMENT:
 		opf = 0x00;
 		TRI_KEY_ERR("opf = 0x%x\n", opf);
 
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_ACTION, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_ACTION,
+					      &opf, 1);
 
 		usleep_range(5000, 5100);
 
 		opf = 0x00;
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_OPF, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OPF,
+					      &opf, 1);
 
-		ret = ist8801_i2c_read_block(ist8801_data,
-				IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_read_block(ist8801_data, IST8801_REG_IFCNTL,
+					     &ifcntl, 1);
 		ifcntl |= 0x04;
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_IFCNTL,
+					      &ifcntl, 1);
 
 		opf = FREQUENCY;
 		TRI_KEY_ERR("opf = 0x%x\n", opf);
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_OPF, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OPF,
+					      &opf, 1);
 		TRI_KEY_ERR("=OPERATION_MODE_MEASUREMENT\n");
 		break;
 	case OPERATION_MODE_LOWPOWER_MEASUREMENT:
 		opf = 0x00;
 		TRI_KEY_ERR("opf = 0x%x\n", opf);
 
-		ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_ACTION, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_ACTION,
+					      &opf, 1);
 
 		usleep_range(5000, 5100);
 
 		opf = 0x00;
-		ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_OPF, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OPF,
+					      &opf, 1);
 
-		ret = ist8801_i2c_read_block(ist8801_data,
-			IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_read_block(ist8801_data, IST8801_REG_IFCNTL,
+					     &ifcntl, 1);
 		ifcntl |= 0x04;
-		ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_IFCNTL,
+					      &ifcntl, 1);
 
 		opf = LOWPOWER_FREQUENCY;
 		TRI_KEY_ERR("opf = 0x%x\n", opf);
-		ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_OPF, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OPF,
+					      &opf, 1);
 		TRI_KEY_ERR("operation mode LOWPOWER_MEASUREMENT\n");
 		break;
 
 	case OPERATION_MODE_SUSPEND:
 		opf = 0x00;
 		TRI_KEY_ERR("opf = 0x%x\n", opf);
-		ret = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_OPF, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OPF,
+					      &opf, 1);
 
-		ret = ist8801_i2c_read_block(ist8801_data,
-				IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_read_block(ist8801_data, IST8801_REG_IFCNTL,
+					     &ifcntl, 1);
 		ifcntl |= 0x04;
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_IFCNTL, &ifcntl, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_IFCNTL,
+					      &ifcntl, 1);
 
 		opf = 0x02;
 		TRI_KEY_ERR("opf = 0x%x\n", opf);
 
-		ret = ist8801_i2c_write_block(ist8801_data,
-				IST8801_REG_ACTION, &opf, 1);
+		ret = ist8801_i2c_write_block(ist8801_data, IST8801_REG_ACTION,
+					      &opf, 1);
 		TRI_KEY_ERR("operation mode :OPERATION_MODE_SUSPEND\n");
 
 		usleep_range(5000, 5100);
@@ -580,7 +576,6 @@ static int ist8801_set_operation_mode(struct ist8801_data_t *ist8801_data,
 
 	return ret;
 }
-
 
 /* functions for interrupt handler */
 static irqreturn_t ist8801_up_irq_handler(int irq, void *dev_id)
@@ -607,7 +602,7 @@ static int ist8801_setup_eint(struct ist8801_data_t *ist8801_data)
 		ret = gpio_request(ist8801_data->irq_gpio, "ist8801_up_irq");
 		if (ret)
 			TRI_KEY_LOG("unable to request gpio [%d]\n",
-			ist8801_data->irq_gpio);
+				    ist8801_data->irq_gpio);
 		else {
 			ret = gpio_direction_input(ist8801_data->irq_gpio);
 			msleep(50);
@@ -615,7 +610,7 @@ static int ist8801_setup_eint(struct ist8801_data_t *ist8801_data)
 		}
 	}
 	TRI_KEY_ERR("GPIO %d irq:%d\n", ist8801_data->irq_gpio,
-			ist8801_data->irq);
+		    ist8801_data->irq);
 
 	return 0;
 }
@@ -631,14 +626,14 @@ static int ist8801_set_detection_mode(u8 mode)
 	}
 
 	TRI_KEY_LOG("ist8801 detection mode : %s\n",
-				(mode == 0) ? "POLLING":"INTERRUPT");
+		    (mode == 0) ? "POLLING" : "INTERRUPT");
 
 	if (mode & DETECTION_MODE_INTERRUPT) {
 		if (!g_ist8801_data->irq_enabled) {
 			data = g_ist8801_data->reg.map.intsrs |
-				IST8801_DETECTION_MODE_INTERRUPT;
-			err = ist8801_i2c_write_block(g_ist8801_data,
-				IST8801_REG_INTSRS, &data, 1);
+			       IST8801_DETECTION_MODE_INTERRUPT;
+			err = ist8801_i2c_write_block(
+				g_ist8801_data, IST8801_REG_INTSRS, &data, 1);
 			if (err < 0) {
 				TRI_KEY_ERR("config interrupt fail %d\n", err);
 				return err;
@@ -650,10 +645,11 @@ static int ist8801_set_detection_mode(u8 mode)
 				return err;
 			}
 
-			err = request_threaded_irq(g_ist8801_data->irq, NULL,
-			&ist8801_up_irq_handler,
-			IRQ_TYPE_LEVEL_LOW | IRQF_ONESHOT,
-				"ist8801_up", (void *)g_ist8801_data->client);
+			err = request_threaded_irq(
+				g_ist8801_data->irq, NULL,
+				&ist8801_up_irq_handler,
+				IRQ_TYPE_LEVEL_LOW | IRQF_ONESHOT, "ist8801_up",
+				(void *)g_ist8801_data->client);
 			if (err < 0) {
 				TRI_KEY_ERR("IRQ LINE NOT AVAILABLE!!\n");
 				return -EINVAL;
@@ -665,10 +661,10 @@ static int ist8801_set_detection_mode(u8 mode)
 	} else {
 		if (g_ist8801_data->irq_enabled) {
 			data = g_ist8801_data->reg.map.intsrs &
-				(0xFF - IST8801_DETECTION_MODE_INTERRUPT);
+			       (0xFF - IST8801_DETECTION_MODE_INTERRUPT);
 
-			err = ist8801_i2c_write_block(g_ist8801_data,
-					IST8801_REG_INTSRS, &data, 1);
+			err = ist8801_i2c_write_block(
+				g_ist8801_data, IST8801_REG_INTSRS, &data, 1);
 			if (err < 0) {
 				TRI_KEY_ERR("config interrupt fail %d\n", err);
 				return err;
@@ -718,7 +714,9 @@ static int ist8801_get_irq_state(void)
 	}
 
 	return ((g_ist8801_data->reg.map.intsrs &
-			IST8801_DETECTION_MODE_INTERRUPT) ? 1 : 0);
+		 IST8801_DETECTION_MODE_INTERRUPT) ?
+			1 :
+			0);
 }
 
 static void ist8801_set_sensitivity(char *value)
@@ -734,9 +732,8 @@ static void ist8801_set_sensitivity(char *value)
 		return;
 	}
 
-
-	len1 = sizeof(ist8801_ranges_1)/sizeof(struct hall_srs);
-	len2 = sizeof(ist8801_ranges_2)/sizeof(struct hall_srs);
+	len1 = sizeof(ist8801_ranges_1) / sizeof(struct hall_srs);
+	len2 = sizeof(ist8801_ranges_2) / sizeof(struct hall_srs);
 
 	if (g_ist8801_data->origin_info == 0x01) {
 		len = len1;
@@ -760,14 +757,14 @@ static void ist8801_set_sensitivity(char *value)
 	}
 
 	temp_opf = 0x00;
-	err = ist8801_i2c_read_block(g_ist8801_data,
-			IST8801_REG_OPF, &temp_opf, 1);
+	err = ist8801_i2c_read_block(g_ist8801_data, IST8801_REG_OPF, &temp_opf,
+				     1);
 
 	rwdata = 0x00;
 	ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_OPF, &rwdata, 1);
 
-	err = ist8801_i2c_read_block(g_ist8801_data,
-		IST8801_REG_IFCNTL, &rwdata, 1);
+	err = ist8801_i2c_read_block(g_ist8801_data, IST8801_REG_IFCNTL,
+				     &rwdata, 1);
 	rwdata |= 0x04;
 	ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_IFCNTL, &rwdata, 1);
 
@@ -781,15 +778,15 @@ static void ist8801_set_sensitivity(char *value)
 
 	TRI_KEY_LOG("get sensitivity IST8801_REG_CNTL2 = 0x%x\n", rwdata);
 
-	rwdata = ((uint8_t) srs->ratio) + g_ist8801_data->origin_gain;
+	rwdata = ((uint8_t)srs->ratio) + g_ist8801_data->origin_gain;
 	TRI_KEY_LOG("set sensitivity IST8801_REG_GAINCNTL = %d\n", rwdata);
 
-	ist8801_i2c_write_block(g_ist8801_data,
-		IST8801_REG_GAINCNTL, &rwdata, 1);
+	ist8801_i2c_write_block(g_ist8801_data, IST8801_REG_GAINCNTL, &rwdata,
+				1);
 
 	rwdata = 0;
-	err = ist8801_i2c_read_block(g_ist8801_data,
-		IST8801_REG_GAINCNTL, &rwdata, 1);
+	err = ist8801_i2c_read_block(g_ist8801_data, IST8801_REG_GAINCNTL,
+				     &rwdata, 1);
 
 	TRI_KEY_LOG("get sensitivity IST8801_REG_GAINCNTL = %d\n", rwdata);
 
@@ -829,65 +826,64 @@ static int ist8801_reset_device(struct ist8801_data_t *ist8801_data)
 	}
 	if (data != IST8801_VAL_DID) {
 		TRI_KEY_ERR("current device id(0x%02X)", data,
-			"is not IST8801 device id(0x%02X)",
-			 IST8801_VAL_DID);
+			    "is not IST8801 device id(0x%02X)",
+			    IST8801_VAL_DID);
 	}
 
 	data = 0x04;
-	err = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_TSTCNTL, &data, 1);
+	err = ist8801_i2c_write_block(ist8801_data, IST8801_REG_TSTCNTL, &data,
+				      1);
 
 	data = 0x05;
-	err = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_OSRCNTL, &data, 1);
+	err = ist8801_i2c_write_block(ist8801_data, IST8801_REG_OSRCNTL, &data,
+				      1);
 
 	data = 0x00;
 	ist8801_i2c_read_block(ist8801_data, IST8801_REG_GAINCNTL, &data, 1);
 	ist8801_data->origin_gain = data;
 
 	TRI_KEY_LOG("ist8801_data->origin_gain = %d\n",
-			ist8801_data->origin_gain);
+		    ist8801_data->origin_gain);
 
 	data = 0x00;
 	ist8801_i2c_read_block(ist8801_data, IST8801_REG_OSRCNTL, &data, 1);
 	ist8801_data->origin_osr = data;
 
 	TRI_KEY_LOG("ist8801_data->origin_osr = %d\n",
-			ist8801_data->origin_osr);
+		    ist8801_data->origin_osr);
 
 	data = 0x00;
 	ist8801_i2c_read_block(ist8801_data, IST8801_REG_INFO, &data, 1);
 	ist8801_data->origin_info = data;
 
 	TRI_KEY_LOG("ist8801_data->origin_info = %d\n",
-			ist8801_data->origin_info);
+		    ist8801_data->origin_info);
 
 	ist8801_data->reg.map.persint = IST8801_PERSISTENCE_COUNT;
 	data = ist8801_data->reg.map.persint;
-	err = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_PERSINT, &data, 1);
-
+	err = ist8801_i2c_write_block(ist8801_data, IST8801_REG_PERSINT, &data,
+				      1);
 
 	ist8801_data->reg.map.intsrs = IST8801_DETECTION_MODE |
-				ist8801_data->reg.map.range;
+				       ist8801_data->reg.map.range;
 	if (ist8801_data->reg.map.intsrs & IST8801_DETECTION_MODE_INTERRUPT)
 		ist8801_data->reg.map.intsrs |= IST8801_INTERRUPT_TYPE;
 
 	data = ist8801_data->reg.map.intsrs;
-	err = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_INTSRS, &data, 1);
+	err = ist8801_i2c_write_block(ist8801_data, IST8801_REG_INTSRS, &data,
+				      1);
 
 #if DISABLE_TEMP_CONPEN
 	data = 0x01;
-	err = ist8801_i2c_write_block(ist8801_data,
-			IST8801_REG_CHIP_TEST, &data, 1);
+	err = ist8801_i2c_write_block(ist8801_data, IST8801_REG_CHIP_TEST,
+				      &data, 1);
 	if (err < 0) {
 		TRI_KEY_ERR("IST8801_REG_CHIP_TEST failed(%d)", err);
 		return err;
 	}
 #endif
 	err = ist8801_set_operation_mode(ist8801_data,
-			OPERATION_MODE_MEASUREMENT);
+					 OPERATION_MODE_MEASUREMENT);
 	if (err < 0) {
 		TRI_KEY_ERR("ist8801_set_operation_mode was failed(%d)", err);
 		return err;
@@ -906,8 +902,7 @@ static int ist8801_parse_dts(struct device *dev, struct ist8801_data_t *p_data)
 	rc = of_property_read_u32(np, "data-range", &data_range);
 	if (rc) {
 		p_data->reg.map.range = IST8801_SENSITIVITY_TYPE;
-		TRI_KEY_LOG("use default value:0x%x\n",
-				p_data->reg.map.range);
+		TRI_KEY_LOG("use default value:0x%x\n", p_data->reg.map.range);
 	} else {
 		p_data->reg.map.range = (uint8_t)data_range;
 		TRI_KEY_LOG("data-range is 0x%x\n", p_data->reg.map.range);
@@ -933,8 +928,8 @@ static int ist8801_parse_dts(struct device *dev, struct ist8801_data_t *p_data)
 		goto err;
 	}
 
-	p_data->irq_state = pinctrl_lookup_state(p_data->pctrl,
-			"ist8801_hall_up_active");
+	p_data->irq_state =
+		pinctrl_lookup_state(p_data->pctrl, "ist8801_hall_up_active");
 	if (IS_ERR_OR_NULL(p_data->irq_state)) {
 		rc = PTR_ERR(p_data->irq_state);
 		TRI_KEY_ERR("pinctrl_lookup_state, err:%d\n", rc);
@@ -956,8 +951,8 @@ err:
 	return rc;
 };
 
-struct dhall_operations  ist8801_up_ops = {
-	.get_data  = ist8801_get_data,
+struct dhall_operations ist8801_up_ops = {
+	.get_data = ist8801_get_data,
 	.enable_irq = ist8801_enable_irq,
 	.clear_irq = ist8801_clear_irq,
 	.get_irq_state = ist8801_get_irq_state,
@@ -970,7 +965,7 @@ struct dhall_operations  ist8801_up_ops = {
 };
 
 static int ist8801_i2c_probe(struct i2c_client *client,
-			const struct i2c_device_id *id)
+			     const struct i2c_device_id *id)
 {
 	struct ist8801_data_t *p_data = NULL;
 	struct extcon_dev_data *hall_dev = NULL;
@@ -980,7 +975,7 @@ static int ist8801_i2c_probe(struct i2c_client *client,
 	TRI_KEY_LOG("call\n");
 
 	p_data = devm_kzalloc(&client->dev, sizeof(struct ist8801_data_t),
-				GFP_KERNEL);
+			      GFP_KERNEL);
 	if (!p_data) {
 		TRI_KEY_ERR("kernel memory alocation was failed\n");
 		return -ENOMEM;
@@ -1016,8 +1011,8 @@ static int ist8801_i2c_probe(struct i2c_client *client,
 	dev_id = ist8801_get_id(p_data);
 	if (dev_id != IST8801_VAL_DID) {
 		TRI_KEY_ERR("current device id(0x%02x)", dev_id,
-			"is not ist8801 device id(0x%02x)\n",
-			IST8801_VAL_DID);
+			    "is not ist8801 device id(0x%02x)\n",
+			    IST8801_VAL_DID);
 		goto fail;
 	}
 
@@ -1053,12 +1048,14 @@ static int ist8801_i2c_remove(struct i2c_client *client)
 }
 
 static const struct of_device_id ist8801_match[] = {
-	{ .compatible = HALL_IST8801_UP, },
+	{
+		.compatible = HALL_IST8801_UP,
+	},
 	{},
 };
 
 static const struct i2c_device_id ist8801_id[] = {
-	{"hall_ist8801_up", 0 },
+	{ "hall_ist8801_up", 0 },
 	{},
 };
 
@@ -1096,5 +1093,3 @@ module_exit(ist8801_up_exit);
 
 MODULE_DESCRIPTION("ist8801 hallswitch driver");
 MODULE_LICENSE("GPL");
-
-

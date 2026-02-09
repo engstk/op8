@@ -903,6 +903,7 @@ static void update_curr(struct cfs_rq *cfs_rq)
 
 	if (entity_is_task(curr)) {
 		struct task_struct *curtask = task_of(curr);
+
 		trace_sched_stat_runtime(curtask, delta_exec, curr->vruntime);
 		cgroup_account_cputime(curtask, delta_exec);
 		account_group_exec_runtime(curtask, delta_exec);
@@ -1016,6 +1017,7 @@ update_stats_enqueue_sleeper(struct cfs_rq *cfs_rq, struct sched_entity *se)
 				__schedstat_inc(se->statistics.iowait_count);
 				trace_sched_stat_iowait(tsk, delta);
 			}
+
 			trace_sched_stat_blocked(tsk, delta);
 			trace_sched_blocked_reason(tsk);
 
@@ -3926,6 +3928,7 @@ bias_to_this_cpu(struct task_struct *p, int cpu, int start_cpu)
 			cpu_active(cpu);
 	bool start_cap_test = (capacity_orig_of(cpu) >=
 					capacity_orig_of(start_cpu));
+
 	return base_test && start_cap_test;
 }
 
@@ -4412,7 +4415,6 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
 
 	ideal_runtime = sched_slice(cfs_rq, curr);
 	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
-
 	if (delta_exec > ideal_runtime) {
 		resched_curr(rq_of(cfs_rq));
 		/*
@@ -6990,7 +6992,6 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 	int isolated_candidate = -1;
 	unsigned int target_nr_rtg_high_prio = UINT_MAX;
 	bool rtg_high_prio_task = task_rtg_high_prio(p);
-	cpumask_t new_allowed_cpus;
 
 	/*
 	 * In most cases, target_capacity tracks capacity_orig of the most
@@ -7029,12 +7030,11 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 			goto target;
 		}
 	}
+
 	/* Scan CPUs in all SDs */
 	sg = start_sd->groups;
-
-	cpumask_copy(&new_allowed_cpus, &p->cpus_allowed);
 	do {
-		for_each_cpu_and(i, &new_allowed_cpus, sched_group_span(sg)) {
+		for_each_cpu_and(i, &p->cpus_allowed, sched_group_span(sg)) {
 			unsigned long capacity_curr = capacity_curr_of(i);
 			unsigned long capacity_orig = capacity_orig_of(i);
 			unsigned long wake_util, new_util, new_util_cuml;
@@ -7327,6 +7327,7 @@ static void find_best_target(struct sched_domain *sd, cpumask_t *cpus,
 		if (p->in_iowait && !next_group_higher_cap &&
 				most_spare_cap_cpu != -1)
 			break;
+
 		/*
 		 * If we've found a cpu, but the boost is ON_ALL we continue
 		 * visiting other clusters. If the boost is ON_BIG we visit
@@ -7846,6 +7847,7 @@ static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu,
 	} else {
 		select_cpu_candidates(sd, candidates, pd, p, prev_cpu);
 	}
+
 	/* Bail out if no candidate was found. */
 	weight = cpumask_weight(candidates);
 	if (!weight) {
@@ -7926,6 +7928,7 @@ unlock:
 		best_energy_cpu = prev_cpu;
 
 done:
+
 	trace_sched_task_util(p, cpumask_bits(candidates)[0], best_energy_cpu,
 			sync, fbt_env.need_idle, fbt_env.fastpath,
 			placement_boost, start_t, boosted, is_rtg,
@@ -8233,7 +8236,6 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
 	find_matching_se(&se, &pse);
 	update_curr(cfs_rq_of(se));
 	BUG_ON(!pse);
-
 	if (wakeup_preempt_entity(se, pse) == 1) {
 		/*
 		 * Bias pick_next to pick the sched entity that is

@@ -39,7 +39,7 @@ enum fw_opt {
 	FW_OPT_NOFALLBACK =     BIT(5),
 #ifdef OPLUS_FEATURE_TP_BSPFWUPDATE
 	FW_OPT_COMPARE =        BIT(6),
-#endif/*OPLUS_FEATURE_TP_BSPFWUPDATE*/
+#endif /*OPLUS_FEATURE_TP_BSPFWUPDATE*/
 };
 
 enum fw_status {

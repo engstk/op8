@@ -31,7 +31,6 @@ static int msm_fault_handler(struct iommu_domain *domain, struct device *dev,
 	if (iommu->base.handler)
 		return iommu->base.handler(iommu->base.arg, iova, flags);
 	pr_warn_ratelimited("*** fault: iova=%08lx, flags=%d\n", iova, flags);
-
 	return 0;
 }
 

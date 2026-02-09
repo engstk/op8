@@ -449,25 +449,28 @@ void __adsp_send_uevent(struct device *dev, char *reason)
 {
 	int ret_val;
 	char adsp_event[] = "ADSP_EVENT=adsp_crash";
-	char adsp_reason[300] = {0};
+	char adsp_reason[300] = { 0 };
 	char *envp[3];
 
 	envp[0] = (char *)&adsp_event;
-	if(reason){
-		snprintf(adsp_reason, sizeof(adsp_reason),"ADSP_REASON=%s", reason);
-	}else{
-	    snprintf(adsp_reason, sizeof(adsp_reason),"ADSP_REASON=unkown");
+	if (reason) {
+		snprintf(adsp_reason, sizeof(adsp_reason), "ADSP_REASON=%s",
+			 reason);
+	} else {
+		snprintf(adsp_reason, sizeof(adsp_reason),
+			 "ADSP_REASON=unkown");
 	}
 	adsp_reason[299] = 0;
 	envp[1] = (char *)&adsp_reason;
 	envp[2] = 0;
 
-	if(dev){
+	if (dev) {
 		ret_val = kobject_uevent_env(&(dev->kobj), KOBJ_CHANGE, envp);
-		if(!ret_val){
+		if (!ret_val) {
 			pr_info("adsp_crash:kobject_uevent_env success!\n");
-		}else{
-			pr_info("adsp_crash:kobject_uevent_env fail,error=%d!\n", ret_val);
+		} else {
+			pr_info("adsp_crash:kobject_uevent_env fail,error=%d!\n",
+				ret_val);
 		}
 	}
 }
@@ -494,15 +497,15 @@ int pil_do_ramdump(struct pil_desc *desc,
 #endif /*OPLUS_FEATURE_SSR*/
 
 	if (desc->minidump_ss) {
-		pr_info("Minidump : md_ss_toc->md_ss_toc_init is 0x%x\n",
+		pr_debug("Minidump : md_ss_toc->md_ss_toc_init is 0x%x\n",
 			(unsigned int)desc->minidump_ss->md_ss_toc_init);
-		pr_info("Minidump : md_ss_toc->md_ss_enable_status is 0x%x\n",
+		pr_debug("Minidump : md_ss_toc->md_ss_enable_status is 0x%x\n",
 			(unsigned int)desc->minidump_ss->md_ss_enable_status);
-		pr_info("Minidump : md_ss_toc->encryption_status is 0x%x\n",
+		pr_debug("Minidump : md_ss_toc->encryption_status is 0x%x\n",
 			(unsigned int)desc->minidump_ss->encryption_status);
-		pr_info("Minidump : md_ss_toc->ss_region_count is 0x%x\n",
+		pr_debug("Minidump : md_ss_toc->ss_region_count is 0x%x\n",
 			(unsigned int)desc->minidump_ss->ss_region_count);
-		pr_info("Minidump : md_ss_toc->md_ss_smem_regions_baseptr is 0x%x\n",
+		pr_debug("Minidump : md_ss_toc->md_ss_smem_regions_baseptr is 0x%x\n",
 			(unsigned int)
 			desc->minidump_ss->md_ss_smem_regions_baseptr);
 
@@ -516,10 +519,9 @@ int pil_do_ramdump(struct pil_desc *desc,
 			(desc->minidump_ss->md_ss_toc_init == true) &&
 			(desc->minidump_ss->md_ss_enable_status ==
 				MD_SS_ENABLED)) {
-			//Add for skip mini dump encryption
 			if (desc->minidump_ss->encryption_status ==
 			    MD_SS_ENCR_DONE) {
-				pr_info("Dumping Minidump for %s\n",
+				pr_debug("Dumping Minidump for %s\n",
 					desc->name);
 				return pil_do_minidump(desc, minidump_dev);
 			}
@@ -554,9 +556,10 @@ int pil_do_ramdump(struct pil_desc *desc,
 				__func__, desc->name, ret);
 
 #ifdef OPLUS_FEATURE_SSR
-	if(strlen(desc->name) > 0 && (strncmp(desc->name,"adsp",strlen(desc->name)) == 0)) {
+	if (strlen(desc->name) > 0 &&
+	    (strncmp(desc->name, "adsp", strlen(desc->name)) == 0)) {
 		scnprintf(payload, sizeof(payload), "payload@@%s", desc->name);
-		if(desc->dev){
+		if (desc->dev) {
 			__adsp_send_uevent(desc->dev, payload);
 		}
 	}

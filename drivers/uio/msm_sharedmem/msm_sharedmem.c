@@ -78,14 +78,16 @@ static int setup_shared_ram_perms(u32 client_id, phys_addr_t addr, u32 size,
 	int ret = -EINVAL;
 	u32 source_vmlist[1] = {VMID_HLOS};
 
-	#ifndef OPLUS_BUG_STABILITY
+#ifdef OPLUS_BUG_STABILITY
 	//add for nv backup and restore
-	//if (client_id != MPSS_RMTS_CLIENT_ID)
-	//pr_err("invalid client id %u\n", client_id);
-	#else /* OPLUS_BUG_STABILITY */
-	if ((client_id != MPSS_RMTS_CLIENT_ID) && (client_id != MPSS_OEMBACK_CLIENT_ID))
-	#endif /* OPLUS_BUG_STABILITY */
+	if ((client_id != MPSS_RMTS_CLIENT_ID) &&
+	    (client_id != MPSS_OEMBACK_CLIENT_ID)) {
+#else
+	if (client_id != MPSS_RMTS_CLIENT_ID) {
+#endif
+		pr_err("invalid client id %u\n", client_id);
 		return ret;
+	}
 
 	if (vm_nav_path) {
 		int dest_vmids[3] = {VMID_HLOS, VMID_MSS_MSA, VMID_NAV};

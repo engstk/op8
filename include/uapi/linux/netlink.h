@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 #ifndef _UAPI__LINUX_NETLINK_H
 #define _UAPI__LINUX_NETLINK_H
-#define OPLUS_FEATURE_WIFI_LUCKYMONEY
 
 #include <linux/const.h>
 #include <linux/socket.h> /* for __kernel_sa_family_t */
@@ -33,45 +32,7 @@
 #define NETLINK_SOCKEV		23	/* Socket Administrative Events */
 #define NETLINK_INET_DIAG	NETLINK_SOCK_DIAG
 
-#ifdef OPLUS_FEATURE_WIFI_LUCKYMONEY
-#define NETLINK_OPLUS_NF_HOOKS	32
-#endif /* OPLUS_FEATURE_WIFI_LUCKYMONEY */
-
-#ifdef OPLUS_FEATURE_HANS_FREEZE
-#define NETLINK_OPLUS_HANS       29      /* Socket for freezing solution*/
-#endif /*OPLUS_FEATURE_HANS_FREEZE*/
-
-//Add for apps network monitors
-#define NETLINK_OPLUS_APPS_MONITOR  35      /* Apps monitor NETLINK SOCK */
-//#endif /* VENDOR_EDIT */
-
-//#ifdef OPLUS_FEATURE_NWPOWER
-#define NETLINK_OPLUS_NWPOWERSTATE	36	/*OPLUS NW PowerState*/
-//#endif /* OPLUS_FEATURE_NWPOWER */
-
-//#ifdef OPLUS_FEATURE_DATA_EVAL
-#define NETLINK_OPLUS_KERNEL2USER  37      /* kernel data info to user space */
-//#endif /* OPLUS_FEATURE_DATA_EVAL */
-
-//#ifdef OPLUS_FEATURE_DHCP
-#define NETLINK_OPLUS_DHCP 38
-//#endif /* OPLUS_FEATURE_DHCP */
-
-//#ifdef OPLUS_FEATURE_WIFI_CAPCENTER
-#define NETLINK_OPLUS_WIFI_CAP_CENTER_SYNC 39
-#define NETLINK_OPLUS_WIFI_CAP_CENTER_ASYNC 40
-
-//#ifdef OPLUS_FEATURE_IPV6_OPTIMIZE
-#define NETLINK_OPLUS_IPV6_RTO  42
-//#endif /* OPLUS_FEATURE_IPV6_OPTIMIZE */
-
-//#ifdef OPLUS_FEATURE_THEIA
-//should match with oplus_theia/include/TheiaKeventThread.h define
-#define OPLUS_NETLINK_THEIA_KEVENT 43
-
-//#define MAX_LINKS 40
-#define MAX_LINKS 44
-//#endif /* OPLUS_FEATURE_WIFI_CAPCENTER */
+#define MAX_LINKS 32		
 
 struct sockaddr_nl {
 	__kernel_sa_family_t	nl_family;	/* AF_NETLINK	*/
@@ -111,6 +72,7 @@ struct nlmsghdr {
 
 /* Modifiers to DELETE request */
 #define NLM_F_NONREC	0x100	/* Do not delete recursively	*/
+#define NLM_F_BULK	0x200	/* Delete multiple objects	*/
 
 /* Flags for ACK message */
 #define NLM_F_CAPPED	0x100	/* request was capped */
@@ -194,6 +156,7 @@ enum nlmsgerr_attrs {
 #define NETLINK_LIST_MEMBERSHIPS	9
 #define NETLINK_CAP_ACK			10
 #define NETLINK_EXT_ACK			11
+#define NETLINK_GET_STRICT_CHK		12
 
 struct nl_pktinfo {
 	__u32	group;

@@ -2189,13 +2189,8 @@ int sde_rm_reserve(
 		rsvp_cur = _sde_rm_get_rsvp(rm, enc);
 		if (rsvp_nxt) {
 			SDE_ERROR("poll timeout cur %d nxt %d enc %d\n",
-				rsvp_cur->seq, rsvp_nxt->seq, enc->base.id);
-			#ifdef OPLUS_BUG_STABILITY
-			SDE_MM_ERROR("[sde error] poll timeout cur %d nxt %d enc %d\n",
-				rsvp_cur->seq, rsvp_nxt->seq, enc->base.id);
-			#endif
-			SDE_EVT32(rsvp_cur->seq, rsvp_nxt->seq,
-					 enc->base.id, SDE_EVTLOG_ERROR);
+				(rsvp_cur) ? rsvp_cur->seq : -1,
+				rsvp_nxt->seq, enc->base.id);
 			SDE_EVT32(enc->base.id, (rsvp_cur) ? rsvp_cur->seq : -1,
 					rsvp_nxt->seq, SDE_EVTLOG_ERROR);
 			ret = -EINVAL;
@@ -2223,8 +2218,6 @@ int sde_rm_reserve(
 	 *       be discarded if in test-only mode.
 	 * If reservation is successful, and we're not in test-only, then we
 	 * replace the current with the next.
-	 * Poll for rsvp_nxt clear, allow the check_only commit if rsvp_nxt
-	 * gets cleared and bailout if it does not get cleared before timeout.
 	 */
 	rsvp_nxt = kzalloc(sizeof(*rsvp_nxt), GFP_KERNEL);
 	if (!rsvp_nxt) {

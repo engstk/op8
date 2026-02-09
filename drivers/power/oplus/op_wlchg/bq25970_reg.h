@@ -704,7 +704,7 @@
 #define BQ2597X_TDIE_ALM_SHIFT 0
 #define BQ2597X_TDIE_ALM_BASE 30
 
-#define BQ2597X_TDIE_ALM_LSB                                                   \
+#define BQ2597X_TDIE_ALM_LSB                                                                                           \
 	2 /*careful                                                                  \
 multiply is used for calc*/
 

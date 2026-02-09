@@ -18,8 +18,8 @@
 /*#include <soc/oplus/system/oplus_mm_kevent.h>*/
 
 #define FFL_LEVEL_START 2
-#define FFL_LEVEL_END  236
-#define FFLUPRARE  1
+#define FFL_LEVEL_END 236
+#define FFLUPRARE 1
 #define BACKUPRATE 6
 #define FFL_PENDING_END 600
 #define FFL_EXIT_CONTROL 0
@@ -34,17 +34,17 @@ struct kthread_worker oplus_ffl_worker;
 struct kthread_work oplus_ffl_work;
 static DEFINE_MUTEX(oplus_ffl_lock);
 
-
 void oplus_ffl_set(int enable)
 {
 	unsigned char payload[150] = "";
 
 	mutex_lock(&oplus_ffl_lock);
 
-	if(enable != is_ffl_enable) {
+	if (enable != is_ffl_enable) {
 		pr_debug("set_ffl_setting need change is_ffl_enable\n");
 		is_ffl_enable = enable;
-		if ((is_ffl_enable ==FFL_TRIGGLE_CONTROL) && ffl_work_running){
+		if ((is_ffl_enable == FFL_TRIGGLE_CONTROL) &&
+		    ffl_work_running) {
 			oplus_ffl_trigger_finish = false;
 			kthread_queue_work(&oplus_ffl_worker, &oplus_ffl_work);
 		}
@@ -52,7 +52,7 @@ void oplus_ffl_set(int enable)
 
 	mutex_unlock(&oplus_ffl_lock);
 
-	if ((is_ffl_enable ==FFL_TRIGGLE_CONTROL) && ffl_work_running) {
+	if ((is_ffl_enable == FFL_TRIGGLE_CONTROL) && ffl_work_running) {
 		scnprintf(payload, sizeof(payload), "fflset@@%d", enable);
 		/*upload_mm_fb_kevent_to_atlas(OPLUS_DISPLAY_EVENTID_FFLSET, payload);*/
 	}
@@ -71,7 +71,8 @@ int oplus_display_panel_set_ffl(void *buf)
 {
 	unsigned int *enable = buf;
 
-	printk(KERN_INFO "%s oplus_set_ffl_setting = %d\n", __func__, (*enable));
+	printk(KERN_INFO "%s oplus_set_ffl_setting = %d\n", __func__,
+	       (*enable));
 	oplus_ffl_set(*enable);
 
 	return 0;
@@ -80,8 +81,8 @@ int oplus_display_panel_set_ffl(void *buf)
 void oplus_ffl_setting_thread(struct kthread_work *work)
 {
 	struct dsi_display *display = get_main_display();
-	int index =0;
-	int pending =0;
+	int index = 0;
+	int pending = 0;
 	int system_backlight_target;
 	int rc;
 
@@ -99,18 +100,19 @@ void oplus_ffl_setting_thread(struct kthread_work *work)
 	if (!ffl_work_running)
 		return;
 
-	rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_CORE_CLK, DSI_CLK_ON);
+	rc = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				  DSI_CLK_ON);
 	if (rc) {
 		pr_err("[%s] failed to enable DSI core clocks, rc=%d\n",
-				display->name, rc);
+		       display->name, rc);
 		return;
 	}
 
-	for(index = FFL_LEVEL_START;index < FFL_LEVEL_END;index = index + FFLUPRARE ) {
-		if((is_ffl_enable ==FFL_EXIT_CONTROL) ||
-		   (is_ffl_enable ==FFL_EXIT_FULLY_CONTROL) ||
-		   !ffl_work_running)
+	for (index = FFL_LEVEL_START; index < FFL_LEVEL_END;
+	     index = index + FFLUPRARE) {
+		if ((is_ffl_enable == FFL_EXIT_CONTROL) ||
+		    (is_ffl_enable == FFL_EXIT_FULLY_CONTROL) ||
+		    !ffl_work_running)
 			break;
 		/*
 		 * On Onscreenfingerprint mode, max backlight level should be FFL_FP_LEVEL
@@ -124,21 +126,21 @@ void oplus_ffl_setting_thread(struct kthread_work *work)
 		usleep_range(1000, 1100);
 	}
 
-	for(pending =0; pending <= FFL_PENDING_END; pending++)
-	{
-		if((is_ffl_enable ==FFL_EXIT_CONTROL) ||
-		   (is_ffl_enable ==FFL_EXIT_FULLY_CONTROL) ||
-		   !ffl_work_running)
+	for (pending = 0; pending <= FFL_PENDING_END; pending++) {
+		if ((is_ffl_enable == FFL_EXIT_CONTROL) ||
+		    (is_ffl_enable == FFL_EXIT_FULLY_CONTROL) ||
+		    !ffl_work_running)
 			break;
 		usleep_range(8000, 8100);
 	}
 
 	system_backlight_target = display->panel->bl_config.bl_level;
 
-	if(index < system_backlight_target) {
-		for(index; index < system_backlight_target; index =index + BACKUPRATE) {
-			if((is_ffl_enable ==FFL_EXIT_FULLY_CONTROL) ||
-			   !ffl_work_running)
+	if (index < system_backlight_target) {
+		for (index; index < system_backlight_target;
+		     index = index + BACKUPRATE) {
+			if ((is_ffl_enable == FFL_EXIT_FULLY_CONTROL) ||
+			    !ffl_work_running)
 				break;
 			mutex_lock(&display->panel->panel_lock);
 			dsi_panel_set_backlight(display->panel, index);
@@ -146,9 +148,10 @@ void oplus_ffl_setting_thread(struct kthread_work *work)
 			usleep_range(6000, 6100);
 		}
 	} else if (index > system_backlight_target) {
-		for(index; index > system_backlight_target; index =index - BACKUPRATE) {
-			if((is_ffl_enable ==FFL_EXIT_FULLY_CONTROL) ||
-			   !ffl_work_running)
+		for (index; index > system_backlight_target;
+		     index = index - BACKUPRATE) {
+			if ((is_ffl_enable == FFL_EXIT_FULLY_CONTROL) ||
+			    !ffl_work_running)
 				break;
 			mutex_lock(&display->panel->panel_lock);
 			dsi_panel_set_backlight(display->panel, index);
@@ -163,11 +166,11 @@ void oplus_ffl_setting_thread(struct kthread_work *work)
 	oplus_ffl_trigger_finish = true;
 	mutex_unlock(&display->panel->panel_lock);
 
-	rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_CORE_CLK, DSI_CLK_OFF);
+	rc = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				  DSI_CLK_OFF);
 	if (rc) {
 		pr_err("[%s] failed to disable DSI core clocks, rc=%d\n",
-				display->name, rc);
+		       display->name, rc);
 	}
 }
 
@@ -199,8 +202,8 @@ int oplus_ffl_thread_init(void)
 {
 	kthread_init_worker(&oplus_ffl_worker);
 	kthread_init_work(&oplus_ffl_work, &oplus_ffl_setting_thread);
-	oplus_ffl_thread = kthread_run(kthread_worker_fn,
-				      &oplus_ffl_worker, "oplus_ffl");
+	oplus_ffl_thread =
+		kthread_run(kthread_worker_fn, &oplus_ffl_worker, "oplus_ffl");
 
 	if (IS_ERR(oplus_ffl_thread)) {
 		pr_err("fail to start oplus_ffl_thread\n");
@@ -220,4 +223,3 @@ void oplus_ffl_thread_exit(void)
 		oplus_ffl_thread = NULL;
 	}
 }
-

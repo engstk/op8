@@ -29,7 +29,6 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-
 /**
  *  @file stmvl53l1_if.h  vl53l1 kernel driver user interface
  *
@@ -41,7 +40,6 @@
 
 #ifndef STMVL53L1_IF_H
 #define STMVL53L1_IF_H
-
 
 #include "vl53l1_def.h"
 /**
@@ -57,7 +55,7 @@
  * @li stmvl53l1_ranging1
  * @li stmvl53l1_ranging2
  */
-#define VL53L1_MISC_DEV_NAME		"stmvl53l1_ranging"
+#define VL53L1_MISC_DEV_NAME "stmvl53l1_ranging"
 /**
  * register data use for simple/single ranging data @ref VL53L1_IOCTL_GETDATAS
  *
@@ -222,16 +220,15 @@ enum __stmv53l1_parameter_name_e {
  * parameter structure use in @ref VL53L1_IOCTL_PARAMETER
  */
 struct stmvl53l1_parameter {
-	uint32_t is_read;	/*!< [in] 1: Get 0: Set*/
+	uint32_t is_read; /*!< [in] 1: Get 0: Set*/
 	/*!< [in] parameter to set/get
 	 * see @ref stmv53l1_parameter_name_e
 	 */
 	stmv53l1_parameter_name_e name;
-	int32_t value;		/*!< [in/out] value to set /get */
-	int32_t value2;		/*!< [in/out] optional 2nd value */
-	int32_t status;		/*!< [out] status of the operation */
+	int32_t value; /*!< [in/out] value to set /get */
+	int32_t value2; /*!< [in/out] optional 2nd value */
+	int32_t status; /*!< [out] status of the operation */
 };
-
 
 /**
  * roi structure use as  @ref VL53L1_IOCTL_ROI arg
@@ -240,7 +237,7 @@ struct stmvl53l1_parameter {
  * required
  */
 struct stmvl53l1_roi_t {
-	int32_t		is_read;
+	int32_t is_read;
 	/*!<  specify roi transfer direction \n
 	 * @li 0 to get roi
 	 * @li !0 to set roi
@@ -259,7 +256,7 @@ struct stmvl53l1_roi_t {
 		 * [out] number of ROI  copied back to user\n
 		 * @warning 0 will not return any roi datas!
 		 */
-		VL53L1_UserRoi_t    UserRois[1];
+		VL53L1_UserRoi_t UserRois[1];
 		/*!< roi data array length  definition is 1 but
 		 * NumberOfRoi+ FirstRoiToScan in array are required
 		 * and will be effectively copy to/from user space
@@ -278,7 +275,7 @@ struct stmvl53l1_roi_t {
  * @sa stmvl53l1_roi_t for  field details
  */
 struct stmvl53l1_roi_full_t {
-	int32_t		is_read;
+	int32_t is_read;
 	/*!<  specify roi transfer direction \n
 	 * @li 0 to get roi
 	 * @li !0 to set roi
@@ -294,7 +291,7 @@ struct stmvl53l1_roi_full_t {
  * parameter structure use in @ref VL53L1_IOCTL_CALIBRATION_DATA
  */
 struct stmvl53l1_ioctl_calibration_data_t {
-	int32_t is_read;	/*!< [in] 1: Get 0: Set*/
+	int32_t is_read; /*!< [in] 1: Get 0: Set*/
 	VL53L1_CalibrationData_t data;
 	/*!< [in/out] data to set /get. Caller
 	 * should consider this structure as an opaque one
@@ -316,7 +313,7 @@ struct _stmvl531_zone_calibration_data_t {
  * parameter structure use in @ref VL53L1_IOCTL_ZONE_CALIBRATION_DATA
  */
 struct stmvl53l1_ioctl_zone_calibration_data_t {
-	int32_t is_read;	/*!< [in] 1: Get 0: Set*/
+	int32_t is_read; /*!< [in] 1: Get 0: Set*/
 	stmvl531_zone_calibration_data_t data;
 	/*!< [in/out] data to set /get. Caller
 	 * should consider this structure as an opaque one
@@ -327,7 +324,7 @@ struct stmvl53l1_ioctl_zone_calibration_data_t {
  *
  * param1, param2 and param3 not use
  */
-#define VL53L1_CALIBRATION_REF_SPAD		0
+#define VL53L1_CALIBRATION_REF_SPAD 0
 
 /** Select crosstalk calibration in @ref VL53L1_IOCTL_PERFORM_CALIBRATION.
  *
@@ -336,7 +333,7 @@ struct stmvl53l1_ioctl_zone_calibration_data_t {
  * @li VL53L1_XTALKCALIBRATIONMODE_SINGLE_TARGET
  * @li VL53L1_XTALKCALIBRATIONMODE_FULL_ROI
  */
-#define VL53L1_CALIBRATION_CROSSTALK		1
+#define VL53L1_CALIBRATION_CROSSTALK 1
 
 /** Select offset calibration  @ref VL53L1_IOCTL_PERFORM_CALIBRATION.
  * param1 is offset calibration mode. Parameter is either:
@@ -350,7 +347,7 @@ struct stmvl53l1_ioctl_zone_calibration_data_t {
  * zone offset calibration should use VL53L1_CALIBRATION_OFFSET_PER_ZONE
  * instead.
  */
-#define VL53L1_CALIBRATION_OFFSET		2
+#define VL53L1_CALIBRATION_OFFSET 2
 
 /** Select offset calibration per zone @ref VL53L1_IOCTL_PERFORM_CALIBRATION.
  * param1 is offset calibration mode. Parameter is:
@@ -362,25 +359,25 @@ struct stmvl53l1_ioctl_zone_calibration_data_t {
  * VL53L1_IOCTL_ROI before calling VL53L1_IOCTL_PERFORM_CALIBRATION /
  * VL53L1_CALIBRATION_OFFSET combinaison.
  */
-#define VL53L1_CALIBRATION_OFFSET_PER_ZONE	3
+#define VL53L1_CALIBRATION_OFFSET_PER_ZONE 3
 
 /** Select simple offset calibration @ref VL53L1_IOCTL_PERFORM_CALIBRATION.
  * param1 is target distance in mm.
  * param2 and param3 are not used
  */
-#define VL53L1_CALIBRATION_OFFSET_SIMPLE	4
+#define VL53L1_CALIBRATION_OFFSET_SIMPLE 4
 
 /** Select per Vcsel offset calibration @ref VL53L1_IOCTL_PERFORM_CALIBRATION.
  * param1 is target distance in mm.
  * param2 and param3 are not used
  * this calibration is used by the VL53L1_OFFSETCORRECTIONMODE_PERVCSEL mode
  */
-#define VL53L1_CALIBRATION_OFFSET_PER_VCSEL	5
+#define VL53L1_CALIBRATION_OFFSET_PER_VCSEL 5
 
 /** Select no Distance offset calibration @ref VL53L1_IOCTL_PERFORM_CALIBRATION.
  * param1, param2 and param3 are not used
  */
-#define VL53L1_CALIBRATION_OFFSET_ZERO_DISTANCE	6
+#define VL53L1_CALIBRATION_OFFSET_ZERO_DISTANCE 6
 
 /**
  * parameter structure use in @ref VL53L1_IOCTL_PERFORM_CALIBRATION
@@ -420,7 +417,6 @@ struct stmvl53l1_autonomous_config_t {
  * IOCTL definitions
  */
 
-
 /**
  * Start ranging (no argument)
  *
@@ -454,7 +450,7 @@ struct stmvl53l1_autonomous_config_t {
  @endcode
 */
 
-#define VL53L1_IOCTL_START			_IO('p', 0x01)
+#define VL53L1_IOCTL_START _IO('p', 0x01)
 
 /**
  * stop ranging (no argument)
@@ -484,7 +480,7 @@ int smtvl53l1_stop(int fd){
 }
 @endcode
  */
-#define VL53L1_IOCTL_STOP			_IO('p', 0x05)
+#define VL53L1_IOCTL_STOP _IO('p', 0x05)
 
 /**
  * get single ranging data @sa for multi zone/objet
@@ -505,8 +501,7 @@ int smtvl53l1_stop(int fd){
  * Despite it's non "waiting" nature this ioctl may still block/sleep shortly
  * to ensure race free usage acquiring mutex and/or locks.
  */
-#define VL53L1_IOCTL_GETDATAS \
-	_IOWR('p', 0x0b, stmvl531_range_data_t)
+#define VL53L1_IOCTL_GETDATAS _IOWR('p', 0x0b, stmvl531_range_data_t)
 
 /**
  * set or get parameter
@@ -522,9 +517,7 @@ int smtvl53l1_stop(int fd){
  *
  * @note a set parameter may not be absorbed straight aways !
  */
-#define VL53L1_IOCTL_PARAMETER \
-	_IOWR('p', 0x0d, struct stmvl53l1_parameter)
-
+#define VL53L1_IOCTL_PARAMETER _IOWR('p', 0x0d, struct stmvl53l1_parameter)
 
 /**
  * set/get roi
@@ -553,8 +546,7 @@ int smtvl53l1_stop(int fd){
  *  @li ENODEV never device get started and trying to get more rois than set
  *  @li other errno code could be ll driver specific
  */
-#define VL53L1_IOCTL_ROI\
-	_IOWR('p', 0x0e, struct stmvl53l1_roi_t)
+#define VL53L1_IOCTL_ROI _IOWR('p', 0x0e, struct stmvl53l1_roi_t)
 
 /**
  * Get multi object/zone ranging data
@@ -571,8 +563,7 @@ int smtvl53l1_stop(int fd){
  * @li -ENODEV device is not ranging or device has been removed.
  * as in that case MZ data may not be fully valid
  */
-#define VL53L1_IOCTL_MZ_DATA\
-	_IOR('p', 0x0f, VL53L1_MultiRangingData_t)
+#define VL53L1_IOCTL_MZ_DATA _IOR('p', 0x0f, VL53L1_MultiRangingData_t)
 
 /**
  * get single ranging data @sa for multi zone/objet
@@ -588,8 +579,7 @@ int smtvl53l1_stop(int fd){
  * @li -ENODEV device is not ranging or device has been removed.
  * @li -ERESTARTSYS interrupt while sleeping.
  */
-#define VL53L1_IOCTL_GETDATAS_BLOCKING\
-	_IOWR('p', 0x10, stmvl531_range_data_t)
+#define VL53L1_IOCTL_GETDATAS_BLOCKING _IOWR('p', 0x10, stmvl531_range_data_t)
 
 /**
  * Get multi object/zone ranging data
@@ -607,8 +597,7 @@ int smtvl53l1_stop(int fd){
  * @li -ERESTARTSYS interrupt while sleeping.
  * as in that case MZ data may not be fully valid
  */
-#define VL53L1_IOCTL_MZ_DATA_BLOCKING\
-	_IOR('p', 0x11, VL53L1_MultiRangingData_t)
+#define VL53L1_IOCTL_MZ_DATA_BLOCKING _IOR('p', 0x11, VL53L1_MultiRangingData_t)
 
 /**
  * Get / set calibration data
@@ -630,7 +619,7 @@ int smtvl53l1_stop(int fd){
  * @li -EIO. Read last_error to get device error code
  * @li -ENODEV. Device has been removed.
  */
-#define VL53L1_IOCTL_CALIBRATION_DATA\
+#define VL53L1_IOCTL_CALIBRATION_DATA \
 	_IOWR('p', 0x12, struct stmvl53l1_ioctl_calibration_data_t)
 
 /**
@@ -652,7 +641,7 @@ int smtvl53l1_stop(int fd){
  * @li -EIO. Read last_error to get device error code
  * @li -ENODEV. Device has been removed.
  */
-#define VL53L1_IOCTL_ZONE_CALIBRATION_DATA\
+#define VL53L1_IOCTL_ZONE_CALIBRATION_DATA \
 	_IOWR('p', 0x12, struct stmvl53l1_ioctl_zone_calibration_data_t)
 
 /**
@@ -670,7 +659,7 @@ int smtvl53l1_stop(int fd){
  * @li -EIO. Read last_error to get device error code
  * @li -ENODEV. Device has been removed.
  */
-#define VL53L1_IOCTL_PERFORM_CALIBRATION\
+#define VL53L1_IOCTL_PERFORM_CALIBRATION \
 	_IOW('p', 0x13, struct stmvl53l1_ioctl_perform_calibration_t)
 
 /**
@@ -689,7 +678,7 @@ int smtvl53l1_stop(int fd){
  * @li -EBUSY when trying to change configuration while ranging.
  * @li -ENODEV. Device has been removed.
  */
-#define VL53L1_IOCTL_AUTONOMOUS_CONFIG\
+#define VL53L1_IOCTL_AUTONOMOUS_CONFIG \
 	_IOWR('p', 0x14, struct stmvl53l1_autonomous_config_t)
 
 /** @} */ /* ioctl group */

@@ -37,4 +37,4 @@ extern u32 oplus_last_backlight;
 int oplus_display_panel_get_cabc(void *data);
 int oplus_display_panel_set_cabc(void *data);
 
-#endif  /* _OPLUS_DISPLAY_PANEL_CABC_H_ */
+#endif /* _OPLUS_DISPLAY_PANEL_CABC_H_ */

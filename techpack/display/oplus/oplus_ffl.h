@@ -15,7 +15,6 @@
 
 #include <linux/kthread.h>
 
-
 void oplus_ffl_set(int enable);
 
 void oplus_ffl_setting_thread(struct kthread_work *work);

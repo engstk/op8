@@ -746,6 +746,7 @@ asmlinkage __visible void __init start_kernel(void)
 	taskstats_init_early();
 	delayacct_init();
 
+
 	acpi_subsystem_init();
 	arch_post_acpi_subsys_init();
 	sfi_init_late();

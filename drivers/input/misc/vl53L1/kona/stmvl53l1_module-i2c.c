@@ -67,8 +67,8 @@
 #include "stmvl53l1.h"
 #include "cam_cci_ctrl_interface.h"
 
-#define STMVL53L1_SLAVE_ADDR	(0x52>>1)
-#define IGNORE_IRQ  0       //songyt add
+#define STMVL53L1_SLAVE_ADDR (0x52 >> 1)
+#define IGNORE_IRQ 0 //songyt add
 /** @ingroup drv_port
  * @{
  */
@@ -81,7 +81,7 @@
  * most dbg warn err messages goes true main driver macro
  * this one permit some specific debug without activating all main dbg
  */
-#define MODI2C_DEBUG	0
+#define MODI2C_DEBUG 0
 
 /*
  * mutex to handle device i2c address changes. It allow to avoid multiple
@@ -138,7 +138,7 @@ MODULE_PARM_DESC(intr_gpio_nb, "select gpio numer to use for vl53l1 interrupt");
  *
  * @warning use only in scope where i2c_data ptr is present
  **/
-#define modi2c_warn(fmt, ...)\
+#define modi2c_warn(fmt, ...) \
 	dev_WARN(&i2c_data->client->dev, fmt, ##__VA_ARGS__)
 
 /**
@@ -146,16 +146,12 @@ MODULE_PARM_DESC(intr_gpio_nb, "select gpio numer to use for vl53l1 interrupt");
  *
  * @warning use only in scope where i2c_data ptr is present
  */
-#define modi2c_err(fmt, ...)\
-	dev_err(&i2c_data->client->dev, fmt, ##__VA_ARGS__)
-
-
+#define modi2c_err(fmt, ...) dev_err(&i2c_data->client->dev, fmt, ##__VA_ARGS__)
 
 #if MODI2C_DEBUG
-#	define modi2c_dbg(fmt, ...)\
-		pr_devel("%s "fmt"\n", __func__, ##__VA_ARGS__)
+#define modi2c_dbg(fmt, ...) pr_devel("%s " fmt "\n", __func__, ##__VA_ARGS__)
 #else
-#	define modi2c_dbg(...)	(void)0
+#define modi2c_dbg(...) (void)0
 #endif
 
 static int insert_device(void)
@@ -300,7 +296,7 @@ static int get_intr(struct device *dev, struct i2c_data *i2c_data)
 	i2c_data->irq = gpio_to_irq(i2c_data->intr_gpio);
 	if (i2c_data->irq < 0) {
 		vl53l1_errmsg("fail to map GPIO: %d to interrupt:%d\n",
-				i2c_data->intr_gpio, i2c_data->irq);
+			      i2c_data->intr_gpio, i2c_data->irq);
 		goto irq_failed;
 	}
 	i2c_data->io_flag.intr_owned = 1;
@@ -334,7 +330,7 @@ int get_version(struct device *dev, struct i2c_data *i2c_data)
 {
 	int rc = 0;
 	int gpio_val = -1;
-	if (i2c_data->ver_gpio== -1) {
+	if (i2c_data->ver_gpio == -1) {
 		vl53l1_wanrmsg("version gpio disable");
 		goto no_gpio;
 	}
@@ -367,7 +363,7 @@ int stmvl53l1_parse_tree(struct device *dev, struct i2c_data *i2c_data)
 	 * we use devicetree.
 	 */
 	i2c_data->vdd = NULL;
-    i2c_data->xsd = NULL;
+	i2c_data->xsd = NULL;
 	i2c_data->pwren_gpio = -1;
 	i2c_data->xsdn_gpio = -1;
 	i2c_data->intr_gpio = -1;
@@ -381,57 +377,52 @@ int stmvl53l1_parse_tree(struct device *dev, struct i2c_data *i2c_data)
 		i2c_data->vdd = regulator_get(dev, "laser_vdd");
 		if (IS_ERR(i2c_data->vdd) || i2c_data->vdd == NULL) {
 			i2c_data->vdd = NULL;
-			vl53l1_wanrmsg(
-        		"no laser_vdd, fatal.");
+			vl53l1_wanrmsg("no laser_vdd, fatal.");
 		}
-        i2c_data->xsd = regulator_get(dev, "laser_xsd");
+		i2c_data->xsd = regulator_get(dev, "laser_xsd");
 		if (IS_ERR(i2c_data->xsd) || i2c_data->xsd == NULL) {
 			i2c_data->xsd = NULL;
-			vl53l1_wanrmsg(
-        		"no laser_xsd, fatal.");
+			vl53l1_wanrmsg("no laser_xsd, fatal.");
 		}
-		i2c_data->pwren_gpio = of_get_named_gpio_flags(dev->of_node, "pwren-gpio", 0,
-						  &flags);
+		i2c_data->pwren_gpio = of_get_named_gpio_flags(
+			dev->of_node, "pwren-gpio", 0, &flags);
 		if (gpio_is_valid(i2c_data->pwren_gpio)) {
-			vl53l1_dbgmsg("pwren-gpio %d",
-				i2c_data->pwren_gpio);
+			vl53l1_dbgmsg("pwren-gpio %d", i2c_data->pwren_gpio);
 		} else {
 			vl53l1_wanrmsg(
-        		"no regulator, nor power gpio => power ctrl disabled");
+				"no regulator, nor power gpio => power ctrl disabled");
 			i2c_data->pwren_gpio = -1;
 		}
-		i2c_data->xsdn_gpio = of_get_named_gpio_flags(dev->of_node, "xsdn-gpio", 0,
-						  &flags);
+		i2c_data->xsdn_gpio = of_get_named_gpio_flags(
+			dev->of_node, "xsdn-gpio", 0, &flags);
 		if (gpio_is_valid(i2c_data->xsdn_gpio)) {
-			vl53l1_dbgmsg("xsdn-gpio %d",
-				i2c_data->xsdn_gpio);
+			vl53l1_dbgmsg("xsdn-gpio %d", i2c_data->xsdn_gpio);
 		} else {
 			vl53l1_wanrmsg("Unable to find xsdn-gpio %d",
-				i2c_data->xsdn_gpio);
+				       i2c_data->xsdn_gpio);
 			i2c_data->xsdn_gpio = -1;
 		}
-		i2c_data->ver_gpio = of_get_named_gpio_flags(dev->of_node, "ver-gpio", 0,
-						  &flags);
+		i2c_data->ver_gpio = of_get_named_gpio_flags(
+			dev->of_node, "ver-gpio", 0, &flags);
 		if (gpio_is_valid(i2c_data->ver_gpio)) {
-			vl53l1_dbgmsg("version-gpio %d",
-				i2c_data->ver_gpio);
+			vl53l1_dbgmsg("version-gpio %d", i2c_data->ver_gpio);
 		} else {
 			vl53l1_wanrmsg("Unable to find version-gpio %d",
-				i2c_data->ver_gpio);
+				       i2c_data->ver_gpio);
 			i2c_data->ver_gpio = -1;
 		}
 
 #if IGNORE_IRQ
-        i2c_data->intr_gpio = -1;
-        vl53l1_dbgmsg("do not use intr-gpio!");
+		i2c_data->intr_gpio = -1;
+		vl53l1_dbgmsg("do not use intr-gpio!");
 #else
-		i2c_data->intr_gpio = of_get_named_gpio_flags(dev->of_node, "intr-gpio", 0,&flags);
+		i2c_data->intr_gpio = of_get_named_gpio_flags(
+			dev->of_node, "intr-gpio", 0, &flags);
 		if (gpio_is_valid(i2c_data->intr_gpio)) {
-			vl53l1_dbgmsg("intr-gpio %d",
-				i2c_data->intr_gpio);
+			vl53l1_dbgmsg("intr-gpio %d", i2c_data->intr_gpio);
 		} else {
 			vl53l1_wanrmsg("Unable to find intr-gpio %d",
-				i2c_data->intr_gpio);
+				       i2c_data->intr_gpio);
 			i2c_data->intr_gpio = -1;
 		}
 #endif
@@ -441,21 +432,21 @@ int stmvl53l1_parse_tree(struct device *dev, struct i2c_data *i2c_data)
 	rc = get_xsdn(dev, i2c_data);
 	if (rc)
 		goto no_xsdn;
-    if(i2c_data->pwren_gpio != -1){
-	    rc = get_pwren(dev, i2c_data);
-	    if (rc)
-		    goto no_pwren;
-    }
+	if (i2c_data->pwren_gpio != -1) {
+		rc = get_pwren(dev, i2c_data);
+		if (rc)
+			goto no_pwren;
+	}
 	rc = get_intr(dev, i2c_data);
-	if (rc){
-        vl53l1_errmsg("get_intr failed.");
+	if (rc) {
+		vl53l1_errmsg("get_intr failed.");
 		goto no_intr;
-    }
+	}
 	return rc;
 
 no_intr:
 #if IGNORE_IRQ
-    return 0;
+	return 0;
 #else
 	if (i2c_data->vdd) {
 		regulator_put(i2c_data->vdd);
@@ -476,7 +467,7 @@ no_xsdn:
 
 void stmvl53l1_release_gpios(struct i2c_data *i2c_data)
 {
-    if (i2c_data->xsd) {
+	if (i2c_data->xsd) {
 		regulator_put(i2c_data->xsd);
 		i2c_data->xsd = NULL;
 	}
@@ -490,7 +481,7 @@ void stmvl53l1_release_gpios(struct i2c_data *i2c_data)
 }
 
 static int stmvl53l1_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+			   const struct i2c_device_id *id)
 {
 	int rc = 0;
 	struct stmvl53l1_data *vl53l1_data = NULL;
@@ -510,14 +501,14 @@ static int stmvl53l1_probe(struct i2c_client *client,
 	}
 	if (vl53l1_data) {
 		vl53l1_data->client_object =
-				kzalloc(sizeof(struct i2c_data), GFP_KERNEL);
+			kzalloc(sizeof(struct i2c_data), GFP_KERNEL);
 		if (!vl53l1_data)
 			goto done_freemem;
 		i2c_data = (struct i2c_data *)vl53l1_data->client_object;
 	}
 	i2c_data->client = client;
 	i2c_data->vl53l1_data = vl53l1_data;
-	i2c_data->irq = -1 ; /* init to no irq */
+	i2c_data->irq = -1; /* init to no irq */
 
 	/* parse and configure hardware */
 	rc = stmvl53l1_parse_tree(&i2c_data->client->dev, i2c_data);
@@ -612,18 +603,19 @@ static int stmvl53l1_resume(struct device *dev)
 }
 #endif
 
-
 static SIMPLE_DEV_PM_OPS(stmvl53l1_pm_ops, stmvl53l1_suspend, stmvl53l1_resume);
 
 static const struct i2c_device_id stmvl53l1_id[] = {
 	{ STMVL53L1_DRV_NAME, 0 },
-	{ },
+	{},
 };
 MODULE_DEVICE_TABLE(i2c, stmvl53l1_id);
 
 static const struct of_device_id st_stmvl53l1_dt_match[] = {
-	{ .compatible = "st,"STMVL53L1_DRV_NAME, },
-	{ },
+	{
+		.compatible = "st," STMVL53L1_DRV_NAME,
+	},
+	{},
 };
 
 static struct i2c_driver stmvl53l1_driver = {
@@ -648,7 +640,7 @@ static struct i2c_driver stmvl53l1_driver = {
 int stmvl53l1_power_up_i2c(void *object)
 {
 	int rc = 0;
-	struct i2c_data *data = (struct i2c_data *) object;
+	struct i2c_data *data = (struct i2c_data *)object;
 
 	vl53l1_dbgmsg("Enter\n");
 
@@ -660,12 +652,12 @@ int stmvl53l1_power_up_i2c(void *object)
 			return rc;
 		}
 	}
-    if (data->pwren_gpio != -1) {
+	if (data->pwren_gpio != -1) {
 		gpio_set_value(data->pwren_gpio, 1);
 		vl53l1_info("slow power on");
 	} else
 		vl53l1_wanrmsg("no power control");
-    
+
 	if (data->xsd) {
 		rc = regulator_enable(data->xsd);
 		if (rc) {
@@ -673,12 +665,11 @@ int stmvl53l1_power_up_i2c(void *object)
 			return rc;
 		}
 	}
-    if (data->xsdn_gpio != -1) {
+	if (data->xsdn_gpio != -1) {
 		gpio_set_value(data->xsdn_gpio, 1);
 		vl53l1_info("slow power on");
 	} else
 		vl53l1_wanrmsg("no power control");
-
 
 	return rc;
 }
@@ -691,7 +682,7 @@ int stmvl53l1_power_up_i2c(void *object)
  */
 int stmvl53l1_power_down_i2c(void *i2c_object)
 {
-	struct i2c_data *data = (struct i2c_data *) i2c_object;
+	struct i2c_data *data = (struct i2c_data *)i2c_object;
 	int rc = 0;
 
 	vl53l1_dbgmsg("Enter\n");
@@ -700,22 +691,20 @@ int stmvl53l1_power_down_i2c(void *i2c_object)
 	if (data->vdd) {
 		rc = regulator_disable(data->vdd);
 		if (rc)
-			vl53l1_errmsg("reg disable failed. rc=%d\n",
-				rc);
+			vl53l1_errmsg("reg disable failed. rc=%d\n", rc);
 	}
-    if (data->pwren_gpio != -1) {
+	if (data->pwren_gpio != -1) {
 		gpio_set_value(data->pwren_gpio, 0);
 	}
-    
-    if (data->xsd) {
-            rc = regulator_disable(data->xsd);
-            if (rc)
-                vl53l1_errmsg("reg disable failed. rc=%d\n",
-                    rc);
-        }
-        if (data->xsdn_gpio != -1) {
-            gpio_set_value(data->xsdn_gpio, 0);
-        }
+
+	if (data->xsd) {
+		rc = regulator_disable(data->xsd);
+		if (rc)
+			vl53l1_errmsg("reg disable failed. rc=%d\n", rc);
+	}
+	if (data->xsdn_gpio != -1) {
+		gpio_set_value(data->xsdn_gpio, 0);
+	}
 
 	vl53l1_dbgmsg("power off");
 
@@ -740,18 +729,19 @@ static int release_reset(struct i2c_data *data)
 {
 	//struct i2c_client *client = (struct i2c_client *) data->client;
 	int rc = 0;
-	bool is_address_change = false;//client->addr != data->boot_reg;//songyt modify
+	bool is_address_change =
+		false; //client->addr != data->boot_reg;//songyt modify
 
 	if (is_address_change)
 		mutex_lock(&dev_addr_change_mutex);
-    //vl53l1_dbgmsg("reset xsdn pin to 1\n");
+	//vl53l1_dbgmsg("reset xsdn pin to 1\n");
 	gpio_set_value(data->xsdn_gpio, 1);
 	if (is_address_change) {
 		rc = handle_i2c_address_device_change_lock(data);
-		if (rc){
+		if (rc) {
 			gpio_set_value(data->xsdn_gpio, 0);
-            //vl53l1_dbgmsg("reset xsdn pin to 0\n");
-        }
+			//vl53l1_dbgmsg("reset xsdn pin to 0\n");
+		}
 	}
 
 	if (is_address_change)
@@ -769,7 +759,7 @@ static int release_reset(struct i2c_data *data)
 int stmvl53l1_reset_release_i2c(void *i2c_object)
 {
 	int rc;
-	struct i2c_data *data = (struct i2c_data *) i2c_object;
+	struct i2c_data *data = (struct i2c_data *)i2c_object;
 
 	vl53l1_dbgmsg("Enter\n");
 
@@ -783,7 +773,8 @@ int stmvl53l1_reset_release_i2c(void *i2c_object)
 	data->vl53l1_data->is_delay_allowed = false;
 	if (rc) {
 		gpio_set_value(data->xsdn_gpio, 0);
-		vl53l1_errmsg("boot fail with error %d,change xsdn pin to 0", rc);
+		vl53l1_errmsg("boot fail with error %d,change xsdn pin to 0",
+			      rc);
 		data->vl53l1_data->last_error = rc;
 		rc = -EIO;
 	}
@@ -802,7 +793,7 @@ error:
  */
 int stmvl53l1_reset_hold_i2c(void *i2c_object)
 {
-	struct i2c_data *data = (struct i2c_data *) i2c_object;
+	struct i2c_data *data = (struct i2c_data *)i2c_object;
 
 	vl53l1_dbgmsg("Enter\n");
 
@@ -835,7 +826,6 @@ int stmvl53l1_init_i2c(void)
 	return ret;
 }
 
-
 void stmvl53l1_clean_up_i2c(void)
 {
 	if (stm_test_i2c_client) {
@@ -854,8 +844,8 @@ static irqreturn_t stmvl53l1_irq_handler_i2c(int vec, void *info)
 		modi2c_dbg("over");
 	} else {
 		if (!i2c_data->msg_flag.unhandled_irq_vec) {
-			modi2c_warn("unmatching vec %d != %d\n",
-					vec, i2c_data->irq);
+			modi2c_warn("unmatching vec %d != %d\n", vec,
+				    i2c_data->irq);
 			i2c_data->msg_flag.unhandled_irq_vec = 1;
 		}
 	}
@@ -893,10 +883,9 @@ int stmvl53l1_start_intr(void *object, int *poll_mode)
 
 	vl53l1_dbgmsg("to register_irq:%d\n", i2c_data->irq);
 	rc = request_threaded_irq(i2c_data->irq, NULL,
-			stmvl53l1_irq_handler_i2c,
-			IRQF_TRIGGER_FALLING|IRQF_ONESHOT,
-			"vl53l1_interrupt",
-			(void *)i2c_data);
+				  stmvl53l1_irq_handler_i2c,
+				  IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+				  "vl53l1_interrupt", (void *)i2c_data);
 	if (rc) {
 		vl53l1_errmsg("fail to req threaded irq rc=%d\n", rc);
 		*poll_mode = 0;
@@ -910,7 +899,7 @@ int stmvl53l1_start_intr(void *object, int *poll_mode)
 
 void *stmvl53l1_get(void *object)
 {
-	struct i2c_data *data = (struct i2c_data *) object;
+	struct i2c_data *data = (struct i2c_data *)object;
 
 	vl53l1_dbgmsg("Enter\n");
 	kref_get(&data->ref);
@@ -931,7 +920,7 @@ static void memory_release(struct kref *kref)
 
 void stmvl53l1_put(void *object)
 {
-	struct i2c_data *data = (struct i2c_data *) object;
+	struct i2c_data *data = (struct i2c_data *)object;
 
 	vl53l1_dbgmsg("Enter\n");
 	kref_put(&data->ref, memory_release);

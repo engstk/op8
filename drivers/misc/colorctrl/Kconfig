@@ -1,8 +1,0 @@
-config COLOR_CTRL
-	bool "oplus color ctrl device"
-	default n
-	help
-	  Say Y here if you have a color ctrl connected
-	  to your system.
-
-	  If unsure, say N.

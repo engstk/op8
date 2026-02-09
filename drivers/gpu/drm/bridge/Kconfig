@@ -19,7 +19,7 @@ config DRM_ANALOGIX_ANX78XX
 	tristate "Analogix ANX78XX bridge"
 	select DRM_KMS_HELPER
 	select REGMAP_I2C
-	---help---
+	help
 	  ANX78XX is an ultra-low Full-HD SlimPort transmitter
 	  designed for portable devices. The ANX78XX transforms
 	  the HDMI output of an application processor to MyDP
@@ -57,7 +57,7 @@ config DRM_MEGACHIPS_STDPXXXX_GE_B850V3_FW
 	depends on OF
 	select DRM_KMS_HELPER
 	select DRM_PANEL
-	---help---
+	help
           This is a driver for the display bridges of
           GE B850v3 that convert dual channel LVDS
           to DP++. This is used with the i.MX6 imx-ldb
@@ -68,7 +68,7 @@ config DRM_NXP_PTN3460
 	depends on OF
 	select DRM_KMS_HELPER
 	select DRM_PANEL
-	---help---
+	help
 	  NXP PTN3460 eDP-LVDS bridge chip driver.
 
 config DRM_PARADE_PS8622
@@ -78,7 +78,7 @@ config DRM_PARADE_PS8622
 	select DRM_KMS_HELPER
 	select BACKLIGHT_LCD_SUPPORT
 	select BACKLIGHT_CLASS_DEVICE
-	---help---
+	help
 	  Parade eDP-LVDS bridge chip driver.
 
 config DRM_SIL_SII8620
@@ -96,13 +96,13 @@ config DRM_SII902X
 	depends on OF
 	select DRM_KMS_HELPER
 	select REGMAP_I2C
-	---help---
+	help
 	  Silicon Image sii902x bridge chip driver.
 
 config DRM_SII9234
 	tristate "Silicon Image SII9234 HDMI/MHL bridge"
 	depends on OF
-	---help---
+	help
 	  Say Y here if you want support for the MHL interface.
 	  It is an I2C driver, that detects connection of MHL bridge
 	  and starts encapsulation of HDMI signal.
@@ -110,7 +110,7 @@ config DRM_SII9234
 config DRM_THINE_THC63LVD1024
 	tristate "Thine THC63LVD1024 LVDS decoder bridge"
 	depends on OF
-	---help---
+	help
 	  Thine THC63LVD1024 LVDS/parallel converter driver.
 
 config DRM_TOSHIBA_TC358767
@@ -119,14 +119,14 @@ config DRM_TOSHIBA_TC358767
 	select DRM_KMS_HELPER
 	select REGMAP_I2C
 	select DRM_PANEL
-	---help---
+	help
 	  Toshiba TC358767 eDP bridge chip driver.
 
 config DRM_TI_TFP410
 	tristate "TI TFP410 DVI/HDMI bridge"
 	depends on OF
 	select DRM_KMS_HELPER
-	---help---
+	help
 	  Texas Instruments TFP410 DVI/HDMI Transmitter driver
 
 config DRM_LONTIUM_LT9611UXC

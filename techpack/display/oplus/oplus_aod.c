@@ -23,7 +23,7 @@ DEFINE_MUTEX(oplus_aod_light_mode_lock);
 int oplus_display_mode = 1;
 DECLARE_WAIT_QUEUE_HEAD(oplus_aod_wait);
 
-#define RAMLESS_AOD_PAYLOAD_SIZE	100
+#define RAMLESS_AOD_PAYLOAD_SIZE 100
 static struct aod_area oplus_aod_area[RAMLESS_AOD_AREA_NUM];
 
 static bool is_oplus_display_aod_mode(void)
@@ -40,9 +40,10 @@ bool is_oplus_ramless_aod(void)
 }
 #endif /* OPLUS_FEATURE_AOD_RAMLESS */
 
-int __oplus_display_set_aod_light_mode(int mode) {
+int __oplus_display_set_aod_light_mode(int mode)
+{
 	mutex_lock(&oplus_aod_light_mode_lock);
-	if(mode != aod_light_mode) {
+	if (mode != aod_light_mode) {
 		aod_light_mode = mode;
 	}
 	mutex_unlock(&oplus_aod_light_mode_lock);
@@ -82,7 +83,8 @@ int oplus_update_aod_light_mode(void)
 	int ret = 0;
 
 	if (!display || !display->panel) {
-		printk(KERN_INFO "oplus_set_aod_light_mode and main display is null");
+		printk(KERN_INFO
+		       "oplus_set_aod_light_mode and main display is null");
 		return -EINVAL;
 	}
 
@@ -92,20 +94,21 @@ int oplus_update_aod_light_mode(void)
 	}
 
 	if (get_oplus_display_scene() != OPLUS_DISPLAY_AOD_SCENE) {
-		pr_err("%s error get_oplus_display_scene = %d, \n", __func__, get_oplus_display_scene());
+		pr_err("%s error get_oplus_display_scene = %d, \n", __func__,
+		       get_oplus_display_scene());
 		return -EFAULT;
 	}
 	mutex_lock(&display->display_lock);
 	/* enable the clk vote for CMD mode panels */
 	if (display->config.panel_mode == DSI_OP_CMD_MODE) {
-		dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_CORE_CLK, DSI_CLK_ON);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				     DSI_CLK_ON);
 	}
 
 	mutex_lock(&display->panel->panel_lock);
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 	if (display->panel->oplus_priv.is_aod_ramless &&
-		!is_oplus_display_aod_mode()) {
+	    !is_oplus_display_aod_mode()) {
 		pr_err("not support update aod_light_mode at non-aod mode\n");
 		ret = -EINVAL;
 		goto error;
@@ -128,8 +131,8 @@ int oplus_update_aod_light_mode(void)
 error:
 	mutex_unlock(&display->panel->panel_lock);
 	if (display->config.panel_mode == DSI_OP_CMD_MODE) {
-		dsi_display_clk_ctrl(display->dsi_clk_handle,
-			DSI_CORE_CLK, DSI_CLK_OFF);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				     DSI_CLK_OFF);
 	}
 	mutex_unlock(&display->display_lock);
 
@@ -151,14 +154,14 @@ int oplus_panel_get_aod_light_mode(void *buf)
 	unsigned int *aod_mode = buf;
 	(*aod_mode) = aod_light_mode;
 
-	printk(KERN_INFO "oplus_get_aod_light_mode = %d\n",aod_light_mode);
+	printk(KERN_INFO "oplus_get_aod_light_mode = %d\n", aod_light_mode);
 
 	return 0;
 }
 
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 int oplus_ramless_panel_display_atomic_check(struct drm_crtc *crtc,
-	struct drm_crtc_state *state)
+					     struct drm_crtc_state *state)
 {
 	struct dsi_display *display = get_main_display();
 
@@ -184,7 +187,8 @@ int oplus_ramless_panel_update_aod_area_unlock(void)
 	int rc = 0;
 	int i;
 
-	if (!display || !display->panel || !display->panel->oplus_priv.is_aod_ramless)
+	if (!display || !display->panel ||
+	    !display->panel->oplus_priv.is_aod_ramless)
 		return 0;
 
 	if (!dsi_panel_initialized(display->panel))
@@ -194,8 +198,8 @@ int oplus_ramless_panel_update_aod_area_unlock(void)
 
 	/* enable the clk vote for CMD mode panels */
 	if (display->config.panel_mode == DSI_OP_CMD_MODE) {
-		dsi_display_clk_ctrl(display->dsi_clk_handle,
-				DSI_CORE_CLK, DSI_CLK_ON);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				     DSI_CLK_ON);
 	}
 
 	memset(payload, 0, RAMLESS_AOD_PAYLOAD_SIZE);
@@ -203,7 +207,8 @@ int oplus_ramless_panel_update_aod_area_unlock(void)
 	for (i = 0; i < RAMLESS_AOD_AREA_NUM; i++) {
 		struct aod_area *area = &oplus_aod_area[i];
 
-		payload[0] |= (!!area->enable) << (RAMLESS_AOD_AREA_NUM - i - 1);
+		payload[0] |= (!!area->enable)
+			      << (RAMLESS_AOD_AREA_NUM - i - 1);
 		if (area->enable) {
 			int h_start = area->x;
 			int h_block = area->w / 100;
@@ -213,15 +218,17 @@ int oplus_ramless_panel_update_aod_area_unlock(void)
 
 			/* Rect Setting */
 			payload[1 + off] = h_start >> 4;
-			payload[2 + off] = ((h_start & 0xf) << 4) | (h_block & 0xf);
+			payload[2 + off] = ((h_start & 0xf) << 4) |
+					   (h_block & 0xf);
 			payload[3 + off] = v_start >> 4;
-			payload[4 + off] = ((v_start & 0xf) << 4) | ((v_end >> 8) & 0xf);
+			payload[4 + off] = ((v_start & 0xf) << 4) |
+					   ((v_end >> 8) & 0xf);
 			payload[5 + off] = v_end & 0xff;
 
-			/* Mono Setting */
-			#define SET_MONO_SEL(index, shift) \
-			if (i == index) \
-			payload[31] |= area->mono << shift;
+/* Mono Setting */
+#define SET_MONO_SEL(index, shift) \
+	if (i == index)            \
+		payload[31] |= area->mono << shift;
 
 			SET_MONO_SEL(0, 6);
 			SET_MONO_SEL(1, 5);
@@ -229,27 +236,28 @@ int oplus_ramless_panel_update_aod_area_unlock(void)
 			SET_MONO_SEL(3, 2);
 			SET_MONO_SEL(4, 1);
 			SET_MONO_SEL(5, 0);
-			#undef SET_MONO_SEL
+#undef SET_MONO_SEL
 
 			/* Depth Setting */
 			if (i < 4)
-				payload[32] |= (area->bitdepth & 0x3) << ((3 - i) * 2);
+				payload[32] |= (area->bitdepth & 0x3)
+					       << ((3 - i) * 2);
 			else if (i == 4)
 				payload[33] |= (area->bitdepth & 0x3) << 6;
 			else if (i == 5)
 				payload[33] |= (area->bitdepth & 0x3) << 4;
 
-			/* Color Setting */
-			#define SET_COLOR_SEL(index, reg, shift) \
-			if (i == index) \
-			payload[reg] |= (area->color & 0x7) << shift;
+/* Color Setting */
+#define SET_COLOR_SEL(index, reg, shift) \
+	if (i == index)                  \
+		payload[reg] |= (area->color & 0x7) << shift;
 			SET_COLOR_SEL(0, 34, 4);
 			SET_COLOR_SEL(1, 34, 0);
 			SET_COLOR_SEL(2, 35, 4);
 			SET_COLOR_SEL(3, 35, 0);
 			SET_COLOR_SEL(4, 36, 4);
 			SET_COLOR_SEL(5, 36, 0);
-			#undef SET_COLOR_SEL
+#undef SET_COLOR_SEL
 
 			/* Area Gray Setting */
 			payload[37 + i] = area->gray & 0xff;
@@ -260,10 +268,9 @@ int oplus_ramless_panel_update_aod_area_unlock(void)
 	rc = mipi_dsi_dcs_write(mipi_device, 0x81, payload, 43);
 	pr_err("dsi_cmd aod_area[%x] updated \n", payload[0]);
 
-
 	if (display->config.panel_mode == DSI_OP_CMD_MODE) {
-		rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
-				DSI_CORE_CLK, DSI_CLK_OFF);
+		rc = dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+					  DSI_CLK_OFF);
 	}
 
 	return 0;
@@ -274,7 +281,8 @@ int oplus_ramless_panel_get_aod_area(void *buf)
 	struct dsi_display *display = get_main_display();
 	int i, cnt = 0;
 
-	if (!display || !display->panel || !display->panel->oplus_priv.is_aod_ramless)
+	if (!display || !display->panel ||
+	    !display->panel->oplus_priv.is_aod_ramless)
 		return -EINVAL;
 
 	mutex_lock(&display->display_lock);
@@ -285,10 +293,12 @@ int oplus_ramless_panel_get_aod_area(void *buf)
 		struct aod_area *area = &oplus_aod_area[i];
 
 		if (area->enable) {
-			cnt += snprintf(buf + cnt, PAGE_SIZE,
-					"    area[%d]: [%dx%d]-[%dx%d]-%d-%d-%d-%d\n",
-					cnt, area->x, area->y, area->w, area->h,
-					area->color, area->bitdepth, area->mono, area->gray);
+			cnt += snprintf(
+				buf + cnt, PAGE_SIZE,
+				"    area[%d]: [%dx%d]-[%dx%d]-%d-%d-%d-%d\n",
+				cnt, area->x, area->y, area->w, area->h,
+				area->color, area->bitdepth, area->mono,
+				area->gray);
 		}
 	}
 
@@ -298,9 +308,9 @@ int oplus_ramless_panel_get_aod_area(void *buf)
 
 		if (area->enable) {
 			cnt += snprintf(buf + cnt, PAGE_SIZE,
-					"%d %d %d %d %d %d %d %d",
-					area->x, area->y, area->w, area->h,
-					area->color, area->bitdepth, area->mono, area->gray);
+					"%d %d %d %d %d %d %d %d", area->x,
+					area->y, area->w, area->h, area->color,
+					area->bitdepth, area->mono, area->gray);
 		}
 		cnt += snprintf(buf + cnt, PAGE_SIZE, ":");
 	}
@@ -318,7 +328,8 @@ int oplus_ramless_panel_set_aod_area(void *buf)
 	struct panel_aod_area_para *para = (struct panel_aod_area_para *)buf;
 	int i = 0;
 
-	if (!display || !display->panel || !display->panel->oplus_priv.is_aod_ramless) {
+	if (!display || !display->panel ||
+	    !display->panel->oplus_priv.is_aod_ramless) {
 		pr_err("failed to find dsi display or is not ramless\n");
 		return false;
 	}
@@ -326,7 +337,8 @@ int oplus_ramless_panel_set_aod_area(void *buf)
 	mutex_lock(&display->display_lock);
 	mutex_lock(&display->panel->panel_lock);
 
-	memset(oplus_aod_area, 0, sizeof(struct aod_area) * RAMLESS_AOD_AREA_NUM);
+	memset(oplus_aod_area, 0,
+	       sizeof(struct aod_area) * RAMLESS_AOD_AREA_NUM);
 
 	if (para->size > RAMLESS_AOD_AREA_NUM)
 		pr_err("%s warning: para size is overflow\n", __func__);
@@ -341,8 +353,8 @@ int oplus_ramless_panel_set_aod_area(void *buf)
 		area->bitdepth = para->aod_area[i].bitdepth;
 		area->mono = para->aod_area[i].mono;
 		area->gray = para->aod_area[i].gray;
-		pr_info("%s aod_area[%d]: rect[%dx%d-%dx%d]-%d-%d-%d-%d\n", __func__, i,
-			area->x, area->y, area->w, area->h,
+		pr_info("%s aod_area[%d]: rect[%dx%d-%dx%d]-%d-%d-%d-%d\n",
+			__func__, i, area->x, area->y, area->w, area->h,
 			area->color, area->bitdepth, area->mono, area->gray);
 		area->enable = true;
 	}
@@ -359,7 +371,8 @@ int oplus_ramless_panel_get_video(void *buf)
 	struct dsi_display *display = get_main_display();
 	bool is_aod_ramless = false;
 
-	if (display && display->panel && display->panel->oplus_priv.is_aod_ramless)
+	if (display && display->panel &&
+	    display->panel->oplus_priv.is_aod_ramless)
 		is_aod_ramless = true;
 
 	return sprintf(buf, "%d\n", is_aod_ramless ? 1 : 0);
@@ -393,7 +406,8 @@ int oplus_ramless_panel_set_video(void *buf)
 		return 0;
 	}
 
-	if (!dsi_connector || !dsi_connector->state || !dsi_connector->state->crtc) {
+	if (!dsi_connector || !dsi_connector->state ||
+	    !dsi_connector->state->crtc) {
 		pr_err("[%s]: display not ready\n", __func__);
 		return -EINVAL;
 	}
@@ -421,7 +435,7 @@ int oplus_ramless_panel_set_video(void *buf)
 	crtc_state = drm_atomic_get_crtc_state(state, crtc);
 	cur_mode = &crtc->state->mode;
 
-	 {
+	{
 		struct drm_display_mode *set_mode = NULL;
 		struct drm_display_mode *cmd_mode = NULL;
 		struct drm_display_mode *vid_mode = NULL;
@@ -440,7 +454,8 @@ int oplus_ramless_panel_set_video(void *buf)
 		set_mode = oplus_display_mode ? vid_mode : cmd_mode;
 		set_mode = oplus_onscreenfp_status ? vid_mode : set_mode;
 
-		if (set_mode && drm_mode_vrefresh(set_mode) != drm_mode_vrefresh(&crtc_state->mode)) {
+		if (set_mode && drm_mode_vrefresh(set_mode) !=
+					drm_mode_vrefresh(&crtc_state->mode)) {
 			mode_changed = true;
 		} else {
 			mode_changed = false;
@@ -448,9 +463,12 @@ int oplus_ramless_panel_set_video(void *buf)
 
 		if (mode_changed) {
 			for (i = 0; i < priv->num_crtcs; i++) {
-				if (priv->disp_thread[i].crtc_id == crtc->base.id) {
+				if (priv->disp_thread[i].crtc_id ==
+				    crtc->base.id) {
 					if (priv->disp_thread[i].thread)
-						kthread_flush_worker(&priv->disp_thread[i].worker);
+						kthread_flush_worker(
+							&priv->disp_thread[i]
+								 .worker);
 				}
 			}
 
@@ -466,7 +484,8 @@ int oplus_ramless_panel_set_video(void *buf)
 		for (i = 0; i < priv->num_crtcs; i++) {
 			if (priv->disp_thread[i].crtc_id == crtc->base.id) {
 				if (priv->disp_thread[i].thread)
-					kthread_flush_worker(&priv->disp_thread[i].worker);
+					kthread_flush_worker(
+						&priv->disp_thread[i].worker);
 			}
 		}
 	}
@@ -498,14 +517,17 @@ int dsi_panel_parse_oplus_aod_high_brightness_config(struct dsi_panel *panel)
 	if (panel->host_config.ext_bridge_mode)
 		return 0;
 
-	arr = utils->get_property(utils->data, "oplus,dsi-aod-high-brightness", &length);
+	arr = utils->get_property(utils->data, "oplus,dsi-aod-high-brightness",
+				  &length);
 	if (!arr) {
-		DSI_DEBUG("[%s] oplus,dsi-aod-high-brightness not found\n", panel->name);
+		DSI_DEBUG("[%s] oplus,dsi-aod-high-brightness not found\n",
+			  panel->name);
 		return -EINVAL;
 	}
 
 	if (length & 0x1) {
-		DSI_ERR("[%s] oplus,dsi-aod-high-brightness length error\n", panel->name);
+		DSI_ERR("[%s] oplus,dsi-aod-high-brightness length error\n",
+			panel->name);
 		return -EINVAL;
 	}
 
@@ -520,9 +542,10 @@ int dsi_panel_parse_oplus_aod_high_brightness_config(struct dsi_panel *panel)
 	}
 
 	rc = utils->read_u32_array(utils->data, "oplus,dsi-aod-high-brightness",
-					arr_32, length);
+				   arr_32, length);
 	if (rc) {
-		DSI_ERR("[%s] cannot read dsi-aod-high-brightness\n", panel->name);
+		DSI_ERR("[%s] cannot read dsi-aod-high-brightness\n",
+			panel->name);
 		goto error_free_arr_32;
 	}
 
@@ -564,14 +587,17 @@ int dsi_panel_parse_oplus_aod_low_brightness_config(struct dsi_panel *panel)
 	if (panel->host_config.ext_bridge_mode)
 		return 0;
 
-	arr = utils->get_property(utils->data, "oplus,dsi-aod-low-brightness", &length);
+	arr = utils->get_property(utils->data, "oplus,dsi-aod-low-brightness",
+				  &length);
 	if (!arr) {
-		DSI_DEBUG("[%s] oplus,dsi-aod-low-brightness not found\n", panel->name);
+		DSI_DEBUG("[%s] oplus,dsi-aod-low-brightness not found\n",
+			  panel->name);
 		return -EINVAL;
 	}
 
 	if (length & 0x1) {
-		DSI_ERR("[%s] oplus,dsi-aod-low-brightness length error\n", panel->name);
+		DSI_ERR("[%s] oplus,dsi-aod-low-brightness length error\n",
+			panel->name);
 		return -EINVAL;
 	}
 
@@ -586,9 +612,10 @@ int dsi_panel_parse_oplus_aod_low_brightness_config(struct dsi_panel *panel)
 	}
 
 	rc = utils->read_u32_array(utils->data, "oplus,dsi-aod-low-brightness",
-					arr_32, length);
+				   arr_32, length);
 	if (rc) {
-		DSI_ERR("[%s] cannot read dsi-aod-low-brightness\n", panel->name);
+		DSI_ERR("[%s] cannot read dsi-aod-low-brightness\n",
+			panel->name);
 		goto error_free_arr_32;
 	}
 
@@ -622,20 +649,25 @@ void dsi_panel_parse_oplus_aod_config(struct dsi_panel *panel)
 
 	ret = dsi_panel_parse_oplus_aod_high_brightness_config(panel);
 	if (ret) {
-		pr_err("[%s] could not parse aod high brightness config\n", __func__);
+		pr_err("[%s] could not parse aod high brightness config\n",
+		       __func__);
 	}
 
 	ret = dsi_panel_parse_oplus_aod_low_brightness_config(panel);
 	if (ret) {
-		pr_err("[%s] could not parse aod low brightness config\n", __func__);
+		pr_err("[%s] could not parse aod low brightness config\n",
+		       __func__);
 	}
 
-	ret = utils->read_u32(utils->data, "oplus,dsi-aod-low-brightness-threshold",
-			&panel->oplus_priv.aod_low_brightness_threshold);
+	ret = utils->read_u32(utils->data,
+			      "oplus,dsi-aod-low-brightness-threshold",
+			      &panel->oplus_priv.aod_low_brightness_threshold);
 	if (ret) {
-		pr_err("[%s]failed get panel parameter: oplus,dsi-aod-low-brightness-threshold\n", __func__);
+		pr_err("[%s]failed get panel parameter: oplus,dsi-aod-low-brightness-threshold\n",
+		       __func__);
 		panel->oplus_priv.aod_low_brightness_threshold = 0;
 	} else {
-		DSI_INFO("oplus,dsi-aod-low-brightness-threshold: %d", panel->oplus_priv.aod_low_brightness_threshold);
+		DSI_INFO("oplus,dsi-aod-low-brightness-threshold: %d",
+			 panel->oplus_priv.aod_low_brightness_threshold);
 	}
 }

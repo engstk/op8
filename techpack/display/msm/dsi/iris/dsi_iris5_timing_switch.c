@@ -15,7 +15,6 @@
 #include "dsi_iris5_lp.h"
 #include "dsi_iris5_log.h"
 
-
 enum {
 	SWITCH_ABYP_TO_ABYP = 0,
 	SWITCH_ABYP_TO_PT,
@@ -24,12 +23,10 @@ enum {
 	SWITCH_NONE,
 };
 
-#define SWITCH_CASE(case)[SWITCH_##case] = #case
-static const char * const switch_case_name[] = {
-	SWITCH_CASE(ABYP_TO_ABYP),
-	SWITCH_CASE(ABYP_TO_PT),
-	SWITCH_CASE(PT_TO_ABYP),
-	SWITCH_CASE(PT_TO_PT),
+#define SWITCH_CASE(case) [SWITCH_##case] = #case
+static const char *const switch_case_name[] = {
+	SWITCH_CASE(ABYP_TO_ABYP), SWITCH_CASE(ABYP_TO_PT),
+	SWITCH_CASE(PT_TO_ABYP),   SWITCH_CASE(PT_TO_PT),
 	SWITCH_CASE(NONE),
 };
 #undef SWITCH_CASE
@@ -40,8 +37,8 @@ void iris_init_timing_switch(void)
 	pcfg->switch_case = SWITCH_ABYP_TO_ABYP;
 }
 
-static int32_t _iris_parse_timing_switch_seq(
-		struct device_node *np, struct iris_cfg *pcfg)
+static int32_t _iris_parse_timing_switch_seq(struct device_node *np,
+					     struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 	const uint8_t *key = "pxlw,iris-timing-switch-sequence";
@@ -62,8 +59,8 @@ static int32_t _iris_parse_timing_switch_seq(
 	return rc;
 }
 
-int32_t iris_parse_timing_switch_info(
-		struct device_node *np, struct iris_cfg *pcfg)
+int32_t iris_parse_timing_switch_info(struct device_node *np,
+				      struct iris_cfg *pcfg)
 {
 	int32_t rc = 0;
 
@@ -73,7 +70,8 @@ int32_t iris_parse_timing_switch_info(
 
 	rc = _iris_parse_timing_switch_seq(np, pcfg);
 	if (rc)
-		IRIS_LOGI("%s, [optional] have not timing switch sequence", __func__);
+		IRIS_LOGI("%s, [optional] have not timing switch sequence",
+			  __func__);
 
 	return 0;
 }
@@ -89,8 +87,8 @@ void iris_send_timing_switch_pkt(void)
 	if ((refresh_rate == HIGH_FREQ) && (v_active == FHD_H))
 		pseq = &pcfg->timing_switch_seq_1;
 
-	IRIS_LOGI("%s, cmd list index: %d, v res: %d, fps: %d",
-			__func__, pcfg->cmd_list_index, v_active, refresh_rate);
+	IRIS_LOGI("%s, cmd list index: %d, v res: %d, fps: %d", __func__,
+		  pcfg->cmd_list_index, v_active, refresh_rate);
 
 	if (pseq == NULL) {
 		IRIS_LOGE("%s(), seq is NULL", __func__);
@@ -102,14 +100,18 @@ void iris_send_timing_switch_pkt(void)
 	udelay(100);
 }
 
-static uint32_t _iris_switch_case(const u32 refresh_rate, const u32 frame_height)
+static uint32_t _iris_switch_case(const u32 refresh_rate,
+				  const u32 frame_height)
 {
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
-	bool cur_pt_mode = (pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE);
+	bool cur_pt_mode =
+		(pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE);
 	u32 switch_mode = SWITCH_ABYP_TO_ABYP;
 
-	IRIS_LOGD("%s(), refersh rate %u, frame height %u, iris current mode '%s'",
-			__func__, refresh_rate, frame_height, cur_pt_mode ? "PT" : "ABYP");
+	IRIS_LOGD(
+		"%s(), refersh rate %u, frame height %u, iris current mode '%s'",
+		__func__, refresh_rate, frame_height,
+		cur_pt_mode ? "PT" : "ABYP");
 
 	if (frame_height == QHD_H) {
 		pcfg->cmd_list_index = IRIS_DTSI0_PIP_IDX;
@@ -135,11 +137,11 @@ bool iris_is_resolution_switched(struct dsi_mode_info *mode_info)
 	struct iris_cfg *pcfg = iris_get_cfg();
 
 	IRIS_LOGD("%s(), switch resolution from %ux%u to %ux%u", __func__,
-			pcfg->cur_h_active, pcfg->cur_v_active,
-			mode_info->h_active, mode_info->v_active);
+		  pcfg->cur_h_active, pcfg->cur_v_active, mode_info->h_active,
+		  mode_info->v_active);
 
-	if (pcfg->cur_h_active != mode_info->h_active
-			|| pcfg->cur_v_active != mode_info->v_active) {
+	if (pcfg->cur_h_active != mode_info->h_active ||
+	    pcfg->cur_v_active != mode_info->v_active) {
 		pcfg->cur_h_active = mode_info->h_active;
 		pcfg->cur_v_active = mode_info->v_active;
 
@@ -155,26 +157,26 @@ static void _iris_switch_framerate(void)
 	u32 framerate = pcfg->panel->cur_mode->timing.refresh_rate;
 	bool high = false;
 
-	if ((framerate == HIGH_FREQ)
-			&& (pcfg->panel->cur_mode->timing.v_active == FHD_H))
+	if ((framerate == HIGH_FREQ) &&
+	    (pcfg->panel->cur_mode->timing.v_active == FHD_H))
 		high = true;
 
-	iris_send_ipopt_cmds(IRIS_IP_SYS, high ? 0xA1:0xA0);
+	iris_send_ipopt_cmds(IRIS_IP_SYS, high ? 0xA1 : 0xA0);
 	udelay(100);
-	iris_send_ipopt_cmds(IRIS_IP_RX, high ? 0xE1:0xE0);
-	iris_send_ipopt_cmds(IRIS_IP_TX, high ? 0x4:0x0);
+	iris_send_ipopt_cmds(IRIS_IP_RX, high ? 0xE1 : 0xE0);
+	iris_send_ipopt_cmds(IRIS_IP_TX, high ? 0x4 : 0x0);
 	iris_set_out_frame_rate(framerate);
-	iris_send_ipopt_cmds(IRIS_IP_RX, high ? 0xF2:0xF1);
+	iris_send_ipopt_cmds(IRIS_IP_RX, high ? 0xF2 : 0xF1);
 #if defined(PXLW_IRIS_DUAL)
-	iris_send_ipopt_cmds(IRIS_IP_RX_2, high ? 0xF2:0xF1);
-	iris_send_ipopt_cmds(IRIS_IP_BLEND, high ? 0xF1:0xF0);
+	iris_send_ipopt_cmds(IRIS_IP_RX_2, high ? 0xF2 : 0xF1);
+	iris_send_ipopt_cmds(IRIS_IP_BLEND, high ? 0xF1 : 0xF0);
 #endif
 	udelay(2000); //delay 2ms
 }
 
 int iris_post_switch(struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *switch_cmds,
-		struct dsi_mode_info *mode_info)
+		     struct dsi_panel_cmd_set *switch_cmds,
+		     struct dsi_mode_info *mode_info)
 {
 	int rc = 0;
 	struct iris_cfg *pcfg = iris_get_cfg();
@@ -184,9 +186,10 @@ int iris_post_switch(struct dsi_panel *panel,
 	u32 frame_height = mode_info->v_active;
 	u32 switch_case = _iris_switch_case(refresh_rate, frame_height);
 
-	IRIS_LOGI("%s(), post switch to %ux%u@%uHz, cmd list %u, switch case %s",
-			__func__, frame_width, frame_height, refresh_rate,
-			pcfg->cmd_list_index, switch_case_name[switch_case]);
+	IRIS_LOGI(
+		"%s(), post switch to %ux%u@%uHz, cmd list %u, switch case %s",
+		__func__, frame_width, frame_height, refresh_rate,
+		pcfg->cmd_list_index, switch_case_name[switch_case]);
 
 	pcfg->switch_case = switch_case;
 
@@ -194,22 +197,26 @@ int iris_post_switch(struct dsi_panel *panel,
 		return 0;
 
 	if (lightup_opt & 0x8) {
-		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds, switch_cmds->count, switch_cmds->state);
+		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds,
+					switch_cmds->count, switch_cmds->state);
 		IRIS_LOGI("%s(), post switch Force ABYP", __func__);
 		return 0;
 	}
 
 	if (iris_get_abyp_mode(panel) == PASS_THROUGH_MODE)
-		rc = iris_pt_send_panel_cmd(panel, &(panel->cur_mode->priv_info->cmd_sets[DSI_CMD_SET_POST_TIMING_SWITCH]));
+		rc = iris_pt_send_panel_cmd(
+			panel,
+			&(panel->cur_mode->priv_info
+				  ->cmd_sets[DSI_CMD_SET_POST_TIMING_SWITCH]));
 	else
-		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds, switch_cmds->count, switch_cmds->state);
+		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds,
+					switch_cmds->count, switch_cmds->state);
 
 	IRIS_LOGD("%s(), return %d", __func__, rc);
 	return 0;
 }
 
-int iris_switch(struct dsi_panel *panel,
-		struct dsi_panel_cmd_set *switch_cmds,
+int iris_switch(struct dsi_panel *panel, struct dsi_panel_cmd_set *switch_cmds,
 		struct dsi_mode_info *mode_info)
 {
 	int rc = 0;
@@ -229,16 +236,19 @@ int iris_switch(struct dsi_panel *panel,
 		ktime = ktime_get();
 
 	if (lightup_opt & 0x8) {
-		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds, switch_cmds->count, switch_cmds->state);
-		IRIS_LOGI("%s(), switch between ABYP and ABYP, total cost '%d us'",
-				__func__,
-				(u32)(ktime_to_us(ktime_get()) - ktime_to_us(ktime)));
+		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds,
+					switch_cmds->count, switch_cmds->state);
+		IRIS_LOGI(
+			"%s(), switch between ABYP and ABYP, total cost '%d us'",
+			__func__,
+			(u32)(ktime_to_us(ktime_get()) - ktime_to_us(ktime)));
 		IRIS_LOGW("%s(), force ABYP switch.", __func__);
 		return rc;
 	}
 
 	if (switch_case == SWITCH_ABYP_TO_ABYP)
-		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds, switch_cmds->count, switch_cmds->state);
+		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds,
+					switch_cmds->count, switch_cmds->state);
 
 	if (switch_case == SWITCH_PT_TO_PT) {
 		rc = iris_pt_send_panel_cmd(panel, switch_cmds);
@@ -246,16 +256,17 @@ int iris_switch(struct dsi_panel *panel,
 	}
 
 	if (switch_case == SWITCH_PT_TO_ABYP) {
-		iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE, false, true);
-		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds, switch_cmds->count, switch_cmds->state);
+		iris_abypass_switch_proc(pcfg->display, ANALOG_BYPASS_MODE,
+					 false, true);
+		rc = iris_dsi_send_cmds(panel, switch_cmds->cmds,
+					switch_cmds->count, switch_cmds->state);
 	}
 
 	// Update panel timing
 	iris_is_resolution_switched(mode_info);
 
-	IRIS_LOGI("%s(), return %d, total cost '%d us'",
-			__func__,
-			rc, (u32)(ktime_to_us(ktime_get()) - ktime_to_us(ktime)));
+	IRIS_LOGI("%s(), return %d, total cost '%d us'", __func__, rc,
+		  (u32)(ktime_to_us(ktime_get()) - ktime_to_us(ktime)));
 
 	return 0;
 }
@@ -267,15 +278,14 @@ uint32_t iris_get_cont_type_with_timing_switch(struct dsi_panel *panel)
 	uint32_t switch_case = SWITCH_NONE;
 
 	if (pcfg->valid >= PARAM_PARSED)
-		switch_case = _iris_switch_case(
-				panel->cur_mode->timing.refresh_rate,
-				panel->cur_mode->timing.v_active);
+		switch_case =
+			_iris_switch_case(panel->cur_mode->timing.refresh_rate,
+					  panel->cur_mode->timing.v_active);
 
-	IRIS_LOGI("%s(), switch case: %s, rate: %d, v: %d",
-			__func__,
-			switch_case_name[switch_case],
-			panel->cur_mode->timing.refresh_rate,
-			panel->cur_mode->timing.v_active);
+	IRIS_LOGI("%s(), switch case: %s, rate: %d, v: %d", __func__,
+		  switch_case_name[switch_case],
+		  panel->cur_mode->timing.refresh_rate,
+		  panel->cur_mode->timing.v_active);
 
 	switch (switch_case) {
 	case SWITCH_PT_TO_PT:

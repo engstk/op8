@@ -1827,8 +1827,9 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 #ifdef OPLUS_FEATURE_CHG_BASIC
 				if (gadget->speed >= USB_SPEED_SUPER) {
 					cdev->desc.bcdUSB = cpu_to_le16(0x0320);
-				cdev->desc.bMaxPacketSize0 = 9;
-				} else if (gadget->lpm_capable || enable_l1_for_hs)  {
+					cdev->desc.bMaxPacketSize0 = 9;
+				} else if (gadget->lpm_capable ||
+					   enable_l1_for_hs) {
 					cdev->desc.bcdUSB = cpu_to_le16(0x0210);
 				} else {
 					cdev->desc.bcdUSB = cpu_to_le16(0x0200);
@@ -1879,7 +1880,8 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			break;
 		case USB_DT_BOS:
 #ifdef OPLUS_FEATURE_CHG_BASIC
-			if ((gadget_is_superspeed(gadget) && (gadget->speed >= USB_SPEED_SUPER)) ||
+			if ((gadget_is_superspeed(gadget) &&
+			     (gadget->speed >= USB_SPEED_SUPER)) ||
 #else
 			if (gadget_is_superspeed(gadget) ||
 #endif

@@ -1722,19 +1722,20 @@ VA_MACRO_DAPM_ENUM_EXT(va_smic3_v3, BOLERO_CDC_VA_INP_MUX_ADC_MUX3_CFG0,
 
 #ifdef OPLUS_FEATURE_MIC_VA_MIC_CLK_SWITCH
 static int va_macro_mic_clk_get(struct snd_kcontrol *kcontrol,
-				      struct snd_ctl_elem_value *ucontrol)
+				struct snd_ctl_elem_value *ucontrol)
 {
 	if (!va_priv_golbal)
 		return -EINVAL;
 
-	ucontrol->value.integer.value[0] = VA_MACRO_CLK_DIV_16 - va_priv_golbal->dmic_clk_div;
-	pr_debug("%s: va mic clk = %ld\n",
-		 __func__, ucontrol->value.integer.value[0]);
-    return 0;
+	ucontrol->value.integer.value[0] =
+		VA_MACRO_CLK_DIV_16 - va_priv_golbal->dmic_clk_div;
+	pr_debug("%s: va mic clk = %ld\n", __func__,
+		 ucontrol->value.integer.value[0]);
+	return 0;
 }
 
 static int va_macro_mic_clk_put(struct snd_kcontrol *kcontrol,
-				      struct snd_ctl_elem_value *ucontrol)
+				struct snd_ctl_elem_value *ucontrol)
 {
 	if (!va_priv_golbal)
 		return -EINVAL;
@@ -1761,13 +1762,13 @@ static int va_macro_mic_clk_put(struct snd_kcontrol *kcontrol,
 	default:
 		break;
 	}
-	pr_debug("%s: dmic_clk_div = %d\n",
-		 __func__, va_priv_golbal->dmic_clk_div);
-    return 0;
+	pr_debug("%s: dmic_clk_div = %d\n", __func__,
+		 va_priv_golbal->dmic_clk_div);
+	return 0;
 }
 
-static const char *const mic_clk_rate_text[] = {"0P6MHZ", "1P2MHZ", "1P6MHZ", "2P4MHZ",
-	"3P2MHZ", "4P8MHZ"};
+static const char *const mic_clk_rate_text[] = { "0P6MHZ", "1P2MHZ", "1P6MHZ",
+						 "2P4MHZ", "3P2MHZ", "4P8MHZ" };
 
 static const struct soc_enum va_mic_clk_enum =
 	SOC_ENUM_SINGLE_EXT(6, mic_clk_rate_text);
@@ -3230,6 +3231,7 @@ static int va_macro_probe(struct platform_device *pdev)
 #ifdef OPLUS_FEATURE_MIC_VA_MIC_CLK_SWITCH
 	va_priv_golbal = va_priv;
 #endif
+
 	mutex_init(&va_priv->mclk_lock);
 	dev_set_drvdata(&pdev->dev, va_priv);
 	va_macro_init_ops(&ops, va_io_base, va_without_decimation);

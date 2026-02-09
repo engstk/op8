@@ -11,7 +11,7 @@
 
 /* option IDs */
 #define ID_SYS_PMU_CTRL 0xf0
-#define ID_SYS_ULPS	0xf1
+#define ID_SYS_ULPS 0xf1
 #define ID_SYS_MEM_REPAIR 0x07
 
 #define ID_SYS_ENTER_ABYP 0x0104
@@ -25,11 +25,11 @@
 #define REG_ADDR_PMU_STATUS 0xf0000094
 #define IRIS_RUN_STATUS 0xf1240030
 #define IRIS_REG_UPDATE 0xf1250000
-#define DISP_CMD_SHAWDOW_EN_MASK  0x00000040
+#define DISP_CMD_SHAWDOW_EN_MASK 0x00000040
 #define DISP_CMD_SHAWDOW_EN_SHIFT 6
 
 #define IRIS_REG_INTSTAT_RAW 0xf189ffe4
-#define TXFALSE_CONTROL_MASK  0x00040000
+#define TXFALSE_CONTROL_MASK 0x00040000
 #define PQ_SWITCH_MASK BIT(3)
 
 enum iris_pmu_domain {
@@ -100,7 +100,8 @@ int iris_pmu_lce_set(bool on);
 void iris_lce_dynamic_pmu_mask_set(bool enable);
 
 /* Switch PT and Bypass mode */
-bool iris_abypass_switch_proc(struct dsi_display *display, int mode, bool pending, bool first);
+bool iris_abypass_switch_proc(struct dsi_display *display, int mode,
+			      bool pending, bool first);
 
 void iris_lce_power_status_set(bool enable);
 

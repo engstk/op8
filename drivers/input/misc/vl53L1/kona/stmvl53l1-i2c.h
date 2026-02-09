@@ -48,7 +48,7 @@ struct i2c_data {
 
 	/*!< if null no regulator use for power ctrl */
 	struct regulator *vdd;
-    struct regulator *xsd;
+	struct regulator *xsd;
 
 	/*!< power enable gpio number
 	 *
@@ -81,10 +81,10 @@ struct i2c_data {
 
 	/*!< is set if above irq gpio got acquired */
 	struct i2d_data_flags_t {
-		unsigned pwr_owned:1; /*!< set if pwren gpio is owned*/
-		unsigned xsdn_owned:1; /*!< set if sxdn  gpio is owned*/
-		unsigned intr_owned:1; /*!< set if intr  gpio is owned*/
-		unsigned intr_started:1; /*!< set if irq is hanlde  */
+		unsigned pwr_owned : 1; /*!< set if pwren gpio is owned*/
+		unsigned xsdn_owned : 1; /*!< set if sxdn  gpio is owned*/
+		unsigned intr_owned : 1; /*!< set if intr  gpio is owned*/
+		unsigned intr_started : 1; /*!< set if irq is hanlde  */
 	} io_flag;
 
 	/** the irq vectore assigned to gpio
@@ -93,13 +93,13 @@ struct i2c_data {
 	int irq;
 
 	struct msgtctrl_t {
-		unsigned unhandled_irq_vec:1;
+		unsigned unhandled_irq_vec : 1;
 	} msg_flag;
 };
 
 #ifdef USE_CAMERA_CCI
 int __init stmvl53l1_init_cci(void);
-void __exit stmvl53l1_exit_cci(void*);
+void __exit stmvl53l1_exit_cci(void *);
 int stmvl53l1_enable_pinctrl(void);
 int stmvl53l1_disable_pinctrl(void);
 #else

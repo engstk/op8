@@ -4,10 +4,11 @@ config OPLUS_FEATURE_SENSOR_CFG
 	help
 	  To compile this driver as a module, set M in kernel build config
 	  module will be called oplus_sensor.
+
 config SSC_INTERACTIVE
-    tristate "config ssc interactive"
-    help
-        define this config to send lcd info to slpi
+	tristate "config ssc interactive"
+	help
+	  define this config to send lcd info to slpi
 
 config OPLUS_SENSOR_FB_QC
 	tristate "sensor feedback config for qcom"

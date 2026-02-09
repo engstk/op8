@@ -2261,7 +2261,6 @@ static void _sde_dspp_setup_blocks(struct sde_mdss_cfg *sde_cfg,
 		sblk->sixzone.len = 0;
 		set_bit(SDE_DSPP_VLUT, &dspp->features);
 	}
-
 }
 
 static int sde_rot_parse_dt(struct device_node *np,

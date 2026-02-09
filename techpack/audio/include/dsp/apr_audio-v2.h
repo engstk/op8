@@ -11152,25 +11152,26 @@ struct afe_spkr_prot_calib_get_resp {
 #ifdef OPLUS_ARCH_EXTENDS
 #ifdef CONFIG_SND_SOC_MAX98937
 /*Maxim DSM module and parameters IDs*/
-#define AFE_RX_TOPOLOGY_ID_DSM                              0x10001061
-#define AFE_TX_TOPOLOGY_ID_DSM                              0x10001060
-#define AFE_MODULE_DSM_TX                                   0x10001068
-#define AFE_MODULE_DSM_RX                                   0x10001062
-#define AFE_PARAM_ID_DSM_ENABLE                             0x10001063
-#define AFE_PARAM_ID_CALIB                                  0x10001065
-#define AFE_PARAM_ID_DSM_CFG                                0x10001066
-#define AFE_PARAM_ID_DSM_INFO                               0x10001067
-#define AFE_PARAM_ID_DSM_STAT                               0x10001069
+#define AFE_RX_TOPOLOGY_ID_DSM 0x10001061
+#define AFE_TX_TOPOLOGY_ID_DSM 0x10001060
+#define AFE_MODULE_DSM_TX 0x10001068
+#define AFE_MODULE_DSM_RX 0x10001062
+#define AFE_PARAM_ID_DSM_ENABLE 0x10001063
+#define AFE_PARAM_ID_CALIB 0x10001065
+#define AFE_PARAM_ID_DSM_CFG 0x10001066
+#define AFE_PARAM_ID_DSM_INFO 0x10001067
+#define AFE_PARAM_ID_DSM_STAT 0x10001069
 
-#define DSM_RX_PORT_ID      AFE_PORT_ID_TERTIARY_MI2S_RX
-#define DSM_TX_PORT_ID      AFE_PORT_ID_TERTIARY_MI2S_TX
+#define DSM_RX_PORT_ID AFE_PORT_ID_TERTIARY_MI2S_RX
+#define DSM_TX_PORT_ID AFE_PORT_ID_TERTIARY_MI2S_TX
 
 struct afe_dsm_param_array {
-    uint32_t    data[112];
+	uint32_t data[112];
 } __packed;
+
 struct afe_dsm_get_param {
 	struct param_hdr_v3 pdata;
-    struct afe_dsm_param_array param;
+	struct afe_dsm_param_array param;
 } __packed;
 
 struct afe_dsm_get_resp {
@@ -11178,7 +11179,6 @@ struct afe_dsm_get_resp {
 	struct param_hdr_v3 pdata;
 	struct afe_dsm_param_array param;
 } __packed;
-
 #endif
 #endif /* OPLUS_ARCH_EXTENDS */
 

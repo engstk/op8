@@ -25,25 +25,5 @@ obj-$(CONFIG_ARCH_U8500)	+= ux500/
 obj-$(CONFIG_PLAT_VERSATILE)	+= versatile/
 obj-y				+= xilinx/
 obj-$(CONFIG_ARCH_ZX)		+= zte/
-obj-y                           += oplus/
-#ifdef VENDOR_EDIT
-obj-$(CONFIG_OPLUS_SYSTEM_KERNEL)	+= oplus/system/
-#endif /* VENDOR_EDIT */
 
-#ifdef OPLUS_FEATURE_SENSOR_SMEM
-obj-y						+= oplus/sensor/
-#endif
-#ifdef OPLUS_FEATURE_SENSOR_CRASH_MONITOR
-obj-$(CONFIG_OPLUS_FEATURE_SENSOR_CRASH_MONITOR)	+= oplus/oplus_slpirst/
-#endif
-
-#ifdef OPLUS_FEATURE_POWERINFO_STANDBY
-obj-$(CONFIG_OPLUS_WAKELOCK_PROFILER) += oplus/owakelock/
-#endif /* OPLUS_FEATURE_POWERINFO_STANDBY */
-
-#ifdef OPLUS_FEATURE_ESIM
-obj-y += oplus/misc/
-#endif /* OPLUS_FEATURE_ESIM */
-
-#Add for NandSwap
-obj-$(CONFIG_NANDSWAP)		+= oplus/oplus_nandswap/
+obj-y				+= oplus/

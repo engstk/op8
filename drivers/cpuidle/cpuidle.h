@@ -5,6 +5,7 @@
 
 #ifndef __DRIVER_CPUIDLE_H
 #define __DRIVER_CPUIDLE_H
+
 /* For internal use only */
 extern struct cpuidle_governor *cpuidle_curr_governor;
 extern struct list_head cpuidle_governors;

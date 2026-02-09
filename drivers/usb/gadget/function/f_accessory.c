@@ -377,7 +377,7 @@ static void acc_complete_set_string(struct usb_ep *ep, struct usb_request *req)
 #ifdef OPLUS_FEATURE_CHG_BASIC
 	default:
 		pr_err("unknown accessory string index %d\n",
-				dev->string_index);
+		       dev->string_index);
 		return;
 #endif
 	}
@@ -385,7 +385,7 @@ static void acc_complete_set_string(struct usb_ep *ep, struct usb_request *req)
 #ifdef OPLUS_FEATURE_CHG_BASIC
 	if (!length) {
 		pr_debug("zero length for accessory string index %d\n",
-				dev->string_index);
+			 dev->string_index);
 		return;
 	}
 
@@ -397,7 +397,6 @@ static void acc_complete_set_string(struct usb_ep *ep, struct usb_request *req)
 	/* ensure zero termination */
 	string_dest[length] = 0;
 	spin_unlock_irqrestore(&dev->lock, flags);
-
 #else
 	if (string_dest) {
 		unsigned long flags;

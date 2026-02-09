@@ -29,7 +29,6 @@
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ****************************************************************************/
 
-
 #ifndef _VL53L1_PLATFORM_USER_DATA_H_
 #define _VL53L1_PLATFORM_USER_DATA_H_
 
@@ -39,8 +38,7 @@
 #include "vl53l1_def.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include <linux/string.h>
@@ -52,12 +50,11 @@ extern "C"
 #define VL53L1DevDataSet(Dev, field, data) ((Dev->field) = (data))
 
 #define VL53L1DevStructGetLLDriverHandle(Dev) (&VL53L1DevDataGet(Dev, LLData))
-#define VL53L1DevStructGetLLResultsHandle(Dev) (&VL53L1DevDataGet(Dev,\
-		llresults))
+#define VL53L1DevStructGetLLResultsHandle(Dev) \
+	(&VL53L1DevDataGet(Dev, llresults))
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

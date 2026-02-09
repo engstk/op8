@@ -93,10 +93,6 @@ static void end_report(unsigned long *flags)
 	spin_unlock_irqrestore(&report_lock, *flags);
 	check_panic_on_warn("KASAN");
 	kasan_enable_current();
-#ifdef OPLUS_BUG_STABILITY
-/* trigger KE to get the KAsan double free message*/
-	BUG();
-#endif
 }
 
 static void print_track(struct kasan_track *track, const char *prefix)

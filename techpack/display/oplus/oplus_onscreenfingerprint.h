@@ -23,9 +23,9 @@
 
 extern int oplus_onscreenfp_status;
 
-enum CUST_ALPHA_ENUM{
+enum CUST_ALPHA_ENUM {
 	CUST_A_NO = 0,
-	CUST_A_TRANS,  /* alpha = 0, transparent */
+	CUST_A_TRANS, /* alpha = 0, transparent */
 	CUST_A_OPAQUE, /* alpha = 255, opaque */
 };
 
@@ -38,7 +38,8 @@ int dsi_panel_parse_oplus_fod_config(struct dsi_panel *panel);
 
 int dsi_panel_parse_oplus_config(struct dsi_panel *panel);
 
-int dsi_panel_parse_oplus_mode_config(struct dsi_display_mode *mode, struct dsi_parser_utils *utils);
+int dsi_panel_parse_oplus_mode_config(struct dsi_display_mode *mode,
+				      struct dsi_parser_utils *utils);
 
 bool sde_crtc_get_dimlayer_mode(struct drm_crtc_state *crtc_state);
 
@@ -46,16 +47,19 @@ bool sde_crtc_get_fingerprint_mode(struct drm_crtc_state *crtc_state);
 
 bool sde_crtc_get_fingerprint_pressed(struct drm_crtc_state *crtc_state);
 
-int sde_crtc_set_onscreenfinger_defer_sync(struct drm_crtc_state *crtc_state, bool defer_sync);
+int sde_crtc_set_onscreenfinger_defer_sync(struct drm_crtc_state *crtc_state,
+					   bool defer_sync);
 
-int sde_crtc_config_fingerprint_dim_layer(struct drm_crtc_state *crtc_state, int stage);
+int sde_crtc_config_fingerprint_dim_layer(struct drm_crtc_state *crtc_state,
+					  int stage);
 
 bool is_skip_pcc(struct drm_crtc *crtc);
 
 bool sde_cp_crtc_update_pcc(struct drm_crtc *crtc);
 
-bool _sde_encoder_setup_dither_for_onscreenfingerprint(struct sde_encoder_phys *phys,
-						  void *dither_cfg, int len, struct sde_hw_pingpong *hw_pp);
+bool _sde_encoder_setup_dither_for_onscreenfingerprint(
+	struct sde_encoder_phys *phys, void *dither_cfg, int len,
+	struct sde_hw_pingpong *hw_pp);
 
 int sde_plane_check_fingerprint_layer(const struct drm_plane_state *drm_state);
 int oplus_display_panel_set_dimlayer_hbm(void *data);
@@ -65,8 +69,8 @@ int oplus_display_panel_notify_fp_press(void *data);
 int oplus_ofp_set_fp_type(void *buf);
 int oplus_ofp_get_fp_type(void *buf);
 ssize_t oplus_ofp_set_fp_type_attr(struct device *dev,
-				struct device_attribute *attr,
-				const char *buf, size_t count);
+				   struct device_attribute *attr,
+				   const char *buf, size_t count);
 ssize_t oplus_ofp_get_fp_type_attr(struct device *dev,
-				struct device_attribute *attr, char *buf);
+				   struct device_attribute *attr, char *buf);
 #endif /*_OPLUS_ONSCREENFINGERPRINT_H_*/

@@ -505,6 +505,7 @@ void blk_mq_free_request(struct request *rq)
 
 	if (unlikely(laptop_mode && !blk_rq_is_passthrough(rq)))
 		laptop_io_completion(q->backing_dev_info);
+
 	rq_qos_done(q, rq);
 
 	if (blk_rq_rl(rq))

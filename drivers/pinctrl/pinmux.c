@@ -301,7 +301,7 @@ static int pinmux_func_name_to_selector(struct pinctrl_dev *pctldev,
 	while (selector < nfuncs) {
 		const char *fname = ops->get_function_name(pctldev, selector);
 
-		if (!strcmp(function, fname))
+		if (fname && !strcmp(function, fname))
 			return selector;
 
 		selector++;
@@ -505,11 +505,12 @@ void pinmux_disable_setting(const struct pinctrl_setting *setting)
 				 pins[i], desc->name, gname);
 #else
 			if (printk_ratelimit()) {
-				dev_warn(pctldev->dev,
+				dev_warn(
+					pctldev->dev,
 					"not freeing pin %d (%s) as part of "
 					"deactivating group %s - it is already "
 					"used for some other setting",
-				pins[i], desc->name, gname);
+					pins[i], desc->name, gname);
 			}
 #endif
 		}

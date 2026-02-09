@@ -20,15 +20,10 @@
 #include "dsi_iris5_log.h"
 
 // for game station settings via i2c
-uint32_t CM_CNTL[14] = {
-	0xf0560000, 0x8020e000,
-	0xf0560000, 0x820e000,
-	0xf0560008, 0x00000000,
-	0xf056000c, 0x6e,
-	0xf056000c, 0x5f,
-	0xf0560110, 0x00000000,
-	0xf0560140, 0x00000100
-};
+uint32_t CM_CNTL[14] = { 0xf0560000, 0x8020e000, 0xf0560000, 0x820e000,
+			 0xf0560008, 0x00000000, 0xf056000c, 0x6e,
+			 0xf056000c, 0x5f,	 0xf0560110, 0x00000000,
+			 0xf0560140, 0x00000100 };
 
 // 0: mipi, 1: i2c
 static int adb_type;
@@ -38,19 +33,14 @@ static int mdss_mipi_dsi_command(void __user *values)
 {
 	struct msmfb_mipi_dsi_cmd cmd;
 
-	char read_response_buf[16] = {0};
-	struct dsi_cmd_desc desc = {
-		.msg.rx_buf = &read_response_buf,
-		.msg.rx_len = 16
-	};
-	struct dsi_panel_cmd_set cmdset = {
-		.count = 1,
-		.cmds = &desc
-	};
+	char read_response_buf[16] = { 0 };
+	struct dsi_cmd_desc desc = { .msg.rx_buf = &read_response_buf,
+				     .msg.rx_len = 16 };
+	struct dsi_panel_cmd_set cmdset = { .count = 1, .cmds = &desc };
 	int ret;
 	struct iris_cfg *pcfg = iris_get_cfg();
 
-	struct iris_ocp_dsi_tool_input iris_ocp_input = {0, 0, 0, 0, 0};
+	struct iris_ocp_dsi_tool_input iris_ocp_input = { 0, 0, 0, 0, 0 };
 
 	ret = copy_from_user(&cmd, values, sizeof(cmd));
 	if (ret) {
@@ -59,16 +49,17 @@ static int mdss_mipi_dsi_command(void __user *values)
 	}
 
 	IRIS_LOGD("#### %s:%d vc=%u d=%02x f=%hu l=%hu", __func__, __LINE__,
-			cmd.vc, cmd.dtype, cmd.flags, cmd.length);
+		  cmd.vc, cmd.dtype, cmd.flags, cmd.length);
 
 	IRIS_LOGD("#### %s:%d %x, %x, %x", __func__, __LINE__,
-			cmd.iris_ocp_type, cmd.iris_ocp_addr, cmd.iris_ocp_size);
+		  cmd.iris_ocp_type, cmd.iris_ocp_addr, cmd.iris_ocp_size);
 
 	if (cmd.length < SZ_4K && cmd.payload) {
 		desc.msg.tx_buf = vmalloc(cmd.length);
 		if (!desc.msg.tx_buf)
 			return -ENOMEM;
-		ret = copy_from_user((char *)desc.msg.tx_buf, cmd.payload, cmd.length);
+		ret = copy_from_user((char *)desc.msg.tx_buf, cmd.payload,
+				     cmd.length);
 		if (ret) {
 			ret = -EPERM;
 			goto err;
@@ -79,7 +70,9 @@ static int mdss_mipi_dsi_command(void __user *values)
 	desc.msg.type = cmd.dtype;
 	desc.msg.channel = cmd.vc;
 	desc.last_command = (cmd.flags & MSMFB_MIPI_DSI_COMMAND_LAST) > 0;
-	desc.msg.flags |= ((cmd.flags & MSMFB_MIPI_DSI_COMMAND_ACK) > 0 ? MIPI_DSI_MSG_REQ_ACK : 0);
+	desc.msg.flags |= ((cmd.flags & MSMFB_MIPI_DSI_COMMAND_ACK) > 0 ?
+				   MIPI_DSI_MSG_REQ_ACK :
+				   0);
 	desc.msg.tx_len = cmd.length;
 	desc.post_wait_ms = 0;
 	desc.msg.ctrl = 0;
@@ -96,7 +89,8 @@ static int mdss_mipi_dsi_command(void __user *values)
 		if (iris_get_abyp_mode(pcfg->panel) == PASS_THROUGH_MODE)
 			iris_pt_send_panel_cmd(pcfg->panel, &cmdset);
 		else
-			iris_dsi_send_cmds(pcfg->panel, cmdset.cmds, cmdset.count, cmdset.state);
+			iris_dsi_send_cmds(pcfg->panel, cmdset.cmds,
+					   cmdset.count, cmdset.state);
 	} else if (cmd.flags & MSMFB_MIPI_DSI_COMMAND_T) {
 		u32 pktCnt = (cmd.iris_ocp_type >> 8) & 0xFF;
 
@@ -127,13 +121,17 @@ static int mdss_mipi_dsi_command(void __user *values)
 			iris_ocp_input.iris_ocp_size = cmd.iris_ocp_size;
 
 			if (pktCnt)
-				iris_write_test_muti_pkt(pcfg->panel, &iris_ocp_input);
+				iris_write_test_muti_pkt(pcfg->panel,
+							 &iris_ocp_input);
 			else
-				iris_write_test(pcfg->panel, cmd.iris_ocp_addr, cmd.iris_ocp_type & 0xF, cmd.iris_ocp_size);
+				iris_write_test(pcfg->panel, cmd.iris_ocp_addr,
+						cmd.iris_ocp_type & 0xF,
+						cmd.iris_ocp_size);
 			//iris_ocp_bitmask_write(ctrl,cmd.iris_ocp_addr,cmd.iris_ocp_size,cmd.iris_ocp_value);
 		}
 	} else
-		iris_dsi_send_cmds(pcfg->panel, cmdset.cmds, cmdset.count, cmdset.state);
+		iris_dsi_send_cmds(pcfg->panel, cmdset.cmds, cmdset.count,
+				   cmdset.state);
 
 	mutex_unlock(&pcfg->panel->panel_lock);
 
@@ -149,7 +147,6 @@ err:
 	return ret;
 }
 
-
 int iris_operate_tool(struct msm_iris_operate_value *argp)
 {
 	int ret = -1;
@@ -164,7 +161,8 @@ int iris_operate_tool(struct msm_iris_operate_value *argp)
 	//		__func__, configure.type, configure.count);
 	//	return -EPERM;
 	// }
-	IRIS_LOGI("%s type = %d, value = %d", __func__, argp->type, argp->count);
+	IRIS_LOGI("%s type = %d, value = %d", __func__, argp->type,
+		  argp->count);
 
 	display_type = (argp->type >> 16) & 0xff;
 	pcfg = iris_get_cfg_by_index(display_type);
@@ -211,13 +209,12 @@ static bool _iris_is_valid_type(u32 display, u32 type)
 	if (type >= IRIS_CONFIG_TYPE_MAX)
 		return false;
 
-	if (!iris_special_config(type)
-			&& type != IRIS_ANALOG_BYPASS_MODE
-			&& pcfg->abypss_ctrl.abypass_mode == ANALOG_BYPASS_MODE)
+	if (!iris_special_config(type) && type != IRIS_ANALOG_BYPASS_MODE &&
+	    pcfg->abypss_ctrl.abypass_mode == ANALOG_BYPASS_MODE)
 		return false;
 
-	if (type != IRIS_DBG_KERNEL_LOG_LEVEL
-			&& pcfg->chip_ver == IRIS3_CHIP_VERSION)
+	if (type != IRIS_DBG_KERNEL_LOG_LEVEL &&
+	    pcfg->chip_ver == IRIS3_CHIP_VERSION)
 		return false;
 
 	return true;
@@ -260,7 +257,8 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		if (pqlt_cur_setting->pq_setting.cmcolortempmode > 2)
 			goto error;
 
-		iris_cm_colortemp_mode_set(pqlt_cur_setting->pq_setting.cmcolortempmode);
+		iris_cm_colortemp_mode_set(
+			pqlt_cur_setting->pq_setting.cmcolortempmode);
 		break;
 	case IRIS_CM_COLOR_GAMUT_PRE:
 		iris_cm_color_gamut_pre_set(value & 0x03);
@@ -270,7 +268,8 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		if (pqlt_cur_setting->pq_setting.cmcolorgamut > 6)
 			goto error;
 
-		iris_cm_color_gamut_set(pqlt_cur_setting->pq_setting.cmcolorgamut);
+		iris_cm_color_gamut_set(
+			pqlt_cur_setting->pq_setting.cmcolorgamut);
 		break;
 	case IRIS_DBC_LCE_POWER:
 		if (value == 0)
@@ -298,12 +297,14 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 			if (pqlt_cur_setting->pq_setting.lcelevel > 5)
 				goto error;
 
-			iris_lce_level_set(pqlt_cur_setting->pq_setting.lcelevel);
+			iris_lce_level_set(
+				pqlt_cur_setting->pq_setting.lcelevel);
 		}
 		break;
 	case IRIS_GRAPHIC_DET_ENABLE:
 		pqlt_cur_setting->pq_setting.graphicdet = value & 0x1;
-		iris_lce_graphic_det_set(pqlt_cur_setting->pq_setting.graphicdet);
+		iris_lce_graphic_det_set(
+			pqlt_cur_setting->pq_setting.graphicdet);
 		break;
 	case IRIS_AL_ENABLE:
 
@@ -311,10 +312,13 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 			pqlt_cur_setting->pq_setting.alenable = value & 0x1;
 
 			/*check the case here*/
-			if (pqlt_cur_setting->pq_setting.sdr2hdr == SDR2HDR_Bypass)
-				iris_lce_al_set(pqlt_cur_setting->pq_setting.alenable);
+			if (pqlt_cur_setting->pq_setting.sdr2hdr ==
+			    SDR2HDR_Bypass)
+				iris_lce_al_set(
+					pqlt_cur_setting->pq_setting.alenable);
 			else
-				iris_ambient_light_lut_set(iris_sdr2hdr_lut2ctl_get());
+				iris_ambient_light_lut_set(
+					iris_sdr2hdr_lut2ctl_get());
 		}
 		break;
 	case IRIS_DBC_LEVEL:
@@ -329,11 +333,15 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		break;
 	case IRIS_DYNAMIC_POWER_CTRL:
 		if (value & 0x01) {
-			IRIS_LOGI(" [%s, %d] open psr_mif osd first address eco.", __func__, __LINE__);
+			IRIS_LOGI(
+				" [%s, %d] open psr_mif osd first address eco.",
+				__func__, __LINE__);
 			iris_psf_mif_dyn_addr_set(true);
 			iris_dynamic_power_set(value & 0x01);
 		} else {
-			IRIS_LOGI(" [%s, %d] close psr_mif osd first address eco.", __func__, __LINE__);
+			IRIS_LOGI(
+				" [%s, %d] close psr_mif osd first address eco.",
+				__func__, __LINE__);
 			iris_dynamic_power_set(value & 0x01);
 			iris_psf_mif_dyn_addr_set(false);
 		}
@@ -344,10 +352,10 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 	case IRIS_SDR2HDR:
 		iris_set_sdr2hdr_mode((value & 0xf00) >> 8);
 		value = value & 0xff;
-		if (value/10 == 4) {/*magic code to enable YUV input.*/
+		if (value / 10 == 4) { /*magic code to enable YUV input.*/
 			iris_set_yuv_input(true);
 			value -= 40;
-		} else if (value/10 == 6) {
+		} else if (value / 10 == 6) {
 			iris_set_HDR10_YCoCg(true);
 			value -= 60;
 		} else if (value == 55) {
@@ -361,12 +369,14 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 			iris_set_HDR10_YCoCg(false);
 		}
 
-		if (pqlt_cur_setting->pq_setting.sdr2hdr > SDR709_2_2020 || value > SDR709_2_2020)
+		if (pqlt_cur_setting->pq_setting.sdr2hdr > SDR709_2_2020 ||
+		    value > SDR709_2_2020)
 			goto error;
 		if (pqlt_cur_setting->pq_setting.sdr2hdr != value) {
 			pqlt_cur_setting->pq_setting.sdr2hdr = value;
 
-			iris_sdr2hdr_level_set(pqlt_cur_setting->pq_setting.sdr2hdr);
+			iris_sdr2hdr_level_set(
+				pqlt_cur_setting->pq_setting.sdr2hdr);
 		}
 		break;
 	case IRIS_READING_MODE:
@@ -375,23 +385,26 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		break;
 	case IRIS_COLOR_TEMP_VALUE:
 		pqlt_cur_setting->colortempvalue = value;
-		if (pqlt_cur_setting->pq_setting.cmcolortempmode == IRIS_COLOR_TEMP_MANUL)
+		if (pqlt_cur_setting->pq_setting.cmcolortempmode ==
+		    IRIS_COLOR_TEMP_MANUL)
 			iris_cm_color_temp_set();
 		break;
 	case IRIS_CCT_VALUE:
 		pqlt_cur_setting->cctvalue = value;
-		if (pqlt_cur_setting->pq_setting.cmcolortempmode == IRIS_COLOR_TEMP_AUTO)
+		if (pqlt_cur_setting->pq_setting.cmcolortempmode ==
+		    IRIS_COLOR_TEMP_AUTO)
 			iris_cm_color_temp_set();
 		break;
 	case IRIS_LUX_VALUE:
 		/* move to iris_configure_ex*/
 		pqlt_cur_setting->luxvalue = value;
 		if (pqlt_cur_setting->pq_setting.alenable == 1) {
-
-			if (pqlt_cur_setting->pq_setting.sdr2hdr == SDR2HDR_Bypass)
+			if (pqlt_cur_setting->pq_setting.sdr2hdr ==
+			    SDR2HDR_Bypass)
 				iris_lce_lux_set();
 			else
-				iris_ambient_light_lut_set(iris_sdr2hdr_lut2ctl_get());
+				iris_ambient_light_lut_set(
+					iris_sdr2hdr_lut2ctl_get());
 		}
 		break;
 	case IRIS_HDR_MAXCLL:
@@ -406,9 +419,11 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		if (value == ANALOG_BYPASS_MODE) {
 			iris_panel_nits_set(0, true, value);
 			iris_quality_setting_off();
-			iris_abypass_switch_proc(pcfg->display, value, true, true);
+			iris_abypass_switch_proc(pcfg->display, value, true,
+						 true);
 		} else
-			iris_abypass_switch_proc(pcfg->display, value, false, true);
+			iris_abypass_switch_proc(pcfg->display, value, false,
+						 true);
 		break;
 	case IRIS_DBG_LOOP_BACK_MODE:
 		pcfg->loop_back_mode = value;
@@ -416,20 +431,24 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 	case IRIS_HDR_PANEL_NITES_SET:
 		if (pqlt_cur_setting->al_bl_ratio != value) {
 			pqlt_cur_setting->al_bl_ratio = value;
-			iris_panel_nits_set(value, false, pqlt_cur_setting->pq_setting.sdr2hdr);
+			iris_panel_nits_set(
+				value, false,
+				pqlt_cur_setting->pq_setting.sdr2hdr);
 		}
 		break;
 	case IRIS_PEAKING_IDLE_CLK_ENABLE:
 		iris_peaking_idle_clk_enable(value & 0x01);
 		break;
 	case IRIS_CM_MAGENTA_GAIN:
-		iris_cm_6axis_seperate_gain(IRIS_MAGENTA_GAIN_TYPE, value & 0x3f);
+		iris_cm_6axis_seperate_gain(IRIS_MAGENTA_GAIN_TYPE,
+					    value & 0x3f);
 		break;
 	case IRIS_CM_RED_GAIN:
 		iris_cm_6axis_seperate_gain(IRIS_RED_GAIN_TYPE, value & 0x3f);
 		break;
 	case IRIS_CM_YELLOW_GAIN:
-		iris_cm_6axis_seperate_gain(IRIS_YELLOW_GAIN_TYPE, value & 0x3f);
+		iris_cm_6axis_seperate_gain(IRIS_YELLOW_GAIN_TYPE,
+					    value & 0x3f);
 		break;
 	case IRIS_CM_GREEN_GAIN:
 		iris_cm_6axis_seperate_gain(IRIS_GREEN_GAIN_TYPE, value & 0x3f);
@@ -450,7 +469,8 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		iris_scaler_filter_update(SCALER_PP, value & 0x1);
 		break;
 	case IRIS_HDR_PREPARE:
-		if ((value == 0) || ((value == 1) && !iris_get_debug_cap()) || (value == 2))
+		if ((value == 0) || ((value == 1) && !iris_get_debug_cap()) ||
+		    (value == 2))
 			iris_hdr_csc_prepare();
 		else if (value == 3)
 			iris_set_skip_dma(true);
@@ -464,10 +484,12 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 			iris_hdr_csc_complete(value);
 
 		if (value != 2 && value != 4) {
-			if (pqlt_cur_setting->pq_setting.sdr2hdr == SDR2HDR_Bypass)
+			if (pqlt_cur_setting->pq_setting.sdr2hdr ==
+			    SDR2HDR_Bypass)
 				iris_panel_nits_set(0, true, value);
 			else
-				iris_panel_nits_set(PANEL_BL_MAX_RATIO, false, value);
+				iris_panel_nits_set(PANEL_BL_MAX_RATIO, false,
+						    value);
 		}
 		break;
 	case IRIS_DEBUG_CAP:
@@ -475,7 +497,7 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 		break;
 	case IRIS_FW_UPDATE:
 		// Need do multi-thread protection.
-		if (value <= 2) {//CID100675
+		if (value <= 2) { //CID100675
 			/* before parsing firmware, free ip & opt buffer which alloc for LUT,
 			 * if loading firmware failed before, need realloc seq space after
 			 * updating firmware
@@ -489,8 +511,11 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 				iris_alloc_seq_space();
 			}
 			if (iris_get_fw_status() == FIRMWARE_LOAD_SUCCESS) {
-				if (pcfg->abypss_ctrl.abypass_mode == PASS_THROUGH_MODE) {
-					iris_cm_color_gamut_set(pqlt_cur_setting->pq_setting.cmcolorgamut);
+				if (pcfg->abypss_ctrl.abypass_mode ==
+				    PASS_THROUGH_MODE) {
+					iris_cm_color_gamut_set(
+						pqlt_cur_setting->pq_setting
+							.cmcolorgamut);
 					iris_scaler_gamma_enable(false, 1);
 				}
 				iris_update_fw_status(FIRMWARE_IN_USING);
@@ -589,7 +614,6 @@ static int _iris_configure(u32 display, u32 type, u32 value)
 
 error:
 	return -EINVAL;
-
 }
 
 int iris_configure(u32 display, u32 type, u32 value)
@@ -597,9 +621,10 @@ int iris_configure(u32 display, u32 type, u32 value)
 	struct iris_cfg *pcfg = iris_get_cfg_by_index(DSI_PRIMARY);
 	int rc = 0;
 
-	IRIS_LOGI("%s(), display: %u, type: 0x%04x(%u), value: %#x(%u), current Iris mode: %d",
-			__func__,
-			display, type, type, value, value, pcfg->abypss_ctrl.abypass_mode);
+	IRIS_LOGI(
+		"%s(), display: %u, type: 0x%04x(%u), value: %#x(%u), current Iris mode: %d",
+		__func__, display, type, type, value, value,
+		pcfg->abypss_ctrl.abypass_mode);
 	if (!_iris_is_valid_type(display, type))
 		return -EPERM;
 
@@ -671,7 +696,9 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		pqlt_cur_setting->luxvalue = iris_ambient_lut->ambient_lux;
 
 		if (iris_ambient.lut_lut2_payload != NULL) {
-			ret = copy_from_user(iris_ambient_lut->lut_lut2_payload, iris_ambient.lut_lut2_payload, sizeof(uint32_t)*LUT_LEN);
+			ret = copy_from_user(iris_ambient_lut->lut_lut2_payload,
+					     iris_ambient.lut_lut2_payload,
+					     sizeof(uint32_t) * LUT_LEN);
 			if (ret) {
 				IRIS_LOGE("can not copy from user sdr2hdr");
 				goto error1;
@@ -691,7 +718,8 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 			LutPos = 0;
 
 		if (pqlt_cur_setting->pq_setting.alenable == 1) {
-			if (pqlt_cur_setting->pq_setting.sdr2hdr == SDR2HDR_Bypass) {
+			if (pqlt_cur_setting->pq_setting.sdr2hdr ==
+			    SDR2HDR_Bypass) {
 				iris_sdr2hdr_lut2ctl_set(LutPos);
 				iris_lce_lux_set();
 			} else
@@ -705,16 +733,22 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		iris_maxcll_lut->mMAXCLL = iris_maxcll.mMAXCLL;
 
 		if (iris_maxcll.lut_luty_payload != NULL) {
-			ret = copy_from_user(iris_maxcll_lut->lut_luty_payload, iris_maxcll.lut_luty_payload, sizeof(uint32_t)*LUT_LEN);
+			ret = copy_from_user(iris_maxcll_lut->lut_luty_payload,
+					     iris_maxcll.lut_luty_payload,
+					     sizeof(uint32_t) * LUT_LEN);
 			if (ret) {
-				IRIS_LOGE("can not copy lut y from user sdr2hdr");
+				IRIS_LOGE(
+					"can not copy lut y from user sdr2hdr");
 				goto error1;
 			}
 		}
 		if (iris_maxcll.lut_lutuv_payload != NULL) {
-			ret = copy_from_user(iris_maxcll_lut->lut_lutuv_payload, iris_maxcll.lut_lutuv_payload, sizeof(uint32_t)*LUT_LEN);
+			ret = copy_from_user(iris_maxcll_lut->lut_lutuv_payload,
+					     iris_maxcll.lut_lutuv_payload,
+					     sizeof(uint32_t) * LUT_LEN);
 			if (ret) {
-				IRIS_LOGE("can not copy lut uv from user sdr2hdr");
+				IRIS_LOGE(
+					"can not copy lut uv from user sdr2hdr");
 				goto error1;
 			}
 		}
@@ -733,15 +767,23 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		/* Nothing to do for Iirs5*/
 		break;
 	case IRIS_HUE_SAT_ADJ:
-		IRIS_LOGD("cm csc value: csc0 = 0x%x, csc1 = 0x%x, csc2 = 0x%x, csc3 = 0x%x, csc4 = 0x%x", values[0], values[1], values[2], values[3], values[4]);
+		IRIS_LOGD(
+			"cm csc value: csc0 = 0x%x, csc1 = 0x%x, csc2 = 0x%x, csc3 = 0x%x, csc4 = 0x%x",
+			values[0], values[1], values[2], values[3], values[4]);
 		IRIS_LOGD("game mode %d", values[5]);
 		if (values[5] == 1) {
 			for (i = 0; i <= 4; i++) {
 				if (pcfg->iris_i2c_write) {
-					if (pcfg->iris_i2c_write(CM_CNTL[10] + i*4, values[i]) < 0)
-						IRIS_LOGE("i2c set reg fails, reg=0x%x, val=0x%x", CM_CNTL[10] + i*4, values[i]);
+					if (pcfg->iris_i2c_write(CM_CNTL[10] +
+									 i * 4,
+								 values[i]) < 0)
+						IRIS_LOGE(
+							"i2c set reg fails, reg=0x%x, val=0x%x",
+							CM_CNTL[10] + i * 4,
+							values[i]);
 				} else {
-					IRIS_LOGE("Game Station is not connected");
+					IRIS_LOGE(
+						"Game Station is not connected");
 				}
 			}
 		} else {
@@ -749,8 +791,9 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		}
 		break;
 	case IRIS_CONTRAST_DIMMING:
-		IRIS_LOGI("dpp csc value: csc0 = 0x%x, csc1 = 0x%x, csc2 = 0x%x, csc3 = 0x%x, csc4 = 0x%x",
-				values[0], values[1], values[2], values[3], values[4]);
+		IRIS_LOGI(
+			"dpp csc value: csc0 = 0x%x, csc1 = 0x%x, csc2 = 0x%x, csc3 = 0x%x, csc4 = 0x%x",
+			values[0], values[1], values[2], values[3], values[4]);
 		iris_cm_csc_level_set(IRIS_IP_DPP, &values[0]);
 		break;
 	case IRIS_COLOR_TEMP_VALUE:
@@ -759,20 +802,27 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 
 		if (is_phone) {
 			if (count > 3) {
-				pqlt_cur_setting->min_colortempvalue = values[2];
-				pqlt_cur_setting->max_colortempvalue = values[3];
+				pqlt_cur_setting->min_colortempvalue =
+					values[2];
+				pqlt_cur_setting->max_colortempvalue =
+					values[3];
 			} else {
 				pqlt_cur_setting->min_colortempvalue = 0;
 				pqlt_cur_setting->max_colortempvalue = 0;
 			}
-			if (pqlt_cur_setting->pq_setting.cmcolortempmode == IRIS_COLOR_TEMP_MANUL)
+			if (pqlt_cur_setting->pq_setting.cmcolortempmode ==
+			    IRIS_COLOR_TEMP_MANUL)
 				iris_cm_color_temp_set();
 		} else {
 			TempValue = iris_cm_ratio_set_for_iic();
-			IRIS_LOGD("set reg=0x%x, val=0x%x", CM_CNTL[4], TempValue);
+			IRIS_LOGD("set reg=0x%x, val=0x%x", CM_CNTL[4],
+				  TempValue);
 			if (pcfg->iris_i2c_write) {
-				if (pcfg->iris_i2c_write(CM_CNTL[4], TempValue) < 0)
-					IRIS_LOGE("i2c set reg fails, reg=0x%x, val=0x%x", CM_CNTL[4], TempValue);
+				if (pcfg->iris_i2c_write(CM_CNTL[4],
+							 TempValue) < 0)
+					IRIS_LOGE(
+						"i2c set reg fails, reg=0x%x, val=0x%x",
+						CM_CNTL[4], TempValue);
 			} else {
 				IRIS_LOGE("Game Station is not connected");
 			}
@@ -784,19 +834,25 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		} else if (adb_type == 1) {
 			if (iris_i2c_ver == 0) {
 				if (pcfg->iris_i2c_write) {
-					if (pcfg->iris_i2c_write(values[0], values[1]) < 0)
-						IRIS_LOGE("i2c set reg fails, reg=0x%x, val=0x%x", values[0], values[1]);
+					if (pcfg->iris_i2c_write(values[0],
+								 values[1]) < 0)
+						IRIS_LOGE(
+							"i2c set reg fails, reg=0x%x, val=0x%x",
+							values[0], values[1]);
 				} else {
-					IRIS_LOGE("Game Station is not connected");
+					IRIS_LOGE(
+						"Game Station is not connected");
 				}
 			} else {
-				IRIS_LOGD("addr = %x, value = %x\n", values[0], values[1]);
+				IRIS_LOGD("addr = %x, value = %x\n", values[0],
+					  values[1]);
 				iris_i2c_ocp_single_write(values, 1);
 			}
 		}
 		break;
 	case IRIS_DBG_TARGET_REGADDR_VALUE_SET2:
-		iris_ocp_write_vals(values[0], values[1], count-2, values+2);
+		iris_ocp_write_vals(values[0], values[1], count - 2,
+				    values + 2);
 		break;
 	case IRIS_CM_6AXES:
 		// phone
@@ -805,10 +861,15 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 
 		// game station
 		if (pcfg->iris_i2c_write) {
-			if (pcfg->iris_i2c_write(CM_CNTL[0], values[1] ? CM_CNTL[3] : CM_CNTL[1]) < 0)
-				IRIS_LOGE("i2c set reg fails, reg=0x%x", CM_CNTL[0]);
-			else if (pcfg->iris_i2c_write(CM_CNTL[12], CM_CNTL[13]) < 0)
-				IRIS_LOGE("i2c set reg fails, reg=0x%x", CM_CNTL[12]);
+			if (pcfg->iris_i2c_write(CM_CNTL[0],
+						 values[1] ? CM_CNTL[3] :
+							     CM_CNTL[1]) < 0)
+				IRIS_LOGE("i2c set reg fails, reg=0x%x",
+					  CM_CNTL[0]);
+			else if (pcfg->iris_i2c_write(CM_CNTL[12],
+						      CM_CNTL[13]) < 0)
+				IRIS_LOGE("i2c set reg fails, reg=0x%x",
+					  CM_CNTL[12]);
 		} else {
 			IRIS_LOGE("Game Station is not connected");
 		}
@@ -819,14 +880,20 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		if (pqlt_cur_setting->pq_setting.cmcolortempmode > 2)
 			goto error;
 
-		iris_cm_colortemp_mode_set(pqlt_cur_setting->pq_setting.cmcolortempmode);
+		iris_cm_colortemp_mode_set(
+			pqlt_cur_setting->pq_setting.cmcolortempmode);
 
 		// game station
 		if (pcfg->iris_i2c_write) {
-			if (pcfg->iris_i2c_write(CM_CNTL[6], values[1] ? CM_CNTL[9] : CM_CNTL[7]) < 0)
-				IRIS_LOGE("i2c set reg fails, reg=0x%x", CM_CNTL[6]);
-			else if (pcfg->iris_i2c_write(CM_CNTL[12], CM_CNTL[13]) < 0)
-				IRIS_LOGE("i2c set reg fails, reg=0x%x", CM_CNTL[12]);
+			if (pcfg->iris_i2c_write(CM_CNTL[6],
+						 values[1] ? CM_CNTL[9] :
+							     CM_CNTL[7]) < 0)
+				IRIS_LOGE("i2c set reg fails, reg=0x%x",
+					  CM_CNTL[6]);
+			else if (pcfg->iris_i2c_write(CM_CNTL[12],
+						      CM_CNTL[13]) < 0)
+				IRIS_LOGE("i2c set reg fails, reg=0x%x",
+					  CM_CNTL[12]);
 		} else {
 			IRIS_LOGE("Game Station is not connected");
 		}
@@ -844,13 +911,16 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		break;
 	case IRIS_DBG_SEND_PACKAGE:
 		ret = iris_send_ipopt_cmds(values[0], values[1]);
-		IRIS_LOGD("iris config sends package: ip: %#x, opt: %#x, send: %d.",
-				values[0], values[1], ret);
+		IRIS_LOGD(
+			"iris config sends package: ip: %#x, opt: %#x, send: %d.",
+			values[0], values[1], ret);
 		break;
 	case IRIS_MEMC_OSD_PROTECT:
-		IRIS_LOGD("OSD protect setting: Top_left_pos = 0x%x, bot_right_pos = 0x%x, OSDwinID = 0x%x, OSDwinIDEn = 0x%x, DynCompensate = 0x%x",
-				values[0], values[1], values[2], values[3], values[4]);
-		ret = iris_fi_osd_protect_window(values[0], values[1], values[2], values[3], values[4]);
+		IRIS_LOGD(
+			"OSD protect setting: Top_left_pos = 0x%x, bot_right_pos = 0x%x, OSDwinID = 0x%x, OSDwinIDEn = 0x%x, DynCompensate = 0x%x",
+			values[0], values[1], values[2], values[3], values[4]);
+		ret = iris_fi_osd_protect_window(
+			values[0], values[1], values[2], values[3], values[4]);
 		if (ret)
 			goto error;
 		break;
@@ -862,7 +932,8 @@ static int _iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 		break;
 	case IRIS_WAIT_VSYNC:
 		if (count > 2)
-			iris_set_pending_panel_brightness(values[0], values[1], values[2]);
+			iris_set_pending_panel_brightness(values[0], values[1],
+							  values[2]);
 		break;
 	default:
 		goto error;
@@ -882,9 +953,10 @@ int iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 	struct iris_cfg *pcfg1 = iris_get_cfg_by_index(DSI_PRIMARY);
 	int rc = 0;
 
-	IRIS_LOGI("%s(), type: 0x%04x(%d), value: %#x(%d), count: %d, abyp mode: %d",
-			__func__,
-			type, type, values[0], values[0], count, pcfg->abypss_ctrl.abypass_mode);
+	IRIS_LOGI(
+		"%s(), type: 0x%04x(%d), value: %#x(%d), count: %d, abyp mode: %d",
+		__func__, type, type, values[0], values[0], count,
+		pcfg->abypss_ctrl.abypass_mode);
 	if (!_iris_is_valid_type(display, type))
 		return -EPERM;
 
@@ -900,8 +972,8 @@ int iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 	return rc;
 }
 
-static int iris_configure_ex_t(uint32_t display, uint32_t type,
-		uint32_t count, void __user *values)
+static int iris_configure_ex_t(uint32_t display, uint32_t type, uint32_t count,
+			       void __user *values)
 {
 	int ret = -1;
 	uint32_t *val = NULL;
@@ -1032,9 +1104,9 @@ int iris_configure_get(u32 display, u32 type, u32 count, u32 *values)
 		break;
 	case IRIS_DBG_TARGET_REGADDR_VALUE_GET:
 		IRIS_LOGI("%s:%d, pcfg->abypss_ctrl.abypass_mode = %d",
-				__func__, __LINE__,
-				pcfg->abypss_ctrl.abypass_mode);
-		if ((pcfg->abypss_ctrl.abypass_mode == ANALOG_BYPASS_MODE) && (adb_type == 0))
+			  __func__, __LINE__, pcfg->abypss_ctrl.abypass_mode);
+		if ((pcfg->abypss_ctrl.abypass_mode == ANALOG_BYPASS_MODE) &&
+		    (adb_type == 0))
 			return -ENOTCONN;
 
 		if (adb_type == 0) {
@@ -1046,16 +1118,21 @@ int iris_configure_get(u32 display, u32 type, u32 count, u32 *values)
 			reg_addr = *values;
 			if (iris_i2c_ver == 0) {
 				if (pcfg->iris_i2c_read) {
-					if (pcfg->iris_i2c_read(reg_addr, &reg_val) < 0)
-						IRIS_LOGE("i2c read reg fails, reg=0x%x", reg_addr);
+					if (pcfg->iris_i2c_read(reg_addr,
+								&reg_val) < 0)
+						IRIS_LOGE(
+							"i2c read reg fails, reg=0x%x",
+							reg_addr);
 					else
 						*values = reg_val;
 				} else {
-					IRIS_LOGE("Game Station is not connected");
+					IRIS_LOGE(
+						"Game Station is not connected");
 				}
 			} else {
 				iris_i2c_ocp_read(values, 1, 0);
-				IRIS_LOGD("addr = %x, value = %x\n", reg_addr, *values);
+				IRIS_LOGD("addr = %x, value = %x\n", reg_addr,
+					  *values);
 			}
 		}
 		break;
@@ -1094,7 +1171,8 @@ int iris_configure_get(u32 display, u32 type, u32 count, u32 *values)
 		mutex_unlock(&pcfg1->panel->panel_lock);
 		break;
 	case IRIS_WORK_MODE:
-		*values = ((int)pcfg->pwil_mode<<16) | ((int)pcfg->tx_mode<<8) | ((int)pcfg->rx_mode);
+		*values = ((int)pcfg->pwil_mode << 16) |
+			  ((int)pcfg->tx_mode << 8) | ((int)pcfg->rx_mode);
 		break;
 	case IRIS_PANEL_TE:
 		*values = pcfg1->panel_te;
@@ -1125,14 +1203,13 @@ int iris_configure_get(u32 display, u32 type, u32 count, u32 *values)
 		return -EFAULT;
 	}
 
-	IRIS_LOGI("%s(), type: 0x%04x(%d), value: %d",
-			__func__,
-			type, type, *values);
+	IRIS_LOGI("%s(), type: 0x%04x(%d), value: %d", __func__, type, type,
+		  *values);
 	return 0;
 }
 
-int iris_configure_get_t(uint32_t display, uint32_t type,
-		uint32_t count, void __user *values)
+int iris_configure_get_t(uint32_t display, uint32_t type, uint32_t count,
+			 void __user *values)
 {
 	int ret = -1;
 	uint32_t *val = NULL;
@@ -1179,8 +1256,10 @@ int iris_operate_conf(struct msm_iris_operate_value *argp)
 	display_type = (argp->type >> 16) & 0xff;
 	pcfg = iris_get_cfg_by_index(display_type);
 	if (pcfg == NULL || pcfg->valid < PARAM_PARSED) {
-		if (child_type == IRIS_WAIT_VSYNC || child_type == IRIS_CHIP_VERSION)
-			IRIS_LOGV("Allow type 0x%04x(%u) for Soft Iris", child_type, child_type);
+		if (child_type == IRIS_WAIT_VSYNC ||
+		    child_type == IRIS_CHIP_VERSION)
+			IRIS_LOGV("Allow type 0x%04x(%u) for Soft Iris",
+				  child_type, child_type);
 		else {
 			IRIS_LOGE("Target display does not exist!");
 			return -EPERM;
@@ -1192,10 +1271,12 @@ int iris_operate_conf(struct msm_iris_operate_value *argp)
 		ret = iris_configure_t(display_type, child_type, argp->values);
 		break;
 	case IRIS_OPRT_CONFIGURE_NEW:
-		ret = iris_configure_ex_t(display_type, child_type, argp->count, argp->values);
+		ret = iris_configure_ex_t(display_type, child_type, argp->count,
+					  argp->values);
 		break;
 	case IRIS_OPRT_CONFIGURE_NEW_GET:
-		ret = iris_configure_get_t(display_type, child_type, argp->count, argp->values);
+		ret = iris_configure_get_t(display_type, child_type,
+					   argp->count, argp->values);
 		break;
 	default:
 		IRIS_LOGE("could not find right operate type = %d", argp->type);
@@ -1206,7 +1287,7 @@ int iris_operate_conf(struct msm_iris_operate_value *argp)
 }
 
 static ssize_t iris_adb_type_read(struct file *file, char __user *buff,
-		size_t count, loff_t *ppos)
+				  size_t count, loff_t *ppos)
 {
 	int tot = 0;
 	char bp[512];
@@ -1222,8 +1303,8 @@ static ssize_t iris_adb_type_read(struct file *file, char __user *buff,
 	return tot;
 }
 
-static ssize_t iris_adb_type_write(struct file *file,
-		const char __user *buff, size_t count, loff_t *ppos)
+static ssize_t iris_adb_type_write(struct file *file, const char __user *buff,
+				   size_t count, loff_t *ppos)
 {
 	unsigned long val;
 
@@ -1247,8 +1328,8 @@ int iris_dbgfs_adb_type_init(struct dsi_display *display)
 
 	if (debugfs_create_file("adb_type", 0644, pcfg->dbg_root, display,
 				&iris_adb_type_write_fops) == NULL) {
-		IRIS_LOGE("%s(%d): debugfs_create_file: index fail",
-				__FILE__, __LINE__);
+		IRIS_LOGE("%s(%d): debugfs_create_file: index fail", __FILE__,
+			  __LINE__);
 		return -EFAULT;
 	}
 

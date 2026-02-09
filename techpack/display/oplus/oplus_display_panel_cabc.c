@@ -13,7 +13,7 @@
 #include "oplus_display_panel_cabc.h"
 
 u32 oplus_last_backlight = 0;
-static int cabc_mode = 1;
+static int cabc_mode = 0;
 static int cabc_mode_backup = 1;
 static int cabc_lock_flag = 0;
 DEFINE_MUTEX(oplus_cabc_lock);
@@ -84,7 +84,8 @@ static int panel_cabc_cmd_config_unlock(struct dsi_panel *panel, int mode)
 		}
 		break;
 	default:
-		pr_err("[%s] CABC_MODE%d Invalid, default set CABC_MODE1\n", panel->name, mode);
+		pr_err("[%s] CABC_MODE%d Invalid, default set CABC_MODE1\n",
+		       panel->name, mode);
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_CABC_MODE1);
 		if (rc) {
 			pr_err("[%s] failed to send DSI_CMD_CABC_MODE1 cmds, rc=%d\n",
@@ -113,17 +114,20 @@ static int panel_cabc_cmd_config(struct dsi_display *display, int mode)
 
 	/* enable the clk vote for CMD mode panels */
 	if (display->config.panel_mode == DSI_OP_CMD_MODE)
-		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK, DSI_CLK_ON);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				     DSI_CLK_ON);
 
 	mutex_lock(&display->panel->panel_lock);
 	rc = panel_cabc_cmd_config_unlock(display->panel, mode);
 	if (rc) {
-		pr_err("[%s] panel_cabc_cmd_config_unlock fail, rc=%d\n", display->name, rc);
+		pr_err("[%s] panel_cabc_cmd_config_unlock fail, rc=%d\n",
+		       display->name, rc);
 	}
 	mutex_unlock(&display->panel->panel_lock);
 
 	if (display->config.panel_mode == DSI_OP_CMD_MODE)
-		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK, DSI_CLK_OFF);
+		dsi_display_clk_ctrl(display->dsi_clk_handle, DSI_CORE_CLK,
+				     DSI_CLK_OFF);
 
 	mutex_unlock(&display->display_lock);
 	return rc;
@@ -164,7 +168,8 @@ int oplus_display_panel_set_cabc(void *data)
 	if (get_oplus_display_power_status() == OPLUS_DISPLAY_POWER_ON) {
 		rc = panel_cabc_cmd_config(display, cabc_mode);
 	} else {
-		pr_err("%s: panel is off, set cabc_mode=%d fail\n", __func__, *temp_save);
+		pr_err("%s: panel is off, set cabc_mode=%d fail\n", __func__,
+		       *temp_save);
 	}
 
 	return rc;

@@ -46,9 +46,9 @@
  * IPP adapt
  */
 #ifdef DEBUG
-#	define IPP_PRINT(...) printk(__VA_ARGS__)
+#define IPP_PRINT(...) printk(__VA_ARGS__)
 #else
-#	define IPP_PRINT(...) (void)0
+#define IPP_PRINT(...) (void)0
 #endif
 
 #include "stmvl53l1_ipp.h"
@@ -59,8 +59,8 @@
  */
 #define STMVL531_CFG_NETLINK_USER 31
 
-#define STMVL53L1_MAX_CCI_XFER_SZ	256
-#define STMVL53L1_DRV_NAME	"stmvl53l1"
+#define STMVL53L1_MAX_CCI_XFER_SZ 256
+#define STMVL53L1_DRV_NAME "stmvl53l1"
 
 /**
  * configure usage of regulator device from device tree info
@@ -69,7 +69,7 @@
  */
 /* define CFG_STMVL53L1_HAVE_REGULATOR */
 
-#define DRIVER_VERSION		"13.4.2"
+#define DRIVER_VERSION "13.4.2"
 
 /** @ingroup vl53l1_config
  * @{
@@ -77,14 +77,14 @@
 /**
  * Configure max number of device the driver can support
  */
-#define STMVL53L1_CFG_MAX_DEV	2
+#define STMVL53L1_CFG_MAX_DEV 2
 /** @} */ /* ingroup vl53l1_config */
 
 /** @ingroup vl53l1_mod_dbg
  * @{
  */
 #if 0
-#define DEBUG	1
+#define DEBUG 1
 #endif
 #if 0
 #define FORCE_CONSOLE_DEBUG
@@ -93,48 +93,46 @@
 extern int stmvl53l1_enable_debug;
 
 #ifdef DEBUG
-#	ifdef FORCE_CONSOLE_DEBUG
-#define vl53l1_dbgmsg(str, ...) do { \
-	if (stmvl53l1_enable_debug) \
-		pr_info("%s: " str, __func__, ##__VA_ARGS__); \
-} while (0)
-#	else
-#define vl53l1_dbgmsg(str, ...) do { \
-	if (stmvl53l1_enable_debug) \
-		pr_debug("%s: " str, __func__, ##__VA_ARGS__); \
-} while (0)
-#	endif
+#ifdef FORCE_CONSOLE_DEBUG
+#define vl53l1_dbgmsg(str, ...)                                       \
+	do {                                                          \
+		if (stmvl53l1_enable_debug)                           \
+			pr_info("%s: " str, __func__, ##__VA_ARGS__); \
+	} while (0)
 #else
-#	define vl53l1_dbgmsg(...) (void)0
+#define vl53l1_dbgmsg(str, ...)                                        \
+	do {                                                           \
+		if (stmvl53l1_enable_debug)                            \
+			pr_debug("%s: " str, __func__, ##__VA_ARGS__); \
+	} while (0)
+#endif
+#else
+#define vl53l1_dbgmsg(...) (void)0
 #endif
 
 /**
  * set to 0 1 activate or not debug from work (data interrupt/polling)
  */
-#define WORK_DEBUG	0
+#define WORK_DEBUG 0
 #if WORK_DEBUG
-#	define work_dbg(msg, ...)\
-	printk("[D WK53L1] :" msg "\n", ##__VA_ARGS__)
+#define work_dbg(msg, ...) printk("[D WK53L1] :" msg "\n", ##__VA_ARGS__)
 #else
-#	define work_dbg(...) (void)0
+#define work_dbg(...) (void)0
 #endif
 
-#define vl53l1_info(str, args...) \
-	pr_info("%s: " str "\n", __func__, ##args)
+#define vl53l1_info(str, args...) pr_info("%s: " str "\n", __func__, ##args)
 
-#define vl53l1_errmsg(str, args...) \
-	pr_err("%s: " str, __func__, ##args)
+#define vl53l1_errmsg(str, args...) pr_err("%s: " str, __func__, ##args)
 
-#define vl53l1_wanrmsg(str, args...) \
-	pr_warn("%s: " str, __func__, ##args)
+#define vl53l1_wanrmsg(str, args...) pr_warn("%s: " str, __func__, ##args)
 
 /* turn off poll log if not defined */
 #ifndef STMVL53L1_LOG_POLL_TIMING
-#	define STMVL53L1_LOG_POLL_TIMING	0
+#define STMVL53L1_LOG_POLL_TIMING 0
 #endif
 /* turn off cci log timing if not defined */
 #ifndef STMVL53L1_LOG_CCI_TIMING
-#	define STMVL53L1_LOG_CCI_TIMING	0
+#define STMVL53L1_LOG_CCI_TIMING 0
 #endif
 
 /**@} */ /* ingroup mod_dbg*/
@@ -146,7 +144,7 @@ extern int stmvl53l1_enable_debug;
 /** if set to 1 enable ipp execution timing (if debug enabled)
  * @ingroup vl53l1_mod_dbg
  */
-#define IPP_LOG_TIMING	1
+#define IPP_LOG_TIMING 1
 
 struct ipp_data_t {
 	struct ipp_work_t work;
@@ -162,7 +160,7 @@ struct ipp_data_t {
 	 * as such never id 0 will be in any round trip exchange
 	 * it's ok for daemon to use 0 in "ping" when it identify himself
 	 */
-	int status;	/** if that is not 0 do not look at out work data */
+	int status; /** if that is not 0 do not look at out work data */
 	wait_queue_head_t waitq;
 	/*!< ipp caller are put in that queue wait while job is posted to user
 	 * @warning  ipp and dev mutex will be released before waiting
@@ -182,16 +180,17 @@ struct stmvl53l1_waiters {
  *  driver data structs
  */
 struct stmvl53l1_data {
-	int id;			/*!< multiple device id 0 based*/
-	char name[64];		/*!< misc device name */
+	int id; /*!< multiple device id 0 based*/
+	char name[64]; /*!< misc device name */
 
-	VL53L1_DevData_t stdev;	/*!<embed ST VL53L0 Dev data as "stdev" */
+	VL53L1_DevData_t stdev; /*!<embed ST VL53L0 Dev data as "stdev" */
 
-	void *client_object;	/*!< cci or i2c model i/f specific ptr  */
-	bool is_device_remove;	/*!< true when device has been remove */
+	void *client_object; /*!< cci or i2c model i/f specific ptr  */
+	bool is_device_remove; /*!< true when device has been remove */
 
-	struct mutex work_mutex; /*!< main dev mutex/lock */;
-	struct delayed_work	dwork;
+	struct mutex work_mutex; /*!< main dev mutex/lock */
+	;
+	struct delayed_work dwork;
 	/*!< work for pseudo irq polling check  */
 
 	struct input_dev *input_dev_ps;
@@ -205,25 +204,25 @@ struct stmvl53l1_data {
 	int is_first_start_done;
 
 	/* control data */
-	int poll_mode;	/*!< use poll even if interrupt line present*/
-	int poll_delay_ms;	/*!< rescheduled time use in poll mode  */
-	int enable_sensor;	/*!< actual device enabled state  */
-	struct timeval start_tv;/*!< stream start time */
+	int poll_mode; /*!< use poll even if interrupt line present*/
+	int poll_delay_ms; /*!< rescheduled time use in poll mode  */
+	int enable_sensor; /*!< actual device enabled state  */
+	struct timeval start_tv; /*!< stream start time */
 	int enable_debug;
 	bool allow_hidden_start_stop; /*!< allow stop/start sequence in bare */
 
 	/* Custom values set by app */
 
-	int preset_mode;	/*!< preset working mode of the device */
-	uint32_t timing_budget;	/*!< Timing Budget */
-	int distance_mode;	/*!< distance mode of the device */
-	int crosstalk_enable;	/*!< is crosstalk compensation is enable */
-	int output_mode;	/*!< output mode of the device */
-	bool force_device_on_en;/*!< keep device active when stopped */
-	VL53L1_Error last_error;/*!< last device internal error */
-	int offset_correction_mode;/*!< offset correction mode to apply */
-	FixPoint1616_t dmax_reflectance;/*!< reflectance use for dmax calc */
-	int dmax_mode;		/*!< Dmax mode of the device */
+	int preset_mode; /*!< preset working mode of the device */
+	uint32_t timing_budget; /*!< Timing Budget */
+	int distance_mode; /*!< distance mode of the device */
+	int crosstalk_enable; /*!< is crosstalk compensation is enable */
+	int output_mode; /*!< output mode of the device */
+	bool force_device_on_en; /*!< keep device active when stopped */
+	VL53L1_Error last_error; /*!< last device internal error */
+	int offset_correction_mode; /*!< offset correction mode to apply */
+	FixPoint1616_t dmax_reflectance; /*!< reflectance use for dmax calc */
+	int dmax_mode; /*!< Dmax mode of the device */
 	int smudge_correction_mode; /*!< smudge mode */
 
 	/* Read only values */
@@ -234,15 +233,15 @@ struct stmvl53l1_data {
 	/* PS parameters */
 
 	/* Calibration parameters */
-	bool is_calibrating;	/*!< active during calibration phases */
+	bool is_calibrating; /*!< active during calibration phases */
 
 	/* Range Data and stat */
 	struct range_t {
-		uint32_t	cnt;
-		uint32_t	intr;
-		int	poll_cnt;
-		uint32_t	err_cnt; /* on actual measurement */
-		uint32_t	err_tot; /* from start */
+		uint32_t cnt;
+		uint32_t intr;
+		int poll_cnt;
+		uint32_t err_cnt; /* on actual measurement */
+		uint32_t err_tot; /* from start */
 		struct timeval start_tv;
 		struct timeval comp_tv;
 		VL53L1_RangingMeasurementData_t single_range_data;
@@ -289,21 +288,18 @@ struct stmvl53l1_data {
 	/* Debug */
 	struct ipp_data_t ipp;
 #if IPP_LOG_TIMING
-#	define stmvl531_ipp_tim_stop(data)\
-	do_gettimeofday(&data->ipp.stop_tv)
-#	define stmvl531_ipp_tim_start(data)\
-	do_gettimeofday(&data->ipp.start_tv)
-#	define stmvl531_ipp_time(data)\
+#define stmvl531_ipp_tim_stop(data) do_gettimeofday(&data->ipp.stop_tv)
+#define stmvl531_ipp_tim_start(data) do_gettimeofday(&data->ipp.start_tv)
+#define stmvl531_ipp_time(data) \
 	stmvl53l1_tv_dif(&data->ipp.start_tv, &data->ipp.stop_tv)
-#	define stmvl531_ipp_stat(data, fmt, ...)\
+#define stmvl531_ipp_stat(data, fmt, ...) \
 	vl53l1_dbgmsg("IPPSTAT " fmt "\n", ##__VA_ARGS__)
 #else
-#	define stmvl531_ipp_tim_stop(data) (void)0
-#	define stmvl531_ipp_tim_start(data) (void)0
-#	define stmvl531_ipp_stat(...) (void)0
+#define stmvl531_ipp_tim_stop(data) (void)0
+#define stmvl531_ipp_tim_start(data) (void)0
+#define stmvl531_ipp_stat(...) (void)0
 #endif
 };
-
 
 /**
  * timeval diff in us
@@ -312,7 +308,6 @@ struct stmvl53l1_data {
  * @param pstop_tv
  */
 long stmvl53l1_tv_dif(struct timeval *pstart_tv, struct timeval *pstop_tv);
-
 
 /**
  * The device table list table is update as device get added
@@ -327,7 +322,6 @@ void stmvl53l1_cleanup(struct stmvl53l1_data *data);
 void stmvl53l1_pm_suspend_stop(struct stmvl53l1_data *data);
 #endif
 int stmvl53l1_intr_handler(struct stmvl53l1_data *data);
-
 
 /**
  * request ipp to abort or stop
@@ -346,7 +340,7 @@ int stmvl53l1_intr_handler(struct stmvl53l1_data *data);
 int stmvl53l1_ipp_stop(struct stmvl53l1_data *data);
 
 int stmvl53l1_ipp_do(struct stmvl53l1_data *data, struct ipp_work_t *work_in,
-		struct ipp_work_t *work_out);
+		     struct ipp_work_t *work_out);
 
 /**
  * per device netlink init
@@ -381,11 +375,8 @@ void stmvl53l1_ipp_exit(void);
  */
 int stmvl53l1_ipp_enable(int n_dev, struct stmvl53l1_data *data);
 
-
 /*
  *  function pointer structs
  */
-
-
 
 #endif /* STMVL53L1_H */

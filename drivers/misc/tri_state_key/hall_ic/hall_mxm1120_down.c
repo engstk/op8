@@ -34,70 +34,73 @@
 #include "../oplus_tri_key.h"
 
 #define M1120_DBG_ENABLE
-#define M1120_DETECTION_MODE	M1120_DETECTION_MODE_INTERRUPT
-#define M1120_INTERRUPT_TYPE	M1120_VAL_INTSRS_INTTYPE_BESIDE
+#define M1120_DETECTION_MODE M1120_DETECTION_MODE_INTERRUPT
+#define M1120_INTERRUPT_TYPE M1120_VAL_INTSRS_INTTYPE_BESIDE
 /*#define M1120_INTERRUPT_TYPE	M1120_VAL_INTSRS_INTTYPE_WITHIN*/
-#define M1120_SENSITIVITY_TYPE	M1120_VAL_INTSRS_SRS_10BIT_0_068mT
-#define M1120_PERSISTENCE_COUNT	M1120_VAL_PERSINT_COUNT(15)
-#define M1120_OPERATION_FREQUENCY	M1120_VAL_OPF_FREQ_80HZ
-#define M1120_OPERATION_RESOLUTION	M1120_VAL_OPF_BIT_10
-#define M1120_DETECT_RANGE_HIGH	(60)/*Need change via test.*/
-#define M1120_DETECT_RANGE_LOW	(50)/*Need change via test.*/
-#define M1120_RESULT_STATUS_A	(0x01)/*result status A 180Degree*/
-#define M1120_RESULT_STATUS_B	(0x02)/*result status B 180Degree*/
-#define M1120_EVENT_TYPE	EV_ABS
-#define M1120_EVENT_CODE	ABS_X
-#define M1120_EVENT_DATA_CAPABILITY_MIN  (-32768)
-#define M1120_EVENT_DATA_CAPABILITY_MAX  (32767)
+#define M1120_SENSITIVITY_TYPE M1120_VAL_INTSRS_SRS_10BIT_0_068mT
+#define M1120_PERSISTENCE_COUNT M1120_VAL_PERSINT_COUNT(15)
+#define M1120_OPERATION_FREQUENCY M1120_VAL_OPF_FREQ_80HZ
+#define M1120_OPERATION_RESOLUTION M1120_VAL_OPF_BIT_10
+#define M1120_DETECT_RANGE_HIGH (60) /*Need change via test.*/
+#define M1120_DETECT_RANGE_LOW (50) /*Need change via test.*/
+#define M1120_RESULT_STATUS_A (0x01) /*result status A 180Degree*/
+#define M1120_RESULT_STATUS_B (0x02) /*result status B 180Degree*/
+#define M1120_EVENT_TYPE EV_ABS
+#define M1120_EVENT_CODE ABS_X
+#define M1120_EVENT_DATA_CAPABILITY_MIN (-32768)
+#define M1120_EVENT_DATA_CAPABILITY_MAX (32767)
 
-#define M1120_VDD_MIN_UV	2700000
-#define M1120_VDD_MAX_UV	3600000
-#define M1120_VIO_MIN_UV	1650000
-#define M1120_VIO_MAX_UV	3600000
+#define M1120_VDD_MIN_UV 2700000
+#define M1120_VDD_MAX_UV 3600000
+#define M1120_VIO_MIN_UV 1650000
+#define M1120_VIO_MAX_UV 3600000
 
 #define HALL_MXM1120_DOWN "oplus,hall-mxm1120,down"
 
-#define TRI_KEY_TAG                  "[tri_state_key] "
-#define TRI_KEY_ERR(fmt, args...)\
-	pr_info(TRI_KEY_TAG" %s : "fmt, __func__, ##args)
-#define TRI_KEY_LOG(fmt, args...)\
-	pr_info(TRI_KEY_TAG" %s : "fmt, __func__, ##args)
+#define TRI_KEY_TAG "[tri_state_key] "
+#define TRI_KEY_ERR(fmt, args...) \
+	pr_info(TRI_KEY_TAG " %s : " fmt, __func__, ##args)
+#define TRI_KEY_LOG(fmt, args...) \
+	pr_info(TRI_KEY_TAG " %s : " fmt, __func__, ##args)
 
 static struct m1120_data_t *p_m1120_data;
 
 static DEFINE_MUTEX(hall_m1120_down_i2c_mutex);
 
 /*i2c interface*/
-static int m1120_i2c_read_block(struct m1120_data_t *m1120_data, u8 addr, u8 *data, u8 len);
-static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr, u8 *data, u8 len);
-static void m1120_short_to_2byte(struct m1120_data_t *m1120_data, short x, u8 *hbyte, u8 *lbyte);
-static short m1120_2byte_to_short(struct m1120_data_t *m1120_data, u8 hbyte, u8 lbyte);
+static int m1120_i2c_read_block(struct m1120_data_t *m1120_data, u8 addr,
+				u8 *data, u8 len);
+static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr,
+				 u8 *data, u8 len);
+static void m1120_short_to_2byte(struct m1120_data_t *m1120_data, short x,
+				 u8 *hbyte, u8 *lbyte);
+static short m1120_2byte_to_short(struct m1120_data_t *m1120_data, u8 hbyte,
+				  u8 lbyte);
 /*vdd vid power control*/
 static int m1120_set_power(bool on);
 
-
-static int  m1120_get_enable(struct m1120_data_t *p_data);
+static int m1120_get_enable(struct m1120_data_t *p_data);
 static void m1120_set_enable(struct m1120_data_t *p_data, int enable);
 static void m1120_set_delay(struct m1120_data_t *p_data, int delay);
 static void m1120_set_debug(struct m1120_data_t *p_data, int debug);
-static int  m1120_clear_interrupt(struct m1120_data_t *p_data);
-static int  m1120_set_operation_mode(struct m1120_data_t *p_data, int mode);
-static int  m1120_init_device(struct m1120_data_t *p_data);
-static int  m1120_reset_device(struct m1120_data_t *p_data);
-static int  m1120_power_ctl(struct m1120_data_t *data, bool on);
+static int m1120_clear_interrupt(struct m1120_data_t *p_data);
+static int m1120_set_operation_mode(struct m1120_data_t *p_data, int mode);
+static int m1120_init_device(struct m1120_data_t *p_data);
+static int m1120_reset_device(struct m1120_data_t *p_data);
+static int m1120_power_ctl(struct m1120_data_t *data, bool on);
 static int m1120_get_data(short *data);
 
 /*functions for i2c interface*/
 
-#define M1120_I2C_BUF_SIZE		(17)
+#define M1120_I2C_BUF_SIZE (17)
 
-
-static int m1120_i2c_read_block(struct m1120_data_t *m1120_data, u8 addr, u8 *data, u8 len)
+static int m1120_i2c_read_block(struct m1120_data_t *m1120_data, u8 addr,
+				u8 *data, u8 len)
 {
 	u8 reg_addr = addr;
 	int err = 0;
 	struct i2c_client *client = NULL;
-	struct i2c_msg msgs[2] = {{0}, {0}};
+	struct i2c_msg msgs[2] = { { 0 }, { 0 } };
 
 	if (!m1120_data) {
 		TRI_KEY_ERR("m1120_data == NULL\n");
@@ -127,23 +130,24 @@ static int m1120_i2c_read_block(struct m1120_data_t *m1120_data, u8 addr, u8 *da
 	err = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
 
 	if (err < 0) {
-		TRI_KEY_ERR("i2c_transfer error: (%d %p %d) %d\n", addr, data, len, err);
+		TRI_KEY_ERR("i2c_transfer error: (%d %p %d) %d\n", addr, data,
+			    len, err);
 		err = -EIO;
-	} else  {
+	} else {
 		err = 0;
 	}
 	mutex_unlock(&hall_m1120_down_i2c_mutex);
 
 	return err;
-
 }
 
-static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr, u8 *data, u8 len)
+static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr,
+				 u8 *data, u8 len)
 {
 	int err = 0;
 	int idx = 0;
 	int num = 0;
-	char buf[M1120_I2C_BUF_SIZE] = {0};
+	char buf[M1120_I2C_BUF_SIZE] = { 0 };
 	struct i2c_client *client = NULL;
 
 	if (!m1120_data) {
@@ -207,14 +211,16 @@ static int m1120_i2c_write_block(struct m1120_data_t *m1120_data, u8 addr, u8 *d
 	return err;
 }
 
-static void m1120_short_to_2byte(struct m1120_data_t *m1120_data, short x, u8 *hbyte, u8 *lbyte)
+static void m1120_short_to_2byte(struct m1120_data_t *m1120_data, short x,
+				 u8 *hbyte, u8 *lbyte)
 {
 	if (!m1120_data) {
 		TRI_KEY_ERR("m1120_data == NULL\n");
 		return;
 	}
 
-	if ((m1120_data->reg.map.opf & M1120_VAL_OPF_BIT_8) == M1120_VAL_OPF_BIT_8) {
+	if ((m1120_data->reg.map.opf & M1120_VAL_OPF_BIT_8) ==
+	    M1120_VAL_OPF_BIT_8) {
 		/* 8 bit resolution */
 		if (x < -128)
 			x = -128;
@@ -237,13 +243,15 @@ static void m1120_short_to_2byte(struct m1120_data_t *m1120_data, short x, u8 *h
 			*lbyte = x & 0xFF;
 			*hbyte = (((x & 0x100) >> 8) & 0x01) << 6;
 		} else {
-			*lbyte = (0x0200 - (x*(-1))) & 0xFF;
-			*hbyte = ((((0x0200 - (x*(-1))) & 0x100) >> 8) << 6) | 0x80;
+			*lbyte = (0x0200 - (x * (-1))) & 0xFF;
+			*hbyte = ((((0x0200 - (x * (-1))) & 0x100) >> 8) << 6) |
+				 0x80;
 		}
 	}
 }
 
-static short m1120_2byte_to_short(struct m1120_data_t *m1120_data, u8 hbyte, u8 lbyte)
+static short m1120_2byte_to_short(struct m1120_data_t *m1120_data, u8 hbyte,
+				  u8 lbyte)
 {
 	short x = 0;
 
@@ -252,7 +260,8 @@ static short m1120_2byte_to_short(struct m1120_data_t *m1120_data, u8 hbyte, u8 
 		return -EINVAL;
 	}
 
-	if ((m1120_data->reg.map.opf & M1120_VAL_OPF_BIT_8) == M1120_VAL_OPF_BIT_8) {
+	if ((m1120_data->reg.map.opf & M1120_VAL_OPF_BIT_8) ==
+	    M1120_VAL_OPF_BIT_8) {
 		/* 8 bit resolution */
 		x = lbyte & 0x7F;
 		if (lbyte & 0x80)
@@ -290,29 +299,28 @@ static irqreturn_t m1120_down_irq_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-
 static int m1120_get_enable(struct m1120_data_t *p_data)
 {
 	return atomic_read(&p_data->atm.enable);
 }
 
-
 static void m1120_set_enable(struct m1120_data_t *p_data, int enable)
 {
 	mutex_lock(&p_data->mtx.enable);
 	TRI_KEY_LOG("enable : %d\n", enable);
-	if (enable) {/*enable if state will be changed*/
+	if (enable) { /*enable if state will be changed*/
 		if (!atomic_cmpxchg(&p_data->atm.enable, 0, 1))
-			m1120_set_operation_mode(p_data, OPERATION_MODE_MEASUREMENT_M);
-	} else {/*disable if state will be changed*/
+			m1120_set_operation_mode(p_data,
+						 OPERATION_MODE_MEASUREMENT_M);
+	} else { /*disable if state will be changed*/
 		if (atomic_cmpxchg(&p_data->atm.enable, 1, 0))
-			m1120_set_operation_mode(p_data, OPERATION_MODE_POWERDOWN_M);
+			m1120_set_operation_mode(p_data,
+						 OPERATION_MODE_POWERDOWN_M);
 	}
 	atomic_set(&p_data->atm.enable, enable);
 
 	mutex_unlock(&p_data->mtx.enable);
 }
-
 
 static void m1120_set_delay(struct m1120_data_t *p_data, int delay)
 {
@@ -323,15 +331,16 @@ static void m1120_set_delay(struct m1120_data_t *p_data, int delay)
 	mutex_lock(&p_data->mtx.enable);
 
 	if (m1120_get_enable(p_data)) {
-		if (!(p_data->reg.map.intsrs & M1120_DETECTION_MODE_INTERRUPT)) {
+		if (!(p_data->reg.map.intsrs &
+		      M1120_DETECTION_MODE_INTERRUPT)) {
 			cancel_delayed_work_sync(&p_data->work);
-			schedule_delayed_work(&p_data->work, msecs_to_jiffies(delay));
+			schedule_delayed_work(&p_data->work,
+					      msecs_to_jiffies(delay));
 		}
 	}
 
 	mutex_unlock(&p_data->mtx.enable);
 }
-
 
 static void m1120_set_debug(struct m1120_data_t *p_data, int debug)
 {
@@ -344,7 +353,7 @@ static int m1120_clear_interrupt(struct m1120_data_t *p_data)
 	u8 data = 0x00;
 
 	data = p_data->reg.map.persint | 0x01;
-	ret =  m1120_i2c_write_block(p_data, M1120_REG_PERSINT, &data, 1);
+	ret = m1120_i2c_write_block(p_data, M1120_REG_PERSINT, &data, 1);
 
 	return ret;
 }
@@ -371,7 +380,8 @@ static int m1120_set_operation_mode(struct m1120_data_t *p_data, int mode)
 		opf |= M1120_VAL_OPF_EFRD_ON;
 		opf |= M1120_VAL_OPF_HSSON_ON;
 		err = m1120_i2c_write_block(p_data, M1120_REG_OPF, &opf, 1);
-		TRI_KEY_LOG("operation mode was OPERATION_MODE_FUSEROMACCESS_M");
+		TRI_KEY_LOG(
+			"operation mode was OPERATION_MODE_FUSEROMACCESS_M");
 		break;
 	}
 	TRI_KEY_LOG("opf = ox%x\n", opf);
@@ -421,7 +431,7 @@ static int m1120_init_device(struct m1120_data_t *p_data)
 static int m1120_reset_device(struct m1120_data_t *p_data)
 {
 	int err = 0;
-	u8  id = 0xFF, data = 0x00;
+	u8 id = 0xFF, data = 0x00;
 
 	if ((p_data == NULL) || (p_data->client == NULL))
 		return -ENODEV;
@@ -440,7 +450,8 @@ static int m1120_reset_device(struct m1120_data_t *p_data)
 	if (err < 0)
 		return err;
 	if (id != M1120_VAL_DID) {
-		TRI_KEY_ERR("current device id(0x%02X) is not M1120 device id(0x%02X)",
+		TRI_KEY_ERR(
+			"current device id(0x%02X) is not M1120 device id(0x%02X)",
 			id, M1120_VAL_DID);
 		return -ENXIO;
 	}
@@ -448,7 +459,7 @@ static int m1120_reset_device(struct m1120_data_t *p_data)
 	/*(3) init variables*/
 	/*(3-1) persint*/
 	data = M1120_PERSISTENCE_COUNT;
-	err =   m1120_i2c_write_block(p_data, M1120_REG_PERSINT, &data, 1);
+	err = m1120_i2c_write_block(p_data, M1120_REG_PERSINT, &data, 1);
 	if (err < 0) {
 		TRI_KEY_ERR("cm1120_i2c_write_block error, data : %d", data);
 		return err;
@@ -496,13 +507,14 @@ static int m1120_input_dev_init(struct m1120_data_t *p_data)
 #if (M1120_EVENT_TYPE == EV_ABS)
 	input_set_drvdata(dev, p_data);
 	input_set_capability(dev, M1120_EVENT_TYPE, ABS_MISC);
-	input_set_abs_params(dev, M1120_EVENT_CODE, M1120_EVENT_DATA_CAPABILITY_MIN,
-		M1120_EVENT_DATA_CAPABILITY_MAX, 0, 0);
+	input_set_abs_params(dev, M1120_EVENT_CODE,
+			     M1120_EVENT_DATA_CAPABILITY_MIN,
+			     M1120_EVENT_DATA_CAPABILITY_MAX, 0, 0);
 #elif (M1120_EVENT_TYPE == EV_KEY)
 	input_set_drvdata(dev, p_data);
 	input_set_capability(dev, M1120_EVENT_TYPE, M1120_EVENT_CODE);
 #else
-#error ("[ERR] M1120_EVENT_TYPE is not defined.")
+#error("[ERR] M1120_EVENT_TYPE is not defined.")
 #endif
 
 	err = input_register_device(dev);
@@ -532,13 +544,15 @@ static int m1120_power_ctl(struct m1120_data_t *data, bool on)
 	if (!on && data->power_enabled) {
 		ret = regulator_disable(data->vdd);
 		if (ret) {
-			TRI_KEY_ERR("Regulator vdd disable failed ret=%d\n", ret);
+			TRI_KEY_ERR("Regulator vdd disable failed ret=%d\n",
+				    ret);
 			return ret;
 		}
 
 		ret = regulator_disable(data->vio);
 		if (ret) {
-			TRI_KEY_ERR("Regulator vio disable failed ret=%d\n", ret);
+			TRI_KEY_ERR("Regulator vio disable failed ret=%d\n",
+				    ret);
 			err = regulator_enable(data->vdd);
 			return ret;
 		}
@@ -546,25 +560,26 @@ static int m1120_power_ctl(struct m1120_data_t *data, bool on)
 	} else if (on && !data->power_enabled) {
 		ret = regulator_enable(data->vdd);
 		if (ret) {
-			TRI_KEY_ERR("Regulator vdd enable failed ret=%d\n", ret);
+			TRI_KEY_ERR("Regulator vdd enable failed ret=%d\n",
+				    ret);
 			return ret;
 		}
 		msleep(20);
 		ret = regulator_enable(data->vio);
 		if (ret) {
-			TRI_KEY_ERR("Regulator vio enable failed ret=%d\n", ret);
+			TRI_KEY_ERR("Regulator vio enable failed ret=%d\n",
+				    ret);
 			err = regulator_disable(data->vdd);
 			return ret;
 		}
 		msleep(20);
 		data->power_enabled = on;
 	} else {
-		dev_info(&data->client->dev,
-			"Power on=%d. enabled=%d\n",
-			on, data->power_enabled);
-}
+		dev_info(&data->client->dev, "Power on=%d. enabled=%d\n", on,
+			 data->power_enabled);
+	}
 
-return ret;
+	return ret;
 }
 
 static int m1120_power_init(struct m1120_data_t *data)
@@ -579,9 +594,8 @@ static int m1120_power_init(struct m1120_data_t *data)
 	}
 
 	if (regulator_count_voltages(data->vdd) > 0) {
-		ret = regulator_set_voltage(data->vdd,
-				M1120_VDD_MIN_UV,
-				M1120_VDD_MAX_UV);
+		ret = regulator_set_voltage(data->vdd, M1120_VDD_MIN_UV,
+					    M1120_VDD_MAX_UV);
 		if (ret) {
 			TRI_KEY_ERR("Regulator set failed vdd ret=%d\n", ret);
 			goto reg_vdd_put;
@@ -596,9 +610,8 @@ static int m1120_power_init(struct m1120_data_t *data)
 	}
 
 	if (regulator_count_voltages(data->vio) > 0) {
-		ret = regulator_set_voltage(data->vio,
-				M1120_VIO_MIN_UV,
-				M1120_VIO_MAX_UV);
+		ret = regulator_set_voltage(data->vio, M1120_VIO_MIN_UV,
+					    M1120_VIO_MAX_UV);
 		if (ret) {
 			TRI_KEY_ERR("Regulator set failed vio ret=%d\n", ret);
 			goto reg_vio_put;
@@ -617,9 +630,8 @@ reg_vdd_put:
 	return ret;
 }
 
-
 static int tri_key_m1120_parse_dt(struct device *dev,
-		struct m1120_data_t *p_data)
+				  struct m1120_data_t *p_data)
 {
 	struct device_node *np = dev->of_node;
 	struct pinctrl *key_pinctrl;
@@ -640,12 +652,13 @@ static int tri_key_m1120_parse_dt(struct device *dev,
 	p_data->int_en = of_property_read_bool(np, "magnachip,use-interrupt");
 
 	p_data->igpio = of_get_named_gpio_flags(dev->of_node,
-			"magnachip,gpio-int", 0, NULL);
+						"magnachip,gpio-int", 0, NULL);
 
-	p_data->irq_gpio =  of_get_named_gpio(np, "dhall,irq-gpio", 0);
+	p_data->irq_gpio = of_get_named_gpio(np, "dhall,irq-gpio", 0);
 	TRI_KEY_LOG("irq_gpio : %d", p_data->irq_gpio);
 
-	p_data->use_hrtimer = of_property_read_bool(np, "magnachip,use-hrtimer");
+	p_data->use_hrtimer =
+		of_property_read_bool(np, "magnachip,use-hrtimer");
 
 	key_pinctrl = devm_pinctrl_get(dev);
 
@@ -653,12 +666,11 @@ static int tri_key_m1120_parse_dt(struct device *dev,
 		TRI_KEY_ERR("Failed to get pinctrl\n");
 
 	set_state = pinctrl_lookup_state(key_pinctrl,
-			"downhall_tri_state_key_active");
+					 "downhall_tri_state_key_active");
 	if (IS_ERR_OR_NULL(set_state))
 		TRI_KEY_ERR("Failed to lookup_state\n");
 
 	pinctrl_select_state(key_pinctrl, set_state);
-
 
 	return 0;
 }
@@ -666,7 +678,7 @@ static int tri_key_m1120_parse_dt(struct device *dev,
 static int m1120_get_data(short *data)
 {
 	int err = 0;
-	u8 buf[3] = {0};
+	u8 buf[3] = { 0 };
 	short value = 0;
 
 	if (!p_m1120_data) {
@@ -674,7 +686,8 @@ static int m1120_get_data(short *data)
 		return -EINVAL;
 	}
 
-	err = m1120_i2c_read_block(p_m1120_data, M1120_REG_ST1, buf, sizeof(buf));
+	err = m1120_i2c_read_block(p_m1120_data, M1120_REG_ST1, buf,
+				   sizeof(buf));
 	if (err < 0) {
 		TRI_KEY_LOG("fail %d\n", err);
 		return err;
@@ -726,12 +739,14 @@ static int m1120_get_irq_state(void)
 		return -EINVAL;
 	}
 
-	return ((p_m1120_data->reg.map.intsrs & M1120_DETECTION_MODE_INTERRUPT) ? 1 : 0);
+	return ((p_m1120_data->reg.map.intsrs &
+		 M1120_DETECTION_MODE_INTERRUPT) ?
+			1 :
+			0);
 }
 
 static bool m1120_update_threshold(int position, short lowthd, short highthd)
 {
-
 	u8 lthh, lthl, hthh, hthl;
 	int err = 0;
 
@@ -746,14 +761,19 @@ static bool m1120_update_threshold(int position, short lowthd, short highthd)
 	err = m1120_clear_interrupt(p_m1120_data);
 
 	if (p_m1120_data->reg.map.intsrs & M1120_DETECTION_MODE_INTERRUPT) {
-		TRI_KEY_LOG("dn hallthreshold, lowthd=%d, highthd=%d.\n", lowthd, highthd);
+		TRI_KEY_LOG("dn hallthreshold, lowthd=%d, highthd=%d.\n",
+			    lowthd, highthd);
 		m1120_short_to_2byte(p_m1120_data, highthd, &hthh, &hthl);
 		m1120_short_to_2byte(p_m1120_data, lowthd, &lthh, &lthl);
 
-		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_HTHH, &hthh, 1);
-		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_HTHL, &hthl, 1);
-		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_LTHH, &lthh, 1);
-		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_LTHL, &lthl, 1);
+		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_HTHH,
+					     &hthh, 1);
+		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_HTHL,
+					     &hthl, 1);
+		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_LTHH,
+					     &lthh, 1);
+		err |= m1120_i2c_write_block(p_m1120_data, M1120_REG_LTHL,
+					     &lthl, 1);
 	}
 
 	if (err < 0) {
@@ -770,8 +790,8 @@ static void m1120_dump_reg(u8 *buf)
 {
 	int i, err;
 	u8 val;
-	u8 buffer[512] = {0};
-	u8 _buf[20] = {0};
+	u8 buffer[512] = { 0 };
+	u8 _buf[20] = { 0 };
 
 	TRI_KEY_LOG("%s", __func__);
 	if (p_m1120_data == NULL) {
@@ -817,13 +837,16 @@ static int m1120_set_detection_mode_1(u8 mode)
 		return -EINVAL;
 	}
 
-	TRI_KEY_LOG("m1120 down detection mode : %s\n", (mode == 0) ? "POLLING":"INTERRUPT");
+	TRI_KEY_LOG("m1120 down detection mode : %s\n",
+		    (mode == 0) ? "POLLING" : "INTERRUPT");
 
 	if (mode & DETECTION_MODE_INTERRUPT) { /*interrupt mode*/
 		if (!p_m1120_data->irq_enabled) {
-			data = p_m1120_data->reg.map.intsrs | M1120_DETECTION_MODE_INTERRUPT;
+			data = p_m1120_data->reg.map.intsrs |
+			       M1120_DETECTION_MODE_INTERRUPT;
 
-			err = m1120_i2c_write_block(p_m1120_data, M1120_REG_INTSRS, &data, 1);
+			err = m1120_i2c_write_block(p_m1120_data,
+						    M1120_REG_INTSRS, &data, 1);
 			if (err < 0) {
 				TRI_KEY_ERR("config interrupt fail %d\n", err);
 				return err;
@@ -837,8 +860,9 @@ static int m1120_set_detection_mode_1(u8 mode)
 
 			/* request irq */
 			TRI_KEY_LOG("m1120 down enter irq handler\n");
-			if (request_irq(p_m1120_data->irq, &m1120_down_irq_handler,
-				IRQ_TYPE_LEVEL_LOW, "hall_m1120_down",
+			if (request_irq(p_m1120_data->irq,
+					&m1120_down_irq_handler,
+					IRQ_TYPE_LEVEL_LOW, "hall_m1120_down",
 					(void *)p_m1120_data->client)) {
 				TRI_KEY_ERR("IRQ LINE NOT AVAILABLE!!\n");
 				return -EINVAL;
@@ -850,9 +874,10 @@ static int m1120_set_detection_mode_1(u8 mode)
 	} else { /*polling mode*/
 		if (p_m1120_data->irq_enabled) {
 			data = p_m1120_data->reg.map.intsrs &
-				(0xFF - M1120_DETECTION_MODE_INTERRUPT);
+			       (0xFF - M1120_DETECTION_MODE_INTERRUPT);
 
-			err = m1120_i2c_write_block(p_m1120_data, M1120_REG_INTSRS, &data, 1);
+			err = m1120_i2c_write_block(p_m1120_data,
+						    M1120_REG_INTSRS, &data, 1);
 			if (err < 0) {
 				TRI_KEY_ERR("config interrupt fail %d\n", err);
 				return err;
@@ -870,7 +895,6 @@ static int m1120_set_detection_mode_1(u8 mode)
 
 static int m1120_set_reg_1(int reg, int val)
 {
-
 	u8 data = (u8)val;
 
 	TRI_KEY_LOG("======> %s", __func__);
@@ -883,8 +907,8 @@ static int m1120_set_reg_1(int reg, int val)
 	return 0;
 }
 
-struct dhall_operations  m1120_downs_ops = {
-	.get_data  = m1120_get_data,
+struct dhall_operations m1120_downs_ops = {
+	.get_data = m1120_get_data,
 	.enable_irq = m1120_enable_irq,
 	.clear_irq = m1120_clear_irq,
 	.get_irq_state = m1120_get_irq_state,
@@ -895,11 +919,12 @@ struct dhall_operations  m1120_downs_ops = {
 	.is_power_on = m1120_is_power_on
 };
 
-static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client,
+				       const struct i2c_device_id *id)
 {
-	struct m1120_data_t            *p_data;
-	struct extcon_dev_data	*hall_dev = NULL;
-	int                  err = 0;
+	struct m1120_data_t *p_data;
+	struct extcon_dev_data *hall_dev = NULL;
+	int err = 0;
 
 	TRI_KEY_LOG("allocation memory for p_m1120_data down %s\n", __func__);
 	/*(1) allocation memory for p_m1120_data*/
@@ -946,14 +971,14 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 	if (gpio_is_valid(p_data->irq_gpio)) {
 		err = gpio_request(p_data->irq_gpio, "m1120_down_irq");
 		if (err) {
-			TRI_KEY_LOG("unable to request gpio [%d]", p_data->irq_gpio);
+			TRI_KEY_LOG("unable to request gpio [%d]",
+				    p_data->irq_gpio);
 		} else {
 			err = gpio_direction_input(p_data->irq_gpio);
 			msleep(50);
 			p_data->irq = gpio_to_irq(p_data->irq_gpio);
 			TRI_KEY_LOG("======> irq : %d", p_data->irq);
 		}
-
 	}
 
 	err = m1120_power_init(p_data);
@@ -968,7 +993,6 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 		err = -EINVAL;
 		goto error_1;
 	}
-
 
 	/*(6) reset and init device*/
 	err = m1120_init_device(p_data);
@@ -990,7 +1014,6 @@ static int tri_key_m1120_i2c_drv_probe(struct i2c_client *client, const struct i
 
 	/*(12) imigrate p_data to p_m1120_data*/
 	TRI_KEY_LOG("%s : %s was probed.\n", __func__, M1120_DRIVER_NAME_DOWN);
-
 
 	oplus_register_hall("hall_down", &m1120_downs_ops, hall_dev);
 	return 0;
@@ -1022,14 +1045,15 @@ static int m1120_i2c_drv_remove(struct i2c_client *client)
 }
 
 static const struct i2c_device_id m1120_i2c_drv_id_table[] = {
-	{"hall_m1120_down", 0 },
-	{ }
+	{ "hall_m1120_down", 0 },
+	{}
 };
 
-
 static const struct of_device_id m1120_of_match[] = {
-	{ .compatible = HALL_MXM1120_DOWN, },
-	{ },
+	{
+		.compatible = HALL_MXM1120_DOWN,
+	},
+	{},
 };
 
 struct i2c_driver m1120_i2c_down_driver = {
@@ -1063,4 +1087,3 @@ module_exit(m1120_driver_exit_down);
 
 MODULE_DESCRIPTION("M1120 hallswitch driver");
 MODULE_LICENSE("GPL");
-

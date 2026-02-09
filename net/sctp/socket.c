@@ -1364,7 +1364,7 @@ static int __sctp_setsockopt_connectx(struct sock *sk,
 
 	kaddrs = memdup_user(addrs, addrs_size);
 	if (IS_ERR(kaddrs))
-		return PTR_ERR(kaddrs) == -EFAULT ? -EINVAL : PTR_ERR(kaddrs);
+		return PTR_ERR(kaddrs);
 
 	/* Allow security module to validate connectx addresses. */
 	err = security_sctp_bind_connect(sk, SCTP_SOCKOPT_CONNECTX,
@@ -8811,7 +8811,7 @@ void sctp_copy_sock(struct sock *newsk, struct sock *sk,
 	if (newsk->sk_flags & SK_FLAGS_TIMESTAMP)
 		net_enable_timestamp();
 
-	/* Set newsk security attributes from orginal sk and connection
+	/* Set newsk security attributes from original sk and connection
 	 * security attribute from ep.
 	 */
 	security_sctp_sk_clone(ep, sk, newsk);

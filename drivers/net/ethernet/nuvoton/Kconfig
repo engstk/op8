@@ -6,7 +6,7 @@ config NET_VENDOR_NUVOTON
 	bool "Nuvoton devices"
 	default y
 	depends on ARM && ARCH_W90X900
-	---help---
+	help
 	  If you have a network (Ethernet) card belonging to this class, say Y.
 
 	  Note that the answer to this question doesn't directly affect the
@@ -21,7 +21,7 @@ config W90P910_ETH
 	depends on ARM && ARCH_W90X900
 	select PHYLIB
 	select MII
-	---help---
+	help
 	  Say Y here if you want to use built-in Ethernet ports
 	  on w90p910 processor.
 

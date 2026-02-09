@@ -51,14 +51,6 @@
 								##__VA_ARGS__)
 #define DSI_DEBUG(fmt, ...)	DRM_DEV_DEBUG(NULL, "[msm-dsi-debug]: "fmt, \
 								##__VA_ARGS__)
-
-#ifdef OPLUS_BUG_STABILITY
-#define DSI_MM_ERR(fmt, ...)	\
-	do { \
-		DRM_DEV_ERROR(NULL, "[msm-dsi-error]: " fmt, ##__VA_ARGS__); \
-	} while(0)
-#endif /* OPLUS_BUG_STABILITY */
-
 /**
  * enum dsi_pixel_format - DSI pixel formats
  * @DSI_PIXEL_FORMAT_RGB565:
@@ -369,9 +361,9 @@ enum dsi_cmd_set_type {
 	DSI_CMD_HBM_EXIT1_SWITCH,
 	DSI_CMD_HBM_EXIT2_SWITCH,
 	DSI_CMD_HBM_AOR_RESTORE,
-	DSI_CMD_SET_LP1_PVT,  /*DSI_CMD_SET_LP1*/
+	DSI_CMD_SET_LP1_PVT, /*DSI_CMD_SET_LP1*/
 	DSI_CMD_SET_NOLP_PVT, /*DSI_CMD_SET_NOLP*/
-	DSI_CMD_AOD_HBM_ON_PVT,  /*DSI_CMD_AOD_HBM_ON*/
+	DSI_CMD_AOD_HBM_ON_PVT, /*DSI_CMD_AOD_HBM_ON*/
 	DSI_CMD_AOD_HBM_OFF_PVT, /*DSI_CMD_AOD_HBM_OFF*/
 	DSI_CMD_DLY_OFF,
 	DSI_CMD_SET_REGISTER_READ,
@@ -384,15 +376,15 @@ enum dsi_cmd_set_type {
 	DSI_CMD_CABC_MODE3,
 	DSI_GAMMA_NOMAL_COMMAND,
 	DSI_GAMMA_LOWBL_COMMAND,
-/* add for optimizing the display effect under low backlight brightness */
+	/* add for optimizing the display effect under low backlight brightness */
 	DSI_CMD_DIMMING_GAMMA,
 	DSI_CMD_SET_FPS60,
 	DSI_CMD_SET_FPS120,
+	DSI_CMD_SET_D_ON,
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
 	DSI_CMD_SET_ABYP,
 #endif
 #endif
-
 #ifdef OPLUS_FEATURE_ADFR
 	DSI_CMD_QSYNC_MIN_FPS_0,
 	DSI_CMD_QSYNC_MIN_FPS_1,
@@ -407,7 +399,6 @@ enum dsi_cmd_set_type {
 	DSI_CMD_FAKEFRAME,
 	DSI_CMD_ADFR_PRE_SWITCH,
 #endif
-
 	DSI_CMD_SET_MAX
 };
 

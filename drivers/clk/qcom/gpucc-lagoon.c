@@ -21,8 +21,8 @@
 #include "vdd-level-lagoon.h"
 
 static DEFINE_VDD_REGULATORS(vdd_cx, VDD_NUM, 1, vdd_corner);
-static DEFINE_VDD_REGULATORS(vdd_gx, VDD_GX_NUM, 1, vdd_corner);
-static DEFINE_VDD_REGULATORS(vdd_mx, VDD_NUM, 1, vdd_gx_corner);
+static DEFINE_VDD_REGULATORS(vdd_gx, VDD_GX_NUM, 1, vdd_gx_corner);
+static DEFINE_VDD_REGULATORS(vdd_mx, VDD_NUM, 1, vdd_corner);
 
 #define CX_GMU_CBCR_SLEEP_MASK		0xF
 #define CX_GMU_CBCR_SLEEP_SHIFT		4

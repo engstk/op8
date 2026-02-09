@@ -1,3 +1,3 @@
-#ifndef _VERSIONS_H 
+#ifndef _VERSIONS_H
 #define _VERSIONS_H
 #endif

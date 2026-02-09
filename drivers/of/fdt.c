@@ -32,10 +32,6 @@
 
 #include "of_private.h"
 
-#ifdef CONFIG_PARAM_READ_WRITE
-void init_param_mem_base_size(phys_addr_t base, unsigned long size);
-#endif
-
 /*
  * of_fdt_limit_memory - limit the number of regions in the /memory node
  * @limit: maximum entries
@@ -678,11 +674,6 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
 		else
 			pr_info("Reserved memory: failed to reserve memory for node '%s': base %pa, size %lu MiB\n",
 				uname, &base, (unsigned long)(size / SZ_1M));
-
-		#ifdef CONFIG_PARAM_READ_WRITE
-		if (!strncmp(uname, "param_mem", 9))
-			init_param_mem_base_size(base, size);
-		#endif
 
 		len -= t_len;
 		if (first) {

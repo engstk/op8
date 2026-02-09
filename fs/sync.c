@@ -219,6 +219,7 @@ static int do_fsync(unsigned int fd, int datasync)
 {
 	struct fd f = fdget(fd);
 	int ret = -EBADF;
+
 	if (f.file) {
 		ret = vfs_fsync(f.file, datasync);
 		fdput(f);

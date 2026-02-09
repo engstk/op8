@@ -297,10 +297,8 @@ static void dsi_phy_hw_cphy_enable(struct dsi_phy_hw *phy,
 #ifdef OPLUS_BUG_STABILITY
 	/* A tablet Pad, modify mipi */
 	if (mipi_c_phy_oslo_flag) {
-		DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_TOP_CTRL,
-			0x1F);
-		DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_BOT_CTRL,
-			0x1F);
+		DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_TOP_CTRL, 0x1F);
+		DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_BOT_CTRL, 0x1F);
 	} else {
 		DSI_W32(phy, DSIPHY_CMN_GLBL_RESCODE_OFFSET_TOP_CTRL,
 			glbl_rescode_top_ctrl);
@@ -383,7 +381,14 @@ static void dsi_phy_hw_dphy_enable(struct dsi_phy_hw *phy,
 		glbl_hstx_str_ctrl_0 = 0x88;
 #else
 		if (oplus_enhance_mipi_strength) {
-			if (display && display->panel && display->panel->oplus_priv.is_oplus_project) {
+			if (display && display->panel &&
+			    (display->panel->oplus_priv.is_oplus_project ||
+			     (!strcmp(display->panel->name,
+				      "samsung ams662zs01 dsc cmd 21623")) ||
+			     (!strcmp(display->panel->oplus_priv.vendor_name,
+				      "SOFE03F")) ||
+			     (!strcmp(display->panel->oplus_priv.vendor_name,
+				      "AMS662ZS01")))) {
 				glbl_str_swi_cal_sel_ctrl = 0x03;
 				glbl_hstx_str_ctrl_0 = 0xee;
 			} else {

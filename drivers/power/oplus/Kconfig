@@ -1,15 +1,16 @@
-menuconfig OPLUS_CHARGER
-	bool "OPLUS charging system"
-	depends on I2C
-	select REGMAP_I2C
+#ifdef OPLUS_FEATURE_CHG_BASIC
+config OPLUS_SM8250_CHARGER
+	tristate "OPLUS SM8150 charger driver"
+	depends on MFD_SPMI_PMIC
 	help
-	  Say Y here to enable OPLUS charging system support
+	  Enables support for the oplus charging framework
 
-if OPLUS_CHARGER
-config OPLUS_CHARGER_MTK
-	bool "OPLUS charger on MTK"
+config OPLUS_SHORT_C_BATT_CHECK
+	tristate "OPLUS_SHORT_C_BATT CHECK SUPPORT"
+	default n
+	depends on MFD_SPMI_PMIC
 	help
-	  Say Y here to declare charging system is on MTK
+	  Say Y to include support
 
 config OPLUS_CALL_MODE_SUPPORT
 	bool "OPLUS call mode support"
@@ -21,32 +22,51 @@ config OPLUS_SMART_CHARGER_SUPPORT
 	help
 	  Say Y to include support
 
-config OPLUS_CHG_DYNAMIC_CONFIG
-	bool "OPLUS_CHG_DYNAMIC_CONFIG"
+config OPLUS_SHORT_HW_CHECK
+	tristate "OPLUS_SHORT_HW CHECK SUPPORT"
 	default n
+	depends on MFD_SPMI_PMIC
 	help
 	  Say Y to include support
 
-menuconfig OPLUS_CHG
-	tristate "OPLUS CHARGER KO module"
-	default n
-depends on I2C
-	select REGMAP_I2C
+config OPLUS_CHIP_SOC_NODE
+	bool "OPLUS chip soc node"
 	help
-	  Enables support for the oplus charging v1 framework
+	  Say Y to include support
 
-source "drivers/power/oplus/v1/Kconfig"
-
-menuconfig OPLUS_CHG_V2
-	tristate "OPLUS charging V2 system"
+config OPLUS_SHORT_IC_CHECK
+	tristate "OPLUS_SHORT_IC CHECK SUPPORT"
 	default n
-	depends on I2C
-	select REGMAP_I2C
+	depends on MFD_SPMI_PMIC
 	help
-	  Enables support for the oplus charging v2 framework
+	  Say Y to include support
 
-if OPLUS_CHG_V2
-source "drivers/power/oplus/v2/Kconfig"
-endif
+config OPLUS_SHORT_USERSPACE
+	bool "OPLUS batt userspace"
+	help
+	  Say Y to include support
 
-endif #OPLUS_CHARGER
+config OPLUS_CHECK_CHARGERID_VOLT
+	tristate "OPLUS CHECK CHARGERID VOLT"
+	default n
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to include support
+
+config OPLUS_SHIP_MODE_SUPPORT
+	tristate "OPLUS_SHIP_MODE_SUPPORT"
+	default n
+	depends on MFD_SPMI_PMIC
+	help
+	  Say Y to include support
+
+config OPLUS_CHARGER_WIRELESS_PEN
+	bool "OPLUS charger wireless pen"
+	help
+	  Say Y to include support
+
+config OPLUS_SMOOTH_SOC
+	bool "OPLUS config smooth soc "
+	help
+	  Say Y here to include smooth soc
+#endif

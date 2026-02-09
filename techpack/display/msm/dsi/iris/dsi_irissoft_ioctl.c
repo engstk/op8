@@ -36,7 +36,8 @@ int iris_wait_vsync()
 	return 0;
 }
 
-int iris_set_pending_panel_brightness(int32_t pending, int32_t delay, int32_t level)
+int iris_set_pending_panel_brightness(int32_t pending, int32_t delay,
+				      int32_t level)
 {
 	struct iris_cfg *pcfg = &gcfg[gcfg_index];
 
@@ -75,16 +76,18 @@ int iris_sync_panel_brightness(int32_t step, void *phys_enc)
 	pcfg = &gcfg[gcfg_index];
 
 	if (pcfg->panel_pending == step) {
-		DSI_INFO("IRIS_LOG sync pending panel %d %d,%d,%d", step, pcfg->panel_pending, pcfg->panel_delay, pcfg->panel_level);
+		DSI_INFO("IRIS_LOG sync pending panel %d %d,%d,%d", step,
+			 pcfg->panel_pending, pcfg->panel_delay,
+			 pcfg->panel_level);
 		SDE_ATRACE_BEGIN("sync_panel_brightness");
 		if (step <= 2) {
-			rc = c_conn->ops.set_backlight(&c_conn->base,
-					display, pcfg->panel_level);
+			rc = c_conn->ops.set_backlight(&c_conn->base, display,
+						       pcfg->panel_level);
 			usleep_range(pcfg->panel_delay, pcfg->panel_delay);
 		} else {
 			usleep_range(pcfg->panel_delay, pcfg->panel_delay);
-			rc = c_conn->ops.set_backlight(&c_conn->base,
-					display, pcfg->panel_level);
+			rc = c_conn->ops.set_backlight(&c_conn->base, display,
+						       pcfg->panel_level);
 		}
 		if (c_conn->bl_device)
 			c_conn->bl_device->props.brightness = pcfg->panel_level;
@@ -137,7 +140,8 @@ int iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 	switch (type) {
 	case IRIS_WAIT_VSYNC:
 		if (count > 2)
-			iris_set_pending_panel_brightness(values[0], values[1], values[2]);
+			iris_set_pending_panel_brightness(values[0], values[1],
+							  values[2]);
 		break;
 	default:
 		break;
@@ -146,8 +150,8 @@ int iris_configure_ex(u32 display, u32 type, u32 count, u32 *values)
 	return 0;
 }
 
-int iris_configure_ex_t(uint32_t display, uint32_t type,
-								uint32_t count, void __user *values)
+int iris_configure_ex_t(uint32_t display, uint32_t type, uint32_t count,
+			void __user *values)
 {
 	int ret = -1;
 	uint32_t *val = NULL;
@@ -175,7 +179,7 @@ void iris_init(struct dsi_display *display, struct dsi_panel *panel)
 	DSI_INFO("IRIS_LOG %s:%d", __func__, __LINE__);
 	pcfg->display = display;
 	pcfg->panel = panel;
-	pcfg->valid = 1;	/* empty */
+	pcfg->valid = 1; /* empty */
 }
 
 int iris_operate_tool(struct msm_iris_operate_value *argp)
@@ -208,7 +212,8 @@ int iris_operate_conf(struct msm_iris_operate_value *argp)
 		break;
 	case IRIS_OPRT_CONFIGURE_NEW:
 		mutex_lock(&pcfg->panel->panel_lock);
-		ret = iris_configure_ex_t(display_type, child_type, argp->count, argp->values);
+		ret = iris_configure_ex_t(display_type, child_type, argp->count,
+					  argp->values);
 		mutex_unlock(&pcfg->panel->panel_lock);
 		break;
 	default:

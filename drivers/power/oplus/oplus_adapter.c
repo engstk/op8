@@ -12,21 +12,15 @@
 #include "oplus_gauge.h"
 #include "oplus_adapter.h"
 
-
-
 extern int enable_charger_log;
-#define adapter_xlog_printk(num, fmt, ...) \
-        do { \
-                if (enable_charger_log >= (int)num) { \
-                        printk(KERN_NOTICE pr_fmt("[OPLUS_CHG][%s]"fmt), __func__, ##__VA_ARGS__);\
-        } \
-} while (0)
-
+#define adapter_xlog_printk(num, fmt, ...)                                                                             \
+	do {                                                                                                           \
+		if (enable_charger_log >= (int)num) {                                                                  \
+			printk(KERN_NOTICE pr_fmt("[OPLUS_CHG][%s]" fmt), __func__, ##__VA_ARGS__);                    \
+		}                                                                                                      \
+	} while (0)
 
 static struct oplus_adapter_chip *g_adapter_chip = NULL;
-
-
-
 
 static void oplus_adpater_awake_init(struct oplus_adapter_chip *chip)
 {
@@ -63,82 +57,78 @@ static void oplus_adapter_set_awake(struct oplus_adapter_chip *chip, bool awake)
 #endif
 }
 
-
 static void adapter_update_work_func(struct work_struct *work)
 {
-        struct delayed_work *dwork = to_delayed_work(work);
-        struct oplus_adapter_chip *chip = container_of(dwork, struct oplus_adapter_chip, adapter_update_work);
-        bool update_result = false;
-		long tx_gpio = 0, rx_gpio = 0;
-        int i = 0;
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct oplus_adapter_chip *chip = container_of(dwork, struct oplus_adapter_chip, adapter_update_work);
+	bool update_result = false;
+	long tx_gpio = 0, rx_gpio = 0;
+	int i = 0;
 
-        if (!chip) {
-                chg_err("oplus_adapter_chip NULL\n");
-                return;
-        }		
-        oplus_adapter_set_awake(chip, true);
-		
-		tx_gpio = oplus_vooc_get_uart_tx();
-		rx_gpio = oplus_vooc_get_uart_rx();
-		
-        adapter_xlog_printk(CHG_LOG_CRTI, " begin\n");
-		oplus_vooc_uart_init();
-		
-        for (i = 0;i < 2;i++) {
-                update_result = chip->vops->adapter_update(tx_gpio, rx_gpio);
-                if (update_result == true) {
-                        break;
-                }
-                if (i < 1) {
-                        msleep(1650);
-                }
-        }
+	if (!chip) {
+		chg_err("oplus_adapter_chip NULL\n");
+		return;
+	}
+	oplus_adapter_set_awake(chip, true);
 
-        if (update_result) {
-				oplus_vooc_set_adapter_update_real_status(ADAPTER_FW_UPDATE_SUCCESS);
-        } else {
-				oplus_vooc_set_adapter_update_real_status(ADAPTER_FW_UPDATE_FAIL);
-				oplus_vooc_set_adapter_update_report_status(ADAPTER_FW_UPDATE_FAIL);
-				
-        }
-        msleep(20);
-		
-		oplus_vooc_uart_reset();
-		
-        if (update_result) {
-                msleep(2000);
-				oplus_vooc_set_adapter_update_report_status(ADAPTER_FW_UPDATE_SUCCESS);
-        }
-        oplus_vooc_battery_update();
-        adapter_xlog_printk(CHG_LOG_CRTI, "  end update_result:%d\n", update_result);
-        oplus_adapter_set_awake(chip, false);
+	tx_gpio = oplus_vooc_get_uart_tx();
+	rx_gpio = oplus_vooc_get_uart_rx();
+
+	adapter_xlog_printk(CHG_LOG_CRTI, " begin\n");
+	oplus_vooc_uart_init();
+
+	for (i = 0; i < 2; i++) {
+		update_result = chip->vops->adapter_update(tx_gpio, rx_gpio);
+		if (update_result == true) {
+			break;
+		}
+		if (i < 1) {
+			msleep(1650);
+		}
+	}
+
+	if (update_result) {
+		oplus_vooc_set_adapter_update_real_status(ADAPTER_FW_UPDATE_SUCCESS);
+	} else {
+		oplus_vooc_set_adapter_update_real_status(ADAPTER_FW_UPDATE_FAIL);
+		oplus_vooc_set_adapter_update_report_status(ADAPTER_FW_UPDATE_FAIL);
+	}
+	msleep(20);
+
+	oplus_vooc_uart_reset();
+
+	if (update_result) {
+		msleep(2000);
+		oplus_vooc_set_adapter_update_report_status(ADAPTER_FW_UPDATE_SUCCESS);
+	}
+	oplus_vooc_battery_update();
+	adapter_xlog_printk(CHG_LOG_CRTI, "  end update_result:%d\n", update_result);
+	oplus_adapter_set_awake(chip, false);
 }
 
-#define ADAPTER_UPDATE_DELAY                          1400
+#define ADAPTER_UPDATE_DELAY 1400
 void oplus_adapter_fw_update(void)
 {
-        struct oplus_adapter_chip *chip = g_adapter_chip ;
-		adapter_xlog_printk(CHG_LOG_CRTI, " call \n");
-        /*schedule_delayed_work_on(7, &chip->adapter_update_work, */
-        /*                        round_jiffies_relative(msecs_to_jiffies(ADAPTER_UPDATE_DELAY)));*/
-        schedule_delayed_work(&chip->adapter_update_work,
-                                round_jiffies_relative(msecs_to_jiffies(ADAPTER_UPDATE_DELAY)));
+	struct oplus_adapter_chip *chip = g_adapter_chip;
+	adapter_xlog_printk(CHG_LOG_CRTI, " call \n");
+	/*schedule_delayed_work_on(7, &chip->adapter_update_work, */
+	/*                        round_jiffies_relative(msecs_to_jiffies(ADAPTER_UPDATE_DELAY)));*/
+	schedule_delayed_work(&chip->adapter_update_work,
+			      round_jiffies_relative(msecs_to_jiffies(ADAPTER_UPDATE_DELAY)));
 }
-
 
 void oplus_adapter_init(struct oplus_adapter_chip *chip)
 {
-        g_adapter_chip = chip;
-		oplus_adpater_awake_init(chip);
-		INIT_DELAYED_WORK(&chip->adapter_update_work, adapter_update_work_func);
+	g_adapter_chip = chip;
+	oplus_adpater_awake_init(chip);
+	INIT_DELAYED_WORK(&chip->adapter_update_work, adapter_update_work_func);
 }
 
 bool oplus_adapter_check_chip_is_null(void)
 {
-        if (!g_adapter_chip) {
-                return true;
-        } else {
-                return false;
-        }
+	if (!g_adapter_chip) {
+		return true;
+	} else {
+		return false;
+	}
 }
-

@@ -439,7 +439,7 @@ config ROMSIZE
 
 choice
 	prompt "Kernel executes from"
-	---help---
+	help
 	  Choose the memory type that the kernel will be running in.
 
 config RAMKERNEL

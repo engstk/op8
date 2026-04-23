@@ -30,6 +30,7 @@
 #include <linux/cryptohash.h>
 #include <linux/kref.h>
 #include <linux/ktime.h>
+#include <linux/indirect_call_wrapper.h>
 
 #include <net/inet_connection_sock.h>
 #include <net/inet_timewait_sock.h>
@@ -944,6 +945,11 @@ static inline int tcp_v6_sdif(const struct sk_buff *skb)
 #endif
 	return 0;
 }
+
+INDIRECT_CALLABLE_DECLARE(void tcp_v6_send_check(struct sock *sk, struct sk_buff *skb));
+INDIRECT_CALLABLE_DECLARE(int tcp_v6_rcv(struct sk_buff *skb));
+void tcp_v6_early_demux(struct sk_buff *skb);
+
 #endif
 
 static inline bool inet_exact_dif_match(struct net *net, struct sk_buff *skb)

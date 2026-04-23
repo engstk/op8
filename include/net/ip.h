@@ -56,6 +56,7 @@ struct inet_skb_parm {
 #define IPSKB_DOREDIRECT	BIT(5)
 #define IPSKB_FRAG_PMTU		BIT(6)
 #define IPSKB_L3SLAVE		BIT(7)
+#define IPSKB_MULTIPATH		BIT(9)
 
 	u16			frag_max_size;
 };
@@ -197,11 +198,7 @@ struct sk_buff *ip_make_skb(struct sock *sk, struct flowi4 *fl4,
 			    struct ipcm_cookie *ipc, struct rtable **rtp,
 			    struct inet_cork *cork, unsigned int flags);
 
-static inline int ip_queue_xmit(struct sock *sk, struct sk_buff *skb,
-				struct flowi *fl)
-{
-	return __ip_queue_xmit(sk, skb, fl, inet_sk(sk)->tos);
-}
+int ip_queue_xmit(struct sock *sk, struct sk_buff *skb, struct flowi *fl);
 
 static inline struct sk_buff *ip_finish_skb(struct sock *sk, struct flowi4 *fl4)
 {
@@ -440,6 +437,27 @@ static inline unsigned int ip_skb_dst_mtu(struct sock *sk,
 struct dst_metrics *ip_fib_metrics_init(struct net *net, struct nlattr *fc_mx,
 					int fc_mx_len,
 					struct netlink_ext_ack *extack);
+
+/* ipv4 and ipv6 both use refcounted metrics if it is not the default */
+static inline
+void ip_dst_init_metrics(struct dst_entry *dst, struct dst_metrics *fib_metrics)
+{
+	dst_init_metrics(dst, fib_metrics->metrics, true);
+
+	if (fib_metrics != &dst_default_metrics) {
+		dst->_metrics |= DST_METRICS_REFCOUNTED;
+		refcount_inc(&fib_metrics->refcnt);
+	}
+}
+
+static inline
+void ip_dst_metrics_put(struct dst_entry *dst)
+{
+	struct dst_metrics *p = (struct dst_metrics *)DST_METRICS_PTR(dst);
+
+	if (p != &dst_default_metrics && refcount_dec_and_test(&p->refcnt))
+		kfree(p);
+}
 
 u32 ip_idents_reserve(u32 hash, int segs);
 void __ip_select_ident(struct net *net, struct iphdr *iph, int segs);

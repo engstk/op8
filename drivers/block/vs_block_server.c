@@ -669,7 +669,7 @@ static int vs_block_server_io_req_read(struct vs_server_block_state *state,
 
 	req->mbuf = vs_server_block_io_alloc_ack_read(state, &req->pbuf,
 			GFP_KERNEL);
-	if (IS_ERR(req->mbuf) && (PTR_ERR(req->mbuf) == -ENOBUFS)) {
+	if (PTR_ERR(req->mbuf) == -ENOBUFS) {
 		/* Fall back to a bounce buffer */
 		req->mbuf = NULL;
 	} else if (IS_ERR(req->mbuf)) {

@@ -490,7 +490,8 @@ static int tcf_ife_init(struct net *net, struct nlattr *nla,
 		return -EINVAL;
 	}
 
-	err = nla_parse_nested(tb, TCA_IFE_MAX, nla, ife_policy, NULL);
+	err = nla_parse_nested_deprecated(tb, TCA_IFE_MAX, nla, ife_policy,
+					  NULL);
 	if (err < 0)
 		return err;
 
@@ -568,8 +569,9 @@ static int tcf_ife_init(struct net *net, struct nlattr *nla,
 		INIT_LIST_HEAD(&ife->metalist);
 
 	if (tb[TCA_IFE_METALST]) {
-		err = nla_parse_nested(tb2, IFE_META_MAX, tb[TCA_IFE_METALST],
-				       NULL, NULL);
+		err = nla_parse_nested_deprecated(tb2, IFE_META_MAX,
+						  tb[TCA_IFE_METALST], NULL,
+						  NULL);
 		if (err) {
 metadata_parse_err:
 			tcf_idr_release(*a, bind);
@@ -623,9 +625,9 @@ static int tcf_ife_dump(struct sk_buff *skb, struct tc_action *a, int bind,
 
 	memset(&opt, 0, sizeof(opt));
 
-	opt.index = ife->tcf_index,
-	opt.refcnt = refcount_read(&ife->tcf_refcnt) - ref,
-	opt.bindcnt = atomic_read(&ife->tcf_bindcnt) - bind,
+	opt.index = ife->tcf_index;
+	opt.refcnt = refcount_read(&ife->tcf_refcnt) - ref;
+	opt.bindcnt = atomic_read(&ife->tcf_bindcnt) - bind;
 
 	spin_lock_bh(&ife->tcf_lock);
 	opt.action = ife->tcf_action;
@@ -795,6 +797,7 @@ static int tcf_ife_encode(struct sk_buff *skb, const struct tc_action *a,
 	/* could be stupid policy setup or mtu config
 	 * so lets be conservative.. */
 	if ((action == TC_ACT_SHOT) || exceed_mtu) {
+drop:
 		qstats_drop_inc(this_cpu_ptr(ife->common.cpu_qstats));
 		return TC_ACT_SHOT;
 	}
@@ -803,6 +806,8 @@ static int tcf_ife_encode(struct sk_buff *skb, const struct tc_action *a,
 		skb_push(skb, skb->dev->hard_header_len);
 
 	ife_meta = ife_encode(skb, metalen);
+	if (!ife_meta)
+		goto drop;
 
 	spin_lock(&ife->tcf_lock);
 
@@ -818,8 +823,7 @@ static int tcf_ife_encode(struct sk_buff *skb, const struct tc_action *a,
 		if (err < 0) {
 			/* too corrupt to keep around if overwritten */
 			spin_unlock(&ife->tcf_lock);
-			qstats_drop_inc(this_cpu_ptr(ife->common.cpu_qstats));
-			return TC_ACT_SHOT;
+			goto drop;
 		}
 		skboff += err;
 	}

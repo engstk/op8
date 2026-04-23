@@ -166,7 +166,6 @@ struct fib6_info {
 					should_flush:1,
 					dst_nocount:1,
 					dst_nopolicy:1,
-					dst_host:1,
 					fib6_destroying:1,
 					unused:2;
 

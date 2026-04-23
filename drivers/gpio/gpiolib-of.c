@@ -250,7 +250,7 @@ struct gpio_desc *of_find_gpio(struct device *dev, const char *con_id,
 		 * preserve the return code for our user to be able to
 		 * retry probing later.
 		 */
-		if (IS_ERR(desc) && PTR_ERR(desc) == -EPROBE_DEFER)
+		if (PTR_ERR(desc) == -EPROBE_DEFER)
 			return desc;
 
 		if (!IS_ERR(desc) || (PTR_ERR(desc) != -ENOENT))

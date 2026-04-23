@@ -112,8 +112,9 @@ static int wil_ftm_parse_meas_params(struct wil6210_priv *wil,
 		params->burst_period = 5; /* 500 milliseconds */
 		return 0;
 	}
-	rc = nla_parse_nested(tb, QCA_ATTR_FTM_PARAM_MAX,
-			      attr, wil_nl80211_ftm_meas_param_policy, NULL);
+	rc = nla_parse_nested_deprecated(tb, QCA_ATTR_FTM_PARAM_MAX, attr,
+					 wil_nl80211_ftm_meas_param_policy,
+					 NULL);
 	if (rc) {
 		wil_err(wil, "invalid measurement params\n");
 		return rc;
@@ -769,8 +770,8 @@ int wil_ftm_start_session(struct wiphy *wiphy, struct wireless_dev *wdev,
 	if (!test_bit(WMI_FW_CAPABILITY_FTM, wil->fw_capabilities))
 		return -ENOTSUPP;
 
-	rc = nla_parse(tb, QCA_ATTR_LOC_MAX, data, data_len,
-		       wil_nl80211_loc_policy, NULL);
+	rc = nla_parse_deprecated(tb, QCA_ATTR_LOC_MAX, data, data_len,
+				  wil_nl80211_loc_policy, NULL);
 	if (rc) {
 		wil_err(wil, "Invalid ATTR\n");
 		return rc;
@@ -821,8 +822,10 @@ int wil_ftm_start_session(struct wiphy *wiphy, struct wireless_dev *wdev,
 	request->n_peers = n_peers;
 	nla_for_each_nested(peer, tb[QCA_ATTR_FTM_MEAS_PEERS],
 			    tmp) {
-		rc = nla_parse_nested(tb2, QCA_ATTR_FTM_PEER_MAX,
-				      peer, wil_nl80211_ftm_peer_policy, NULL);
+		rc = nla_parse_nested_deprecated(tb2, QCA_ATTR_FTM_PEER_MAX,
+						 peer,
+						 wil_nl80211_ftm_peer_policy,
+						 NULL);
 		if (rc) {
 			wil_err(wil, "Invalid peer ATTR\n");
 			goto out;
@@ -907,8 +910,8 @@ int wil_aoa_start_measurement(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	wil_dbg_misc(wil, "AOA start measurement\n");
 
-	rc = nla_parse(tb, QCA_ATTR_LOC_MAX, data, data_len,
-		       wil_nl80211_loc_policy, NULL);
+	rc = nla_parse_deprecated(tb, QCA_ATTR_LOC_MAX, data, data_len,
+				  wil_nl80211_loc_policy, NULL);
 	if (rc) {
 		wil_err(wil, "Invalid ATTR\n");
 		return rc;

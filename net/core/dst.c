@@ -26,23 +26,6 @@
 #include <net/dst.h>
 #include <net/dst_metadata.h>
 
-/*
- * Theory of operations:
- * 1) We use a list, protected by a spinlock, to add
- *    new entries from both BH and non-BH context.
- * 2) In order to keep spinlock held for a small delay,
- *    we use a second list where are stored long lived
- *    entries, that are handled by the garbage collect thread
- *    fired by a workqueue.
- * 3) This list is guarded by a mutex,
- *    so that the gc_task and dst_dev_event() can be synchronized.
- */
-
-/*
- * We want to keep lock & list close together
- * to dirty as few cache lines as possible in __dst_free().
- * As this is not a very strong hint, we dont force an alignment on SMP.
- */
 int dst_discard_out(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
 	kfree_skb(skb);
@@ -176,7 +159,7 @@ void dst_dev_put(struct dst_entry *dst)
 		dst->ops->ifdown(dst, dev, true);
 	dst->input = dst_discard;
 	dst->output = dst_discard_out;
-	dst->dev = dev_net(dst->dev)->loopback_dev;
+	dst->dev = blackhole_netdev;
 	dev_hold(dst->dev);
 	dev_put(dev);
 }
@@ -252,6 +235,44 @@ void __dst_destroy_metrics_generic(struct dst_entry *dst, unsigned long old)
 		kfree(__DST_METRICS_PTR(old));
 }
 EXPORT_SYMBOL(__dst_destroy_metrics_generic);
+
+struct dst_entry *dst_blackhole_check(struct dst_entry *dst, u32 cookie)
+{
+	return NULL;
+}
+
+u32 *dst_blackhole_cow_metrics(struct dst_entry *dst, unsigned long old)
+{
+	return NULL;
+}
+
+struct neighbour *dst_blackhole_neigh_lookup(const struct dst_entry *dst,
+					     struct sk_buff *skb,
+					     const void *daddr)
+{
+	return NULL;
+}
+
+void dst_blackhole_update_pmtu(struct dst_entry *dst, struct sock *sk,
+			       struct sk_buff *skb, u32 mtu,
+			       bool confirm_neigh)
+{
+}
+EXPORT_SYMBOL_GPL(dst_blackhole_update_pmtu);
+
+void dst_blackhole_redirect(struct dst_entry *dst, struct sock *sk,
+			    struct sk_buff *skb)
+{
+}
+EXPORT_SYMBOL_GPL(dst_blackhole_redirect);
+
+unsigned int dst_blackhole_mtu(const struct dst_entry *dst)
+{
+	unsigned int mtu = dst_metric_raw(dst, RTAX_MTU);
+
+	return mtu ? : dst->dev->mtu;
+}
+EXPORT_SYMBOL_GPL(dst_blackhole_mtu);
 
 static struct dst_ops md_dst_ops = {
 	.family =		AF_UNSPEC,

@@ -23,7 +23,7 @@
 #include <net/ipv6.h>
 #endif
 #include <net/ipv6_stubs.h>
-#include <net/nexthop.h>
+#include <net/rtnh.h>
 #include "internal.h"
 
 /* max memory we will use for mpls_route */
@@ -1221,8 +1221,8 @@ static int mpls_netconf_get_devconf(struct sk_buff *in_skb,
 	int ifindex;
 	int err;
 
-	err = nlmsg_parse(nlh, sizeof(*ncm), tb, NETCONFA_MAX,
-			  devconf_mpls_policy, NULL);
+	err = nlmsg_parse_deprecated(nlh, sizeof(*ncm), tb, NETCONFA_MAX,
+				     devconf_mpls_policy, NULL);
 	if (err < 0)
 		goto errout;
 
@@ -1774,8 +1774,8 @@ static int rtm_to_route_config(struct sk_buff *skb,
 	int index;
 	int err;
 
-	err = nlmsg_parse(nlh, sizeof(*rtm), tb, RTA_MAX, rtm_mpls_policy,
-			  extack);
+	err = nlmsg_parse_deprecated(nlh, sizeof(*rtm), tb, RTA_MAX,
+				     rtm_mpls_policy, extack);
 	if (err < 0)
 		goto errout;
 
@@ -2217,8 +2217,8 @@ static int mpls_getroute(struct sk_buff *in_skb, struct nlmsghdr *in_nlh,
 	u8 n_labels;
 	int err;
 
-	err = nlmsg_parse(in_nlh, sizeof(*rtm), tb, RTA_MAX,
-			  rtm_mpls_policy, extack);
+	err = nlmsg_parse_deprecated(in_nlh, sizeof(*rtm), tb, RTA_MAX,
+				     rtm_mpls_policy, extack);
 	if (err < 0)
 		goto errout;
 

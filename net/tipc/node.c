@@ -1840,9 +1840,9 @@ int tipc_nl_peer_rm(struct sk_buff *skb, struct genl_info *info)
 	if (!info->attrs[TIPC_NLA_NET])
 		return -EINVAL;
 
-	err = nla_parse_nested(attrs, TIPC_NLA_NET_MAX,
-			       info->attrs[TIPC_NLA_NET], tipc_nl_net_policy,
-			       info->extack);
+	err = nla_parse_nested_deprecated(attrs, TIPC_NLA_NET_MAX,
+					  info->attrs[TIPC_NLA_NET],
+					  tipc_nl_net_policy, info->extack);
 	if (err)
 		return err;
 
@@ -1998,9 +1998,9 @@ int tipc_nl_node_set_link(struct sk_buff *skb, struct genl_info *info)
 	if (!info->attrs[TIPC_NLA_LINK])
 		return -EINVAL;
 
-	err = nla_parse_nested(attrs, TIPC_NLA_LINK_MAX,
-			       info->attrs[TIPC_NLA_LINK],
-			       tipc_nl_link_policy, info->extack);
+	err = nla_parse_nested_deprecated(attrs, TIPC_NLA_LINK_MAX,
+					  info->attrs[TIPC_NLA_LINK],
+					  tipc_nl_link_policy, info->extack);
 	if (err)
 		return err;
 
@@ -2074,9 +2074,9 @@ int tipc_nl_node_get_link(struct sk_buff *skb, struct genl_info *info)
 	if (!info->attrs[TIPC_NLA_LINK])
 		return -EINVAL;
 
-	err = nla_parse_nested(attrs, TIPC_NLA_LINK_MAX,
-			       info->attrs[TIPC_NLA_LINK],
-			       tipc_nl_link_policy, info->extack);
+	err = nla_parse_nested_deprecated(attrs, TIPC_NLA_LINK_MAX,
+					  info->attrs[TIPC_NLA_LINK],
+					  tipc_nl_link_policy, info->extack);
 	if (err)
 		return err;
 
@@ -2139,9 +2139,9 @@ int tipc_nl_node_reset_link_stats(struct sk_buff *skb, struct genl_info *info)
 	if (!info->attrs[TIPC_NLA_LINK])
 		return -EINVAL;
 
-	err = nla_parse_nested(attrs, TIPC_NLA_LINK_MAX,
-			       info->attrs[TIPC_NLA_LINK],
-			       tipc_nl_link_policy, info->extack);
+	err = nla_parse_nested_deprecated(attrs, TIPC_NLA_LINK_MAX,
+					  info->attrs[TIPC_NLA_LINK],
+					  tipc_nl_link_policy, info->extack);
 	if (err)
 		return err;
 
@@ -2279,9 +2279,10 @@ int tipc_nl_node_set_monitor(struct sk_buff *skb, struct genl_info *info)
 	if (!info->attrs[TIPC_NLA_MON])
 		return -EINVAL;
 
-	err = nla_parse_nested(attrs, TIPC_NLA_MON_MAX,
-			       info->attrs[TIPC_NLA_MON],
-			       tipc_nl_monitor_policy, info->extack);
+	err = nla_parse_nested_deprecated(attrs, TIPC_NLA_MON_MAX,
+					  info->attrs[TIPC_NLA_MON],
+					  tipc_nl_monitor_policy,
+					  info->extack);
 	if (err)
 		return err;
 
@@ -2399,9 +2400,10 @@ int tipc_nl_node_dump_monitor_peer(struct sk_buff *skb,
 		if (!attrs[TIPC_NLA_MON])
 			return -EINVAL;
 
-		err = nla_parse_nested(mon, TIPC_NLA_MON_MAX,
-				       attrs[TIPC_NLA_MON],
-				       tipc_nl_monitor_policy, NULL);
+		err = nla_parse_nested_deprecated(mon, TIPC_NLA_MON_MAX,
+						  attrs[TIPC_NLA_MON],
+						  tipc_nl_monitor_policy,
+						  NULL);
 		if (err)
 			return err;
 

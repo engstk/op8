@@ -66,7 +66,7 @@
 #include <net/netlink.h>
 #include <net/fib_rules.h>
 #include <linux/netconf.h>
-#include <net/nexthop.h>
+#include <net/rtnh.h>
 #include <net/switchdev.h>
 
 #include <linux/nospec.h>
@@ -2484,8 +2484,8 @@ static int ipmr_rtm_getroute(struct sk_buff *in_skb, struct nlmsghdr *nlh,
 	u32 tableid;
 	int err;
 
-	err = nlmsg_parse(nlh, sizeof(*rtm), tb, RTA_MAX,
-			  rtm_ipv4_policy, extack);
+	err = nlmsg_parse_deprecated(nlh, sizeof(*rtm), tb, RTA_MAX,
+				     rtm_ipv4_policy, extack);
 	if (err < 0)
 		goto errout;
 
@@ -2595,8 +2595,8 @@ static int rtm_to_ipmr_mfcc(struct net *net, struct nlmsghdr *nlh,
 	struct rtmsg *rtm;
 	int ret, rem;
 
-	ret = nlmsg_validate(nlh, sizeof(*rtm), RTA_MAX, rtm_ipmr_policy,
-			     extack);
+	ret = nlmsg_validate_deprecated(nlh, sizeof(*rtm), RTA_MAX,
+					rtm_ipmr_policy, extack);
 	if (ret < 0)
 		goto out;
 	rtm = nlmsg_data(nlh);

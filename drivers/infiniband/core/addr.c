@@ -87,8 +87,8 @@ static void ib_nl_process_ip_rsep(const struct nlmsghdr *nlh)
 	if (nlh->nlmsg_flags & RDMA_NL_LS_F_ERR)
 		return;
 
-	ret = nla_parse(tb, LS_NLA_TYPE_MAX - 1, nlmsg_data(nlh),
-			nlmsg_len(nlh), ib_nl_addr_policy, NULL);
+	ret = nla_parse_deprecated(tb, LS_NLA_TYPE_MAX - 1, nlmsg_data(nlh),
+				   nlmsg_len(nlh), ib_nl_addr_policy, NULL);
 	if (ret)
 		return;
 
@@ -324,7 +324,7 @@ static bool has_gateway(const struct dst_entry *dst, sa_family_t family)
 
 	if (family == AF_INET) {
 		rt = container_of(dst, struct rtable, dst);
-		return rt->rt_gw_family == AF_INET;
+		return rt->rt_uses_gateway;
 	}
 
 	rt6 = container_of(dst, struct rt6_info, dst);

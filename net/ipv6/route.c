@@ -60,7 +60,7 @@
 #include <net/xfrm.h>
 #include <net/netevent.h>
 #include <net/netlink.h>
-#include <net/nexthop.h>
+#include <net/rtnh.h>
 #include <net/lwtunnel.h>
 #include <net/ip_tunnels.h>
 #include <net/l3mdev.h>
@@ -184,7 +184,7 @@ static void rt6_uncached_list_flush_dev(struct net *net, struct net_device *dev)
 			}
 
 			if (rt_dev == dev) {
-				rt->dst.dev = loopback_dev;
+				rt->dst.dev = blackhole_netdev;
 				dev_hold(rt->dst.dev);
 				dev_put(rt_dev);
 			}
@@ -254,7 +254,7 @@ static struct dst_ops ip6_dst_ops_template = {
 	.cow_metrics		=	dst_cow_metrics_generic,
 	.destroy		=	ip6_dst_destroy,
 	.ifdown			=	ip6_dst_ifdown,
-	.negative_advice	=	ip6_negative_advice,
+	.negative_advice	=	(android_dst_ops_negative_advice_old_t)ip6_negative_advice,
 	.link_failure		=	ip6_link_failure,
 	.update_pmtu		=	ip6_rt_update_pmtu,
 	.redirect		=	rt6_do_redirect,
@@ -263,34 +263,16 @@ static struct dst_ops ip6_dst_ops_template = {
 	.confirm_neigh		=	ip6_confirm_neigh,
 };
 
-static unsigned int ip6_blackhole_mtu(const struct dst_entry *dst)
-{
-	unsigned int mtu = dst_metric_raw(dst, RTAX_MTU);
-
-	return mtu ? : dst->dev->mtu;
-}
-
-static void ip6_rt_blackhole_update_pmtu(struct dst_entry *dst, struct sock *sk,
-					 struct sk_buff *skb, u32 mtu,
-					 bool confirm_neigh)
-{
-}
-
-static void ip6_rt_blackhole_redirect(struct dst_entry *dst, struct sock *sk,
-				      struct sk_buff *skb)
-{
-}
-
 static struct dst_ops ip6_dst_blackhole_ops = {
-	.family			=	AF_INET6,
-	.destroy		=	ip6_dst_destroy,
-	.check			=	ip6_dst_check,
-	.mtu			=	ip6_blackhole_mtu,
-	.default_advmss		=	ip6_default_advmss,
-	.update_pmtu		=	ip6_rt_blackhole_update_pmtu,
-	.redirect		=	ip6_rt_blackhole_redirect,
-	.cow_metrics		=	dst_cow_metrics_generic,
-	.neigh_lookup		=	ip6_dst_neigh_lookup,
+	.family			= AF_INET6,
+	.default_advmss		= ip6_default_advmss,
+	.neigh_lookup		= ip6_dst_neigh_lookup,
+	.check			= ip6_dst_check,
+	.destroy		= ip6_dst_destroy,
+	.cow_metrics		= dst_cow_metrics_generic,
+	.update_pmtu		= dst_blackhole_update_pmtu,
+	.redirect		= dst_blackhole_redirect,
+	.mtu			= dst_blackhole_mtu,
 };
 
 static const u32 ip6_template_metrics[RTAX_MAX] = {
@@ -372,14 +354,11 @@ EXPORT_SYMBOL(ip6_dst_alloc);
 
 static void ip6_dst_destroy(struct dst_entry *dst)
 {
-	struct dst_metrics *p = (struct dst_metrics *)DST_METRICS_PTR(dst);
 	struct rt6_info *rt = (struct rt6_info *)dst;
 	struct fib6_info *from;
 	struct inet6_dev *idev;
 
-	if (p != &dst_default_metrics && refcount_dec_and_test(&p->refcnt))
-		kfree(p);
-
+	ip_dst_metrics_put(dst);
 	rt6_uncached_list_del(rt);
 
 	idev = rt->rt6i_idev;
@@ -923,8 +902,6 @@ static unsigned short fib6_info_dst_flags(struct fib6_info *rt)
 		flags |= DST_NOCOUNT;
 	if (rt->dst_nopolicy)
 		flags |= DST_NOPOLICY;
-	if (rt->dst_host)
-		flags |= DST_HOST;
 
 	return flags;
 }
@@ -982,11 +959,7 @@ static void rt6_set_from(struct rt6_info *rt, struct fib6_info *from)
 {
 	rt->rt6i_flags &= ~RTF_EXPIRES;
 	rcu_assign_pointer(rt->from, from);
-	dst_init_metrics(&rt->dst, from->fib6_metrics->metrics, true);
-	if (from->fib6_metrics != &dst_default_metrics) {
-		rt->dst._metrics |= DST_METRICS_REFCOUNTED;
-		refcount_inc(&from->fib6_metrics->refcnt);
-	}
+	ip_dst_init_metrics(&rt->dst, from->fib6_metrics);
 }
 
 /* Caller must already hold reference to @ort */
@@ -1207,7 +1180,6 @@ static struct rt6_info *ip6_rt_cache_alloc(struct fib6_info *ort,
 
 	ip6_rt_copy_init(rt, ort);
 	rt->rt6i_flags |= RTF_CACHE;
-	rt->dst.flags |= DST_HOST;
 	rt->rt6i_dst.addr = *daddr;
 	rt->rt6i_dst.plen = 128;
 
@@ -1986,10 +1958,7 @@ static void ip6_multipath_l3_keys(const struct sk_buff *skb,
 	if (!icmph)
 		goto out;
 
-	if (icmph->icmp6_type != ICMPV6_DEST_UNREACH &&
-	    icmph->icmp6_type != ICMPV6_PKT_TOOBIG &&
-	    icmph->icmp6_type != ICMPV6_TIME_EXCEED &&
-	    icmph->icmp6_type != ICMPV6_PARAMPROB)
+	if (!icmpv6_is_err(icmph->icmp6_type))
 		goto out;
 
 	inner_iph = skb_header_pointer(skb,
@@ -2740,7 +2709,6 @@ struct dst_entry *icmp6_dst_alloc(struct net_device *dev,
 		goto out;
 	}
 
-	rt->dst.flags |= DST_HOST;
 	rt->dst.input = ip6_input;
 	rt->dst.output  = ip6_output;
 	rt->rt6i_gateway  = fl6->daddr;
@@ -3199,8 +3167,6 @@ static struct fib6_info *ip6_route_info_create(struct fib6_config *cfg,
 
 	ipv6_addr_prefix(&rt->fib6_dst.addr, &cfg->fc_dst, cfg->fc_dst_len);
 	rt->fib6_dst.plen = cfg->fc_dst_len;
-	if (rt->fib6_dst.plen == 128)
-		rt->dst_host = true;
 
 #ifdef CONFIG_IPV6_SUBTREES
 	ipv6_addr_prefix(&rt->fib6_src.addr, &cfg->fc_src, cfg->fc_src_len);
@@ -3897,7 +3863,7 @@ void rt6_clean_tohost(struct net *net, struct in6_addr *gateway)
 struct arg_netdev_event {
 	const struct net_device *dev;
 	union {
-		unsigned int nh_flags;
+		unsigned char nh_flags;
 		unsigned long event;
 	};
 };
@@ -4010,7 +3976,7 @@ static int fib6_ifup(struct fib6_info *rt, void *p_arg)
 	return 0;
 }
 
-void rt6_sync_up(struct net_device *dev, unsigned int nh_flags)
+void rt6_sync_up(struct net_device *dev, unsigned char nh_flags)
 {
 	struct arg_netdev_event arg = {
 		.dev = dev,
@@ -4067,7 +4033,7 @@ static unsigned int rt6_multipath_dead_count(const struct fib6_info *rt,
 
 static void rt6_multipath_nh_flags_set(struct fib6_info *rt,
 				       const struct net_device *dev,
-				       unsigned int nh_flags)
+				       unsigned char nh_flags)
 {
 	struct fib6_info *iter;
 
@@ -4220,8 +4186,8 @@ static int rtm_to_fib6_config(struct sk_buff *skb, struct nlmsghdr *nlh,
 	unsigned int pref;
 	int err;
 
-	err = nlmsg_parse(nlh, sizeof(*rtm), tb, RTA_MAX, rtm_ipv6_policy,
-			  NULL);
+	err = nlmsg_parse_deprecated(nlh, sizeof(*rtm), tb, RTA_MAX,
+				     rtm_ipv6_policy, NULL);
 	if (err < 0)
 		goto errout;
 
@@ -4804,9 +4770,13 @@ static int rt6_fill_node(struct net *net, struct sk_buff *skb,
 
 		nla_nest_end(skb, mp);
 	} else {
+		unsigned char nh_flags = 0;
+
 		if (fib_nexthop_info(skb, &rt->fib6_nh.nh_common,
-				     &rtm->rtm_flags, false) < 0)
+				     &nh_flags, false) < 0)
 			goto nla_put_failure;
+
+		rtm->rtm_flags |= nh_flags;
 	}
 
 	if (rt6_flags & RTF_EXPIRES) {
@@ -4891,8 +4861,8 @@ static int inet6_rtm_getroute(struct sk_buff *in_skb, struct nlmsghdr *nlh,
 	struct flowi6 fl6;
 	bool fibmatch;
 
-	err = nlmsg_parse(nlh, sizeof(*rtm), tb, RTA_MAX, rtm_ipv6_policy,
-			  extack);
+	err = nlmsg_parse_deprecated(nlh, sizeof(*rtm), tb, RTA_MAX,
+				     rtm_ipv6_policy, extack);
 	if (err < 0)
 		goto errout;
 

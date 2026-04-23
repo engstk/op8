@@ -43,6 +43,7 @@
 #include <net/sock.h>
 #include <net/arp.h>
 #include <net/ip_fib.h>
+#include <net/nexthop.h>
 #include <net/rtnetlink.h>
 #include <net/xfrm.h>
 #include <net/l3mdev.h>
@@ -72,11 +73,6 @@ static int __net_init fib4_rules_init(struct net *net)
 fail:
 	fib_free_table(main_table);
 	return -ENOMEM;
-}
-
-static bool fib4_has_custom_rules(struct net *net)
-{
-	return false;
 }
 #else
 
@@ -132,11 +128,6 @@ struct fib_table *fib_get_table(struct net *net, u32 id)
 			return tb;
 	}
 	return NULL;
-}
-
-static bool fib4_has_custom_rules(struct net *net)
-{
-	return net->ipv4.fib_has_custom_rules;
 }
 #endif /* CONFIG_IP_MULTIPLE_TABLES */
 
@@ -234,7 +225,9 @@ static inline unsigned int __inet_dev_addr_type(struct net *net,
 	if (table) {
 		ret = RTN_UNICAST;
 		if (!fib_table_lookup(table, &fl4, &res, FIB_LOOKUP_NOREF)) {
-			if (!dev || dev == res.fi->fib_dev)
+			struct fib_nh_common *nhc = fib_info_nhc(res.fi, 0);
+
+			if (!dev || dev == nhc->nhc_dev)
 				ret = res.type;
 		}
 	}
@@ -315,6 +308,32 @@ __be32 fib_compute_spec_dst(struct sk_buff *skb)
 	return inet_select_addr(dev, ip_hdr(skb)->saddr, scope);
 }
 
+bool fib_info_nh_uses_dev(struct fib_info *fi, const struct net_device *dev)
+{
+	bool dev_match = false;
+#ifdef CONFIG_IP_ROUTE_MULTIPATH
+	int ret;
+
+	for (ret = 0; ret < fib_info_num_path(fi); ret++) {
+		const struct fib_nh_common *nhc = fib_info_nhc(fi, ret);
+
+		if (nhc->nhc_dev == dev) {
+			dev_match = true;
+			break;
+		} else if (l3mdev_master_ifindex_rcu(nhc->nhc_dev) == dev->ifindex) {
+			dev_match = true;
+			break;
+		}
+	}
+#else
+	if (fib_info_nhc(fi, 0)->nhc_dev == dev)
+		dev_match = true;
+#endif
+
+	return dev_match;
+}
+EXPORT_SYMBOL_GPL(fib_info_nh_uses_dev);
+
 /* Given (packet source, input interface) and optional (dst, oif, tos):
  * - (main) check, that source is valid i.e. not broadcast or our local
  *   address.
@@ -364,24 +383,8 @@ static int __fib_validate_source(struct sk_buff *skb, __be32 src, __be32 dst,
 	    (res.type != RTN_LOCAL || !IN_DEV_ACCEPT_LOCAL(idev)))
 		goto e_inval;
 	fib_combine_itag(itag, &res);
-	dev_match = false;
 
-#ifdef CONFIG_IP_ROUTE_MULTIPATH
-	for (ret = 0; ret < res.fi->fib_nhs; ret++) {
-		struct fib_nh *nh = &res.fi->fib_nh[ret];
-
-		if (nh->nh_dev == dev) {
-			dev_match = true;
-			break;
-		} else if (l3mdev_master_ifindex_rcu(nh->nh_dev) == dev->ifindex) {
-			dev_match = true;
-			break;
-		}
-	}
-#else
-	if (FIB_RES_DEV(res) == dev)
-		dev_match = true;
-#endif
+	dev_match = fib_info_nh_uses_dev(res.fi, dev);
 	if (dev_match) {
 		ret = FIB_RES_NHC(res)->nhc_scope >= RT_SCOPE_HOST;
 		return ret;
@@ -551,7 +554,8 @@ static int rtentry_to_fib_config(struct net *net, int cmd, struct rtentry *rt,
 	if (rt->rt_gateway.sa_family == AF_INET && addr) {
 		unsigned int addr_type;
 
-		cfg->fc_gw = addr;
+		cfg->fc_gw4 = addr;
+		cfg->fc_gw_family = AF_INET;
 		addr_type = inet_addr_type_table(net, addr, cfg->fc_table);
 		if (rt->rt_flags & RTF_GATEWAY &&
 		    addr_type == RTN_UNICAST)
@@ -564,7 +568,7 @@ static int rtentry_to_fib_config(struct net *net, int cmd, struct rtentry *rt,
 	if (cmd == SIOCDELRT)
 		return 0;
 
-	if (rt->rt_flags & RTF_GATEWAY && !cfg->fc_gw)
+	if (rt->rt_flags & RTF_GATEWAY && !cfg->fc_gw_family)
 		return -EINVAL;
 
 	if (cfg->fc_scope == RT_SCOPE_NOWHERE)
@@ -668,8 +672,8 @@ static int rtm_to_fib_config(struct net *net, struct sk_buff *skb,
 	int err, remaining;
 	struct rtmsg *rtm;
 
-	err = nlmsg_validate(nlh, sizeof(*rtm), RTA_MAX, rtm_ipv4_policy,
-			     extack);
+	err = nlmsg_validate_deprecated(nlh, sizeof(*rtm), RTA_MAX,
+					rtm_ipv4_policy, extack);
 	if (err < 0)
 		goto errout;
 
@@ -704,7 +708,8 @@ static int rtm_to_fib_config(struct net *net, struct sk_buff *skb,
 			cfg->fc_oif = nla_get_u32(attr);
 			break;
 		case RTA_GATEWAY:
-			cfg->fc_gw = nla_get_be32(attr);
+			cfg->fc_gw_family = AF_INET;
+			cfg->fc_gw4 = nla_get_be32(attr);
 			break;
 		case RTA_VIA:
 			NL_SET_ERR_MSG(extack, "IPv4 does not support RTA_VIA attribute");
@@ -824,18 +829,23 @@ int ip_valid_fib_dump_req(struct net *net, const struct nlmsghdr *nlh,
 		NL_SET_ERR_MSG(extack, "Invalid values in header for FIB dump request");
 		return -EINVAL;
 	}
+
 	if (rtm->rtm_flags & ~(RTM_F_CLONED | RTM_F_PREFIX)) {
 		NL_SET_ERR_MSG(extack, "Invalid flags for FIB dump request");
 		return -EINVAL;
 	}
+	if (rtm->rtm_flags & RTM_F_CLONED)
+		filter->dump_routes = false;
+	else
+		filter->dump_exceptions = false;
 
 	filter->flags    = rtm->rtm_flags;
 	filter->protocol = rtm->rtm_protocol;
 	filter->rt_type  = rtm->rtm_type;
 	filter->table_id = rtm->rtm_table;
 
-	err = nlmsg_parse_strict(nlh, sizeof(*rtm), tb, RTA_MAX,
-				 rtm_ipv4_policy, extack);
+	err = nlmsg_parse_deprecated_strict(nlh, sizeof(*rtm), tb, RTA_MAX,
+					    rtm_ipv4_policy, extack);
 	if (err < 0)
 		return err;
 
@@ -873,9 +883,10 @@ EXPORT_SYMBOL_GPL(ip_valid_fib_dump_req);
 
 static int inet_dump_fib(struct sk_buff *skb, struct netlink_callback *cb)
 {
+	struct fib_dump_filter filter = { .dump_routes = true,
+					  .dump_exceptions = true };
 	const struct nlmsghdr *nlh = cb->nlh;
 	struct net *net = sock_net(skb->sk);
-	struct fib_dump_filter filter = {};
 	unsigned int h, s_h;
 	unsigned int e = 0, s_e;
 	struct fib_table *tb;
@@ -892,6 +903,17 @@ static int inet_dump_fib(struct sk_buff *skb, struct netlink_callback *cb)
 	    ((struct rtmsg *)nlmsg_data(nlh))->rtm_flags & RTM_F_CLONED)
 		return skb->len;
 
+	if (filter.table_id) {
+		tb = fib_get_table(net, filter.table_id);
+		if (!tb) {
+			NL_SET_ERR_MSG(cb->extack, "ipv4: FIB table does not exist");
+			return -ENOENT;
+		}
+
+		err = fib_table_dump(tb, skb, cb, &filter);
+		return skb->len ? : err;
+	}
+
 	s_h = cb->args[0];
 	s_e = cb->args[1];
 
@@ -906,7 +928,7 @@ static int inet_dump_fib(struct sk_buff *skb, struct netlink_callback *cb)
 			if (dumped)
 				memset(&cb->args[2], 0, sizeof(cb->args) -
 						 2 * sizeof(cb->args[0]));
-			err = fib_table_dump(tb, skb, cb);
+			err = fib_table_dump(tb, skb, cb, &filter);
 			if (err < 0) {
 				if (likely(skb->len))
 					goto out;

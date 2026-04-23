@@ -750,8 +750,8 @@ static int rtnl_net_newid(struct sk_buff *skb, struct nlmsghdr *nlh,
 	struct net *peer;
 	int nsid, err;
 
-	err = nlmsg_parse(nlh, sizeof(struct rtgenmsg), tb, NETNSA_MAX,
-			  rtnl_net_policy, extack);
+	err = nlmsg_parse_deprecated(nlh, sizeof(struct rtgenmsg), tb,
+				     NETNSA_MAX, rtnl_net_policy, extack);
 	if (err < 0)
 		return err;
 	if (!tb[NETNSA_NSID]) {
@@ -842,8 +842,8 @@ static int rtnl_net_getid(struct sk_buff *skb, struct nlmsghdr *nlh,
 	struct net *peer;
 	int err, id;
 
-	err = nlmsg_parse(nlh, sizeof(struct rtgenmsg), tb, NETNSA_MAX,
-			  rtnl_net_policy, extack);
+	err = nlmsg_parse_deprecated(nlh, sizeof(struct rtgenmsg), tb,
+				     NETNSA_MAX, rtnl_net_policy, extack);
 	if (err < 0)
 		return err;
 	if (tb[NETNSA_PID]) {

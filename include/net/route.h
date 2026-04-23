@@ -57,14 +57,15 @@ struct rtable {
 	unsigned int		rt_flags;
 	__u16			rt_type;
 	__u8			rt_is_input;
-	u8			rt_gw_family;
+	__u8			rt_uses_gateway;
 
 	int			rt_iif;
 
+	u8			rt_gw_family;
 	/* Info on neighbour */
 	union {
-		__be32      rt_gw4;
-		struct in6_addr rt_gw6;
+		__be32		rt_gw4;
+		struct in6_addr	rt_gw6;
 	};
 
 	/* Miscellaneous cached information */
@@ -188,6 +189,10 @@ int ip_route_input_rcu(struct sk_buff *skb, __be32 dst, __be32 src,
 		       u8 tos, struct net_device *devin,
 		       struct fib_result *res);
 
+int ip_route_use_hint(struct sk_buff *skb, __be32 dst, __be32 src,
+		      u8 tos, struct net_device *devin,
+		      const struct sk_buff *hint);
+
 static inline int ip_route_input(struct sk_buff *skb, __be32 dst, __be32 src,
 				 u8 tos, struct net_device *devin)
 {
@@ -206,10 +211,9 @@ static inline int ip_route_input(struct sk_buff *skb, __be32 dst, __be32 src,
 }
 
 void ipv4_update_pmtu(struct sk_buff *skb, struct net *net, u32 mtu, int oif,
-		      u32 mark, u8 protocol, int flow_flags);
+		      u8 protocol);
 void ipv4_sk_update_pmtu(struct sk_buff *skb, struct sock *sk, u32 mtu);
-void ipv4_redirect(struct sk_buff *skb, struct net *net, int oif, u32 mark,
-		   u8 protocol, int flow_flags);
+void ipv4_redirect(struct sk_buff *skb, struct net *net, int oif, u8 protocol);
 void ipv4_sk_redirect(struct sk_buff *skb, struct sock *sk);
 void ip_rt_send_redirect(struct sk_buff *skb);
 
@@ -225,7 +229,8 @@ int ip_rt_ioctl(struct net *, unsigned int cmd, struct rtentry *rt);
 void ip_rt_get_source(u8 *src, struct sk_buff *skb, struct rtable *rt);
 struct rtable *rt_dst_alloc(struct net_device *dev,
 			     unsigned int flags, u16 type,
-			     bool nopolicy, bool noxfrm, bool will_cache);
+			     bool nopolicy, bool noxfrm);
+struct rtable *rt_dst_clone(struct net_device *dev, struct rtable *rt);
 
 struct in_ifaddr;
 void fib_add_ifaddr(struct in_ifaddr *);
@@ -234,6 +239,10 @@ void fib_modify_prefix_metric(struct in_ifaddr *ifa, u32 new_metric);
 
 void rt_add_uncached_list(struct rtable *rt);
 void rt_del_uncached_list(struct rtable *rt);
+
+int fib_dump_info_fnhe(struct sk_buff *skb, struct netlink_callback *cb,
+		       u32 table_id, struct fib_info *fi,
+		       int *fa_index, int fa_start, unsigned int flags);
 
 static inline void ip_rt_put(struct rtable *rt)
 {

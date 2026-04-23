@@ -50,7 +50,8 @@ static int tcf_nat_init(struct net *net, struct nlattr *nla, struct nlattr *est,
 	if (nla == NULL)
 		return -EINVAL;
 
-	err = nla_parse_nested(tb, TCA_NAT_MAX, nla, nat_policy, NULL);
+	err = nla_parse_nested_deprecated(tb, TCA_NAT_MAX, nla, nat_policy,
+					  NULL);
 	if (err < 0)
 		return err;
 
@@ -198,9 +199,7 @@ static int tcf_nat_act(struct sk_buff *skb, const struct tc_action *a,
 
 		icmph = (void *)(skb_network_header(skb) + ihl);
 
-		if ((icmph->type != ICMP_DEST_UNREACH) &&
-		    (icmph->type != ICMP_TIME_EXCEEDED) &&
-		    (icmph->type != ICMP_PARAMETERPROB))
+		if (!icmp_is_err(icmph->type))
 			break;
 
 		if (!pskb_may_pull(skb, ihl + sizeof(*icmph) + sizeof(*iph) +

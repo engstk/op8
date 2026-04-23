@@ -145,7 +145,7 @@
 			oplus,fp-id = <0>; /* fp id mapping table */
 			vendor-chip = <11>; /* please refer to the struct fp_vendor_t in oplus_fp_commmon.n */
 			eng-menu = "-1,-1"; /* represents SNR, inclination test item in engineer menu, and 0/1 means off/on */
-			chip-name = "G_OPTICAL_19811_G5"; /* /proc/fp_id, will be displayed in engineer menu */
+			chip-name = "G_OPTICAL_19811_G6"; /* /proc/fp_id, will be displayed in engineer menu */
 		};
 	};
 

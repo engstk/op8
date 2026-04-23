@@ -160,7 +160,7 @@ static unsigned long limits_mitigation_notify(struct limits_dcvs_hw *hw)
 		 * fail with -ERANGE and we need to match to the lowest
 		 * frequency using freq_ceil.
 		 */
-		if (IS_ERR(opp_entry) && PTR_ERR(opp_entry) == -ERANGE) {
+		if (PTR_ERR(opp_entry) == -ERANGE) {
 			opp_entry = dev_pm_opp_find_freq_ceil(cpu_dev,
 								&freq_val);
 			if (IS_ERR(opp_entry))

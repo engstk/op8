@@ -166,7 +166,7 @@ static inline int wlan_cfg80211_nla_parse(struct nlattr **tb,
 					  int len,
 					  const struct nla_policy *policy)
 {
-	return nla_parse(tb, maxtype, head, len, policy);
+	return nla_parse_deprecated(tb, maxtype, head, len, policy);
 }
 
 static inline int
@@ -184,7 +184,7 @@ static inline int wlan_cfg80211_nla_parse(struct nlattr **tb,
 					  int len,
 					  const struct nla_policy *policy)
 {
-	return nla_parse(tb, maxtype, head, len, policy, NULL);
+	return nla_parse_deprecated(tb, maxtype, head, len, policy, NULL);
 }
 
 static inline int
@@ -193,7 +193,7 @@ wlan_cfg80211_nla_parse_nested(struct nlattr *tb[],
 			       const struct nlattr *nla,
 			       const struct nla_policy *policy)
 {
-	return nla_parse_nested(tb, maxtype, nla, policy, NULL);
+	return nla_parse_nested_deprecated(tb, maxtype, nla, policy, NULL);
 }
 #endif
 #define nla_parse(...) (obsolete, use wlan_cfg80211_nla_parse)

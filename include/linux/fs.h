@@ -444,6 +444,7 @@ struct address_space {
 	const struct address_space_operations *a_ops;	/* methods */
 	unsigned long		flags;		/* error bits */
 	spinlock_t		private_lock;	/* for use by the address_space */
+	struct rw_semaphore invalidate_lock;
 	gfp_t			gfp_mask;	/* implicit gfp mask for allocations */
 	struct list_head	private_list;	/* for use by the address_space */
 	void			*private_data;	/* ditto */

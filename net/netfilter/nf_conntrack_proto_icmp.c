@@ -209,11 +209,7 @@ icmp_error(struct net *net, struct nf_conn *tmpl,
 	}
 
 	/* Need to track icmp error message? */
-	if (icmph->type != ICMP_DEST_UNREACH &&
-	    icmph->type != ICMP_SOURCE_QUENCH &&
-	    icmph->type != ICMP_TIME_EXCEEDED &&
-	    icmph->type != ICMP_PARAMETERPROB &&
-	    icmph->type != ICMP_REDIRECT)
+	if (!icmp_is_err(icmph->type))
 		return NF_ACCEPT;
 
 	return icmp_error_message(net, tmpl, skb, hooknum);

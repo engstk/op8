@@ -4740,6 +4740,11 @@ static inline bool netif_is_ovs_port(const struct net_device *dev)
 	return dev->priv_flags & IFF_OVS_DATAPATH;
 }
 
+static inline bool netif_is_any_bridge_port(const struct net_device *dev)
+{
+	return netif_is_bridge_port(dev) || netif_is_ovs_port(dev);
+}
+
 static inline bool netif_is_team_master(const struct net_device *dev)
 {
 	return dev->priv_flags & IFF_TEAM;
@@ -4996,5 +5001,7 @@ do {								\
  */
 #define PTYPE_HASH_SIZE	(16)
 #define PTYPE_HASH_MASK	(PTYPE_HASH_SIZE - 1)
+
+extern struct net_device *blackhole_netdev;
 
 #endif	/* _LINUX_NETDEVICE_H */

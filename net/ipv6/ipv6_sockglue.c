@@ -761,7 +761,7 @@ done:
 
 		if (optlen < GROUP_FILTER_SIZE(0))
 			goto e_inval;
-		if (optlen > sysctl_optmem_max) {
+		if (optlen > READ_ONCE(sysctl_optmem_max)) {
 			retv = -ENOBUFS;
 			break;
 		}

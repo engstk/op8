@@ -600,8 +600,9 @@ static struct nlmsghdr *xfrm_user_rcv_msg_compat(const struct nlmsghdr *h32,
 	    (h32->nlmsg_flags & NLM_F_DUMP))
 		return NULL;
 
-	err = nlmsg_parse(h32, compat_msg_min[type], attrs,
-			maxtype ? : XFRMA_MAX, policy ? : compat_policy, extack);
+	err = nlmsg_parse_deprecated(h32, compat_msg_min[type], attrs,
+				     maxtype ? : XFRMA_MAX,
+				     policy ? : compat_policy, extack);
 	if (err < 0)
 		return ERR_PTR(err);
 

@@ -23,7 +23,7 @@
 #include "wlan_p2p_api.h"
 #include <wlan_objmgr_psoc_obj.h>
 #include "wlan_p2p_public_struct.h"
-#include "../../core/src/wlan_p2p_main.h"
+#include "wlan_p2p_main.h"
 
 bool wlan_p2p_check_oui_and_force_1x1(uint8_t *assoc_ie, uint32_t assoc_ie_len)
 {

@@ -30,6 +30,10 @@ struct limits_isense_cdsp_smem_data {
 	uint16_t size_of_partition_data;
 } __packed;
 
+static struct kobj_type limits_isense_cdsp_ktype = {
+    .sysfs_ops = &kobj_sysfs_ops,
+};
+
 static struct limits_isense_cdsp_smem_data  *limits_isense_cdsp_data;
 static struct limits_isense_cdsp_sysfs      *limits_isense_cdsp_sysfs;
 
@@ -78,8 +82,9 @@ static int limits_create_msm_limits_cdsp_sysfs(struct platform_device *pdev)
 	m_kobj->mod = THIS_MODULE;
 	m_kobj->kobj.kset = module_kset;
 
-	err = kobject_init_and_add(&m_kobj->kobj, &module_ktype, NULL,
-				   "%s", KBUILD_MODNAME);
+	err = kobject_init_and_add(&m_kobj->kobj,
+				   &limits_isense_cdsp_ktype,
+				   NULL, "%s", KBUILD_MODNAME);
 	if (err) {
 		dev_err(&pdev->dev,
 			"%s: cannot create kobject for %s\n",

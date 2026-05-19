@@ -1,0 +1,1 @@
+../components/cmn_services/policy_mgr/src/wlan_policy_mgr_tables_no_dbs_i.h

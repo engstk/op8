@@ -799,16 +799,11 @@ early_param("random.trust_cpu", parse_trust_cpu);
 early_param("random.trust_bootloader", parse_trust_bootloader);
 
 /*
- * The first collection of entropy occurs at system boot while interrupts
- * are still turned off. Here we push in latent entropy, RDSEED, a timestamp,
- * utsname(), and the command line. Depending on the above configuration knob,
- * RDSEED may be considered sufficient for initialization. Note that much
- * earlier setup may already have pushed entropy into the input pool by the
- * time we get here.
+ * This is called extremely early, before time keeping functionality is
+ * available, but arch randomness is. Interrupts are not yet enabled.
  */
-int __init random_init(const char *command_line)
+void __init random_init_early(const char *command_line)
 {
-	ktime_t now = ktime_get_real();
 	unsigned int i, arch_bits;
 	unsigned long entropy;
 
@@ -821,22 +816,41 @@ int __init random_init(const char *command_line)
 	     i < BLAKE2S_BLOCK_SIZE; i += sizeof(entropy)) {
 		if (!arch_get_random_seed_long_early(&entropy) &&
 		    !arch_get_random_long_early(&entropy)) {
-			entropy = random_get_entropy();
 			arch_bits -= sizeof(entropy) * 8;
+			continue;
 		}
 		_mix_pool_bytes(&entropy, sizeof(entropy));
 	}
-	_mix_pool_bytes(&now, sizeof(now));
-	_mix_pool_bytes(utsname(), sizeof(*(utsname())));
-	_mix_pool_bytes(command_line, strlen(command_line));
-	add_latent_entropy();
 
+	_mix_pool_bytes(command_line, strlen(command_line));
+
+	/* Reseed if already seeded by earlier phases. */
 	if (crng_ready())
 		crng_reseed();
 	else if (trust_cpu)
 		_credit_init_bits(arch_bits);
+}
 
-	return 0;
+/*
+ * This is called a little bit after the prior function, and now there is
+ * access to timestamps counters. Interrupts are not yet enabled.
+ */
+void __init random_init(void)
+{
+	unsigned long entropy = random_get_entropy();
+	ktime_t now = ktime_get_real();
+
+	_mix_pool_bytes(utsname(), sizeof(*(utsname())));
+	_mix_pool_bytes(&now, sizeof(now));
+	_mix_pool_bytes(&entropy, sizeof(entropy));
+	add_latent_entropy();
+
+	/* Reseed if already seeded by earlier phases. */
+	if (crng_ready())
+		crng_reseed();
+
+	WARN(!entropy, "Missing cycle counter and fallback timer; RNG "
+		       "entropy collection will consequently suffer.");
 }
 
 /*

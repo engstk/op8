@@ -24,9 +24,9 @@
 
 #include "qdf_status.h"
 #include <wlan_tdls_tgt_api.h>
-#include "../../core/src/wlan_tdls_main.h"
-#include "../../core/src/wlan_tdls_cmds_process.h"
-#include "../../core/src/wlan_tdls_mgmt.h"
+#include "wlan_tdls_main.h"
+#include "wlan_tdls_cmds_process.h"
+#include "wlan_tdls_mgmt.h"
 
 static inline struct wlan_lmac_if_tdls_tx_ops *
 wlan_psoc_get_tdls_txops(struct wlan_objmgr_psoc *psoc)

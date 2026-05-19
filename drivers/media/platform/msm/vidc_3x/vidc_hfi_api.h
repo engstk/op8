@@ -1535,8 +1535,7 @@ struct hfi_device {
 	enum hal_default_properties (*get_default_properties)(void *dev);
 };
 
-typedef void (*hfi_cmd_response_callback) (enum hal_command_response cmd,
-			void *data);
+typedef void (*hfi_cmd_response_callback) (u32 cmd, void *data);
 typedef void (*msm_vidc_callback) (u32 response, void *callback);
 
 struct hfi_device *vidc_hfi_initialize(enum msm_vidc_hfi_type hfi_type,

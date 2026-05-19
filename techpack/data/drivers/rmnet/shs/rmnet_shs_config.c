@@ -153,11 +153,6 @@ static int rmnet_shs_dev_notify_cb(struct notifier_block *nb,
 					&rmnet_shs_dl_hdr_handler_v2;
 				rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler_v2 =
 					&rmnet_shs_dl_trl_handler_v2;
-			} else {
-				rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler =
-					&rmnet_shs_dl_hdr_handler;
-				rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler =
-					&rmnet_shs_dl_trl_handler;
 			}
 			rmnet_shs_cfg.rmnet_idl_ind_cb.ps_on_handler =
 					&rmnet_shs_ps_on_hdlr;

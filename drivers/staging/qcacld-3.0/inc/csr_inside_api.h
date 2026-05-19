@@ -1,0 +1,1 @@
+../core/sme/src/csr/csr_inside_api.h

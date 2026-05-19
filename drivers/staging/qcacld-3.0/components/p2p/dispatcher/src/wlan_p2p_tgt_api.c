@@ -30,9 +30,9 @@
 #include <wlan_objmgr_peer_obj.h>
 #include "wlan_p2p_tgt_api.h"
 #include "wlan_p2p_public_struct.h"
-#include "../../core/src/wlan_p2p_main.h"
-#include "../../core/src/wlan_p2p_roc.h"
-#include "../../core/src/wlan_p2p_off_chan_tx.h"
+#include "wlan_p2p_main.h"
+#include "wlan_p2p_roc.h"
+#include "wlan_p2p_off_chan_tx.h"
 
 #define IEEE80211_FC0_TYPE_MASK              0x0c
 #define P2P_NOISE_FLOOR_DBM_DEFAULT          (-96)

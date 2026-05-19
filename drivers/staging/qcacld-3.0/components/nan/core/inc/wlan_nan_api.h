@@ -29,7 +29,7 @@
 
 #ifdef WLAN_FEATURE_NAN
 
-#include "../src/nan_main_i.h"
+#include "nan_main_i.h"
 
 struct wlan_objmgr_psoc;
 

@@ -1,0 +1,1 @@
+../components/fw_offload/dispatcher/inc/cfg_thermal_temp.h

@@ -785,7 +785,7 @@ static void handle_operation_config(enum hal_command_response cmd, void *data)
 }
 #endif
 
-void cvp_handle_cmd_response(enum hal_command_response cmd, void *data)
+void cvp_handle_cmd_response(u32 cmd, void *data)
 {
 	dprintk(CVP_DBG, "Command response = %d\n", cmd);
 	switch (cmd) {

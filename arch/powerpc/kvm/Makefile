@@ -5,7 +5,7 @@
 
 subdir-ccflags-$(CONFIG_PPC_WERROR) := -Werror
 
-ccflags-y := -Ivirt/kvm -Iarch/powerpc/kvm
+ccflags-y := -I $(srctree)/virt/kvm -I $(srctree)/arch/powerpc/kvm
 KVM := ../../../virt/kvm
 
 common-objs-y = $(KVM)/kvm_main.o $(KVM)/eventfd.o

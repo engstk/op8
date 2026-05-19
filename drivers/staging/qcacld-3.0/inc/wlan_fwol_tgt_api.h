@@ -1,0 +1,1 @@
+../components/fw_offload/dispatcher/inc/wlan_fwol_tgt_api.h

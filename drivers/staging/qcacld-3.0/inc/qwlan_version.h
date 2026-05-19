@@ -1,0 +1,1 @@
+../core/mac/inc/qwlan_version.h

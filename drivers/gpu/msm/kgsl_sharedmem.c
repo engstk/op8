@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2002,2007-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <asm/cacheflush.h>
@@ -960,11 +960,16 @@ static int kgsl_shmem_alloc_page(struct page **pages,
 
 void kgsl_shmem_free_pages(struct kgsl_memdesc *memdesc)
 {
-	int i;
+	u32 i, n = 1;
 
-	for (i = 0; i < memdesc->page_count; i++)
-		if (memdesc->pages[i])
+	for (i = 0; i < memdesc->page_count; i += n) {
+		n = 1;
+
+		if (memdesc->pages[i]) {
+			n = 1 << compound_order(memdesc->pages[i]);
 			put_page(memdesc->pages[i]);
+		}
+	}
 }
 
 static int kgsl_memdesc_file_setup(struct kgsl_memdesc *memdesc, uint64_t size)

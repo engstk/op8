@@ -7,7 +7,7 @@
 # Copyright (C) 2008 Silicon Graphics, Inc.  All Rights Reserved.
 #
 
-ccflags-y := -Iarch/ia64/sn/include
+ccflags-y := -I $(srctree)/arch/ia64/sn/include
 
 obj-y				+= setup.o
 obj-$(CONFIG_IA64_GENERIC)      += machvec.o

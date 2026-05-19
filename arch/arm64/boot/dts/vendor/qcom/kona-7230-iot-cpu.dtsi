@@ -231,53 +231,6 @@
 
 };
 
-&funnel_apss {
-	ports {
-		/delete-node/ port@3;
-		/delete-node/ port@4;
-	};
-};
-
-&cti_cpu4 {
-	/delete-property/ cpu;
-	cpu = <&CPU2>;
-};
-
-&cti_cpu5 {
-	/delete-property/ cpu;
-	cpu = <&CPU3>;
-};
-
-&cti_cpu6 {
-	/delete-property/ cpu;
-	cpu = <&CPU4>;
-};
-
-&cti_cpu7 {
-	/delete-property/ cpu;
-	cpu = <&CPU5>;
-};
-
-&etm4 {
-	/delete-property/ cpu;
-	cpu = <&CPU2>;
-};
-
-&etm5 {
-	/delete-property/ cpu;
-	cpu = <&CPU3>;
-};
-
-&etm6 {
-	/delete-property/ cpu;
-	cpu = <&CPU4>;
-};
-
-&etm7 {
-	/delete-property/ cpu;
-	cpu = <&CPU5>;
-};
-
 &jtag_mm4 {
 	/delete-property/ qcom,coresight-jtagmm-cpu;
 	qcom,coresight-jtagmm-cpu = <&CPU2>;
@@ -391,4 +344,3 @@
 		};
 	};
 };
-

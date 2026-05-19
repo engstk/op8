@@ -418,8 +418,7 @@ struct cvp_hfi_device {
 	int (*validate_session)(void *sess, const char *func);
 };
 
-typedef void (*hfi_cmd_response_callback) (enum hal_command_response cmd,
-			void *data);
+typedef void (*hfi_cmd_response_callback) (u32 cmd, void *data);
 typedef void (*msm_cvp_callback) (u32 response, void *callback);
 
 struct cvp_hfi_device *cvp_hfi_initialize(enum msm_cvp_hfi_type hfi_type,

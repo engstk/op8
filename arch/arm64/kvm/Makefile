@@ -3,7 +3,7 @@
 # Makefile for Kernel-based Virtual Machine module
 #
 
-ccflags-y += -Iarch/arm64/kvm -Ivirt/kvm/arm/vgic
+ccflags-y += -I $(srctree)/arch/arm64/kvm -I $(srctree)/virt/kvm/arm/vgic
 CFLAGS_arm.o := -I.
 CFLAGS_mmu.o := -I.
 

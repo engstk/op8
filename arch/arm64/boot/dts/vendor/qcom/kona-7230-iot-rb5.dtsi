@@ -21,10 +21,6 @@
 	status = "disabled";
 };
 
-&disp_rdump_memory {
-	status = "disabled";
-};
-
 &sde_dp {
 	label = "primary";
 	/delete-property/ qcom,max-hdisplay;

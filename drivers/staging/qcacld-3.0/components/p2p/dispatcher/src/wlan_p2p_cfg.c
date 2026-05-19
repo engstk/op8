@@ -23,7 +23,7 @@
 #include <wlan_objmgr_psoc_obj.h>
 #include "wlan_p2p_public_struct.h"
 #include "wlan_p2p_cfg_api.h"
-#include "../../core/src/wlan_p2p_main.h"
+#include "wlan_p2p_main.h"
 #include "wlan_mlme_ucfg_api.h"
 
 static inline struct p2p_soc_priv_obj *

@@ -2752,7 +2752,7 @@ exit:
 	put_inst(inst);
 }
 
-void handle_cmd_response(enum hal_command_response cmd, void *data)
+void handle_cmd_response(u32 cmd, void *data)
 {
 	switch (cmd) {
 	case HAL_SYS_INIT_DONE:

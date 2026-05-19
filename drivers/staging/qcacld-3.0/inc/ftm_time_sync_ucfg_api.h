@@ -1,0 +1,1 @@
+../components/ftm_time_sync/dispatcher/inc/ftm_time_sync_ucfg_api.h

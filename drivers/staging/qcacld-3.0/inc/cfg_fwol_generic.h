@@ -1,0 +1,1 @@
+../components/fw_offload/dispatcher/inc/cfg_fwol_generic.h

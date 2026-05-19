@@ -1954,8 +1954,6 @@ int rmnet_shs_assign(struct sk_buff *skb, struct rmnet_port *port)
 void rmnet_shs_exit(unsigned int cpu_switch)
 {
 	rmnet_shs_freq_exit();
-	rmnet_shs_cfg.dl_mrk_ind_cb.dl_hdr_handler = NULL;
-	rmnet_shs_cfg.dl_mrk_ind_cb.dl_trl_handler = NULL;
 	rmnet_map_dl_ind_deregister(rmnet_shs_cfg.port,
 				    &rmnet_shs_cfg.dl_mrk_ind_cb);
 	rmnet_shs_cfg.is_reg_dl_mrk_ind = 0;

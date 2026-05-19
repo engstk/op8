@@ -25,7 +25,7 @@
 #ifndef _WLAN_TDLS_TGT_API_H_
 #define _WLAN_TDLS_TGT_API_H_
 #include <wlan_tdls_public_structs.h>
-#include "../../core/src/wlan_tdls_main.h"
+#include "wlan_tdls_main.h"
 
 /**
  * tgt_tdls_set_fw_state() - invoke lmac tdls update fw

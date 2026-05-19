@@ -166,7 +166,7 @@ static inline int wlan_cfg80211_nla_parse(struct nlattr **tb,
 					  int len,
 					  const struct nla_policy *policy)
 {
-	return nla_parse_deprecated(tb, maxtype, head, len, policy);
+	return nla_parse(tb, maxtype, head, len, policy);
 }
 
 static inline int

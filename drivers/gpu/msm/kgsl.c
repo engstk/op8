@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2008-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #include <uapi/linux/sched/types.h>
@@ -318,6 +318,7 @@ static void kgsl_destroy_ion(struct kgsl_memdesc *memdesc)
 	 * doesn't try to free it again
 	 */
 	memdesc->sgt = NULL;
+	entry->priv_data = NULL;
 }
 
 static struct kgsl_memdesc_ops kgsl_dmabuf_ops = {
@@ -4942,26 +4943,28 @@ static unsigned long _search_range(struct kgsl_process_private *private,
 	return result;
 }
 
+unsigned long kgsl_get_align(struct kgsl_memdesc *memdesc)
+{
+	u32 bit = kgsl_memdesc_get_align(memdesc);
+
+	if (bit >= ilog2(SZ_2M))
+		return SZ_2M;
+	else if (bit >= ilog2(SZ_1M))
+		return SZ_1M;
+	else if (bit >= ilog2(SZ_64K))
+		return SZ_64K;
+
+	return PAGE_SIZE;
+}
+
 static unsigned long _get_svm_area(struct kgsl_process_private *private,
 		struct kgsl_mem_entry *entry, unsigned long hint,
 		unsigned long len, unsigned long flags)
 {
 	uint64_t start, end;
-	int align_shift = kgsl_memdesc_get_align(&entry->memdesc);
-	uint64_t align;
+	unsigned long align = kgsl_get_align(&entry->memdesc);
 	unsigned long result;
 	unsigned long addr;
-
-	if (align_shift >= ilog2(SZ_2M))
-		align = SZ_2M;
-	else if (align_shift >= ilog2(SZ_1M))
-		align = SZ_1M;
-	else if (align_shift >= ilog2(SZ_64K))
-		align = SZ_64K;
-	else
-		align = SZ_4K;
-
-	align = max_t(uint64_t, align, PAGE_SIZE);
 
 	/* get the GPU pagetable's SVM range */
 	if (kgsl_mmu_svm_range(private->pagetable, &start, &end,

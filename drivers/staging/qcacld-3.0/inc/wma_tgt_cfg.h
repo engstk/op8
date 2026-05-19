@@ -1,0 +1,1 @@
+../core/wma/inc/wma_tgt_cfg.h

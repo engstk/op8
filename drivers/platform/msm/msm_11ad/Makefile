@@ -7,5 +7,5 @@ subdir-ccflags-y += -D__CHECK_ENDIAN__
 
 # need to locate wil_platform.h
 WIL_11AD_PATH = drivers/net/wireless/ath/wil6210
-subdir-ccflags-y += -I$(WIL_11AD_PATH)
+subdir-ccflags-y += -I $(srctree)/$(WIL_11AD_PATH)
 

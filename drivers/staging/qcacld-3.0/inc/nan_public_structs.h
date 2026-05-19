@@ -1,0 +1,1 @@
+../components/nan/core/inc/nan_public_structs.h

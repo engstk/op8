@@ -1,0 +1,1 @@
+../components/interop_issues_ap/dispatcher/inc/wlan_interop_issues_ap_tgt_api.h

@@ -26,9 +26,9 @@
 #include <scheduler_api.h>
 #include "wlan_p2p_public_struct.h"
 #include "wlan_p2p_ucfg_api.h"
-#include "../../core/src/wlan_p2p_main.h"
-#include "../../core/src/wlan_p2p_roc.h"
-#include "../../core/src/wlan_p2p_off_chan_tx.h"
+#include "wlan_p2p_main.h"
+#include "wlan_p2p_roc.h"
+#include "wlan_p2p_off_chan_tx.h"
 
 static inline struct wlan_lmac_if_p2p_tx_ops *
 ucfg_p2p_psoc_get_tx_ops(struct wlan_objmgr_psoc *psoc)

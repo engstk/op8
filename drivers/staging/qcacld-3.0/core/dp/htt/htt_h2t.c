@@ -628,7 +628,7 @@ htt_h2t_rx_ring_cfg_msg_hl(struct htt_pdev_t *pdev)
 
 	pkt = htt_htc_pkt_alloc(pdev);
 	if (!pkt)
-		return A_ERROR; /* failure */
+		return QDF_STATUS_E_FAILURE; /* failure */
 
 	/*
 	 * show that this is not a tx frame download
@@ -644,7 +644,7 @@ htt_h2t_rx_ring_cfg_msg_hl(struct htt_pdev_t *pdev)
 		HTC_HEADER_LEN + HTC_HDR_ALIGNMENT_PADDING, 4, true);
 	if (!msg) {
 		htt_htc_pkt_free(pdev, pkt);
-		return A_ERROR; /* failure */
+		return QDF_STATUS_E_FAILURE; /* failure */
 	}
 	/*
 	 * Set the length of the message.

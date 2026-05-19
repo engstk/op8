@@ -22,7 +22,7 @@
 
 #include <wlan_objmgr_psoc_obj.h>
 #include "wlan_tdls_cfg_api.h"
-#include "../../core/src/wlan_tdls_main.h"
+#include "wlan_tdls_main.h"
 
 QDF_STATUS
 cfg_tdls_get_support_enable(struct wlan_objmgr_psoc *psoc,

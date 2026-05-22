@@ -123,7 +123,7 @@ void oplus_adfr_init(void *panel_node)
 		oplus_adfr_config, oplus_adfr_compatibility_mode);
 }
 
-ssize_t oplus_adfr_get_debug(struct device *dev, struct device_attribute *attr,
+ssize_t oplus_adfr_get_debug(struct kobject *obj, struct kobj_attribute *attr,
 			     char *buf)
 {
 	pr_err("kVRR get adfr config %#X debug %#X \n", oplus_adfr_config,
@@ -136,7 +136,7 @@ ssize_t oplus_adfr_get_debug(struct device *dev, struct device_attribute *attr,
 		oplus_adfr_auto_update_counter);
 }
 
-ssize_t oplus_adfr_set_debug(struct device *dev, struct device_attribute *attr,
+ssize_t oplus_adfr_set_debug(struct kobject *obj, struct kobj_attribute *attr,
 			     const char *buf, size_t count)
 {
 	sscanf(buf, "%u", &oplus_adfr_debug);
@@ -1122,8 +1122,8 @@ static int oplus_dsi_display_get_vsync_switch_gpio(struct dsi_display *display)
 }
 
 /*GPIO SWITCH: 0-TP Vsync    1-TE Vsync*/
-ssize_t oplus_set_vsync_switch(struct device *dev,
-			       struct device_attribute *attr, const char *buf,
+ssize_t oplus_set_vsync_switch(struct kobject *obj,
+			       struct kobj_attribute *attr, const char *buf,
 			       size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -1144,8 +1144,8 @@ ssize_t oplus_set_vsync_switch(struct device *dev,
 	return count;
 }
 
-ssize_t oplus_get_vsync_switch(struct device *dev,
-			       struct device_attribute *attr, char *buf)
+ssize_t oplus_get_vsync_switch(struct kobject *obj,
+			       struct kobj_attribute *attr, char *buf)
 {
 	struct dsi_display *display = get_main_display();
 	int vsync_switch_gpio = OPLUS_VSYNC_SWITCH_TE;

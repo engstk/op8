@@ -118,6 +118,8 @@ char dimming_gamma_120hz[15] = { 0 };
 struct fp_underscreen_info fp_state = { 0 };
 
 #define PANEL_CMD_MIN_TX_COUNT 2
+#define OPLUS_ATTR(_name, _mode, _show, _store) \
+struct kobj_attribute oplus_attr_##_name = __ATTR(_name, _mode, _show, _store)
 
 extern int dsi_display_read_panel_reg(struct dsi_display *display, u8 cmd,
 				      void *data, size_t len);
@@ -472,8 +474,8 @@ bool oplus_panel_support_global_hbm_switch(struct dsi_panel *panel, u32 bl_lvl)
 
 extern int dsi_display_spr_mode(struct dsi_display *display, int mode);
 
-static ssize_t oplus_display_set_hbm(struct device *dev,
-				     struct device_attribute *attr,
+static ssize_t oplus_display_set_hbm(struct kobject *obj,
+				     struct kobj_attribute *attr,
 				     const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -526,8 +528,8 @@ static ssize_t oplus_display_set_hbm(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_set_seed(struct device *dev,
-				      struct device_attribute *attr,
+static ssize_t oplus_display_set_seed(struct kobject *obj,
+				      struct kobj_attribute *attr,
 				      const char *buf, size_t count)
 {
 	int temp_save = 0;
@@ -561,8 +563,8 @@ static ssize_t oplus_display_set_seed(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_set_aod_light_mode(struct device *dev,
-					struct device_attribute *attr,
+static ssize_t oplus_set_aod_light_mode(struct kobject *obj,
+					struct kobj_attribute *attr,
 					const char *buf, size_t count)
 {
 	int temp_save = 0;
@@ -591,8 +593,8 @@ int oplus_dsi_update_spr_mode(void)
 	return ret;
 }
 
-static ssize_t oplus_display_set_spr(struct device *dev,
-				     struct device_attribute *attr,
+static ssize_t oplus_display_set_spr(struct kobject *obj,
+				     struct kobj_attribute *attr,
 				     const char *buf, size_t count)
 {
 	int temp_save = 0;
@@ -619,8 +621,8 @@ static ssize_t oplus_display_set_spr(struct device *dev,
 }
 
 extern int oplus_display_audio_ready;
-static ssize_t oplus_display_set_audio_ready(struct device *dev,
-					     struct device_attribute *attr,
+static ssize_t oplus_display_set_audio_ready(struct kobject *obj,
+					     struct kobj_attribute *attr,
 					     const char *buf, size_t count)
 {
 	sscanf(buf, "%du", &oplus_display_audio_ready);
@@ -628,24 +630,24 @@ static ssize_t oplus_display_set_audio_ready(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_hbm(struct device *dev,
-				     struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_get_hbm(struct kobject *obj,
+				     struct kobj_attribute *attr, char *buf)
 {
 	printk(KERN_INFO "oplus_display_get_hbm = %d\n", hbm_mode);
 
 	return sprintf(buf, "%d\n", hbm_mode);
 }
 
-static ssize_t oplus_display_get_seed(struct device *dev,
-				      struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_get_seed(struct kobject *obj,
+				      struct kobj_attribute *attr, char *buf)
 {
 	printk(KERN_INFO "oplus_display_get_seed = %d\n", seed_mode);
 
 	return sprintf(buf, "%d\n", seed_mode);
 }
 
-static ssize_t oplus_get_aod_light_mode(struct device *dev,
-					struct device_attribute *attr,
+static ssize_t oplus_get_aod_light_mode(struct kobject *obj,
+					struct kobj_attribute *attr,
 					char *buf)
 {
 	printk(KERN_INFO "oplus_get_aod_light_mode = %d\n", aod_light_mode);
@@ -653,16 +655,16 @@ static ssize_t oplus_get_aod_light_mode(struct device *dev,
 	return sprintf(buf, "%d\n", aod_light_mode);
 }
 
-static ssize_t oplus_display_get_spr(struct device *dev,
-				     struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_get_spr(struct kobject *obj,
+				     struct kobj_attribute *attr, char *buf)
 {
 	printk(KERN_INFO "oplus_display_get_spr = %d\n", spr_mode);
 
 	return sprintf(buf, "%d\n", spr_mode);
 }
 
-static ssize_t oplus_display_get_iris_state(struct device *dev,
-					    struct device_attribute *attr,
+static ssize_t oplus_display_get_iris_state(struct kobject *obj,
+					    struct kobj_attribute *attr,
 					    char *buf)
 {
 #if defined(OPLUS_FEATURE_PXLW_IRIS5)
@@ -677,8 +679,8 @@ static ssize_t oplus_display_get_iris_state(struct device *dev,
 	return sprintf(buf, "%d\n", iris_recovery_check_state);
 }
 
-static ssize_t oplus_display_regulator_control(struct device *dev,
-					       struct device_attribute *attr,
+static ssize_t oplus_display_regulator_control(struct kobject *obj,
+					       struct kobj_attribute *attr,
 					       const char *buf, size_t count)
 {
 	int temp_save = 0;
@@ -711,8 +713,8 @@ static ssize_t oplus_display_regulator_control(struct device *dev,
 }
 
 static ssize_t
-oplus_display_get_panel_serial_number(struct device *dev,
-				      struct device_attribute *attr, char *buf)
+oplus_display_get_panel_serial_number(struct kobject *obj,
+				      struct kobj_attribute *attr, char *buf)
 {
 	int ret = 0;
 	unsigned char read[30];
@@ -875,8 +877,8 @@ oplus_display_get_panel_serial_number(struct device *dev,
 
 extern char oplus_rx_reg[PANEL_TX_MAX_BUF];
 extern char oplus_rx_len;
-static ssize_t oplus_display_get_panel_reg(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_get_panel_reg(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -895,8 +897,8 @@ static ssize_t oplus_display_get_panel_reg(struct device *dev,
 	return cnt;
 }
 
-static ssize_t oplus_display_set_panel_reg(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_set_panel_reg(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   const char *buf, size_t count)
 {
 	char reg[PANEL_TX_MAX_BUF] = { 0x0 };
@@ -996,8 +998,8 @@ static ssize_t oplus_display_set_panel_reg(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_panel_id(struct device *dev,
-					  struct device_attribute *attr,
+static ssize_t oplus_display_get_panel_id(struct kobject *obj,
+					  struct kobj_attribute *attr,
 					  char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -1044,8 +1046,8 @@ static ssize_t oplus_display_get_panel_id(struct device *dev,
 	return ret;
 }
 
-static ssize_t oplus_display_get_panel_dsc(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_get_panel_dsc(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   char *buf)
 {
 	int ret = 0;
@@ -1079,8 +1081,8 @@ static ssize_t oplus_display_get_panel_dsc(struct device *dev,
 	return ret;
 }
 
-static ssize_t oplus_display_dump_info(struct device *dev,
-				       struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_dump_info(struct kobject *obj,
+				       struct kobj_attribute *attr, char *buf)
 {
 	int ret = 0;
 	struct dsi_display *temp_display;
@@ -1112,8 +1114,8 @@ static ssize_t oplus_display_dump_info(struct device *dev,
 	return ret;
 }
 
-static ssize_t oplus_display_get_power_status(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_get_power_status(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      char *buf)
 {
 	printk(KERN_DEBUG "oplus_display_get_power_status = %d\n",
@@ -1122,8 +1124,8 @@ static ssize_t oplus_display_get_power_status(struct device *dev,
 	return sprintf(buf, "%d\n", get_oplus_display_power_status());
 }
 
-static ssize_t oplus_display_set_power_status(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_set_power_status(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      const char *buf, size_t count)
 {
 	int temp_save = 0;
@@ -1134,8 +1136,8 @@ static ssize_t oplus_display_set_power_status(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_closebl_flag(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_get_closebl_flag(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      char *buf)
 {
 	printk(KERN_INFO "oplus_display_get_closebl_flag = %d\n",
@@ -1143,8 +1145,8 @@ static ssize_t oplus_display_get_closebl_flag(struct device *dev,
 	return sprintf(buf, "%d\n", lcd_closebl_flag);
 }
 
-static ssize_t oplus_display_set_closebl_flag(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_set_closebl_flag(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      const char *buf, size_t count)
 {
 	int closebl = 0;
@@ -1156,8 +1158,8 @@ static ssize_t oplus_display_set_closebl_flag(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_backlight_smooth_get_debug(struct device *dev,
-						struct device_attribute *attr,
+static ssize_t oplus_backlight_smooth_get_debug(struct kobject *obj,
+						struct kobj_attribute *attr,
 						char *buf)
 {
 	printk(KERN_INFO "oplus_backlight_smooth_get_debug = %d\n",
@@ -1165,8 +1167,8 @@ static ssize_t oplus_backlight_smooth_get_debug(struct device *dev,
 	return sprintf(buf, "%d\n", backlight_smooth_enable);
 }
 
-static ssize_t oplus_backlight_smooth_set_debug(struct device *dev,
-						struct device_attribute *attr,
+static ssize_t oplus_backlight_smooth_set_debug(struct kobject *obj,
+						struct kobj_attribute *attr,
 						const char *buf, size_t count)
 {
 	int bk_feature = 0;
@@ -1185,8 +1187,8 @@ static ssize_t oplus_backlight_smooth_set_debug(struct device *dev,
 }
 
 extern const char *cmd_set_prop_map[];
-static ssize_t oplus_display_get_dsi_command(struct device *dev,
-					     struct device_attribute *attr,
+static ssize_t oplus_display_get_dsi_command(struct kobject *obj,
+					     struct kobj_attribute *attr,
 					     char *buf)
 {
 	int i, cnt;
@@ -1336,8 +1338,8 @@ error_free_payloads:
 	return rc;
 }
 
-static ssize_t oplus_display_set_dsi_command(struct device *dev,
-					     struct device_attribute *attr,
+static ssize_t oplus_display_set_dsi_command(struct kobject *obj,
+					     struct kobj_attribute *attr,
 					     const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -1501,8 +1503,8 @@ int interpolate(int x, int xa, int xb, int ya, int yb, bool nosub)
 	return ya + factor + plus + sub;
 }
 
-static ssize_t oplus_display_get_dim_alpha(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_get_dim_alpha(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -1514,8 +1516,8 @@ static ssize_t oplus_display_get_dim_alpha(struct device *dev,
 	return sprintf(buf, "%d\n", oplus_underbrightness_alpha);
 }
 
-static ssize_t oplus_display_set_dim_alpha(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_set_dim_alpha(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   const char *buf, size_t count)
 {
 	sscanf(buf, "%x", &oplus_panel_alpha);
@@ -1523,8 +1525,8 @@ static ssize_t oplus_display_set_dim_alpha(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_dc_dim_alpha(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_get_dc_dim_alpha(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      char *buf)
 {
 	int ret = 0;
@@ -1550,8 +1552,8 @@ static ssize_t oplus_display_get_dc_dim_alpha(struct device *dev,
 }
 
 static ssize_t
-oplus_display_get_dimlayer_backlight(struct device *dev,
-				     struct device_attribute *attr, char *buf)
+oplus_display_get_dimlayer_backlight(struct kobject *obj,
+				     struct kobj_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%d %d %d %d %d %d\n", oplus_dimlayer_bl_alpha,
 		       oplus_dimlayer_bl_alpha_value,
@@ -1561,8 +1563,8 @@ oplus_display_get_dimlayer_backlight(struct device *dev,
 }
 
 static ssize_t
-oplus_display_set_dimlayer_backlight(struct device *dev,
-				     struct device_attribute *attr,
+oplus_display_set_dimlayer_backlight(struct kobject *obj,
+				     struct kobj_attribute *attr,
 				     const char *buf, size_t count)
 {
 	sscanf(buf, "%d %d %d %d %d %d", &oplus_dimlayer_bl_alpha,
@@ -1579,8 +1581,8 @@ int oplus_fod_on_vblank = -1;
 int oplus_fod_off_vblank = -1;
 static int oplus_datadimming_v3_debug_value = -1;
 static int oplus_datadimming_v3_debug_delay = 16000;
-static ssize_t oplus_display_get_debug(struct device *dev,
-				       struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_get_debug(struct kobject *obj,
+				       struct kobj_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%d %d %d %d %d %d\n", oplus_dimlayer_bl_on_vblank,
 		       oplus_dimlayer_bl_off_vblank, oplus_fod_on_vblank,
@@ -1588,8 +1590,8 @@ static ssize_t oplus_display_get_debug(struct device *dev,
 		       oplus_datadimming_v3_debug_delay);
 }
 
-static ssize_t oplus_display_set_debug(struct device *dev,
-				       struct device_attribute *attr,
+static ssize_t oplus_display_set_debug(struct kobject *obj,
+				       struct kobj_attribute *attr,
 				       const char *buf, size_t count)
 {
 	sscanf(buf, "%d %d %d %d %d %d", &oplus_dimlayer_bl_on_vblank,
@@ -1600,8 +1602,8 @@ static ssize_t oplus_display_set_debug(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_dimlayer_enable(struct device *dev,
-						 struct device_attribute *attr,
+static ssize_t oplus_display_get_dimlayer_enable(struct kobject *obj,
+						 struct kobj_attribute *attr,
 						 char *buf)
 {
 	return sprintf(buf, "%d %d\n", oplus_dimlayer_bl_enable,
@@ -1871,8 +1873,8 @@ int oplus_panel_update_backlight_unlock(struct dsi_panel *panel)
 	return dsi_panel_set_backlight(panel, panel->bl_config.bl_level);
 }
 
-static ssize_t oplus_display_set_dimlayer_enable(struct device *dev,
-						 struct device_attribute *attr,
+static ssize_t oplus_display_set_dimlayer_enable(struct kobject *obj,
+						 struct kobj_attribute *attr,
 						 const char *buf, size_t count)
 {
 	struct dsi_display *display = NULL;
@@ -1927,8 +1929,8 @@ static ssize_t oplus_display_set_dimlayer_enable(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_dimlayer_hbm(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_get_dimlayer_hbm(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      char *buf)
 {
 	return sprintf(buf, "%d\n", oplus_dimlayer_hbm_saved);
@@ -1936,8 +1938,8 @@ static ssize_t oplus_display_get_dimlayer_hbm(struct device *dev,
 
 extern int oplus_dimlayer_hbm_vblank_count;
 extern atomic_t oplus_dimlayer_hbm_vblank_ref;
-static ssize_t oplus_display_set_dimlayer_hbm(struct device *dev,
-					      struct device_attribute *attr,
+static ssize_t oplus_display_set_dimlayer_hbm(struct kobject *obj,
+					      struct kobj_attribute *attr,
 					      const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -1977,15 +1979,15 @@ static ssize_t oplus_display_set_dimlayer_hbm(struct device *dev,
 }
 
 int oplus_force_screenfp = 0;
-static ssize_t oplus_display_get_forcescreenfp(struct device *dev,
-					       struct device_attribute *attr,
+static ssize_t oplus_display_get_forcescreenfp(struct kobject *obj,
+					       struct kobj_attribute *attr,
 					       char *buf)
 {
 	return sprintf(buf, "%d\n", oplus_force_screenfp);
 }
 
-static ssize_t oplus_display_set_forcescreenfp(struct device *dev,
-					       struct device_attribute *attr,
+static ssize_t oplus_display_set_forcescreenfp(struct kobject *obj,
+					       struct kobj_attribute *attr,
 					       const char *buf, size_t count)
 {
 	sscanf(buf, "%x", &oplus_force_screenfp);
@@ -1993,8 +1995,8 @@ static ssize_t oplus_display_set_forcescreenfp(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_esd_status(struct device *dev,
-					    struct device_attribute *attr,
+static ssize_t oplus_display_get_esd_status(struct kobject *obj,
+					    struct kobj_attribute *attr,
 					    char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -2016,8 +2018,8 @@ error:
 	return rc;
 }
 
-static ssize_t oplus_display_set_esd_status(struct device *dev,
-					    struct device_attribute *attr,
+static ssize_t oplus_display_set_esd_status(struct kobject *obj,
+					    struct kobj_attribute *attr,
 					    const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -2056,8 +2058,8 @@ static ssize_t oplus_display_set_esd_status(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_notify_panel_blank(struct device *dev,
-						struct device_attribute *attr,
+static ssize_t oplus_display_notify_panel_blank(struct kobject *obj,
+						struct kobj_attribute *attr,
 						const char *buf, size_t count)
 {
 	struct msm_drm_notifier notifier_data;
@@ -2087,14 +2089,14 @@ static ssize_t oplus_display_notify_panel_blank(struct device *dev,
 }
 
 extern int is_ffl_enable;
-static ssize_t oplus_get_ffl_setting(struct device *dev,
-				     struct device_attribute *attr, char *buf)
+static ssize_t oplus_get_ffl_setting(struct kobject *obj,
+				     struct kobj_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%d\n", is_ffl_enable);
 }
 
-static ssize_t oplus_set_ffl_setting(struct device *dev,
-				     struct device_attribute *attr,
+static ssize_t oplus_set_ffl_setting(struct kobject *obj,
+				     struct kobj_attribute *attr,
 				     const char *buf, size_t count)
 {
 	int enable = 0;
@@ -2110,8 +2112,8 @@ static ssize_t oplus_set_ffl_setting(struct device *dev,
 ktime_t oplus_onscreenfp_pressed_time;
 u32 oplus_onscreenfp_vblank_count = 0;
 
-static ssize_t oplus_display_notify_fp_press(struct device *dev,
-					     struct device_attribute *attr,
+static ssize_t oplus_display_notify_fp_press(struct kobject *obj,
+					     struct kobj_attribute *attr,
 					     const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -2286,8 +2288,8 @@ error:
 	return count;
 }
 
-static ssize_t oplus_display_get_roundcorner(struct device *dev,
-					     struct device_attribute *attr,
+static ssize_t oplus_display_get_roundcorner(struct kobject *obj,
+					     struct kobj_attribute *attr,
 					     char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -2304,8 +2306,8 @@ static ssize_t oplus_display_get_roundcorner(struct device *dev,
 DEFINE_MUTEX(dynamic_osc_clock_lock);
 extern int dynamic_osc_clock;
 static ssize_t
-oplus_display_get_dynamic_osc_clock(struct device *dev,
-				    struct device_attribute *attr, char *buf)
+oplus_display_get_dynamic_osc_clock(struct kobject *obj,
+				    struct kobj_attribute *attr, char *buf)
 {
 	struct dsi_display *display = get_main_display();
 	int rc = 0;
@@ -2326,8 +2328,8 @@ oplus_display_get_dynamic_osc_clock(struct device *dev,
 }
 
 static ssize_t
-oplus_display_set_dynamic_osc_clock(struct device *dev,
-				    struct device_attribute *attr,
+oplus_display_set_dynamic_osc_clock(struct kobject *obj,
+				    struct kobj_attribute *attr,
 				    const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -2351,8 +2353,8 @@ oplus_display_set_dynamic_osc_clock(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_max_brightness(struct device *dev,
-						struct device_attribute *attr,
+static ssize_t oplus_display_get_max_brightness(struct kobject *obj,
+						struct kobj_attribute *attr,
 						char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -2366,8 +2368,8 @@ static ssize_t oplus_display_get_max_brightness(struct device *dev,
 	}
 }
 
-static ssize_t oplus_display_set_max_brightness(struct device *dev,
-						struct device_attribute *attr,
+static ssize_t oplus_display_set_max_brightness(struct kobject *obj,
+						struct kobj_attribute *attr,
 						const char *buf, size_t count)
 {
 	sscanf(buf, "%du", &oplus_debug_max_brightness);
@@ -2375,8 +2377,8 @@ static ssize_t oplus_display_set_max_brightness(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_ccd_check(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_get_ccd_check(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -2758,8 +2760,8 @@ static u32 update_current_voltage(u32 id)
 	return vol_current;
 }
 
-static ssize_t oplus_display_get_panel_pwr(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_get_panel_pwr(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   char *buf)
 {
 	int ret = 0;
@@ -2784,8 +2786,8 @@ static ssize_t oplus_display_get_panel_pwr(struct device *dev,
 		panel_vol_bak[2].voltage_current, panel_vol_bak[2].voltage_max);
 }
 
-static ssize_t oplus_display_set_panel_pwr(struct device *dev,
-					   struct device_attribute *attr,
+static ssize_t oplus_display_set_panel_pwr(struct kobject *obj,
+					   struct kobj_attribute *attr,
 					   const char *buf, size_t count)
 {
 	int panel_vol_value = 0, rc = 0, panel_vol_id = 0, pwr_id = 0;
@@ -2843,15 +2845,15 @@ static ssize_t oplus_display_set_panel_pwr(struct device *dev,
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
 #define BUFFER_TEMP_SIZE (1024)
 
-static ssize_t oplus_display_get_aod_area(struct device *dev,
-					  struct device_attribute *attr,
+static ssize_t oplus_display_get_aod_area(struct kobject *obj,
+					  struct kobj_attribute *attr,
 					  char *buf)
 {
 	return oplus_ramless_panel_get_aod_area(buf);
 }
 
-static ssize_t oplus_display_set_aod_area(struct device *dev,
-					  struct device_attribute *attr,
+static ssize_t oplus_display_set_aod_area(struct kobject *obj,
+					  struct kobj_attribute *attr,
 					  const char *buf, size_t count)
 {
 	char buf_temp[BUFFER_TEMP_SIZE];
@@ -2868,14 +2870,14 @@ static ssize_t oplus_display_set_aod_area(struct device *dev,
 	return oplus_ramless_panel_set_aod_area(buf_temp);
 }
 
-static ssize_t oplus_display_get_video(struct device *dev,
-				       struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_get_video(struct kobject *obj,
+				       struct kobj_attribute *attr, char *buf)
 {
 	return oplus_ramless_panel_get_video(buf);
 }
 
-static ssize_t oplus_display_set_video(struct device *dev,
-				       struct device_attribute *attr,
+static ssize_t oplus_display_set_video(struct kobject *obj,
+				       struct kobj_attribute *attr,
 				       const char *buf, size_t count)
 {
 	char buf_temp[BUFFER_TEMP_SIZE];
@@ -2893,8 +2895,8 @@ static ssize_t oplus_display_set_video(struct device *dev,
 }
 #endif /* OPLUS_FEATURE_AOD_RAMLESS */
 
-static ssize_t oplus_display_set_mca(struct device *dev,
-				     struct device_attribute *attr,
+static ssize_t oplus_display_set_mca(struct kobject *obj,
+				     struct kobj_attribute *attr,
 				     const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -2935,8 +2937,8 @@ static ssize_t oplus_display_set_mca(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_mca(struct device *dev,
-				     struct device_attribute *attr, char *buf)
+static ssize_t oplus_display_get_mca(struct kobject *obj,
+				     struct kobj_attribute *attr, char *buf)
 {
 	printk(KERN_INFO "oplus_display_get_mca = %d\n", mca_mode);
 
@@ -2945,15 +2947,15 @@ static ssize_t oplus_display_get_mca(struct device *dev,
 
 /*#ifdef OPLUS_BUG_STABILITY*/
 static ssize_t
-oplus_display_get_dsi_cmd_log_switch(struct device *dev,
-				     struct device_attribute *attr, char *buf)
+oplus_display_get_dsi_cmd_log_switch(struct kobject *obj,
+				     struct kobj_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%d\n", dsi_cmd_log_enable);
 }
 
 static ssize_t
-oplus_display_set_dsi_cmd_log_switch(struct device *dev,
-				     struct device_attribute *attr,
+oplus_display_set_dsi_cmd_log_switch(struct kobject *obj,
+				     struct kobj_attribute *attr,
 				     const char *buf, size_t count)
 {
 	sscanf(buf, "%d", &dsi_cmd_log_enable);
@@ -2964,8 +2966,8 @@ oplus_display_set_dsi_cmd_log_switch(struct device *dev,
 }
 
 static ssize_t
-oplus_display_get_dc_real_backlight(struct device *dev,
-				    struct device_attribute *attr, char *buf)
+oplus_display_get_dc_real_backlight(struct kobject *obj,
+				    struct kobj_attribute *attr, char *buf)
 {
 	struct dsi_display *display = get_main_display();
 
@@ -2978,8 +2980,8 @@ oplus_display_get_dc_real_backlight(struct device *dev,
 }
 
 static ssize_t
-oplus_display_set_dc_real_backlight(struct device *dev,
-				    struct device_attribute *attr,
+oplus_display_set_dc_real_backlight(struct kobject *obj,
+				    struct kobj_attribute *attr,
 				    const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -3912,8 +3914,8 @@ static int dsi_display_failsafe_off(struct dsi_display *display)
 	return rc;
 }
 
-static ssize_t oplus_display_set_failsafe(struct device *dev,
-					  struct device_attribute *attr,
+static ssize_t oplus_display_set_failsafe(struct kobject *obj,
+					  struct kobj_attribute *attr,
 					  const char *buf, size_t count)
 {
 	struct dsi_display *display = get_main_display();
@@ -3957,8 +3959,8 @@ static ssize_t oplus_display_set_failsafe(struct device *dev,
 	return count;
 }
 
-static ssize_t oplus_display_get_mipi_clk_rate_hz(struct device *dev,
-						  struct device_attribute *attr,
+static ssize_t oplus_display_get_mipi_clk_rate_hz(struct kobject *obj,
+						  struct kobj_attribute *attr,
 						  char *buf)
 {
 	struct dsi_display *display = get_main_display();
@@ -3977,8 +3979,8 @@ static ssize_t oplus_display_get_mipi_clk_rate_hz(struct device *dev,
 	return sprintf(buf, "%llu\n", clk_rate_hz);
 }
 
-static ssize_t oplus_display_get_fp_state(struct device *obj,
-					  struct device_attribute *attr,
+static ssize_t oplus_display_get_fp_state(struct kobject *obj,
+					  struct kobj_attribute *attr,
 					  char *buf)
 {
 	return sprintf(buf, "%d,%d,%d\n", fp_state.x, fp_state.y,
@@ -3987,149 +3989,149 @@ static ssize_t oplus_display_get_fp_state(struct device *obj,
 
 static struct kobject *oplus_display_kobj;
 
-static DEVICE_ATTR(hbm, S_IRUGO | S_IWUSR, oplus_display_get_hbm,
+static OPLUS_ATTR(hbm, S_IRUGO | S_IWUSR, oplus_display_get_hbm,
 		   oplus_display_set_hbm);
-static DEVICE_ATTR(audio_ready, S_IRUGO | S_IWUSR, NULL,
+static OPLUS_ATTR(audio_ready, S_IRUGO | S_IWUSR, NULL,
 		   oplus_display_set_audio_ready);
-static DEVICE_ATTR(seed, S_IRUGO | S_IWUSR, oplus_display_get_seed,
+static OPLUS_ATTR(seed, S_IRUGO | S_IWUSR, oplus_display_get_seed,
 		   oplus_display_set_seed);
-static DEVICE_ATTR(panel_serial_number, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(panel_serial_number, S_IRUGO | S_IWUSR,
 		   oplus_display_get_panel_serial_number, NULL);
-static DEVICE_ATTR(dump_info, S_IRUGO | S_IWUSR, oplus_display_dump_info, NULL);
-static DEVICE_ATTR(panel_dsc, S_IRUGO | S_IWUSR, oplus_display_get_panel_dsc,
+static OPLUS_ATTR(dump_info, S_IRUGO | S_IWUSR, oplus_display_dump_info, NULL);
+static OPLUS_ATTR(panel_dsc, S_IRUGO | S_IWUSR, oplus_display_get_panel_dsc,
 		   NULL);
-static DEVICE_ATTR(power_status, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(power_status, S_IRUGO | S_IWUSR,
 		   oplus_display_get_power_status,
 		   oplus_display_set_power_status);
-static DEVICE_ATTR(display_regulator_control, S_IRUGO | S_IWUSR, NULL,
+static OPLUS_ATTR(display_regulator_control, S_IRUGO | S_IWUSR, NULL,
 		   oplus_display_regulator_control);
-static DEVICE_ATTR(panel_id, S_IRUGO | S_IWUSR, oplus_display_get_panel_id,
+static OPLUS_ATTR(panel_id, S_IRUGO | S_IWUSR, oplus_display_get_panel_id,
 		   NULL);
-static DEVICE_ATTR(sau_closebl_node, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(sau_closebl_node, S_IRUGO | S_IWUSR,
 		   oplus_display_get_closebl_flag,
 		   oplus_display_set_closebl_flag);
-static DEVICE_ATTR(write_panel_reg, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(write_panel_reg, S_IRUGO | S_IWUSR,
 		   oplus_display_get_panel_reg, oplus_display_set_panel_reg);
-static DEVICE_ATTR(dsi_cmd, S_IRUGO | S_IWUSR, oplus_display_get_dsi_command,
+static OPLUS_ATTR(dsi_cmd, S_IRUGO | S_IWUSR, oplus_display_get_dsi_command,
 		   oplus_display_set_dsi_command);
-static DEVICE_ATTR(dim_alpha, S_IRUGO | S_IWUSR, oplus_display_get_dim_alpha,
+static OPLUS_ATTR(dim_alpha, S_IRUGO | S_IWUSR, oplus_display_get_dim_alpha,
 		   oplus_display_set_dim_alpha);
-static DEVICE_ATTR(dim_dc_alpha, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dim_dc_alpha, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dc_dim_alpha, oplus_display_set_dim_alpha);
-static DEVICE_ATTR(dimlayer_hbm, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dimlayer_hbm, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dimlayer_hbm,
 		   oplus_display_set_dimlayer_hbm);
-static DEVICE_ATTR(dimlayer_bl_en, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dimlayer_bl_en, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dimlayer_enable,
 		   oplus_display_set_dimlayer_enable);
-static DEVICE_ATTR(dimlayer_set_bl, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dimlayer_set_bl, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dimlayer_backlight,
 		   oplus_display_set_dimlayer_backlight);
-static DEVICE_ATTR(debug, S_IRUGO | S_IWUSR, oplus_display_get_debug,
+static OPLUS_ATTR(debug, S_IRUGO | S_IWUSR, oplus_display_get_debug,
 		   oplus_display_set_debug);
-static DEVICE_ATTR(force_screenfp, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(force_screenfp, S_IRUGO | S_IWUSR,
 		   oplus_display_get_forcescreenfp,
 		   oplus_display_set_forcescreenfp);
-static DEVICE_ATTR(esd_status, S_IRUGO | S_IWUSR, oplus_display_get_esd_status,
+static OPLUS_ATTR(esd_status, S_IRUGO | S_IWUSR, oplus_display_get_esd_status,
 		   oplus_display_set_esd_status);
-static DEVICE_ATTR(notify_panel_blank, S_IRUGO | S_IWUSR, NULL,
+static OPLUS_ATTR(notify_panel_blank, S_IRUGO | S_IWUSR, NULL,
 		   oplus_display_notify_panel_blank);
-static DEVICE_ATTR(ffl_set, S_IRUGO | S_IWUSR, oplus_get_ffl_setting,
+static OPLUS_ATTR(ffl_set, S_IRUGO | S_IWUSR, oplus_get_ffl_setting,
 		   oplus_set_ffl_setting);
-static DEVICE_ATTR(notify_fppress, S_IRUGO | S_IWUSR, NULL,
+static OPLUS_ATTR(notify_fppress, S_IRUGO | S_IWUSR, NULL,
 		   oplus_display_notify_fp_press);
-static DEVICE_ATTR(aod_light_mode_set, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(aod_light_mode_set, S_IRUGO | S_IWUSR,
 		   oplus_get_aod_light_mode, oplus_set_aod_light_mode);
-static DEVICE_ATTR(spr, S_IRUGO | S_IWUSR, oplus_display_get_spr,
+static OPLUS_ATTR(spr, S_IRUGO | S_IWUSR, oplus_display_get_spr,
 		   oplus_display_set_spr);
-static DEVICE_ATTR(roundcorner, S_IRUGO | S_IRUSR,
+static OPLUS_ATTR(roundcorner, S_IRUGO | S_IRUSR,
 		   oplus_display_get_roundcorner, NULL);
-static DEVICE_ATTR(dynamic_osc_clock, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dynamic_osc_clock, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dynamic_osc_clock,
 		   oplus_display_set_dynamic_osc_clock);
-static DEVICE_ATTR(max_brightness, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(max_brightness, S_IRUGO | S_IWUSR,
 		   oplus_display_get_max_brightness,
 		   oplus_display_set_max_brightness);
-static DEVICE_ATTR(ccd_check, S_IRUGO | S_IRUSR, oplus_display_get_ccd_check,
+static OPLUS_ATTR(ccd_check, S_IRUGO | S_IRUSR, oplus_display_get_ccd_check,
 		   NULL);
-static DEVICE_ATTR(iris_rm_check, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(iris_rm_check, S_IRUGO | S_IWUSR,
 		   oplus_display_get_iris_state, NULL);
-static DEVICE_ATTR(panel_pwr, S_IRUGO | S_IWUSR, oplus_display_get_panel_pwr,
+static OPLUS_ATTR(panel_pwr, S_IRUGO | S_IWUSR, oplus_display_get_panel_pwr,
 		   oplus_display_set_panel_pwr);
-static DEVICE_ATTR(mca_state, S_IRUGO | S_IWUSR, oplus_display_get_mca,
+static OPLUS_ATTR(mca_state, S_IRUGO | S_IWUSR, oplus_display_get_mca,
 		   oplus_display_set_mca);
-static DEVICE_ATTR(failsafe, S_IRUGO | S_IWUSR, NULL,
+static OPLUS_ATTR(failsafe, S_IRUGO | S_IWUSR, NULL,
 		   oplus_display_set_failsafe);
-static DEVICE_ATTR(mipi_clk_rate_hz, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(mipi_clk_rate_hz, S_IRUGO | S_IWUSR,
 		   oplus_display_get_mipi_clk_rate_hz, NULL);
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
-static DEVICE_ATTR(aod_area, S_IRUGO | S_IWUSR, oplus_display_get_aod_area,
+static OPLUS_ATTR(aod_area, S_IRUGO | S_IWUSR, oplus_display_get_aod_area,
 		   oplus_display_set_aod_area);
-static DEVICE_ATTR(video, S_IRUGO | S_IWUSR, oplus_display_get_video,
+static OPLUS_ATTR(video, S_IRUGO | S_IWUSR, oplus_display_get_video,
 		   oplus_display_set_video);
 #endif /* OPLUS_FEATURE_AOD_RAMLESS */
-static DEVICE_ATTR(fp_state, S_IRUGO, oplus_display_get_fp_state, NULL);
+static OPLUS_ATTR(fp_state, S_IRUGO, oplus_display_get_fp_state, NULL);
 
 #ifdef OPLUS_FEATURE_ADFR
-static DEVICE_ATTR(adfr_debug, S_IRUGO | S_IWUSR, oplus_adfr_get_debug,
+static OPLUS_ATTR(adfr_debug, S_IRUGO | S_IWUSR, oplus_adfr_get_debug,
 		   oplus_adfr_set_debug);
-static DEVICE_ATTR(vsync_switch, S_IRUGO | S_IWUSR, oplus_get_vsync_switch,
+static OPLUS_ATTR(vsync_switch, S_IRUGO | S_IWUSR, oplus_get_vsync_switch,
 		   oplus_set_vsync_switch);
 #endif
-static DEVICE_ATTR(backlight_smooth, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(backlight_smooth, S_IRUGO | S_IWUSR,
 		   oplus_backlight_smooth_get_debug,
 		   oplus_backlight_smooth_set_debug);
 
 /*#ifdef OPLUS_BUG_STABILITY*/
-static DEVICE_ATTR(dsi_cmd_log_switch, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dsi_cmd_log_switch, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dsi_cmd_log_switch,
 		   oplus_display_set_dsi_cmd_log_switch);
 /* Apollo DC backlight */
-static DEVICE_ATTR(dc_real_backlight, S_IRUGO | S_IWUSR,
+static OPLUS_ATTR(dc_real_backlight, S_IRUGO | S_IWUSR,
 		   oplus_display_get_dc_real_backlight,
 		   oplus_display_set_dc_real_backlight);
 /*#endif*/
 /* fp type config */
-static DEVICE_ATTR(fp_type, S_IRUGO | S_IWUSR, oplus_ofp_get_fp_type_attr,
+static OPLUS_ATTR(fp_type, S_IRUGO | S_IWUSR, oplus_ofp_get_fp_type_attr,
 		   oplus_ofp_set_fp_type_attr);
 /*
  * Create a group of attributes so that we can create and destroy them all
  * at once.
  */
 static struct attribute *oplus_display_attrs[] = {
-	&dev_attr_hbm.attr, &dev_attr_audio_ready.attr, &dev_attr_seed.attr,
-	&dev_attr_panel_serial_number.attr, &dev_attr_dump_info.attr,
-	&dev_attr_panel_dsc.attr, &dev_attr_power_status.attr,
-	&dev_attr_display_regulator_control.attr, &dev_attr_panel_id.attr,
-	&dev_attr_sau_closebl_node.attr, &dev_attr_write_panel_reg.attr,
-	&dev_attr_dsi_cmd.attr, &dev_attr_dim_alpha.attr,
-	&dev_attr_dim_dc_alpha.attr, &dev_attr_dimlayer_hbm.attr,
-	&dev_attr_dimlayer_set_bl.attr, &dev_attr_dimlayer_bl_en.attr,
-	&dev_attr_debug.attr, &dev_attr_force_screenfp.attr,
-	&dev_attr_esd_status.attr, &dev_attr_notify_panel_blank.attr,
-	&dev_attr_ffl_set.attr, &dev_attr_notify_fppress.attr,
-	&dev_attr_aod_light_mode_set.attr, &dev_attr_spr.attr,
-	&dev_attr_roundcorner.attr, &dev_attr_dynamic_osc_clock.attr,
-	&dev_attr_max_brightness.attr, &dev_attr_ccd_check.attr,
-	&dev_attr_iris_rm_check.attr, &dev_attr_panel_pwr.attr,
-	&dev_attr_mca_state.attr, &dev_attr_failsafe.attr,
-	&dev_attr_mipi_clk_rate_hz.attr,
+	&oplus_attr_hbm.attr, &oplus_attr_audio_ready.attr, &oplus_attr_seed.attr,
+	&oplus_attr_panel_serial_number.attr, &oplus_attr_dump_info.attr,
+	&oplus_attr_panel_dsc.attr, &oplus_attr_power_status.attr,
+	&oplus_attr_display_regulator_control.attr, &oplus_attr_panel_id.attr,
+	&oplus_attr_sau_closebl_node.attr, &oplus_attr_write_panel_reg.attr,
+	&oplus_attr_dsi_cmd.attr, &oplus_attr_dim_alpha.attr,
+	&oplus_attr_dim_dc_alpha.attr, &oplus_attr_dimlayer_hbm.attr,
+	&oplus_attr_dimlayer_set_bl.attr, &oplus_attr_dimlayer_bl_en.attr,
+	&oplus_attr_debug.attr, &oplus_attr_force_screenfp.attr,
+	&oplus_attr_esd_status.attr, &oplus_attr_notify_panel_blank.attr,
+	&oplus_attr_ffl_set.attr, &oplus_attr_notify_fppress.attr,
+	&oplus_attr_aod_light_mode_set.attr, &oplus_attr_spr.attr,
+	&oplus_attr_roundcorner.attr, &oplus_attr_dynamic_osc_clock.attr,
+	&oplus_attr_max_brightness.attr, &oplus_attr_ccd_check.attr,
+	&oplus_attr_iris_rm_check.attr, &oplus_attr_panel_pwr.attr,
+	&oplus_attr_mca_state.attr, &oplus_attr_failsafe.attr,
+	&oplus_attr_mipi_clk_rate_hz.attr,
 #ifdef OPLUS_FEATURE_AOD_RAMLESS
-	&dev_attr_aod_area.attr, &dev_attr_video.attr,
+	&oplus_attr_aod_area.attr, &oplus_attr_video.attr,
 #endif /* OPLUS_FEATURE_AOD_RAMLESS */
 
 #ifdef OPLUS_FEATURE_ADFR
-	&dev_attr_adfr_debug.attr, &dev_attr_vsync_switch.attr,
+	&oplus_attr_adfr_debug.attr, &oplus_attr_vsync_switch.attr,
 #endif
-	&dev_attr_backlight_smooth.attr,
+	&oplus_attr_backlight_smooth.attr,
 
 	/*#ifdef OPLUS_BUG_STABILITY*/
-	&dev_attr_dsi_cmd_log_switch.attr,
+	&oplus_attr_dsi_cmd_log_switch.attr,
 	/* Apollo DC backlight */
-	&dev_attr_dc_real_backlight.attr,
+	&oplus_attr_dc_real_backlight.attr,
 	/*#endif*/
 	/* fp type config */
-	&dev_attr_fp_type.attr, &dev_attr_fp_state.attr,
+	&oplus_attr_fp_type.attr, &oplus_attr_fp_state.attr,
 	NULL, /* need to NULL terminate the list of attributes */
 };
 
@@ -4156,7 +4158,7 @@ static int oplus_opticalfp_irq_handler(struct fp_underscreen_info *tp_info)
 	fp_state.x = tp_info->x;
 	fp_state.y = tp_info->y;
 	fp_state.touch_state = tp_info->touch_state;
-	sysfs_notify(kernel_kobj, "oplus_display", dev_attr_fp_state.attr.name);
+	sysfs_notify(kernel_kobj, "oplus_display", oplus_attr_fp_state.attr.name);
 	return IRQ_HANDLED;
 }
 

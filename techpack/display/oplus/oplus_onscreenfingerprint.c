@@ -1253,8 +1253,8 @@ int oplus_ofp_get_fp_type(void *buf)
 	return 0;
 }
 
-ssize_t oplus_ofp_set_fp_type_attr(struct device *dev,
-				   struct device_attribute *attr,
+ssize_t oplus_ofp_set_fp_type_attr(struct kobject *obj,
+				   struct kobj_attribute *attr,
 				   const char *buf, size_t count)
 {
 	unsigned int fp_type = 0;
@@ -1271,8 +1271,8 @@ ssize_t oplus_ofp_set_fp_type_attr(struct device *dev,
 	return count;
 }
 
-ssize_t oplus_ofp_get_fp_type_attr(struct device *dev,
-				   struct device_attribute *attr, char *buf)
+ssize_t oplus_ofp_get_fp_type_attr(struct kobject *obj,
+				   struct kobj_attribute *attr, char *buf)
 {
 	struct dsi_display *display = get_main_display();
 

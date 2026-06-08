@@ -475,6 +475,8 @@ static enum tfa_error tfa98xx_write_re25(struct tfa_device *tfa, int value)
 #ifdef OPLUS_ARCH_EXTENDS
 #ifdef CONFIG_DEBUG_FS
 static struct dentry *tfa98xx_debugfs = NULL;
+#else /* CONFIG_DEBUG_FS */
+static struct proc_dir_entry *tfa98xx_proc_node = NULL;
 #endif /* CONFIG_DEBUG_FS */
 #define TFA98XX_DEBUG_FS_NAME "ftm_tfa98xx"
 int ftm_mode = 0;
@@ -5539,14 +5541,21 @@ static int tfa98xx_i2c_probe(struct i2c_client *i2c,
 
 #ifdef OPLUS_ARCH_EXTENDS
 #ifdef CONFIG_DEBUG_FS
-	tfa98xx_debugfs = debugfs_create_file(TFA98XX_DEBUG_FS_NAME,
-					      S_IFREG | S_IRUGO | S_IWUSR, NULL,
-					      (void *)TFA98XX_DEBUG_FS_NAME,
-					      &tfa98xx_debug_ops);
+	if (!tfa98xx_debugfs) {
+		tfa98xx_debugfs =
+			debugfs_create_file(TFA98XX_DEBUG_FS_NAME,
+					    S_IFREG | S_IRUGO | S_IWUSR, NULL,
+					    (void *)TFA98XX_DEBUG_FS_NAME,
+					    &tfa98xx_debug_ops);
+	}
 #else
-	proc_create_data(TFA98XX_DEBUG_FS_NAME, S_IFREG | S_IRUGO | S_IWUSR,
-			 NULL, &tfa98xx_debug_ops,
-			 (void *)TFA98XX_DEBUG_FS_NAME);
+	if (!tfa98xx_proc_node) {
+		tfa98xx_proc_node =
+			proc_create_data(TFA98XX_DEBUG_FS_NAME,
+					 S_IFREG | S_IRUGO | S_IWUSR, NULL,
+					 &tfa98xx_debug_ops,
+					 (void *)TFA98XX_DEBUG_FS_NAME);
+	}
 #endif /*CONFIG_DEBUG_FS*/
 
 	ftm_mode = get_boot_mode();
@@ -5597,6 +5606,20 @@ static int tfa98xx_i2c_remove(struct i2c_client *i2c)
 
 	device_remove_bin_file(&i2c->dev, &dev_attr_reg);
 	device_remove_bin_file(&i2c->dev, &dev_attr_rw);
+
+#ifdef OPLUS_ARCH_EXTENDS
+#ifdef CONFIG_DEBUG_FS
+	if (tfa98xx_debugfs) {
+		debugfs_remove(tfa98xx_debugfs);
+		tfa98xx_debugfs = NULL;
+	}
+#else /* CONFIG_DEBUG_FS */
+	if (tfa98xx_proc_node) {
+		remove_proc_entry(TFA98XX_DEBUG_FS_NAME, NULL);
+		tfa98xx_proc_node = NULL;
+	}
+#endif /*CONFIG_DEBUG_FS*/
+#endif /* OPLUS_ARCH_EXTENDS */
 
 	tfa98xx_debug_remove(tfa98xx);
 

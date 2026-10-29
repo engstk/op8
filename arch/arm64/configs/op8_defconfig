@@ -2,14 +2,14 @@
 # Automatically generated file; DO NOT EDIT.
 # Linux/arm64 4.19.325 Kernel Configuration
 #
-CONFIG_CC_VERSION_TEXT="Android (14054515, +pgo, +bolt, +lto, +mlgo, based on r563880c) clang version 21.0.0 (https://android.googlesource.com/toolchain/llvm-project 5e96669f06077099aa41290cdb4c5e6fa0f59349)"
+CONFIG_CC_VERSION_TEXT="Android (15071444, +pgo, +bolt, +lto, +mlgo, based on r596125) clang version 22.0.2 (https://android.googlesource.com/toolchain/llvm-project de03d430485c884861198b25459851f429cbdbad)"
 CONFIG_GCC_VERSION=0
 CONFIG_CC_IS_CLANG=y
 CONFIG_LD_IS_LLD=y
-CONFIG_CLANG_VERSION=210000
+CONFIG_CLANG_VERSION=220002
 CONFIG_AS_IS_LLVM=y
-CONFIG_AS_VERSION=210000
-CONFIG_LLD_VERSION=210000
+CONFIG_AS_VERSION=220002
+CONFIG_LLD_VERSION=220002
 CONFIG_CC_CAN_LINK=y
 CONFIG_CC_CAN_LINK_STATIC=y
 CONFIG_CC_HAS_ASM_GOTO=y

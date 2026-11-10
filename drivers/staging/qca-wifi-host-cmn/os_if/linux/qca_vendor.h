@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -429,6 +430,19 @@
  *	the host driver. The band configurations obtained are referred through
  *	QCA_WLAN_VENDOR_ATTR_SETBAND_MASK.
  *
+ * @QCA_NL80211_VENDOR_SUBCMD_CONCURRENT_MULTI_STA_POLICY: Vendor command to
+ *	configure the concurrent session policies when multiple STA interfaces
+ *	are (getting) active. The attributes used by this command are defined
+ *	in enum qca_wlan_vendor_attr_concurrent_sta_policy.
+ *
+ * @QCA_NL80211_VENDOR_SUBCMD_USABLE_CHANNELS: Userspace can use this command
+ *	to query usable channels for different interface types such as STA,
+ *	AP, P2P GO, P2P Client, NAN, etc. The driver shall report all usable
+ *	channels in the response based on country code, different static
+ *	configurations, concurrency combinations, etc. The attributes used
+ *	with this command are defined in
+ *	enum qca_wlan_vendor_attr_usable_channels.
+ *
  */
 
 enum qca_nl80211_vendor_subcmds {
@@ -655,6 +669,8 @@ enum qca_nl80211_vendor_subcmds {
 	QCA_NL80211_VENDOR_SUBCMD_DRIVER_DISCONNECT_REASON = 189,
 	QCA_NL80211_VENDOR_SUBCMD_CONFIG_TWT = 191,
 	QCA_NL80211_VENDOR_SUBCMD_GETBAND = 192,
+	QCA_NL80211_VENDOR_SUBCMD_CONCURRENT_MULTI_STA_POLICY = 197,
+	QCA_NL80211_VENDOR_SUBCMD_USABLE_CHANNELS = 198,
 
 #ifdef OPLUS_ARCH_INJECT
 	// We need a common value to let this function work on dfferent QCOM plaftom
@@ -4449,6 +4465,26 @@ enum qca_wlan_vendor_attr_config {
 	 * will update the RX NSS based on QCA_WLAN_VENDOR_ATTR_CONFIG_RX_NSS.
 	 */
 	QCA_WLAN_VENDOR_ATTR_CONFIG_RX_NSS = 78,
+
+	/*
+	 * 8-bit unsigned value. This attribute, when set, indicates whether the
+	 * specified interface is the primary STA interface when there are more
+	 * than one STA interfaces concurrently active.
+	 *
+	 * This configuration helps the firmware/hardware to support certain
+	 * features (e.g., roaming) on this primary interface, if the same
+	 * cannot be supported on the concurrent STA interfaces simultaneously.
+	 *
+	 * This configuration is only applicable for a single STA interface on
+	 * a device and gives the priority for it only over other concurrent STA
+	 * interfaces.
+	 *
+	 * If the device is a multi wiphy/soc, this configuration applies to a
+	 * single STA interface across the wiphys.
+	 *
+	 * 1-Enable (is the primary STA), 0-Disable (is not the primary STA)
+	 */
+	QCA_WLAN_VENDOR_ATTR_CONFIG_CONCURRENT_STA_PRIMARY = 79,
 
 	/* keep last */
 	QCA_WLAN_VENDOR_ATTR_CONFIG_AFTER_LAST,
@@ -9460,6 +9496,161 @@ enum qca_disconnect_reason_codes {
 	QCA_DISCONNECT_REASON_BEACON_MISS_FAILURE = 14,
 	QCA_DISCONNECT_REASON_CHANNEL_SWITCH_FAILURE = 15,
 	QCA_DISCONNECT_REASON_USER_TRIGGERED = 16,
+};
+
+/**
+ * enum qca_wlan_vendor_usable_channels_filter - Bitmask of different
+ * filters defined in this enum are used in attribute
+ * %QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_FILTER_MASK.
+ *
+ * @QCA_WLAN_VENDOR_FILTER_CELLULAR_COEX: When this bit is set, the driver
+ * shall filter the channels which are not usable because of coexistence with
+ * cellular radio.
+ * @QCA_WLAN_VENDOR_FILTER_WLAN_CONCURRENCY: When this bit is set, the driver
+ * shall filter the channels which are not usable because of existing active
+ * interfaces in the driver and will result in Multi Channel Concurrency, etc.
+ *
+ */
+enum qca_wlan_vendor_usable_channels_filter {
+	QCA_WLAN_VENDOR_FILTER_CELLULAR_COEX = 0,
+	QCA_WLAN_VENDOR_FILTER_WLAN_CONCURRENCY = 1,
+};
+
+/**
+ * enum qca_wlan_vendor_attr_chan_info - Attributes used inside
+ * %QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_CHAN_INFO nested attribute.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CHAN_INFO_PRIMARY_FREQ:
+ * u32 attribute, required. Indicates the center frequency of the primary
+ * channel in MHz.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CHAN_INFO_SEG0_FREQ:
+ * u32 attribute. Indicates the center frequency of the primary segment of the
+ * channel in MHz. This attribute is required when reporting 40 MHz, 80 MHz,
+ * 160 MHz, and 320 MHz channels.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CHAN_INFO_SEG1_FREQ:
+ * u32 attribute. Indicates the center frequency of the secondary segment of
+ * 80+80 channel in MHz. This attribute is required only when
+ * QCA_WLAN_VENDOR_ATTR_CHAN_INFO_BANDWIDTH is set to NL80211_CHAN_WIDTH_80P80.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CHAN_INFO_BANDWIDTH:
+ * u32 attribute, required. Indicates the bandwidth of the channel, possible
+ * values are defined in enum nl80211_chan_width.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CHAN_INFO_IFACE_MODE_MASK:
+ * u32 attribute, required. Indicates all the interface types for which this
+ * channel is usable. This attribute encapsulates bitmasks of interface types
+ * defined in enum nl80211_iftype.
+ *
+ */
+enum qca_wlan_vendor_attr_chan_info {
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_PRIMARY_FREQ = 1,
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_SEG0_FREQ = 2,
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_SEG1_FREQ = 3,
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_BANDWIDTH = 4,
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_IFACE_MODE_MASK = 5,
+
+	/* keep last */
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_AFTER_LAST,
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_MAX =
+	QCA_WLAN_VENDOR_ATTR_CHAN_INFO_AFTER_LAST - 1,
+};
+
+/**
+ * enum qca_wlan_vendor_attr_usable_channels - Attributes used by
+ * %QCA_NL80211_VENDOR_SUBCMD_USABLE_CHANNELS vendor command.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_BAND_MASK:
+ * u32 attribute. Indicates the bands from which the channels should be reported
+ * in response. This attribute encapsulates bit masks of bands defined in enum
+ * nl80211_band. Optional attribute, if not present in the request the driver
+ * shall return channels from all supported bands.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_IFACE_MODE_MASK:
+ * u32 attribute. Indicates all the interface types for which the usable
+ * channels information is requested. This attribute encapsulates bitmasks of
+ * interface types defined in enum nl80211_iftype. Optional attribute, if not
+ * present in the request the driver shall send information of all supported
+ * interface modes.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_FILTER_MASK:
+ * u32 attribute. This attribute carries information of all filters that shall
+ * be applied while populating usable channels information by the driver. This
+ * attribute carries bit masks of different filters defined in enum
+ * qca_wlan_vendor_usable_channels_filter. Optional attribute, if not present
+ * in the request the driver shall send information of channels without applying
+ * any of the filters that can be configured through this attribute.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_CHAN_INFO:
+ * Nested attribute. This attribute shall be used by the driver to send
+ * usability information of each channel. The attributes defined in enum
+ * qca_wlan_vendor_attr_chan_info are used inside this attribute.
+ */
+enum qca_wlan_vendor_attr_usable_channels {
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_BAND_MASK = 1,
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_IFACE_MODE_MASK = 2,
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_FILTER_MASK = 3,
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_CHAN_INFO = 4,
+
+	/* keep last */
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_AFTER_LAST,
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_MAX =
+	QCA_WLAN_VENDOR_ATTR_USABLE_CHANNELS_AFTER_LAST - 1,
+};
+
+/**
+ * enum qca_wlan_concurrent_sta_policy_config - Concurrent STA policies
+ *
+ * @QCA_WLAN_CONCURRENT_STA_POLICY_PREFER_PRIMARY: Preference to the primary
+ * STA interface has to be given while selecting the connection policies
+ * (e.g., BSSID, band, TX/RX chains, etc.) for the subsequent STA interface.
+ * An interface is set as primary through the attribute
+ * QCA_WLAN_VENDOR_ATTR_CONFIG_CONCURRENT_STA_PRIMARY. This policy is not
+ * applicable if the primary interface has not been set earlier.
+ *
+ * The intention is not to downgrade the primary STA performance, such as:
+ * - Do not reduce the number of TX/RX chains of primary connection.
+ * - Do not optimize DBS vs. MCC/SCC, if DBS ends up reducing the number of
+ *   chains.
+ * - If using MCC, should set the MCC duty cycle of the primary connection to
+ *   be higher than the secondary connection.
+ *
+ * @QCA_WLAN_CONCURRENT_STA_POLICY_UNBIASED: The connection policies for the
+ * subsequent STA connection shall be chosen to balance with the existing
+ * concurrent STA's performance.
+ * Such as
+ * - Can choose MCC or DBS mode depending on the MCC efficiency and hardware
+ *   capability.
+ * - If using MCC, set the MCC duty cycle of the primary connection to be equal
+ *   to the secondary.
+ * - Prefer BSSID candidates which will help provide the best "overall"
+ *   performance for all the STA connections.
+ */
+enum qca_wlan_concurrent_sta_policy_config {
+	QCA_WLAN_CONCURRENT_STA_POLICY_PREFER_PRIMARY = 0,
+	QCA_WLAN_CONCURRENT_STA_POLICY_UNBIASED = 1,
+};
+
+/**
+ * enum qca_wlan_vendor_attr_concurrent_sta_policy - Defines attributes
+ * used by QCA_NL80211_VENDOR_SUBCMD_CONCURRENT_MULTI_STA_POLICY vendor command.
+ *
+ * @QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_CONFIG:
+ * u8 attribute. Configures the concurrent STA policy configuration.
+ * Possible values are defined in enum qca_wlan_concurrent_sta_policy_config.
+ */
+enum qca_wlan_vendor_attr_concurrent_sta_policy {
+	QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_INVALID = 0,
+	QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_CONFIG = 1,
+
+	/* keep last */
+	QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_AFTER_LAST,
+	QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_MAX =
+	QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_AFTER_LAST - 1,
+
 };
 
 /**

@@ -257,6 +257,21 @@ QDF_STATUS ucfg_mlme_set_band_capability(struct wlan_objmgr_psoc *psoc,
 }
 
 /**
+ * ucfg_mlme_set_dual_sta_policy() - Configures the Concurrent STA policy
+ * value
+ * @psoc: pointer to psoc object
+ * @dual_sta_config: Concurrent STA policy configuration value
+ *
+ * Return: QDF Status
+ */
+static inline
+QDF_STATUS ucfg_mlme_set_dual_sta_policy(struct wlan_objmgr_psoc *psoc,
+					 uint8_t dual_sta_config)
+{
+	return wlan_mlme_set_dual_sta_policy(psoc, dual_sta_config);
+}
+
+/**
  * ucfg_mlme_get_prevent_link_down() - Get the prevent link down config
  * @psoc: pointer to psoc object
  * @prevent_link_down: Pointer to the variable from caller
@@ -2017,6 +2032,26 @@ QDF_STATUS ucfg_mlme_set_fils_enabled_info(struct wlan_objmgr_psoc *psoc,
 {
 	return wlan_mlme_set_fils_enabled_info(psoc, value);
 }
+
+/**
+ * ucfg_mlme_set_primary_interface() - Set primary STA iface id
+ *
+ * @psoc: pointer to psoc object
+ * @value: value that needs to be set from the caller
+ *
+ * When a vdev is set as primary then based on the dual sta policy
+ * "qca_wlan_concurrent_sta_policy_config" mcc preference and roaming has
+ * to be enabled on the primary vdev
+ *
+ * Return: QDF_STATUS_SUCCESS or QDF_STATUS_FAILURE
+ */
+static inline
+QDF_STATUS ucfg_mlme_set_primary_interface(struct wlan_objmgr_psoc *psoc,
+					   uint8_t value)
+{
+	return wlan_mlme_set_primary_interface(psoc, value);
+}
+
 
 /**
  * ucfg_mlme_set_enable_bcast_probe_rsp() - Set enable bcast probe resp info

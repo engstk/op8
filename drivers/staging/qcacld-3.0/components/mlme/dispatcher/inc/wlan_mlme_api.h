@@ -270,6 +270,16 @@ QDF_STATUS wlan_mlme_set_band_capability(struct wlan_objmgr_psoc *psoc,
 					 uint32_t band_capability);
 
 /**
+ * wlan_mlme_set_dual_sta_policy() - Set the dual sta config
+ * @psoc: pointer to psoc object
+ * @dual_sta_config: Value to be set from the caller
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS wlan_mlme_set_dual_sta_policy(struct wlan_objmgr_psoc *psoc,
+					 uint8_t dual_sta_config);
+
+/**
  * wlan_mlme_get_prevent_link_down() - Get the prevent link down config
  * @psoc: pointer to psoc object
  * @prevent_link_down: Pointer to the variable from caller
@@ -987,6 +997,20 @@ QDF_STATUS wlan_mlme_get_fils_enabled_info(struct wlan_objmgr_psoc *psoc,
  */
 QDF_STATUS wlan_mlme_set_fils_enabled_info(struct wlan_objmgr_psoc *psoc,
 					   bool value);
+
+/**
+ * wlan_mlme_set_primary_interface() - Set the primary iface id for driver
+ * @psoc: pointer to psoc object
+ * @value: value that needs to be set from the caller
+ *
+ * When a vdev is set as primary then based on the dual sta policy
+ * "qca_wlan_concurrent_sta_policy_config" mcc preference and roaming has
+ * to be enabled on the primary vdev
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS wlan_mlme_set_primary_interface(struct wlan_objmgr_psoc *psoc,
+					   uint8_t value);
 
 /**
  * wlan_mlme_get_tl_delayed_trgr_frm_int() - Get delay interval(in ms)

@@ -538,6 +538,13 @@ config  CMA_ALLOW_WRITE_DEBUGFS
 	  cma allocation, so it is not recommended to
 	  enable this option on any production device.
 
+config CMA_SYSFS
+	bool "CMA information through sysfs interface"
+	depends on CMA && SYSFS
+	help
+	  This option exposes some sysfs attributes to get information
+	  from CMA.
+
 config CMA_AREAS
 	int "Maximum count of the CMA areas"
 	depends on CMA

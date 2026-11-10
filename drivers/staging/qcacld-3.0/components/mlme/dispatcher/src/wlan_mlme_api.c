@@ -215,6 +215,22 @@ QDF_STATUS wlan_mlme_set_band_capability(struct wlan_objmgr_psoc *psoc,
 	return QDF_STATUS_SUCCESS;
 }
 
+QDF_STATUS wlan_mlme_set_dual_sta_policy(struct wlan_objmgr_psoc *psoc,
+					 uint8_t dual_sta_config)
+
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj;
+
+	mlme_obj = mlme_get_psoc_ext_obj(psoc);
+	if (!mlme_obj)
+		return QDF_STATUS_E_FAILURE;
+
+	mlme_obj->cfg.gen.dual_sta_policy.concurrent_sta_policy =
+								dual_sta_config;
+
+	return QDF_STATUS_SUCCESS;
+}
+
 QDF_STATUS wlan_mlme_get_prevent_link_down(struct wlan_objmgr_psoc *psoc,
 					   bool *prevent_link_down)
 {
@@ -2309,6 +2325,18 @@ QDF_STATUS wlan_mlme_set_fils_enabled_info(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 
 	mlme_obj->cfg.oce.fils_enabled = value;
+	return QDF_STATUS_SUCCESS;
+}
+
+QDF_STATUS wlan_mlme_set_primary_interface(struct wlan_objmgr_psoc *psoc,
+					   uint8_t value)
+{
+	struct wlan_mlme_psoc_ext_obj *mlme_obj = mlme_get_psoc_ext_obj(psoc);
+
+	if (!mlme_obj)
+		return QDF_STATUS_E_FAILURE;
+
+	mlme_obj->cfg.gen.dual_sta_policy.primary_vdev_id = value;
 	return QDF_STATUS_SUCCESS;
 }
 

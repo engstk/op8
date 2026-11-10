@@ -394,65 +394,6 @@ static void dump_confidential_status(struct seq_file *s)
 	return;
 }
 
-static void update_manifest(struct proc_dir_entry *parent)
-{
-	static const char *manifest_src[2] = {
-		"/vendor/odm/etc/vintf/manifest_ssss.xml",
-		"/vendor/odm/etc/vintf/manifest_dsds.xml",
-	};
-	mm_segment_t fs;
-	char *substr = strstr(boot_command_line, "simcardnum.doublesim=");
-
-	if (!substr)
-		return;
-
-	substr += strlen("simcardnum.doublesim=");
-
-	fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (parent) {
-		if (substr[0] == '0') {
-			proc_symlink("manifest", parent,
-				     manifest_src[0]); //single sim
-		} else {
-			proc_symlink("manifest", parent, manifest_src[1]);
-		}
-	}
-
-	set_fs(fs);
-}
-
-static void update_telephony_manifest(struct proc_dir_entry *parent)
-{
-	static const char *manifest_src[2] = {
-		"/vendor/odm/etc/vintf/telephony_manifest_ssss.xml",
-		"/vendor/odm/etc/vintf/telephony_manifest_dsds.xml",
-	};
-	mm_segment_t fs;
-	char *substr = strstr(boot_command_line, "simcardnum.doublesim=");
-
-	if (!substr)
-		return;
-
-	substr += strlen("simcardnum.doublesim=");
-
-	fs = get_fs();
-	set_fs(KERNEL_DS);
-
-	if (parent) {
-		if (substr[0] == '0') {
-			proc_symlink("telephony_manifest", parent,
-				     manifest_src[0]); //single sim
-		} else {
-			proc_symlink("telephony_manifest", parent,
-				     manifest_src[1]);
-		}
-	}
-
-	set_fs(fs);
-}
-
 static int project_read_func(struct seq_file *s, void *v)
 {
 	void *p = s->private;
@@ -602,10 +543,6 @@ static int __init oplus_project_init(void)
 				   &project_info_fops, UINT2Ptr(PROJECT_TEST));
 	if (!p_entry)
 		goto error_init;
-
-	/*update single or double cards*/
-	update_manifest(oplus_info);
-	update_telephony_manifest(oplus_info);
 
 	return 0;
 

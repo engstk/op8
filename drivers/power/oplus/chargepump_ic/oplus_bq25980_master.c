@@ -603,8 +603,6 @@ int __init bq25980_master_subsys_init(void)
 
 	return ret;
 }
-EXPORT_SYMBOL(bq25980_master_subsys_init);
-
 subsys_initcall(bq25980_master_subsys_init);
 #else
 int bq25980_master_subsys_init(void)
